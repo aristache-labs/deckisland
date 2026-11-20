@@ -119,20 +119,29 @@ public partial class MainWindow
         var (icon, condition) = WeatherCondition(reading.Code, reading.Daylight);
         var (background, foreground) = WeatherCardColours(colourful ? icon : null);
         var hero = new StackPanel();
-        var title = new DockPanel { LastChildFill = true };
+        var title = new Grid
+        {
+            ColumnDefinitions =
+            {
+                new ColumnDefinition(),
+                new ColumnDefinition { Width = GridLength.Auto },
+                new ColumnDefinition()
+            }
+        };
         // The page can be built while collapsed. The icon starts when the expanded content becomes visible.
         var skyIcon = colourful ? ColourfulWeatherIcon(icon, Animates) ?? WeatherLineIcon(icon, 36, foreground)
             : WeatherLineIcon(icon, 36, foreground);
         skyIcon.Margin = new Thickness(12, 0, 0, 0);
-        DockPanel.SetDock(skyIcon, System.Windows.Controls.Dock.Right);
+        skyIcon.HorizontalAlignment = HorizontalAlignment.Right;
+        Grid.SetColumn(skyIcon, 2);
         title.Children.Add(skyIcon);
         var today = reading.Days.FirstOrDefault();
         var todayPrecipitation = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
-        todayPrecipitation.Children.Add(WeatherPrecipitation(today, foreground, probability: true));
-        var todayTotal = WeatherPrecipitation(today, foreground, probability: false);
+        todayPrecipitation.Children.Add(WeatherPrecipitation(today, foreground, probability: true, hero: true));
+        var todayTotal = WeatherPrecipitation(today, foreground, probability: false, hero: true);
         todayTotal.Margin = new Thickness(14, 0, 0, 0);
         todayPrecipitation.Children.Add(todayTotal);
-        DockPanel.SetDock(todayPrecipitation, System.Windows.Controls.Dock.Right);
+        Grid.SetColumn(todayPrecipitation, 1);
         title.Children.Add(todayPrecipitation);
         var temperature = WeatherText(WeatherTemperature(reading.Temperature, true), 34);
         temperature.Foreground = foreground;
@@ -163,27 +172,33 @@ public partial class MainWindow
                 ColumnDefinitions =
                 {
                     new ColumnDefinition { Width = GridLength.Auto, SharedSizeGroup = "WeatherDate" },
-                    new ColumnDefinition { Width = GridLength.Auto, SharedSizeGroup = "WeatherChance" },
-                    new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) },
-                    new ColumnDefinition { Width = GridLength.Auto, SharedSizeGroup = "WeatherTotal" },
+                    new ColumnDefinition(),
+                    new ColumnDefinition(),
                     new ColumnDefinition { Width = GridLength.Auto, SharedSizeGroup = "WeatherRange" }
                 }
             };
             void AddColumn(FrameworkElement element, int column)
             {
-                if (column != 0) element.Margin = new Thickness(10, 0, 0, 0);
+                element.HorizontalAlignment = column switch
+                {
+                    0 => HorizontalAlignment.Left,
+                    3 => HorizontalAlignment.Right,
+                    _ => HorizontalAlignment.Center
+                };
+                if (column is 1 or 2) element.Margin = new Thickness(5, 0, 5, 0);
                 Grid.SetColumn(element, column);
                 dayRow.Children.Add(element);
             }
-            var when = WeatherText(day.Date.ToString("ddd d", Loc.Culture), 12);
+            var when = WeatherText(day.Date.ToString("d ddd", Loc.Culture), 12);
             AddColumn(when, 0);
             var ink = when.Foreground;
-            AddColumn(WeatherPrecipitation(day, ink, probability: true, sharedIcon: dayIcon), 1);
+            var chance = WeatherPrecipitation(day, ink, probability: true, sharedIcon: dayIcon);
+            chance.Margin = new Thickness(0, 0, 6, 0);
             var mark = WeatherLineIcon(dayIcon, 17, ink);
             mark.Margin = new Thickness(0, 0, 8, 0);
-            AddColumn(new DockPanel { Children = { mark, WeatherText(dayCondition, 12) } }, 2);
-            AddColumn(WeatherPrecipitation(day, ink, probability: false), 3);
-            AddColumn(WeatherText(WeatherExtremes(day), 12), 4);
+            AddColumn(new DockPanel { Children = { chance, mark, WeatherText(dayCondition, 12) } }, 1);
+            AddColumn(WeatherPrecipitation(day, ink, probability: false), 2);
+            AddColumn(WeatherText(WeatherExtremes(day, abbreviated: true), 12), 3);
             rows.Children.Add(new Border
             {
                 Child = dayRow, Margin = new Thickness(0, 3, 0, 0), Padding = new Thickness(14, 5, 14, 5),
@@ -266,7 +281,7 @@ public partial class MainWindow
         return (wash, new SolidColorBrush(PanelTheme.ToColor(ink)));
     }
 
-    private FrameworkElement WeatherPrecipitation(WeatherDay? day, Brush foreground, bool probability, string? sharedIcon = null)
+    private FrameworkElement WeatherPrecipitation(WeatherDay? day, Brush foreground, bool probability, string? sharedIcon = null, bool hero = false)
     {
         string value = (probability, day?.PrecipitationProbability, day?.PrecipitationMillimetres) switch
         {
@@ -274,7 +289,7 @@ public partial class MainWindow
             (false, _, { } amount) => $"{amount:0.##} mm",
             _ => "—"
         };
-        var figures = WeatherText(value, 12);
+        var figures = WeatherText(value, hero ? 14 : 12);
         figures.Foreground = foreground;
         string label = probability ? Loc.T("最高降水概率", "Peak precipitation probability")
             : Loc.T("总降水量（雨、阵雨及雪）", "Total precipitation (rain, showers and snow)");
@@ -287,17 +302,21 @@ public partial class MainWindow
             icon = snow ? "❄" : day?.PrecipitationMillimetres > 0 ? RainIcon : null;
         else if (!probability && day?.PrecipitationMillimetres is not null)
             icon = snow ? "❄" : WaterIcon;
-        if (probability) metric.Children.Add(figures);
+        if (hero && probability && day?.PrecipitationProbability is not null)
+            icon ??= WaterIcon;
+        bool valueFirst = probability && !hero;
+        if (valueFirst) metric.Children.Add(figures);
         if (icon is not null && icon != sharedIcon)
         {
-            var mark = WeatherLineIcon(icon, 14, foreground);
-            mark.Margin = probability ? new Thickness(4, 0, 0, 0) : new Thickness(0, 0, 4, 0);
+            var mark = WeatherLineIcon(icon, hero ? 21 : 14, foreground);
+            mark.Margin = valueFirst ? new Thickness(4, 0, 0, 0) : new Thickness(0, 0, 5, 0);
             metric.Children.Add(mark);
         }
-        if (!probability) metric.Children.Add(figures);
+        if (!valueFirst) metric.Children.Add(figures);
         return metric;
     }
 
-    private string WeatherExtremes(WeatherDay? day) =>
-        $"{Loc.T("最低", "Low")} {WeatherTemperature(day?.Low)}  {Loc.T("最高", "High")} {WeatherTemperature(day?.High)}";
+    private string WeatherExtremes(WeatherDay? day, bool abbreviated = false) =>
+        $"{(abbreviated ? Loc.T("低", "L") : Loc.T("最低", "Low"))} {WeatherTemperature(day?.Low)}  " +
+        $"{(abbreviated ? Loc.T("高", "H") : Loc.T("最高", "High"))} {WeatherTemperature(day?.High)}";
 }
