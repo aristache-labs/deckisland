@@ -12,6 +12,11 @@ internal static class CompactSpacingTests
         Share(check);
         Required(check);
         WidgetSpacing(check);
+        check("Nested raises collapsed text size without changing Single",
+            CompactMusicLayout.CollapsedTextSize(QuotaRingStyle.Nested, 1, 11) == 12.5 &&
+            CompactMusicLayout.CollapsedTextSize(QuotaRingStyle.Nested, 1.5) == 19.5 &&
+            CompactMusicLayout.CollapsedTextSize(QuotaRingStyle.Single, 1, 11) == 11 &&
+            CompactMusicLayout.CollapsedTextSize(QuotaRingStyle.Single, 1.5) == 17.25);
     }
 
     private static void WidgetSpacing(Action<string, bool> check)

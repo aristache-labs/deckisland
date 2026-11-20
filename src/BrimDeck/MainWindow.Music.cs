@@ -1151,6 +1151,8 @@ public partial class MainWindow
     }
     // The color taken from the playing song's cover; null without one, or when the cover gave no color.
     internal Color? CoverColor => _mediaCover is not null && _mediaTrack is { State: not MediaState.Stopped } ? _coverAccent : null;
+    private double CompactTitleFont(CompactMusicLayout layout) => Math.Max(1,
+        CompactMusicLayout.Half(CompactMusicLayout.CollapsedTextSize(Settings.QuotaRingStyle, layout.Scale)));
     // The collapsed title: it scrolls its laps once per text (MarqueeCycle.Laps) and, while it glides, lends the equalizer its
     // frames (MusicGliding).
     private MusicMarquee CompactTitle(string text, double width, CompactMusicLayout layout)
