@@ -135,7 +135,8 @@ public partial class MainWindow
         double dpi = VisualTreeHelper.GetDpi(this).DpiScaleX, start = DevicePixels.Up(icon + gap, dpi);
         var number = new TextBlock
         {
-            Text = count.ToString(CultureInfo.InvariantCulture), FontFamily = UI.PanelFont, FontSize = CompactMusicLayout.Half(11.5 * s), FontWeight = FontWeights.SemiBold,
+            Text = count.ToString(CultureInfo.InvariantCulture), FontFamily = UI.PanelFont,
+            FontSize = CompactMusicLayout.Half(CompactMusicLayout.CollapsedTextSize(Settings.QuotaRingStyle, s)), FontWeight = FontWeights.SemiBold,
             Foreground = UI.Brush(Look.Primary), HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Center, TextWrapping = TextWrapping.NoWrap
         };
         Typography.SetNumeralAlignment(number, FontNumeralAlignment.Tabular);

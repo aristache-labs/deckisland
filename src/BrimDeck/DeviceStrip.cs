@@ -24,7 +24,7 @@ internal sealed class DeviceStrip : FrameworkElement
         _devices = devices;
         _scale = CompactMusicLayout.SafeScale(scale);
         Ring = CompactMusicLayout.StatusRingSize(quotaStyle, _scale);
-        _font = Math.Max(1, CompactMusicLayout.Half(11.5 * _scale));
+        _font = Math.Max(1, CompactMusicLayout.Half(CompactMusicLayout.CollapsedTextSize(quotaStyle, _scale)));
         Height = Row;
         IsHitTestVisible = false;
     }

@@ -61,12 +61,12 @@ public partial class MainWindow
         if ((!Settings.ShowsFocus(EffectiveStyle) && !Settings.FocusSimplifiesCompact(EffectiveStyle)) ||
             _app.FocusSession.Phase == FocusPhase.Idle && _app.FocusNotice == FocusPhase.Idle)
             return null;
-        var badge = WeatherText(FocusBadgeLabel(), 11 * scale);
+        var badge = WeatherText(FocusBadgeLabel(), CompactMusicLayout.CollapsedTextSize(Settings.QuotaRingStyle, scale, 11));
         Typography.SetNumeralAlignment(badge, FontNumeralAlignment.Tabular);
         double size = CompactMusicLayout.StatusRingSize(Settings.QuotaRingStyle, scale);
         _focusBadge = badge;
         _focusBadgeDial = new FocusDial { Width = size, Height = size, Margin = new Thickness(0, 0, 4 * scale, 0) };
-        _focusBadgeDial.Update(_app.FocusSession.Phase, FocusProgress());
+        _focusBadgeDial.Update(_app.FocusSession, Animates);
         var host = new StackPanel { Orientation = Orientation.Horizontal, Background = Brushes.Transparent, Children = { _focusBadgeDial, badge },
             ToolTip = Loc.T("打开专注计时器", "Open Focus timer") };
         host.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
@@ -146,7 +146,7 @@ public partial class MainWindow
         if (_focusBadge is not null)
         {
             _focusBadge.Text = FocusBadgeLabel();
-            _focusBadgeDial?.Update(_app.FocusSession.Phase, FocusProgress());
+            _focusBadgeDial?.Update(_app.FocusSession, Animates);
         }
         if (_focusReading is null || CurrentPage != DeckPage.Focus || FocusContent.Children.Count == 0) return;
         var timer = _app.FocusSession;
@@ -162,32 +162,45 @@ public partial class MainWindow
         _focusReset!.IsEnabled = !idle;
         _focusShorter!.IsEnabled = idle && Settings.FocusMinutes > FocusTimer.MinimumMinutes;
         _focusLonger!.IsEnabled = idle && Settings.FocusMinutes < FocusTimer.MaximumMinutes;
-        _focusDial!.Update(timer.Phase, FocusProgress());
-    }
-
-    private double FocusProgress()
-    {
-        var timer = _app.FocusSession;
-        return timer.Duration > TimeSpan.Zero
-            ? 1 - Math.Clamp(timer.Remaining(DateTimeOffset.UtcNow).TotalSeconds / timer.Duration.TotalSeconds, 0, 1) : 0;
+        _focusDial!.Update(timer, Animates);
     }
 
     private sealed class FocusDial : FrameworkElement
     {
+        private FocusTimer? _timer;
+        private bool _smooth;
         private double _progress;
-        private FocusPhase _phase;
-        internal void Update(FocusPhase phase, double progress)
+
+        public FocusDial() => IsVisibleChanged += (_, _) => UpdateMotion();
+
+        internal void Update(FocusTimer timer, bool smooth)
         {
-            _phase = phase;
-            _progress = progress;
+            _timer = timer;
+            _smooth = smooth;
+            UpdateMotion();
+        }
+
+        private void UpdateMotion()
+        {
+            if (AdvanceFrame(0)) Motion.Start(this, AdvanceFrame);
+        }
+
+        private bool AdvanceFrame(double _)
+        {
+            if (!IsVisible || _timer is not { } timer) return false;
+            var remaining = timer.Remaining(DateTimeOffset.UtcNow);
+            _progress = timer.Duration > TimeSpan.Zero
+                ? 1 - Math.Clamp(remaining.TotalSeconds / timer.Duration.TotalSeconds, 0, 1) : 0;
             InvalidateVisual();
+            return _smooth && timer.Running && remaining > TimeSpan.Zero;
         }
         protected override void OnRender(DrawingContext drawing)
         {
             var look = PanelLook.Of(this);
             double size = Math.Max(1, Math.Min(ActualWidth, ActualHeight) - 2);
-            MonitorDraw.Dial(drawing, new Point(ActualWidth / 2, ActualHeight / 2 - size / 32), size, Math.Clamp(size / 24, 1, 3), 7, _progress,
-                look.Hex(_phase == FocusPhase.Break ? "breakProgress" : "focusProgress"), "", MonitorDraw.PixelsPerDip(this), look: look);
+            double thickness = Math.Min(size / 2, Math.Clamp(size / 15, 1.8, 5));
+            DevicesView.Ring(drawing, new Point(ActualWidth / 2, ActualHeight / 2), size, thickness, _progress,
+                look.Hex(_timer?.Phase == FocusPhase.Break ? "breakProgress" : "focusProgress"), look: look);
         }
     }
 }

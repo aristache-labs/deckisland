@@ -1155,7 +1155,7 @@ public partial class MainWindow
     // frames (MusicGliding).
     private MusicMarquee CompactTitle(string text, double width, CompactMusicLayout layout)
     {
-        var title = new MusicMarquee { Text = text, Width = width, Height = layout.TextHeight, FontSize = layout.TextFont, EdgeWidth = layout.TextEdge,
+        var title = new MusicMarquee { Text = text, Width = width, Height = layout.TextHeight, FontSize = CompactTitleFont(layout), EdgeWidth = layout.TextEdge,
             ScrollAllowed = layout.TextScrolls, Backdrop = Look.MarqueeBackdrop, InkFade = Look.InkFade,
             Laps = true, Rested = text.Length > 0 && text == _compactTitleRested };
         title.Finished += () => { if (ReferenceEquals(_compactMarquee, title)) _compactTitleRested = title.Text; };
@@ -1221,7 +1221,7 @@ public partial class MainWindow
         double textSlot = 0;
         if (steadyText && TextFollowsLength)
         {
-            textSlot = CompactMusicLayout.FollowSlot(CompactTextWidth(text, layout.TextFont), scale);
+            textSlot = CompactMusicLayout.FollowSlot(CompactTextWidth(text, CompactTitleFont(layout)), scale);
             double natural = CompactMusicLayout.NaturalWidth(scale, media, steadyRings, steadyText, fixedFace, strip?.PreferredWidth ?? 0, dpi, equalizer, Settings.EqualizerBars, showCover, ringDiameter, textSlot, spacing);
             wanted = CompactMusicLayout.FollowWidth(natural, wanted, FollowContentLimit(shape));
         }

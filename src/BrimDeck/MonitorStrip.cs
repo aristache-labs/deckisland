@@ -93,9 +93,9 @@ internal sealed class MonitorStrip : FrameworkElement
         // A ring set to show only its temperature, on a machine that has none, shows its dial alone.
         _values = CompactMonitor.Values(readings) & (_usage | _heat | _vram);
         _scale = CompactMusicLayout.SafeScale(scale);
-        _font = Math.Max(1, CompactMusicLayout.Half(11.5 * _scale));
+        _font = Math.Max(1, CompactMusicLayout.Half(CompactMusicLayout.CollapsedTextSize(quotaStyle, _scale)));
         // Two figures stack in smaller type, so both fit the row's height.
-        _small = Math.Max(1, CompactMusicLayout.Half(8.5 * _scale));
+        _small = Math.Max(1, CompactMusicLayout.Half(CompactMusicLayout.CollapsedTextSize(quotaStyle, _scale, 8.5)));
         // Each ring is a dial carrying its letter, with its figure after it or alone.
         _dial = CompactMusicLayout.StatusRingSize(quotaStyle, _scale);
         // Readings with figures sit closer than the dials alone: a figure narrower than the widest it can show already leaves room after it.

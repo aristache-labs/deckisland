@@ -40,5 +40,13 @@ internal static class FocusTimerTests
         restored.Normalize();
         check("Focus and break save independent system sounds", restored.FocusEndSound == FocusSound.None &&
             restored.BreakEndSound == FocusSound.Question);
+        check("Focus and break theme colors differ and meet contrast in both base themes",
+            new[] { PanelThemes.Dark, PanelThemes.Light }.All(id =>
+            {
+                var palette = PanelThemes.Resolve(PanelThemes.BuiltIn(id)!);
+                return palette["focusProgress"] != palette["breakProgress"] &&
+                    palette["focusProgress"].MinimumContrast(palette.SurfaceStops) >= PanelThemes.GraphicContrast &&
+                    palette["breakProgress"].MinimumContrast(palette.SurfaceStops) >= PanelThemes.GraphicContrast;
+            }));
     }
 }

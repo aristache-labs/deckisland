@@ -237,6 +237,8 @@ public sealed record CompactMusicLayout(double MiddleWidth, double RingSize, dou
     public static double StatusRingSize(QuotaRingStyle style, double scale) => style == QuotaRingStyle.Nested
         ? RingSizeFor(QuotaRing.Nested, scale)
         : Math.Max(4, Whole(16 * SafeScale(scale)));
+    public static double CollapsedTextSize(QuotaRingStyle style, double scale, double size = 11.5) =>
+        (size + (style == QuotaRingStyle.Nested ? 1.5 : 0)) * SafeScale(scale);
 
     // The width the rings and the lyric's fixed slot take without cutting or rotating the rings.
     private static double RingsAndText(double s, int rings, bool text, double size, double partGap, double textSlot = 0)

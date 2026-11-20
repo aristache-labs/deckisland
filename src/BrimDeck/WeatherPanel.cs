@@ -69,7 +69,8 @@ public partial class MainWindow
         if (!Settings.ShowsWeather(EffectiveStyle) || _app.CurrentWeather is not { } reading) return null;
         var (icon, condition) = WeatherCondition(reading.Code, reading.Daylight);
         string temperature = WeatherTemperature(reading.Temperature);
-        var text = WeatherText($"{temperature}{(_app.WeatherStale ? "*" : "")}", 11 * scale);
+        var text = WeatherText($"{temperature}{(_app.WeatherStale ? "*" : "")}",
+            CompactMusicLayout.CollapsedTextSize(Settings.QuotaRingStyle, scale, 11));
         bool nested = Settings.QuotaRingStyle == QuotaRingStyle.Nested && icon != "–";
         double statusSize = CompactMusicLayout.StatusRingSize(Settings.QuotaRingStyle, scale);
         double iconHeight = nested ? CompactMusicLayout.Whole(statusSize * .9) : 14 * scale;

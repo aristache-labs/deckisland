@@ -40,6 +40,8 @@
     "hairline": "#17FFFFFF",        // Dividers between columns and rows.
     "track": "#32FFFFFF",           // The empty part of a quota bar. Keep it visible on the surface; the bar on it needs at least 3:1.
     "ringTrack": "#32FFFFFF",       // The empty part of a quota ring. Keep it as visible as the bar's.
+    "focusProgress": "#51D894",     // Focus timer progress during a focus session.
+    "breakProgress": "#74B9FF",     // Focus timer progress during a break.
     "fill": "#12FFFFFF",            // The background of joined switches.
     "fillSelected": "#24FFFFFF",    // The chosen segment.
     "hover": "#18FFFFFF",
