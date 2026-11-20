@@ -699,6 +699,8 @@ public sealed class DeckSettings
     public WeatherCity? WeatherCity { get; set; }
     public bool FocusPage { get; set; }
     public bool FocusHideOtherWidgets { get; set; } = true;
+    public FocusSound FocusEndSound { get; set; } = FocusSound.Asterisk;
+    public FocusSound BreakEndSound { get; set; } = FocusSound.Exclamation;
     public bool FocusSimplifiesCompact(CompactStyle style) => FocusPage && FocusHideOtherWidgets && style != CompactStyle.Line;
     public bool NotchFocus { get; set; } = true;
     public bool CapsuleFocus { get; set; } = true;
@@ -935,6 +937,8 @@ public sealed class DeckSettings
         if (WeatherCity is { Valid: false }) WeatherCity = null;
         FocusMinutes = FocusTimer.ClampMinutes(FocusMinutes);
         BreakMinutes = FocusTimer.ClampMinutes(BreakMinutes);
+        if (!Enum.IsDefined(FocusEndSound)) FocusEndSound = FocusSound.Asterisk;
+        if (!Enum.IsDefined(BreakEndSound)) BreakEndSound = FocusSound.Exclamation;
         FocusWidth = double.IsFinite(FocusWidth) ? Math.Clamp(FocusWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : 440;
         FocusHeight = double.IsFinite(FocusHeight) ? Math.Clamp(FocusHeight, DeckPages.MinHeight, DeckPages.MaxHeight) : 180;
         WeatherWidth = double.IsFinite(WeatherWidth) ? Math.Clamp(WeatherWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : 460;

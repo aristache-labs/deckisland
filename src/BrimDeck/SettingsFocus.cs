@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Automation;
 using System.Windows.Controls;
 using BrimDeck.Core;
 
@@ -20,7 +21,42 @@ public sealed partial class SettingsWindow
             SliderRow(Loc.T("专注时间", "Focus duration"), S.FocusMinutes, FocusTimer.MinimumMinutes, FocusTimer.MaximumMinutes, 1, minutes,
                 value => Change(s => s.FocusMinutes = (int)value)),
             SliderRow(Loc.T("休息时间", "Break duration"), S.BreakMinutes, FocusTimer.MinimumMinutes, FocusTimer.MaximumMinutes, 1, minutes,
-                value => Change(s => s.BreakMinutes = (int)value)));
+                value => Change(s => s.BreakMinutes = (int)value)),
+            FocusSoundRow(Loc.T("专注结束音效", "Focus completion sound"), S.FocusEndSound, sound => Change(s => s.FocusEndSound = sound)),
+            FocusSoundRow(Loc.T("休息结束音效", "Break completion sound"), S.BreakEndSound, sound => Change(s => s.BreakEndSound = sound)));
+    }
+
+    private FrameworkElement FocusSoundRow(string title, FocusSound selected, Action<FocusSound> change)
+    {
+        var sounds = Enum.GetValues<FocusSound>();
+        var choice = new ComboBox
+        {
+            Style = (Style)FindResource("SettingsCombo"), MinWidth = 140,
+            ItemsSource = sounds.Select(sound => sound switch
+            {
+                FocusSound.None => Loc.T("无声", "None"),
+                FocusSound.Asterisk => Loc.T("信息", "Information"),
+                FocusSound.Exclamation => Loc.T("提示", "Exclamation"),
+                FocusSound.Beep => Loc.T("默认提示音", "Default beep"),
+                FocusSound.Hand => Loc.T("停止", "Critical stop"),
+                _ => Loc.T("询问", "Question")
+            }).ToArray(),
+            SelectedIndex = Array.IndexOf(sounds, selected)
+        };
+        PopupMotion.Attach(choice);
+        AutomationProperties.SetName(choice, title);
+        var test = ActionButton(Loc.T("试听", "Test"), () => App.PlayFocusSound(sounds[choice.SelectedIndex]));
+        test.Margin = new Thickness(8, 0, 0, 0);
+        test.IsEnabled = selected != FocusSound.None;
+        AutomationProperties.SetName(test, Loc.T($"试听{title}", $"Test {title}"));
+        choice.SelectionChanged += (_, _) =>
+        {
+            if (choice.SelectedIndex < 0) return;
+            var sound = sounds[choice.SelectedIndex];
+            test.IsEnabled = sound != FocusSound.None;
+            change(sound);
+        };
+        return Row(title, new StackPanel { Orientation = Orientation.Horizontal, Children = { choice, test } });
     }
 
     private void FocusSizeControls()

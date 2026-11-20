@@ -65,6 +65,8 @@ public static partial class PanelThemes
         new("hairline", "分隔线", "Dividers"),
         new("track", "进度条底轨", "Progress track"),
         new("ringTrack", "配额环底轨", "Quota ring track"),
+        new("focusProgress", "专注进度", "Focus progress", GraphicContrast, PanelThemeBackdrop.Surface),
+        new("breakProgress", "休息进度", "Break progress", GraphicContrast, PanelThemeBackdrop.Surface),
         new("fill", "分段控件底色", "Segment background"),
         new("fillSelected", "选中项底色", "Selected segment"),
         new("hover", "悬停底色", "Hover"),

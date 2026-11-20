@@ -66,7 +66,7 @@ public partial class MainWindow
         double size = CompactMusicLayout.StatusRingSize(Settings.QuotaRingStyle, scale);
         _focusBadge = badge;
         _focusBadgeDial = new FocusDial { Width = size, Height = size, Margin = new Thickness(0, 0, 4 * scale, 0) };
-        _focusBadgeDial.Update(FocusProgress());
+        _focusBadgeDial.Update(_app.FocusSession.Phase, FocusProgress());
         var host = new StackPanel { Orientation = Orientation.Horizontal, Background = Brushes.Transparent, Children = { _focusBadgeDial, badge },
             ToolTip = Loc.T("打开专注计时器", "Open Focus timer") };
         host.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
@@ -119,7 +119,7 @@ public partial class MainWindow
         _focusHeading = WeatherText("", 16);
         _focusHeading.FontWeight = FontWeights.SemiBold;
         _focusDetail = WeatherText("", 12);
-        _focusToggle = Control("", () => _app.ToggleFocus(Settings));
+        _focusToggle = Control("", () => _app.ToggleFocus(Profile));
         _focusReset = Control(Loc.T("重置", "Reset"), _app.ResetFocus);
         _focusShorter = Control("−", () => AdjustFocus(-1), Loc.T("减少一分钟", "Decrease focus by one minute"));
         _focusLonger = Control("+", () => AdjustFocus(1), Loc.T("增加一分钟", "Increase focus by one minute"));
@@ -146,7 +146,7 @@ public partial class MainWindow
         if (_focusBadge is not null)
         {
             _focusBadge.Text = FocusBadgeLabel();
-            _focusBadgeDial?.Update(FocusProgress());
+            _focusBadgeDial?.Update(_app.FocusSession.Phase, FocusProgress());
         }
         if (_focusReading is null || CurrentPage != DeckPage.Focus || FocusContent.Children.Count == 0) return;
         var timer = _app.FocusSession;
@@ -162,7 +162,7 @@ public partial class MainWindow
         _focusReset!.IsEnabled = !idle;
         _focusShorter!.IsEnabled = idle && Settings.FocusMinutes > FocusTimer.MinimumMinutes;
         _focusLonger!.IsEnabled = idle && Settings.FocusMinutes < FocusTimer.MaximumMinutes;
-        _focusDial!.Update(FocusProgress());
+        _focusDial!.Update(timer.Phase, FocusProgress());
     }
 
     private double FocusProgress()
@@ -175,13 +175,19 @@ public partial class MainWindow
     private sealed class FocusDial : FrameworkElement
     {
         private double _progress;
-        internal void Update(double progress) { _progress = progress; InvalidateVisual(); }
+        private FocusPhase _phase;
+        internal void Update(FocusPhase phase, double progress)
+        {
+            _phase = phase;
+            _progress = progress;
+            InvalidateVisual();
+        }
         protected override void OnRender(DrawingContext drawing)
         {
             var look = PanelLook.Of(this);
             double size = Math.Max(1, Math.Min(ActualWidth, ActualHeight) - 2);
             MonitorDraw.Dial(drawing, new Point(ActualWidth / 2, ActualHeight / 2 - size / 32), size, Math.Clamp(size / 24, 1, 3), 7, _progress,
-                look.Primary, "", MonitorDraw.PixelsPerDip(this), look: look);
+                look.Hex(_phase == FocusPhase.Break ? "breakProgress" : "focusProgress"), "", MonitorDraw.PixelsPerDip(this), look: look);
         }
     }
 }

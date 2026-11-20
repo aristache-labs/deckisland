@@ -33,5 +33,12 @@ internal static class FocusTimerTests
         settings.FocusHideOtherWidgets = false;
         check("Disabling simplified Focus keeps the timer in the normal widget row",
             !settings.FocusSimplifiesCompact(CompactStyle.Notch) && settings.ShowsFocus(CompactStyle.Notch));
+        settings.FocusEndSound = FocusSound.None;
+        settings.BreakEndSound = FocusSound.Question;
+        var saved = System.Text.Json.JsonSerializer.Serialize(settings);
+        var restored = System.Text.Json.JsonSerializer.Deserialize<DeckSettings>(saved)!;
+        restored.Normalize();
+        check("Focus and break save independent system sounds", restored.FocusEndSound == FocusSound.None &&
+            restored.BreakEndSound == FocusSound.Question);
     }
 }

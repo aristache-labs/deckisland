@@ -21,6 +21,7 @@ public static partial class PanelThemes
             ["accent"] = H, ["onAccent"] = HT, ["liked"] = H, ["equalizer"] = H, ["indicator"] = H, ["indicatorProgress"] = HT, ["rangeFill"] = highlight.WithAlpha(0x40).ToString(),
             ["rim"] = T, ["outline"] = T, ["popupBorder"] = T, ["tooltipBorder"] = T, ["bubbleBorder"] = T, ["coverOutline"] = T, ["scrollThumb"] = T,
             ["hairline"] = Line(0x40), ["rowDivider"] = Line(0x40), ["track"] = Line(0x40), ["ringTrack"] = Line(0x50), ["seekRail"] = Line(0x50),
+            ["focusProgress"] = H, ["breakProgress"] = T,
             ["fill"] = Line(0x18), ["switchFill"] = Line(0x18), ["rowHover"] = Line(0x18), ["hover"] = Line(0x20), ["fillSelected"] = Line(0x30),
             ["pressed"] = Line(0x30), ["coverPlaceholder"] = Line(0x18)
         };

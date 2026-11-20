@@ -28,6 +28,7 @@ public sealed partial class SettingsWindow
         ("文字", "Text", ["textPrimary", "textSecondary", "textTertiary", "menuDetail"]),
         ("强调与状态", "Accent and states", ["accent", "onAccent", "danger", "liked", "rangeFill"]),
         ("时间与律动条", "Clock and equalizer", ["clock", "equalizer"]),
+        ("专注计时器", "Focus timer", ["focusProgress", "breakProgress"]),
         ("面板与收起形态", "Panel and collapsed view", ["surface", "rim", "shadow", "indicator", "indicatorProgress", "coverPlaceholder", "coverOutline"]),
         ("控件", "Controls", ["hairline", "track", "ringTrack", "fill", "fillSelected", "hover", "pressed", "outline", "input", "scrollThumb", "switchFill", "seekRail", "rowDivider", "rowHover"]),
         ("弹出层与提示", "Pop-ups and tooltips", ["popup", "popupBorder", "tooltip", "tooltipBorder", "bubble", "bubbleBorder"]),

@@ -1,6 +1,7 @@
 namespace BrimDeck.Core;
 
 public enum FocusPhase { Idle, Focus, Break }
+public enum FocusSound { None, Asterisk, Exclamation, Beep, Hand, Question }
 
 public sealed class FocusTimer
 {

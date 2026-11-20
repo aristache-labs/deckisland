@@ -10,13 +10,16 @@ public partial class App
     internal FocusPhase FocusNotice { get; private set; }
     private DateTimeOffset _focusNoticeUntil;
     private int _focusSeconds = -1;
+    private Guid? _focusProfile;
     internal event Action<bool>? FocusChanged;
 
-    internal void ToggleFocus(DeckSettings settings)
+    internal void ToggleFocus(Guid? profile)
     {
         var now = DateTimeOffset.UtcNow;
         AdvanceFocus(now);
+        if (FocusSession.Phase == FocusPhase.Idle) _focusProfile = profile ?? Settings.CurrentProfile;
         FocusNotice = FocusPhase.Idle;
+        var settings = SettingsFor(_focusProfile);
         FocusSession.Toggle(now, settings.FocusMinutes, settings.BreakMinutes);
         _focusTick.Tick -= FocusTick;
         _focusTick.Tick += FocusTick;
@@ -47,9 +50,26 @@ public partial class App
     private FocusPhase AdvanceFocus(DateTimeOffset now)
     {
         var completed = FocusSession.Advance(now);
-        if (completed == FocusPhase.Focus) System.Media.SystemSounds.Asterisk.Play();
-        else if (completed == FocusPhase.Break) System.Media.SystemSounds.Exclamation.Play();
+        if (completed != FocusPhase.Idle)
+        {
+            var profile = SettingsFor(_focusProfile);
+            PlayFocusSound(completed == FocusPhase.Focus ? profile.FocusEndSound : profile.BreakEndSound);
+        }
         return completed;
+    }
+
+    internal static void PlayFocusSound(FocusSound sound)
+    {
+        var systemSound = sound switch
+        {
+            FocusSound.Asterisk => System.Media.SystemSounds.Asterisk,
+            FocusSound.Exclamation => System.Media.SystemSounds.Exclamation,
+            FocusSound.Beep => System.Media.SystemSounds.Beep,
+            FocusSound.Hand => System.Media.SystemSounds.Hand,
+            FocusSound.Question => System.Media.SystemSounds.Question,
+            _ => null
+        };
+        systemSound?.Play();
     }
 
     private void RefreshFocus(DateTimeOffset now, bool rebuild)
