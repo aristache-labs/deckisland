@@ -85,7 +85,6 @@ public partial class MainWindow
         RefreshStatus();
         UsageContent.Visibility = MusicContent.Visibility = MonitorContent.Visibility = ShelfContent.Visibility =
             DevicesContent.Visibility = WeatherContent.Visibility = Visibility.Collapsed;
-        ClockLabel.Visibility = Visibility.Visible;
         ModelToolbar.Visibility = ApplicationPages.Visibility = Visibility.Collapsed;
         double height = ContentCanvas.Height;
         if (!double.IsFinite(height)) return;

@@ -27,7 +27,7 @@ public partial class MainWindow
         double right = _header.RightMargin + PanelHeader.SettingsWidth + 6;
         if (_shelfDetail is { } detail)
         {
-            ClockLabel.Visibility = Visibility.Collapsed; ShelfSearchButton.Visibility = Visibility.Collapsed;
+            ShelfSearchButton.Visibility = Visibility.Collapsed;
             var list = DetailList(detail.Side);
             int at = list.IndexOf(detail.Id);
             var left = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(_header.Side - 6, 0, 0, 0) };
@@ -46,11 +46,8 @@ public partial class MainWindow
         if (_shelfSearching)
         {
             ShelfSearchButton.Visibility = Visibility.Collapsed;
-            // The box takes the room right of the clock, up to its usual width (ShelfLayout.SearchWidth); only when that room is under
-            // 140 does it keep 140 and cover the clock.
-            double clock = ClockLabel.Text.Length > 0 ? TextWidth(ClockLabel.Text, 12, FontWeights.Normal) : 34;
-            double room = width - right - (width + clock) / 2 - 12;
-            double boxWidth = Math.Min(ShelfLayout.SearchWidth(width), Math.Max(room, 140)), height = _header.SwitchHeight;
+            double room = width - right - ApplicationPagesLeft(_header.Side);
+            double boxWidth = Math.Min(ShelfLayout.SearchWidth(width), Math.Max(room, 1)), height = _header.SwitchHeight;
             var box = _searchBox ??= NewSearchBox();
             (box.Parent as Panel)?.Children.Remove(box);
             var host = new Grid { Width = boxWidth, Height = height, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, right, 0) };
@@ -90,12 +87,9 @@ public partial class MainWindow
             hint.IsHitTestVisible = false; hint.Visibility = box.Text.Length == 0 ? Visibility.Visible : Visibility.Collapsed; hint.Tag = "hint";
             host.Children.Add(hint);
             ShelfToolbar.Children.Add(host);
-            // The clock is hidden only when the box reaches it.
-            ClockLabel.Visibility = boxWidth > room ? Visibility.Collapsed : Visibility.Visible;
             return;
         }
         ShelfSearchButton.Visibility = Visibility.Visible;
-        ClockLabel.Visibility = Visibility.Visible;
     }
     private Button ToolbarGlyph(string data, string name, Action click)
     {

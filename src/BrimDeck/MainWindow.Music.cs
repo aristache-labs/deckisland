@@ -226,7 +226,7 @@ public partial class MainWindow
     private void RenderPageSwitch()
     {
         SetValue(SuppressMusicToolTipsProperty, IsMusicPage);
-        foreach (var control in new FrameworkElement[] { AIUsageButton, MonitorPageButton, MusicPageButton, ShelfPageButton, DevicesPageButton, WeatherPageButton, FocusPageButton, MediaSourceButton, ClockLabel })
+        foreach (var control in new FrameworkElement[] { AIUsageButton, MonitorPageButton, MusicPageButton, ShelfPageButton, DevicesPageButton, WeatherPageButton, FocusPageButton, MediaSourceButton })
             ToolTipService.SetIsEnabled(control, !IsMusicPage);
         PageSwitch.Visibility = _details && IsUsagePage || IsShelfPage && ShelfHidesSwitch ? Visibility.Collapsed : Visibility.Visible;
         OrderPageButtons();
@@ -451,7 +451,7 @@ public partial class MainWindow
         bool shown = MusicContent.IsVisible && _expanded && !_preview;
         RefreshStatus();
         UsageContent.Visibility = Visibility.Collapsed; MonitorContent.Visibility = Visibility.Collapsed; ShelfContent.Visibility = Visibility.Collapsed; DevicesContent.Visibility = Visibility.Collapsed; WeatherContent.Visibility = Visibility.Collapsed; MusicContent.Visibility = Visibility.Visible;
-        ModelToolbar.Visibility = Visibility.Collapsed; ApplicationPages.Visibility = Visibility.Collapsed; ClockLabel.Visibility = Visibility.Visible;
+        ModelToolbar.Visibility = Visibility.Collapsed; ApplicationPages.Visibility = Visibility.Collapsed;
         double h = ContentCanvas.Height, w = ContentCanvas.Width;
         var track = _mediaTrack;
         if (_seeking && _seekTrack is { } seeking && track is not null && SameMediaSong(seeking, track))
