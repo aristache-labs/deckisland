@@ -133,7 +133,7 @@ public partial class SettingsWindow
             return;
         }
         var inks = new DeviceInks(MonitorThemeColors.For(S), S.DeviceChoices, S.DeviceWarningPercent, S.DeviceLowPercent);
-        var strip = new DeviceStrip(new([.. devices.Select(device => StripDevice.Of(device, inks))], S.DeviceFigures), 1);
+        var strip = new DeviceStrip(new([.. devices.Select(device => StripDevice.Of(device, inks))], S.DeviceFigures), 1, S.QuotaRingStyle);
         strip.Width = strip.PreferredWidth;
         var capsule = new Border { Height = 32, CornerRadius = new CornerRadius(16), Background = UI.Brush(PanelTheme.Hex("surface")), Padding = new Thickness(14, 4, 14, 4),
             Child = strip, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, LayoutTransform = new ScaleTransform(1.5, 1.5) };

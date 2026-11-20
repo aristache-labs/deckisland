@@ -114,10 +114,10 @@ public partial class MainWindow
     // ---- The collapsed count ----
     // The width of the fixed marks of the row: the clock, the count and the devices (CompactMusicLayout).
     // The count shows the whole number, and its width follows the number's digits.
-    private static double FixedFace(double scale, params double[] widths)
+    private static double FixedFace(double gap, params double[] widths)
     {
         var shown = widths.Where(width => width > 0).ToArray();
-        return shown.Sum() + Math.Max(0, shown.Length - 1) * CompactMusicLayout.Gap(scale);
+        return shown.Sum() + Math.Max(0, shown.Length - 1) * gap;
     }
     private FrameworkElement? _compactTransfer;
     private FrameworkElement? TransferBadge(double scale)

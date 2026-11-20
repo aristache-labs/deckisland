@@ -58,7 +58,7 @@ internal sealed class MonitorStrip : FrameworkElement
     // glyph, its letter shown even when it is the only one.
     public MonitorStrip(IReadOnlyList<CompactReading> readings, StripColors colors, double scale, bool centered, StripPresence presence, double dpi,
         CompactMonitorItems unavailable = CompactMonitorItems.None, StripAdmission? admission = null, DriveParts parts = DriveParts.All,
-        CoreDisplay coreDisplay = CoreDisplay.Auto)
+        CoreDisplay coreDisplay = CoreDisplay.Auto, QuotaRingStyle quotaStyle = QuotaRingStyle.Single)
     {
         _driveParts = parts; _coreDisplay = coreDisplay;
         AddVisualChild(_moving);
@@ -97,7 +97,7 @@ internal sealed class MonitorStrip : FrameworkElement
         // Two figures stack in smaller type, so both fit the row's height.
         _small = Math.Max(1, CompactMusicLayout.Half(8.5 * _scale));
         // Each ring is a dial carrying its letter, with its figure after it or alone.
-        _dial = Math.Max(4, CompactMusicLayout.Whole(16 * _scale));
+        _dial = CompactMusicLayout.StatusRingSize(quotaStyle, _scale);
         // Readings with figures sit closer than the dials alone: a figure narrower than the widest it can show already leaves room after it.
         _gap = CompactMusicLayout.Whole((CompactMonitor.RingsOnly(_shown, _values) ? 7 : 6) * _scale);
         _row = Math.Max(1, CompactMusicLayout.Whole(24 * _scale));
@@ -445,10 +445,20 @@ internal sealed class MonitorStrip : FrameworkElement
         int count = (shareText is null ? 0 : 1) + (heatText is null ? 0 : 1) + (memoryText is null ? 0 : 1);
         if (count > 1 && (memoryText is not null || (_inline & item) != 0))
         {
+            var shareFigure = shareText is null ? null : MonitorDraw.Text(shareText, _font, ShareColor(), ppd);
+            var memoryFigure = memoryText is null ? null : MonitorDraw.Text(memoryText, _font, MemoryColor(), ppd);
+            var heatFigure = heatText is null ? null : MonitorDraw.Text(heatText, _font, HeatColor(), ppd);
             double at = x;
-            Side(drawing, ref at, shareText, shareText is null ? "" : ShareColor(), baseline, ppd);
-            Side(drawing, ref at, memoryText, memoryText is null ? "" : MemoryColor(), baseline, ppd);
-            Side(drawing, ref at, heatText, heatText is null ? "" : HeatColor(), baseline, ppd);
+            if (item is CompactMonitorItems.Cpu or CompactMonitorItems.Gpu)
+            {
+                // Keep the reading's slot stable while splitting unused digit space around the inline figures.
+                double ink = FigureSpan(shareFigure) + FigureSpan(memoryFigure) + FigureSpan(heatFigure) + (count - 1) * InlineGap;
+                double slot = Column(item, shareFigure is not null, heat, vram);
+                at += Math.Floor(Math.Max(0, slot - ink) / 2 * ppd) / ppd;
+            }
+            Side(drawing, ref at, shareFigure, baseline);
+            Side(drawing, ref at, memoryFigure, baseline);
+            Side(drawing, ref at, heatFigure, baseline);
             return;
         }
         if (count == 1 && memoryText is not null) { MonitorDraw.BaselineKept(drawing, MonitorDraw.Text(memoryText, _font, MemoryColor(), ppd), x, baseline); return; }
@@ -464,12 +474,13 @@ internal sealed class MonitorStrip : FrameworkElement
     }
 
     // A figure in the row's type at `at`, which moves on past it and the gap.
-    private void Side(DrawingContext drawing, ref double at, string? text, string color, double baseline, double ppd)
+    private static double FigureSpan(FormattedText? figure) => figure is null ? 0 : Math.Ceiling(figure.WidthIncludingTrailingWhitespace);
+
+    private void Side(DrawingContext drawing, ref double at, FormattedText? figure, double baseline)
     {
-        if (text is null) return;
-        var figure = MonitorDraw.Text(text, _font, color, ppd);
+        if (figure is null) return;
         MonitorDraw.BaselineKept(drawing, figure, at, baseline);
-        at += Math.Ceiling(figure.WidthIncludingTrailingWhitespace) + InlineGap;
+        at += FigureSpan(figure) + InlineGap;
     }
 
     // A figure keeps the text color while its reading is normal and takes the level's color at the warning and critical

@@ -19,10 +19,11 @@ internal sealed class DeviceStrip : FrameworkElement
     // The gap between the lines when the devices stand one below the other (Stack); negative while they stand side by side.
     private double _lineGap = -1;
 
-    public DeviceStrip(StripDevices devices, double scale)
+    public DeviceStrip(StripDevices devices, double scale, QuotaRingStyle quotaStyle)
     {
         _devices = devices;
         _scale = CompactMusicLayout.SafeScale(scale);
+        Ring = CompactMusicLayout.StatusRingSize(quotaStyle, _scale);
         _font = Math.Max(1, CompactMusicLayout.Half(11.5 * _scale));
         Height = Row;
         IsHitTestVisible = false;
@@ -40,7 +41,7 @@ internal sealed class DeviceStrip : FrameworkElement
     }
 
     // The ring is as wide as the monitor's dials (MonitorStrip), so the collapsed row's rings read as one size.
-    private double Ring => Math.Max(4, CompactMusicLayout.Whole(16 * _scale));
+    private double Ring { get; }
     // Each device keeps the room of the widest figure ("100%"), so the part never moves with the readings.
     private double Slot => Ring + (_devices.Figures ? Math.Round(4 * _scale) + Math.Ceiling(MonitorDraw.Text("100%", _font, Look.Primary, 1).WidthIncludingTrailingWhitespace) : 0);
     private double Gap => Math.Round((_devices.Figures ? 8 : 6) * _scale);

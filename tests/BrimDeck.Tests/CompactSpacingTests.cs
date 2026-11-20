@@ -11,6 +11,24 @@ internal static class CompactSpacingTests
         Windows(check);
         Share(check);
         Required(check);
+        WidgetSpacing(check);
+    }
+
+    private static void WidgetSpacing(Action<string, bool> check)
+    {
+        var settings = new DeckSettings { NotchPartSpacing = 16, CapsulePartSpacing = 10 };
+        check("Widget spacing is per collapsed style and older settings keep the default",
+            settings.CompactPartSpacing(CompactStyle.Notch) == 16 && settings.CompactPartSpacing(CompactStyle.Capsule) == 10 &&
+            new DeckSettings().CompactPartSpacing(CompactStyle.Notch) == 8);
+        double width(int spacing) => CompactMusicLayout.NaturalWidth(1, false, 3, false, 30, 80, partSpacing: spacing);
+        double minimum(int spacing) => CompactMusicLayout.RequiredWidth(1, false, false, 30, 20, 30, partSpacing: spacing);
+        check("Widget spacing is included in fit width and fixed width minimum",
+            width(16) - width(8) == 16 && minimum(16) - minimum(8) == 16);
+        var layout = CompactMusicLayout.Calculate(width(16), 1, false, 3, false, 30, 80, partSpacing: 16);
+        var placed = CompactSpacing.Arrange([new(layout.RingWidth), new(80), new(30)], -1, 0, 0,
+            width(16), CompactMusicLayout.PartGap(1, 16), 1, 1);
+        check("Widget spacing fits between visible parts without changing the gaps inside quota rings",
+            layout.RingGap == 8 && layout.VisibleRings == 3 && placed.Gap == 16 && Even(placed, width(16), 1));
     }
 
     private static bool Even(CompactSpacing.Placement place, double width, double dpi)

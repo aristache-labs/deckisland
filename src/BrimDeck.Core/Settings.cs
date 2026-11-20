@@ -369,6 +369,7 @@ public sealed class DeckSettings
     // Size and position of each collapsed style in DIPs; limits and defaults are in CollapsedLimits. OffsetX moves the surface
     // from the centre; each monitor narrows the offset to what fits (CollapsedGeometry) without changing the saved value.
     public double NotchWidth { get; set; } = CollapsedLimits.NotchWidthDefault;
+    public int NotchPartSpacing { get; set; } = CompactMusicLayout.DefaultPartSpacing;
     public double NotchHeight { get; set; } = CollapsedLimits.NotchHeightDefault;
     public double NotchOffsetX { get; set; } = CollapsedLimits.OffsetDefault;
     // The edge the notch hangs from. On the other edges it keeps its width (along the edge), height and offset (along the edge
@@ -393,6 +394,7 @@ public sealed class DeckSettings
         => chosen ?? (style == CompactStyle.Notch && edge == ScreenEdge.Top ? EdgeAnchor.Screen : EdgeAnchor.Taskbar);
     public ScreenEdge CompactEdge(CompactStyle style) => style == CompactStyle.Line ? LineEdge : style == CompactStyle.Notch ? NotchEdge : ScreenEdge.Top;
     public double CapsuleWidth { get; set; } = CollapsedLimits.CapsuleWidthDefault;
+    public int CapsulePartSpacing { get; set; } = CompactMusicLayout.DefaultPartSpacing;
     public double CapsuleHeight { get; set; } = CollapsedLimits.CapsuleHeightDefault;
     public double CapsuleOffsetX { get; set; } = CollapsedLimits.OffsetDefault;
     // Distance from the top of the work area. Saved up to 4000; each monitor stops the capsule at the bottom of its work area.
@@ -803,6 +805,12 @@ public sealed class DeckSettings
     public IReadOnlyList<CompactPart> CompactOrder(CompactStyle style) => style == CompactStyle.Capsule ? CapsuleOrder : NotchOrder;
     public void SetCompactOrder(CompactStyle style, IEnumerable<CompactPart> order) { if (style == CompactStyle.Notch) NotchOrder = [.. order]; else if (style == CompactStyle.Capsule) CapsuleOrder = [.. order]; }
     public bool CompactAutoWidth(CompactStyle style) => style switch { CompactStyle.Notch => NotchAutoWidth, CompactStyle.Capsule => CapsuleAutoWidth, _ => false };
+    public int CompactPartSpacing(CompactStyle style) => style switch
+    {
+        CompactStyle.Notch => NotchPartSpacing,
+        CompactStyle.Capsule => CapsulePartSpacing,
+        _ => CompactMusicLayout.DefaultPartSpacing
+    };
     public void SetCompactAutoWidth(CompactStyle style, bool value) { if (style == CompactStyle.Notch) NotchAutoWidth = value; else if (style == CompactStyle.Capsule) CapsuleAutoWidth = value; }
     // The saved width of the notch or the capsule, or the line's length.
     public void SetCompactWidth(CompactStyle style, double width)
@@ -997,6 +1005,8 @@ public sealed class DeckSettings
         static double Fit(double value, double min, double max, double fallback) => double.IsFinite(value) ? Math.Clamp(value, min, max) : fallback;
         static double Offset(double value) => Fit(value, -CollapsedLimits.OffsetLimit, CollapsedLimits.OffsetLimit, CollapsedLimits.OffsetDefault);
         NotchWidth = Fit(NotchWidth, CollapsedLimits.NotchWidthMin, CollapsedLimits.NotchWidthMax, CollapsedLimits.NotchWidthDefault);
+        NotchPartSpacing = Math.Clamp(NotchPartSpacing, CompactMusicLayout.MinimumPartSpacing, CompactMusicLayout.MaximumPartSpacing);
+        CapsulePartSpacing = Math.Clamp(CapsulePartSpacing, CompactMusicLayout.MinimumPartSpacing, CompactMusicLayout.MaximumPartSpacing);
         NotchHeight = Fit(NotchHeight, CollapsedLimits.NotchHeightMin, CollapsedLimits.NotchHeightMax, CollapsedLimits.NotchHeightDefault);
         NotchOffsetX = Offset(NotchOffsetX);
         if (!Enum.IsDefined(NotchEdge)) NotchEdge = ScreenEdge.Top;

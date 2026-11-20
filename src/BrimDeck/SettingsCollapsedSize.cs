@@ -78,7 +78,7 @@ public sealed partial class SettingsWindow
                     SetAutoWidth(auto, width, S.NotchAutoWidth);
                     SetCollapsedRange(offset, -Whole(limits.OffsetMax), Whole(limits.OffsetMax), S.NotchOffsetX);
                 };
-                Group(Rows(edge, AnchorRow(style), auto, width.Row, height.Row, offset.Row));
+                Group(Rows(edge, AnchorRow(style), auto, across ? null : PartSpacingRow(style), width.Row, height.Row, offset.Row));
                 _builtDock = (style, S.NotchEdge, S.NotchAnchor);
                 break;
             }
@@ -100,7 +100,7 @@ public sealed partial class SettingsWindow
                     SetCollapsedRange(top, CollapsedLimits.CapsuleTopMin, Whole(limits.TopMax), S.CapsuleTop);
                     SetCollapsedRange(offset, -Whole(limits.OffsetMax), Whole(limits.OffsetMax), S.CapsuleOffsetX);
                 };
-                Group(auto, width.Row, height.Row, top.Row, offset.Row);
+                Group(auto, PartSpacingRow(style), width.Row, height.Row, top.Row, offset.Row);
                 _builtDock = null;
                 break;
             }
@@ -127,6 +127,15 @@ public sealed partial class SettingsWindow
         }
         _refreshCollapsedRanges();
     }
+
+    private FrameworkElement PartSpacingRow(CompactStyle style) => SizeRow(Loc.T("组件间距", "Spacing between widgets"),
+        S.CompactPartSpacing(style), CompactMusicLayout.MinimumPartSpacing, CompactMusicLayout.MaximumPartSpacing, 1,
+        value => ChangeCollapsed(s =>
+        {
+            if (style == CompactStyle.Notch) s.NotchPartSpacing = (int)value;
+            else s.CapsulePartSpacing = (int)value;
+        }), help: Loc.T("调整相邻组件之间的基础间距，也适用于自适应宽度。固定宽度如果更宽，间距可能更大。",
+            "Sets the base gap between adjacent widgets, including with Fit width to content. A wider fixed panel can leave a larger gap.")).Row;
 
     // Limits come from the main panel's display (MainWindow.CurrentCollapsedRanges). Offsets and tops are taken in whole
     // DIPs so zero stays on the slider's ticks and the thumb never shows a place the panel cannot reach.
@@ -229,9 +238,9 @@ public sealed partial class SettingsWindow
     private static void CopyCollapsedSize(DeckSettings target, DeckSettings source, CompactStyle? style = null)
     {
         if (style is null or CompactStyle.Notch)
-        { target.NotchWidth = source.NotchWidth; target.NotchHeight = source.NotchHeight; target.NotchOffsetX = source.NotchOffsetX; target.NotchAutoWidth = source.NotchAutoWidth; }
+        { target.NotchWidth = source.NotchWidth; target.NotchHeight = source.NotchHeight; target.NotchOffsetX = source.NotchOffsetX; target.NotchAutoWidth = source.NotchAutoWidth; target.NotchPartSpacing = source.NotchPartSpacing; }
         if (style is null or CompactStyle.Capsule)
-        { target.CapsuleWidth = source.CapsuleWidth; target.CapsuleHeight = source.CapsuleHeight; target.CapsuleOffsetX = source.CapsuleOffsetX; target.CapsuleTop = source.CapsuleTop; target.CapsuleAutoWidth = source.CapsuleAutoWidth; }
+        { target.CapsuleWidth = source.CapsuleWidth; target.CapsuleHeight = source.CapsuleHeight; target.CapsuleOffsetX = source.CapsuleOffsetX; target.CapsuleTop = source.CapsuleTop; target.CapsuleAutoWidth = source.CapsuleAutoWidth; target.CapsulePartSpacing = source.CapsulePartSpacing; }
         if (style is null or CompactStyle.Line)
         { target.LineLength = source.LineLength; target.LineThickness = source.LineThickness; target.LineTop = source.LineTop; target.LineOffsetX = source.LineOffsetX; }
     }

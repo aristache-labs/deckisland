@@ -114,7 +114,7 @@ public partial class MainWindow
         _compactDevices = null;
         if (!Settings.ShowsDevices(EffectiveStyle)) return null;
         var devices = StripDevices();
-        return devices.Devices.Any(device => device.Percent is not null) ? _compactDevices = new DeviceStrip(devices, scale) : null;
+        return devices.Devices.Any(device => device.Percent is not null) ? _compactDevices = new DeviceStrip(devices, scale, Settings.QuotaRingStyle) : null;
     }
 
     private DevicesLayout CurrentDevicesLayout()
