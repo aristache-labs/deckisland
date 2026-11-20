@@ -50,7 +50,7 @@ public partial class MainWindow
         bool seen = IsVisible && !IsSuppressed && !DisplayPower.Off;
         bool page = _expanded && CurrentPage == DeckPage.Devices && seen;
         // The collapsed part is read for while it is chosen, before it shows: it joins the row only once a device reports.
-        bool strip = !_expanded && Settings.ShowsDevices(EffectiveStyle) && seen && _alert is null;
+        bool strip = !_expanded && !FocusCompactOnly && Settings.ShowsDevices(EffectiveStyle) && seen && _alert is null;
         _app.PresentDevices(this, page, strip);
         _app.PresentWeather(this, seen && (_expanded ? CurrentPage == DeckPage.Weather : Settings.ShowsWeather(EffectiveStyle) && _alert is null));
         // Opened again, the page shows the readings as they are now, not as it left them. Devices that came or went while it was
@@ -83,7 +83,7 @@ public partial class MainWindow
     {
         if (!_expanded)
         {
-            if (!Settings.ShowsDevices(EffectiveStyle) || _alert is not null) return;
+            if (FocusCompactOnly || !Settings.ShowsDevices(EffectiveStyle) || _alert is not null) return;
             UpdateCompactDevices();
             return;
         }
@@ -112,7 +112,7 @@ public partial class MainWindow
     private DeviceStrip? CompactDevices(double scale)
     {
         _compactDevices = null;
-        if (!Settings.ShowsDevices(EffectiveStyle)) return null;
+        if (FocusCompactOnly || !Settings.ShowsDevices(EffectiveStyle)) return null;
         var devices = StripDevices();
         return devices.Devices.Any(device => device.Percent is not null) ? _compactDevices = new DeviceStrip(devices, scale, Settings.QuotaRingStyle) : null;
     }

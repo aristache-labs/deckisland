@@ -149,7 +149,7 @@ public partial class MainWindow
     }
     // The page chosen on another display's panel (App.PageChosen).
     internal void FollowPage(DeckPage page) { if (CurrentPage != page) SelectPage(page, remember: false); }
-    private FrameworkElement PageContent(DeckPage page) => page switch { DeckPage.Music => MusicContent, DeckPage.Monitor => MonitorContent, DeckPage.Clipboard => ShelfContent, DeckPage.Devices => DevicesContent, DeckPage.Weather => WeatherContent, _ => UsageContent };
+    private FrameworkElement PageContent(DeckPage page) => page switch { DeckPage.Music => MusicContent, DeckPage.Monitor => MonitorContent, DeckPage.Clipboard => ShelfContent, DeckPage.Devices => DevicesContent, DeckPage.Weather => WeatherContent, DeckPage.Focus => FocusContent, _ => UsageContent };
     private void ShowPage(DeckPage page, bool animatePage)
     {
         // The music page keeps what it built while another page shows (RenderMusic's key), so switching back does not build it again.
@@ -212,7 +212,7 @@ public partial class MainWindow
         Toolbar.Height = header.Height;
         PageSwitch.Margin = new Thickness(header.Side, 0, 0, 0);
         FitPageButtons(header);
-        foreach (var button in new[] { AIUsageButton, MonitorPageButton, MusicPageButton, ShelfPageButton, DevicesPageButton, WeatherPageButton })
+        foreach (var button in new[] { AIUsageButton, MonitorPageButton, MusicPageButton, ShelfPageButton, DevicesPageButton, WeatherPageButton, FocusPageButton })
         {
             // A local corner for these two buttons only; PanelIconButton keeps its 5 DIP corner elsewhere.
             button.ApplyTemplate();
@@ -226,12 +226,12 @@ public partial class MainWindow
     private void RenderPageSwitch()
     {
         SetValue(SuppressMusicToolTipsProperty, IsMusicPage);
-        foreach (var control in new FrameworkElement[] { AIUsageButton, MonitorPageButton, MusicPageButton, ShelfPageButton, DevicesPageButton, WeatherPageButton, MediaSourceButton, ClockLabel })
+        foreach (var control in new FrameworkElement[] { AIUsageButton, MonitorPageButton, MusicPageButton, ShelfPageButton, DevicesPageButton, WeatherPageButton, FocusPageButton, MediaSourceButton, ClockLabel })
             ToolTipService.SetIsEnabled(control, !IsMusicPage);
         PageSwitch.Visibility = _details && IsUsagePage || IsShelfPage && ShelfHidesSwitch ? Visibility.Collapsed : Visibility.Visible;
         OrderPageButtons();
         if (!IsShelfPage) { ShelfToolbar.Visibility = Visibility.Collapsed; ShelfSearchButton.Visibility = Visibility.Collapsed; }
-        foreach (var (button, page) in new[] { (AIUsageButton, DeckPage.Usage), (MusicPageButton, DeckPage.Music), (MonitorPageButton, DeckPage.Monitor), (ShelfPageButton, DeckPage.Clipboard), (DevicesPageButton, DeckPage.Devices), (WeatherPageButton, DeckPage.Weather) })
+        foreach (var (button, page) in new[] { (AIUsageButton, DeckPage.Usage), (MusicPageButton, DeckPage.Music), (MonitorPageButton, DeckPage.Monitor), (ShelfPageButton, DeckPage.Clipboard), (DevicesPageButton, DeckPage.Devices), (WeatherPageButton, DeckPage.Weather), (FocusPageButton, DeckPage.Focus) })
         {
             bool current = CurrentPage == page;
             button.Visibility = DeckPages.Shown(Settings, page) ? Visibility.Visible : Visibility.Collapsed;
@@ -1171,7 +1171,7 @@ public partial class MainWindow
         var shape = Collapsed; _compactRendered = shape;
         double scale = CompactMusicLayout.SafeScale(shape.Scale);
         double contentWidth = CompactContentWidth(shape);
-        bool media = Settings.ShowsMusic(EffectiveStyle) && _mediaTrack is { State: not MediaState.Stopped };
+        bool media = !FocusCompactOnly && Settings.ShowsMusic(EffectiveStyle) && _mediaTrack is { State: not MediaState.Stopped };
         bool showCover = Settings.MusicCompactCover && !PausedHides(PausedMusicHide.Cover), hideText = PausedHides(PausedMusicHide.Text);
         bool equalizer = CompactEqualizerShown;
         bool notice = media && !hideText && _trackNoticeUntil > DateTimeOffset.UtcNow;
@@ -1185,8 +1185,8 @@ public partial class MainWindow
                 text = CompactLyricText(_mediaTrack!, _compactLyric);
             }
         }
-        var apps = Settings.ShowsSummary(EffectiveStyle) && !notice ? Settings.EnabledApps : [];
-        var steadyItems = Settings.ShowsSummary(EffectiveStyle) ? QuotaRings(Settings.EnabledApps) : [];
+        var apps = !FocusCompactOnly && Settings.ShowsSummary(EffectiveStyle) && !notice ? Settings.EnabledApps : [];
+        var steadyItems = !FocusCompactOnly && Settings.ShowsSummary(EffectiveStyle) ? QuotaRings(Settings.EnabledApps) : [];
         // The clock keeps its own width; shown alone, it is centred.
         var clock = Settings.ShowsClock(EffectiveStyle) ? new ClockFace(Settings.ClockStyle, Settings.Clock24Hour, Settings.ClockSeconds, ClockFace.Palette(Settings, CoverColor, Look), DateTime.Now, scale, Look) : null;
         // The file transfer's count keeps one width, as the clock does; with both, they are counted as one fixed part with a gap between.
@@ -1195,13 +1195,14 @@ public partial class MainWindow
         // The devices' batteries keep one width too (as many devices as show, each with the room of its widest figure), counted with them.
         var devices = CompactDevices(scale);
         var weather = CompactWeather(scale);
+        var focus = CompactFocus(scale);
         int spacing = Settings.CompactPartSpacing(EffectiveStyle);
         double unit = CompactMusicLayout.PartGap(scale, spacing);
         double devicesWidth = devices is null ? 0 : DevicePixels.Up(devices.PreferredWidth, dpi);
         double transferWidth = transfer?.Width ?? 0;
-        double fixedFace = FixedFace(unit, clock?.ReservedWidth ?? 0, transferWidth, devicesWidth, weather?.Width ?? 0);
+        double fixedFace = FixedFace(unit, clock?.ReservedWidth ?? 0, transferWidth, devicesWidth, focus?.Width ?? 0, weather?.Width ?? 0);
         // The system readings ask for the width of everything chosen, on whole device pixels; the whole ones that fit their region show.
-        var strip = Settings.ShowsMonitor(EffectiveStyle) ? new MonitorStrip(Settings.CompactReadings, MonitorThemeColors.Strip(Settings, Look), scale,
+        var strip = !FocusCompactOnly && Settings.ShowsMonitor(EffectiveStyle) ? new MonitorStrip(Settings.CompactReadings, MonitorThemeColors.Strip(Settings, Look), scale,
             !(media && showCover) && !equalizer && apps.Count == 0 && text.Length == 0 && clock is null && transfer is null && devices is null, _stripPresence, dpi, _stripUnavailable = _stripAdmission.Hidden, _stripAdmission,
             coreDisplay: Settings.CoreDisplay, quotaStyle: Settings.QuotaRingStyle) : null;
         _stripLayout = _stripAdmission.Layout;
@@ -1211,7 +1212,7 @@ public partial class MainWindow
         // An auto-width surface takes the width of what the row shows; the new shape builds the row again. The track notice
         // and the lyric's changing length are left out, so the width changes only when the content itself does, unless the
         // middle text follows its length (below).
-        int steadyRings = Settings.ShowsSummary(EffectiveStyle) ? Settings.EnabledApps.Count : 0;
+        int steadyRings = !FocusCompactOnly && Settings.ShowsSummary(EffectiveStyle) ? Settings.EnabledApps.Count : 0;
         bool steadyText = media && !hideText && Settings.MusicText != CompactMusicText.None;
         double wanted = CompactMusicLayout.NaturalWidth(scale, media, steadyRings, steadyText, fixedFace, strip?.PreferredWidth ?? 0, dpi, equalizer, Settings.EqualizerBars, showCover, ringDiameter, partSpacing: spacing);
         // Middle text that follows its length (TextFollowsLength) asks for the room of what it shows instead of the fixed slot:
@@ -1225,16 +1226,16 @@ public partial class MainWindow
             wanted = CompactMusicLayout.FollowWidth(natural, wanted, FollowContentLimit(shape));
         }
         // Weather can use space left by the existing parts without raising the minimum fixed width.
-        double existingFixedFace = FixedFace(unit, clock?.ReservedWidth ?? 0, transferWidth, devicesWidth);
+        double existingFixedFace = FixedFace(unit, clock?.ReservedWidth ?? 0, transferWidth, devicesWidth, focus?.Width ?? 0);
         // The surface is never narrower than what the row must show (CompactMusicLayout.RequiredWidth); like the width it asks
         // for, this leaves out the track notice, so the surface does not move for it.
         var readingWidths = strip?.ItemWidths() ?? [];
-        double required = CompactMusicLayout.RequiredWidth(scale, media, steadyText, existingFixedFace,
+        double required = CompactMusicLayout.RequiredWidth(scale, media, steadyText, FocusCompactOnly ? fixedFace : existingFixedFace,
             steadyRings > 0 ? CompactMusicLayout.RingSizeFor(ringDiameter, scale) : 0, CompactSpacing.Minimum(readingWidths, strip?.Gap ?? 0), equalizer, Settings.EqualizerBars, showCover, spacing);
         if (double.IsNaN(_compactWanted) || Math.Abs(wanted - _compactWanted) > .5 || Math.Abs(required - _compactRequired) > .5)
         { _compactWanted = wanted; _compactRequired = required; Dispatcher.BeginInvoke(DispatcherPriority.Background, FitCompactToContent); }
         if (weather is not null && (layout.ClockWidth < fixedFace - .001 ||
-            contentWidth < required + fixedFace - existingFixedFace + (existingFixedFace == 0 ? unit : 0)))
+            contentWidth < (FocusCompactOnly ? required : required + fixedFace - existingFixedFace + (existingFixedFace == 0 ? unit : 0))))
         {
             weather = null;
             fixedFace = existingFixedFace;
@@ -1260,8 +1261,9 @@ public partial class MainWindow
         var ringWidths = apps.Select(_ => layout.RingSize).ToList();
         bool hasRings = ringWidths.Count > 0, hasReadings = readingWidths.Count > 0;
         bool hasWeather = weather is not null && hasFixed;
-        int parts = (hasWeather ? 1 : 0) + (hasCover ? 1 : 0) + (hasEqualizer ? 1 : 0) + (hasClock ? 1 : 0) + (hasTransfer ? 1 : 0) + (hasDevices ? 1 : 0) + (hasText ? 1 : 0) + (hasRings ? 1 : 0) + (hasReadings ? 1 : 0);
-        double others = (hasWeather ? weather!.Width : 0) + (hasCover ? layout.CoverSize : 0) + (hasEqualizer ? layout.EqualizerSize : 0) + (hasClock ? clock!.ReservedWidth : 0) + (hasTransfer ? transferWidth : 0) + (hasDevices ? devicesWidth : 0) + Math.Max(0, parts - 1) * unit;
+        bool hasFocus = focus is not null && hasFixed;
+        int parts = (hasFocus ? 1 : 0) + (hasWeather ? 1 : 0) + (hasCover ? 1 : 0) + (hasEqualizer ? 1 : 0) + (hasClock ? 1 : 0) + (hasTransfer ? 1 : 0) + (hasDevices ? 1 : 0) + (hasText ? 1 : 0) + (hasRings ? 1 : 0) + (hasReadings ? 1 : 0);
+        double others = (hasFocus ? focus!.Width : 0) + (hasWeather ? weather!.Width : 0) + (hasCover ? layout.CoverSize : 0) + (hasEqualizer ? layout.EqualizerSize : 0) + (hasClock ? clock!.ReservedWidth : 0) + (hasTransfer ? transferWidth : 0) + (hasDevices ? devicesWidth : 0) + Math.Max(0, parts - 1) * unit;
         double pool = SnapDown(contentWidth, dpi) - others - titleShare;
         // Too short for both narrowest windows, the title gives way down to its shortest.
         double needed = CompactSpacing.Minimum(ringWidths, layout.RingGap) + CompactSpacing.Minimum(readingWidths, strip?.Gap ?? 0);
@@ -1295,6 +1297,7 @@ public partial class MainWindow
             else if (part == CompactPart.Equalizer && hasEqualizer) shown.Add((part, new(layout.EqualizerSize)));
             else if (part == CompactPart.Clock && hasClock) shown.Add((part, new(clock!.ReservedWidth)));
             else if (part == CompactPart.Transfer && hasTransfer) shown.Add((part, new(transferWidth)));
+            else if (part == CompactPart.Focus && hasFocus) shown.Add((part, new(focus!.Width)));
             else if (part == CompactPart.Weather && hasWeather) shown.Add((part, new(weather!.Width)));
             else if (part == CompactPart.Devices && hasDevices) shown.Add((part, new(devicesWidth)));
         }
@@ -1318,6 +1321,9 @@ public partial class MainWindow
                     element = CompactRegion(clock!, room, clock!.ReservedWidth, clock.Height, row, RegionAnchor.Left, dpi); _compactClock = clock; break;
                 case CompactPart.Transfer:
                     element = CompactRegion(transfer!, room, transferWidth, transfer!.Height, row, RegionAnchor.Left, dpi); break;
+                case CompactPart.Focus:
+                    if (room < focus!.Width || left + focus.Width > grid.Width + .01) continue;
+                    element = CompactRegion(focus, room, focus.Width, focus.Height, row, RegionAnchor.Left, dpi); break;
                 case CompactPart.Weather:
                     if (room < weather!.Width || left + weather.Width > grid.Width + .01) continue;
                     element = CompactRegion(weather, room, weather.Width, weather.Height, row, RegionAnchor.Left, dpi); break;
@@ -1413,7 +1419,7 @@ public partial class MainWindow
         };
     }
     // The collapsed bars: while a song plays or is paused, or at all times when chosen (EqualizerAlways).
-    private bool CompactEqualizerShown => Settings.ShowsEqualizer(EffectiveStyle) && (Settings.EqualizerAlways || _mediaTrack is { State: not MediaState.Stopped });
+    private bool CompactEqualizerShown => !FocusCompactOnly && Settings.ShowsEqualizer(EffectiveStyle) && (Settings.EqualizerAlways || _mediaTrack is { State: not MediaState.Stopped });
     private bool TitleGliding => !_expanded && _alert is null && _compactEqualizer is not null && _compactMarquee?.IsGliding == true;
     private void MusicGliding(bool gliding) => UpdateMusicTimer();
     // A display frame while the collapsed title glides (Motion): the bars move once at least a timer's interval has passed,

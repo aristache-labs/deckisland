@@ -170,6 +170,8 @@ public partial class MainWindow
     public void RenderUsage()
     {
         if (UsageContent is null) return;
+        FocusContent.Visibility = CurrentPage == DeckPage.Focus ? Visibility.Visible : Visibility.Collapsed;
+        if (CurrentPage == DeckPage.Focus) { RenderFocus(); return; }
         if (IsMusicPage) { RenderMusic(); return; }
         if (IsMonitorPage) { RenderMonitor(); return; }
         if (IsShelfPage) { RenderShelf(lazy: true); return; }

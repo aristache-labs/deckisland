@@ -30,11 +30,11 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
     private ScrollViewer _scroll = null!;
     private static string[] _pages => [Loc.T("常规", "General"), Loc.T("收起外观", "Collapsed view"), Loc.T("展开外观", "Expanded view"),
         Loc.T("配额与统计", "Quotas and usage"), Loc.T("模型价格", "Model prices"), Loc.T("样式", "Style"), Loc.T("播放器", "Players"), Loc.T("关于 BrimDeck", "About BrimDeck"), Loc.T("面板主题", "Panel theme"), Loc.T("显示与读数", "Display and readings"), Loc.T("增强传感器", "Enhanced sensors"), Loc.T("快捷键", "Shortcuts"), Loc.T("显示与设备", "Display and devices"),
-        Loc.T("剪贴板", "Clipboard"), Loc.T("文件中转", "File transfer"), Loc.T("快捷操作", "Quick actions"), Loc.T("显示器与配置", "Displays and profiles"), Loc.T("页面布局", "Page layout"), Loc.T("剪贴板同步", "Clipboard sync"), Loc.T("天气", "Weather")];
+        Loc.T("剪贴板", "Clipboard"), Loc.T("文件中转", "File transfer"), Loc.T("快捷操作", "Quick actions"), Loc.T("显示器与配置", "Displays and profiles"), Loc.T("页面布局", "Page layout"), Loc.T("剪贴板同步", "Clipboard sync"), Loc.T("天气", "Weather"), Loc.T("专注计时器", "Focus timer")];
     // The order of the pages in the navigation; the theme page (ThemePage) and the shortcuts (HotkeysPage) are listed with the
     // basic pages, and the system monitor's page (MonitorSettingsPage) has its own group after music, then the clipboard's
     // pages (the layout first), before About. The profiles page (ProfilesPage) closes the basic pages.
-    private static readonly int[] PageOrder = [0, 1, 2, ThemePage, HotkeysPage, ProfilesPage, 3, 4, 5, 6, MusicGesturesPage, MonitorSettingsPage, SensorsPage, ShelfLayoutSettingsPage, ClipboardSettingsPage, TransferSettingsPage, ClipboardSyncSettingsPage, DevicesSettingsPage, WeatherSettingsPage, 7];
+    private static readonly int[] PageOrder = [0, 1, 2, ThemePage, HotkeysPage, ProfilesPage, 3, 4, 5, 6, MusicGesturesPage, MonitorSettingsPage, SensorsPage, ShelfLayoutSettingsPage, ClipboardSettingsPage, TransferSettingsPage, ClipboardSyncSettingsPage, DevicesSettingsPage, WeatherSettingsPage, FocusSettingsPage, 7];
     private int _page;
     private bool _preview;
     private StackPanel? _appRows;
@@ -355,7 +355,7 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
             var reset=ActionButton(Loc.T("恢复默认", "Restore defaults"),()=>{ if(Confirm(Loc.T("恢复默认", "Restore defaults"),ResetConfirmText(page),Loc.T("恢复默认", "Restore defaults")))ResetPage(); }); reset.FontSize=11; DockPanel.SetDock(reset,Dock.Right); head.Children.Add(reset);
         }
         head.Children.Add(page == 7 ? Wordmark(28) : TextLine(_pages[page],24,TextPrimary,FontWeights.SemiBold)); _content.Children.Add(head);
-        switch(page) { case 0: General(); break; case 1: Compact(); break; case 2: Expanded(); break; case 3: Pages(); break; case 4: ModelPrices(); break; case 5: MusicStyle(); break; case 6: Players(); break; case 7: About(); break; case ThemePage: ThemesPage(); break; case MonitorSettingsPage: MonitorSettings(); break; case SensorsPage: SensorsSettings(); break; case HotkeysPage: HotkeysSettings(); break; case DevicesSettingsPage: DevicesSettings(); break; case WeatherSettingsPage: WeatherSettings(); break; case ClipboardSettingsPage: ClipboardSettings(); break; case TransferSettingsPage: TransferSettings(); break; case ClipboardSyncSettingsPage: ClipboardSyncSettings(); break; case ShelfLayoutSettingsPage: ShelfLayoutSettings(); break; case MusicGesturesPage: MusicGesturesSettings(); break; case ProfilesPage: ProfilesSettings(); break; }
+        switch(page) { case 0: General(); break; case 1: Compact(); break; case 2: Expanded(); break; case 3: Pages(); break; case 4: ModelPrices(); break; case 5: MusicStyle(); break; case 6: Players(); break; case 7: About(); break; case ThemePage: ThemesPage(); break; case MonitorSettingsPage: MonitorSettings(); break; case SensorsPage: SensorsSettings(); break; case HotkeysPage: HotkeysSettings(); break; case DevicesSettingsPage: DevicesSettings(); break; case WeatherSettingsPage: WeatherSettings(); break; case FocusSettingsPage: FocusSettings(); break; case ClipboardSettingsPage: ClipboardSettings(); break; case TransferSettingsPage: TransferSettings(); break; case ClipboardSyncSettingsPage: ClipboardSyncSettings(); break; case ShelfLayoutSettingsPage: ShelfLayoutSettings(); break; case MusicGesturesPage: MusicGesturesSettings(); break; case ProfilesPage: ProfilesSettings(); break; }
         if (_content.Children[^1] is Border lastGroup) lastGroup.Margin = new Thickness(lastGroup.Margin.Left, lastGroup.Margin.Top, lastGroup.Margin.Right, 0);
         // Apply the offset before the frame is drawn, so the rebuilt page never shows its top for a frame.
         if (keep > 0) { _scroll.UpdateLayout(); _scroll.ScrollToVerticalOffset(keep); _scroll.UpdateLayout(); }
@@ -373,6 +373,7 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
         6 => "M 1,2 H 15 V 14 H 1 Z M 6.5,5.5 L 11,8 L 6.5,10.5 Z",
         MonitorSettingsPage => "M 1,9 H 4 L 6,4 L 9,13 L 11,7 L 12,9 H 15",
         WeatherSettingsPage => "M 8,4 A 4,4 0 1 0 8,12 A 4,4 0 1 0 8,4 M 8,0.5 V 2 M 8,14 V 15.5 M 0.5,8 H 2 M 14,8 H 15.5 M 2.5,2.5 L 3.75,3.75 M 12.25,12.25 L 13.5,13.5 M 13.5,2.5 L 12.25,3.75 M 3.75,12.25 L 2.5,13.5",
+        FocusSettingsPage => "M 8,4 A 5.5,5.5 0 1 0 8,15 A 5.5,5.5 0 1 0 8,4 M 6,1 H 10 M 8,6.5 V 9.5 L 10,11",
         DevicesSettingsPage => "M 3,4.5 H 11.5 A 1.5,1.5 0 0 1 13,6 V 10 A 1.5,1.5 0 0 1 11.5,11.5 H 3 A 1.5,1.5 0 0 1 1.5,10 V 6 A 1.5,1.5 0 0 1 3,4.5 Z M 14.8,7 V 9 M 4.5,7 V 9 M 7,7 V 9",
         SensorsPage => "M 4,4 H 12 V 12 H 4 Z M 6,1 V 4 M 10,1 V 4 M 6,12 V 15 M 10,12 V 15 M 1,6 H 4 M 1,10 H 4 M 12,6 H 15 M 12,10 H 15",
         MusicGesturesPage => "M 1,8 H 15 M 4,5 L 1,8 L 4,11 M 12,5 L 15,8 L 12,11",
@@ -517,6 +518,7 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
                     DeckPage.Music => (DefaultDeckPage.Music, Loc.T("音乐", "Music")),
                     DeckPage.Monitor => (DefaultDeckPage.Monitor, Loc.T("系统监控", "System monitor")),
                     DeckPage.Clipboard => (DefaultDeckPage.Clipboard, Loc.T("剪贴板与文件中转", "Clipboard and file transfer")),
+                    DeckPage.Focus => (DefaultDeckPage.Focus, Loc.T("专注计时器", "Focus timer")),
                     DeckPage.Weather => (DefaultDeckPage.Weather, Loc.T("天气", "Weather")),
                     DeckPage.Devices => (DefaultDeckPage.Devices, Loc.T("设备电量", "Device batteries")),
                     _ => (DefaultDeckPage.Usage, Loc.T("AI 用量", "AI usage"))
@@ -539,6 +541,7 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
                 DeckPage.Music => SizeRow(Loc.T("显示音乐", "Show music"), Loc.T("音乐", "music"), page, S.MusicPage, value => { Change(s => s.MusicPage = value); FillStarts(); }, Collect(MusicSizeControls), pages, FillStarts),
                 DeckPage.Monitor => SizeRow(Loc.T("显示系统监控", "Show system monitor"), Loc.T("系统监控", "system monitor"), page, S.MonitorPage, value => { Change(s => s.MonitorPage = value); FillStarts(); }, Collect(MonitorSizeControls), pages, FillStarts),
                 DeckPage.Clipboard => SizeRow(Loc.T("显示剪贴板与文件中转", "Show clipboard and file transfer"), Loc.T("剪贴板与文件中转", "clipboard and file transfer"), page, S.ClipboardPage, value => { Change(s => s.ClipboardPage = value); FillStarts(); }, Collect(ShelfSizeControls), pages, FillStarts),
+                DeckPage.Focus => SizeRow(Loc.T("显示专注计时器", "Show Focus timer"), Loc.T("专注计时器", "Focus timer"), page, S.FocusPage, value => { Change(s => s.FocusPage = value); FillStarts(); }, Collect(FocusSizeControls), pages, FillStarts),
                 DeckPage.Weather => SizeRow(Loc.T("显示天气", "Show weather"), Loc.T("天气", "weather"), page, S.WeatherPage, value => { Change(s => s.WeatherPage = value); FillStarts(); }, Collect(WeatherSizeControls), pages, FillStarts),
                 DeckPage.Devices => SizeRow(Loc.T("显示设备电量", "Show device batteries"), Loc.T("设备电量", "device batteries"), page, S.DevicesPage, value => { Change(s => s.DevicesPage = value); FillStarts(); }, Collect(DeviceSizeControls), pages, FillStarts),
                 _ => SizeRow(Loc.T("显示 AI 用量", "Show AI usage"), Loc.T("AI 用量", "AI usage"), page, S.UsagePage, value => { Change(s => s.UsagePage = value); FillStarts(); }, Collect(UsageSizes), pages, FillStarts)
@@ -656,6 +659,7 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
                     s.ClickThrough=defaults.ClickThrough;s.ClickThroughPanel=defaults.ClickThroughPanel;s.ClickThroughKeyboard=defaults.ClickThroughKeyboard;s.WindowCapture=defaults.WindowCapture;break;
                 case HotkeysPage:foreach(var kind in Enum.GetValues<HotkeyKind>())s.SetHotkey(kind,defaults.Hotkey(kind));break;
                 case 1:s.Style=defaults.Style;s.NotchSummary=defaults.NotchSummary;s.NotchMusic=defaults.NotchMusic;s.CapsuleSummary=defaults.CapsuleSummary;s.CapsuleMusic=defaults.CapsuleMusic;s.MusicIndicatorProgress=defaults.MusicIndicatorProgress;
+                    s.NotchFocus=defaults.NotchFocus;s.CapsuleFocus=defaults.CapsuleFocus;
                     s.NotchWeather=defaults.NotchWeather;s.CapsuleWeather=defaults.CapsuleWeather;
                     s.NotchEqualizer=defaults.NotchEqualizer;s.CapsuleEqualizer=defaults.CapsuleEqualizer;s.NotchClock=defaults.NotchClock;s.CapsuleClock=defaults.CapsuleClock;s.ClockStyle=defaults.ClockStyle;s.ClockColor=defaults.ClockColor;s.ClockCustomColor=defaults.ClockCustomColor;s.ClockGradient=[.. PanelTheme.Current.ClockGradients[0].Stops];s.Clock24Hour=defaults.Clock24Hour;s.ClockSeconds=defaults.ClockSeconds;CopyCollapsedSize(s,defaults);s.GripDoubleClick=defaults.GripDoubleClick;
                     s.NotchMonitor=defaults.NotchMonitor;s.CapsuleMonitor=defaults.CapsuleMonitor;s.NotchDevices=defaults.NotchDevices;s.CapsuleDevices=defaults.CapsuleDevices;s.NotchOrder=defaults.NotchOrder;s.CapsuleOrder=defaults.CapsuleOrder;s.NotchTransfer=defaults.NotchTransfer;s.CapsuleTransfer=defaults.CapsuleTransfer;
@@ -664,6 +668,7 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
                 case 2:s.UsagePage=true;s.MusicPage=defaults.MusicPage;s.DefaultPage=defaults.DefaultPage;s.RightClickSettings=defaults.RightClickSettings;s.Width=defaults.Width;s.Height=defaults.Height;s.QuickSize=null;s.MusicWidth=defaults.MusicWidth;s.MusicHeight=defaults.MusicHeight;s.MouseWheel=defaults.MouseWheel;s.ExpandAtPointer=defaults.ExpandAtPointer;
                     s.MonitorPage=defaults.MonitorPage;s.MonitorWidth=defaults.MonitorWidth;s.MonitorHeight=defaults.MonitorHeight;s.PageOrder=defaults.PageOrder;
                     s.ClipboardPage=defaults.ClipboardPage;s.ClipboardWidth=defaults.ClipboardWidth;s.ClipboardHeight=defaults.ClipboardHeight;
+                    s.FocusPage=defaults.FocusPage;s.FocusWidth=defaults.FocusWidth;s.FocusHeight=defaults.FocusHeight;
                     s.WeatherPage=defaults.WeatherPage;s.WeatherWidth=defaults.WeatherWidth;s.WeatherHeight=defaults.WeatherHeight;
                     s.DevicesPage=defaults.DevicesPage;s.DevicesWidth=defaults.DevicesWidth;s.DevicesHeight=defaults.DevicesHeight;break;
                 case MonitorSettingsPage:s.MonitorPalette=defaults.MonitorPalette;s.MonitorCustomColors=defaults.MonitorCustomColors;s.CompactWarningColor=null;s.CompactCriticalColor=null;s.CompactSmoothing=defaults.CompactSmoothing;s.CoreDisplay=defaults.CoreDisplay;s.MonitorInterval=defaults.MonitorInterval;s.MonitorProcesses=defaults.MonitorProcesses;s.MonitorSort=defaults.MonitorSort;s.MonitorMain=defaults.MonitorMain;s.MonitorProcessView=defaults.MonitorProcessView;

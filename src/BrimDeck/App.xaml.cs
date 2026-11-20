@@ -638,6 +638,7 @@ public partial class App : Application
     }
     protected override void OnExit(ExitEventArgs e)
     {
+        _focusTick.Stop();
         _weatherTimer.Stop();
         CancelWeather();
         Exiting = true; Lifetime.Cancel(); _save.Stop(); _trim?.Stop(); _release?.Stop(); FinishWriting(); StopBackgroundUpdates(); DisplayPower.Uninstall(); Microsoft.Win32.SystemEvents.UserPreferenceChanged -= SystemThemeChanged; _tray?.Dispose(); DisposeHotkeys(); WindowDrags?.Dispose(); _listener?.Unregister(null); _settingsEvent?.Dispose();

@@ -86,6 +86,7 @@ public sealed partial class SettingsWindow
                 Loc.T("拖动只改变歌名或歌词的位置。封面始终在最左侧。", "Dragging moves only the title or lyric. The cover stays at the left.")),
             CompactPart.Transfer => (Loc.T("文件中转", "File transfer"), style == CompactStyle.Notch ? S.NotchTransfer : S.CapsuleTransfer,
                 Loc.T("显示文件中转里的文件数量，没有文件时不显示。单击直接展开到剪贴板与文件中转页。", "Shows how many files the file transfer holds, and nothing while it is empty. Clicking it opens the clipboard and file transfer page.")),
+            CompactPart.Focus => (Loc.T("专注计时器", "Focus timer"), notch ? S.NotchFocus : S.CapsuleFocus, null),
             CompactPart.Weather => (Loc.T("天气", "Weather"), notch ? S.NotchWeather : S.CapsuleWeather, null),
             CompactPart.Devices => (Loc.T("设备电量", "Device batteries"), S.ShowsDevices(style),
                 Loc.T("显示哪些设备、是否显示数字，在“设备电量”设置页中选择。", "Which devices show, and whether with figures, is chosen on the device batteries settings page.")),
@@ -99,6 +100,7 @@ public sealed partial class SettingsWindow
                 case CompactPart.Music: if (notch) s.NotchMusic = on; else s.CapsuleMusic = on; break;
                 case CompactPart.Equalizer: if (notch) s.NotchEqualizer = on; else s.CapsuleEqualizer = on; break;
                 case CompactPart.Transfer: if (notch) s.NotchTransfer = on; else s.CapsuleTransfer = on; break;
+                case CompactPart.Focus: if (notch) s.NotchFocus = on; else s.CapsuleFocus = on; break;
                 case CompactPart.Weather: if (notch) s.NotchWeather = on; else s.CapsuleWeather = on; break;
                 case CompactPart.Devices: if (notch) s.NotchDevices = on; else s.CapsuleDevices = on; break;
                 default: if (notch) s.NotchMonitor = on; else s.CapsuleMonitor = on; break;

@@ -30,7 +30,7 @@ public partial class MainWindow
         var shape = Collapsed; _compactRendered = shape;
         double scale = CompactMusicLayout.SafeScale(shape.Scale), dpi = VisualTreeHelper.GetDpi(this).DpiScaleX;
         double column = SnapDown(ColumnWidth(shape), dpi), room = SnapDown(CompactContentWidth(shape), dpi);
-        bool media = Settings.ShowsMusic(EffectiveStyle) && _mediaTrack is { State: not MediaState.Stopped };
+        bool media = !FocusCompactOnly && Settings.ShowsMusic(EffectiveStyle) && _mediaTrack is { State: not MediaState.Stopped };
         bool cover = media && !PausedHides(PausedMusicHide.Cover), hideText = PausedHides(PausedMusicHide.Text);
         bool equalizer = CompactEqualizerShown;
         bool notice = media && !hideText && _trackNoticeUntil > DateTimeOffset.UtcNow;
@@ -44,16 +44,17 @@ public partial class MainWindow
                 text = CompactLyricText(_mediaTrack!, _compactLyric);
             }
         }
-        var apps = Settings.ShowsSummary(EffectiveStyle) && !notice ? Settings.EnabledApps : [];
+        var apps = !FocusCompactOnly && Settings.ShowsSummary(EffectiveStyle) && !notice ? Settings.EnabledApps : [];
         var clock = Settings.ShowsClock(EffectiveStyle) ? new ClockFace(Settings.ClockStyle, Settings.Clock24Hour, Settings.ClockSeconds, ClockFace.Palette(Settings, CoverColor, Look), DateTime.Now, scale, Look) : null;
         var transfer = TransferBadge(scale);
         var devices = CompactDevices(scale);
         var weather = CompactWeather(scale);
+        var focus = CompactFocus(scale);
         var layout = CompactMusicLayout.Calculate(10000, scale, media, apps.Count, text.Length > 0, FixedFace(CompactMusicLayout.Gap(scale), clock?.ReservedWidth ?? 0, transfer?.Width ?? 0, devices?.PreferredWidth ?? 0), 0, equalizer, Settings.EqualizerBars, ring: QuotaRing.Diameter(Settings.QuotaRingStyle));
         // One strip per reading, each alone on its line and centred in it. The drives show no glyph here: each drive has a line with its
         // letter and its figures, stacked or side by side as chosen in the settings, so any number of drives stand one below the other.
         var strips = new List<MonitorStrip>();
-        if (Settings.ShowsMonitor(EffectiveStyle))
+        if (!FocusCompactOnly && Settings.ShowsMonitor(EffectiveStyle))
         {
             var colors = MonitorThemeColors.Strip(Settings, Look);
             _stripUnavailable = _stripAdmission.Hidden;
@@ -123,6 +124,8 @@ public partial class MainWindow
                 case CompactPart.Transfer when transfer is not null:
                     Add(transfer, transfer.Height); break;
                 // The devices a line each; should a device's line be wider than the column, they scroll as the readings do.
+                case CompactPart.Focus when focus is not null && focus.Width <= column:
+                    Add(focus, focus.Height); break;
                 case CompactPart.Weather when weather is not null && weather.Width <= column:
                     weatherLine = lines.Count;
                     Add(weather, weather.Height); break;
@@ -150,7 +153,7 @@ public partial class MainWindow
             lines.RemoveAt(weatherLine);
             stack = CompactColumn.Stack([.. lines.Select(line => line.Height)], gap);
         }
-        double wantedColumn = CompactColumn.Width(scale, [layout.CoverSize * (cover ? 1 : 0), equalizer ? layout.EqualizerSize : 0, clock?.ReservedWidth ?? 0, transfer?.Width ?? 0, devices?.PreferredWidth ?? 0, weather?.Width ?? 0, apps.Count > 0 ? layout.RingSize : 0],
+        double wantedColumn = CompactColumn.Width(scale, [layout.CoverSize * (cover ? 1 : 0), equalizer ? layout.EqualizerSize : 0, clock?.ReservedWidth ?? 0, transfer?.Width ?? 0, devices?.PreferredWidth ?? 0, weather?.Width ?? 0, focus?.Width ?? 0, apps.Count > 0 ? layout.RingSize : 0],
             strips.Select(strip => strip.PreferredWidth));
         double wanted = notice ? (double.IsNaN(_compactWanted) ? stack.Length : _compactWanted) : DevicePixels.Up(wantedLength, dpi);
         double required = lines.Count == 0 ? 0 : Math.Ceiling(lines.Max(line => line.Height));

@@ -57,8 +57,8 @@ public sealed record IgnoredMediaApp(string AppId = "", string Name = "", string
 public enum ProviderId { Claude, Codex, Antigravity, Cursor, GlmChina, NewApi, Sub2Api, Custom, ZCode = 10, GlmGlobal = 11, Dsh = 12, DeepSeek = 13, GrokBot = 14, Kimi = 15, KimiApi = 16, OpenCode = 17, OpenCodeGo = 18, OpenRouter = 19, Pi = 20, CodeAgent = 21, CommandCode = 22, CommandCodeApi = 23, WorkBuddy = 24, WorkBuddyAi = 25, MiMo = 26, MiMoApi = 27, MiMoTokenPlan = 28, MiMoLinked = 29, KimiPlatform = 30 }
 public enum SettingsTheme { System, Light, Dark }
 // Pages are saved as numbers, so new members go at the end; their order in the page switch is DeckSettings.PageOrder.
-public enum DeckPage { Usage, Music, Monitor, Clipboard, Devices, Weather }
-public enum DefaultDeckPage { Last, Usage, Music, Monitor, Clipboard, Devices, Weather }
+public enum DeckPage { Usage, Music, Monitor, Clipboard, Devices, Weather, Focus }
+public enum DefaultDeckPage { Last, Usage, Music, Monitor, Clipboard, Devices, Weather, Focus }
 // What the mouse wheel does over the expanded panel. Saved as numbers, so new members go at the end.
 public enum MouseWheelAction { None, Pages, Volume }
 // What a double click on an end of the collapsed notch or capsule does: turn its auto width on or off, or start moving it
@@ -78,14 +78,14 @@ public enum EqualizerMode { Flow = 0, Spectrum = 1 }
 public enum QuotaRingStyle { Nested = 0, Single = 1 }
 // The parts of the collapsed notch and capsule that are put in order, left to right. The cover stays at the left; Music places
 // only the title or lyric. Saved as numbers, so new members go at the end.
-public enum CompactPart { Rings, Music, Monitor, Equalizer, Clock, Transfer, Devices, Weather }
+public enum CompactPart { Rings, Music, Monitor, Equalizer, Clock, Transfer, Devices, Weather, Focus }
 public static class CompactParts
 {
     // The order of new settings and of restoring the defaults: the equalizer and the clock come last.
-    public static IReadOnlyList<CompactPart> Default { get; } = [CompactPart.Rings, CompactPart.Music, CompactPart.Monitor, CompactPart.Transfer, CompactPart.Devices, CompactPart.Equalizer, CompactPart.Clock, CompactPart.Weather];
+    public static IReadOnlyList<CompactPart> Default { get; } = [CompactPart.Rings, CompactPart.Music, CompactPart.Monitor, CompactPart.Transfer, CompactPart.Devices, CompactPart.Equalizer, CompactPart.Clock, CompactPart.Weather, CompactPart.Focus];
     // The order in which parts missing from a saved file are added after its own. A file saved before the equalizer and the clock
     // were put in order adds them after its parts, the clock last, where they stood; the devices' batteries (1.3.0) join last.
-    private static readonly IReadOnlyList<CompactPart> Missing = [CompactPart.Rings, CompactPart.Music, CompactPart.Monitor, CompactPart.Equalizer, CompactPart.Clock, CompactPart.Transfer, CompactPart.Devices, CompactPart.Weather];
+    private static readonly IReadOnlyList<CompactPart> Missing = [CompactPart.Rings, CompactPart.Music, CompactPart.Monitor, CompactPart.Equalizer, CompactPart.Clock, CompactPart.Transfer, CompactPart.Devices, CompactPart.Weather, CompactPart.Focus];
     // Each known part once, in the saved order; a part missing from the file takes its place after the others.
     public static List<CompactPart> Normalize(IEnumerable<CompactPart>? order) => [.. (order ?? []).Where(part => Enum.IsDefined(part)).Concat(Missing).Distinct()];
 }
@@ -697,6 +697,17 @@ public sealed class DeckSettings
     public bool WeatherFahrenheit { get; set; }
     public bool ColourfulWeatherCard { get; set; }
     public WeatherCity? WeatherCity { get; set; }
+    public bool FocusPage { get; set; }
+    public bool FocusHideOtherWidgets { get; set; } = true;
+    public bool FocusSimplifiesCompact(CompactStyle style) => FocusPage && FocusHideOtherWidgets && style != CompactStyle.Line;
+    public bool NotchFocus { get; set; } = true;
+    public bool CapsuleFocus { get; set; } = true;
+    public int FocusMinutes { get; set; } = 25;
+    public int BreakMinutes { get; set; } = 5;
+    public double FocusWidth { get; set; } = 440;
+    public double FocusHeight { get; set; } = 180;
+    public bool ShowsFocus(CompactStyle style) => FocusPage &&
+        (style == CompactStyle.Notch ? NotchFocus : style == CompactStyle.Capsule && CapsuleFocus);
     public bool WeatherPage { get; set; } = true;
     public bool NotchWeather { get; set; } = true;
     public bool CapsuleWeather { get; set; } = true;
@@ -922,6 +933,10 @@ public sealed class DeckSettings
         MusicHeight = double.IsFinite(MusicHeight) ? Math.Clamp(MusicHeight, DeckPages.MinHeight, DeckPages.MaxHeight) : 200;
         MonitorWidth = double.IsFinite(MonitorWidth) ? Math.Clamp(MonitorWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : MonitorSizes.Default.Width;
         if (WeatherCity is { Valid: false }) WeatherCity = null;
+        FocusMinutes = FocusTimer.ClampMinutes(FocusMinutes);
+        BreakMinutes = FocusTimer.ClampMinutes(BreakMinutes);
+        FocusWidth = double.IsFinite(FocusWidth) ? Math.Clamp(FocusWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : 440;
+        FocusHeight = double.IsFinite(FocusHeight) ? Math.Clamp(FocusHeight, DeckPages.MinHeight, DeckPages.MaxHeight) : 180;
         WeatherWidth = double.IsFinite(WeatherWidth) ? Math.Clamp(WeatherWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : 460;
         WeatherHeight = double.IsFinite(WeatherHeight) ? Math.Clamp(WeatherHeight, DeckPages.MinHeight, DeckPages.MaxHeight) : 240;
         DevicesWidth = double.IsFinite(DevicesWidth) ? Math.Clamp(DevicesWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : 460;

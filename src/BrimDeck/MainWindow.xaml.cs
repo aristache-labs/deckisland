@@ -160,6 +160,7 @@ public partial class MainWindow : Window
         InitializeShelf();
         InitializeDevices();
         InitializeWeather();
+        InitializeFocus();
         InitializeResize();
         InitializeScale();
         InitializeShadow();
@@ -692,6 +693,7 @@ public partial class MainWindow : Window
         System.Windows.Automation.AutomationProperties.SetName(AIUsageButton, Loc.T("AI 用量", "AI usage"));
         System.Windows.Automation.AutomationProperties.SetName(MonitorPageButton, Loc.T("系统监控", "System monitor"));
         UpdateShelfPageButton();
+        System.Windows.Automation.AutomationProperties.SetName(FocusPageButton, Loc.T("专注计时器", "Focus timer"));
         System.Windows.Automation.AutomationProperties.SetName(WeatherPageButton, Loc.T("天气", "Weather"));
         System.Windows.Automation.AutomationProperties.SetName(DevicesPageButton, Loc.T("设备电量", "Device batteries"));
         System.Windows.Automation.AutomationProperties.SetName(MusicPageButton, Loc.T("音乐", "Music"));
@@ -751,8 +753,11 @@ public partial class MainWindow : Window
             if (_columnCarousel is not null) { _columnElapsed = _columnCarousel.Elapsed; _columnCarousel.SetRunning(false, false); }
             if (_columnReadings.Count > 0) _stripElapsed = _columnReadings[0].Elapsed;
             foreach (var reading in _columnReadings) reading.SetRunning(false, false);
+            _focusBadge = null;
+            _focusBadgeDial = null;
             _compactEqualizer = null; _compactMarquee = null; _quotaCarousel = null; _stripCarousel = null; _compactClock = null; _compactStrip = null;
             _columnCarousel = null; _columnReadings.Clear(); _columnStrips.Clear();
+            if (FocusCompactOnly && _alert is not null) { _alertTimer.Stop(); _alert = null; }
             if (_alert is not null)
             {
                 CompactAlert.Visibility = Visibility.Visible; CompactRings.Visibility = Visibility.Collapsed;
@@ -787,7 +792,7 @@ public partial class MainWindow : Window
     // appear later when the panel shows again.
     private void ShowAlert(CompactAlertInfo alert)
     {
-        if (IsSuppressed) return;
+        if (IsSuppressed || FocusCompactOnly) return;
         _alert = alert; _alertTimer.Stop(); _alertTimer.Start();
         RenderCompact();
         if (!_expanded && !IsSuppressed) SetExpanded(false);

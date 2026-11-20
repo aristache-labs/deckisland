@@ -97,7 +97,7 @@ public partial class MainWindow
     private void ShelfChanged()
     {
         if (IsShelfPage && _expanded && !_preview) RenderShelf(); else _shelfStale = true;
-        int count = Settings.ShowsTransfer(EffectiveStyle) ? ShelfData.Files.Count : 0;
+        int count = !FocusCompactOnly && Settings.ShowsTransfer(EffectiveStyle) ? ShelfData.Files.Count : 0;
         if (count != _transferShown && !_expanded) RenderCompact();
     }
     // A folder's item count or total size has arrived (ShelfFiles). Each folder is counted the first time its row is built, as it
@@ -122,10 +122,13 @@ public partial class MainWindow
     private FrameworkElement? _compactTransfer;
     private FrameworkElement? TransferBadge(double scale)
     {
-        int count = Settings.ShowsTransfer(EffectiveStyle) ? ShelfData.Files.Count : 0;
+        int count = !FocusCompactOnly && Settings.ShowsTransfer(EffectiveStyle) ? ShelfData.Files.Count : 0;
         _transferShown = count; _compactTransfer = null;
         if (count == 0) return null;
-        double s = CompactMusicLayout.SafeScale(scale), icon = CompactMusicLayout.Whole(14 * s), gap = CompactMusicLayout.Whole(3 * s);
+        bool nested = Settings.QuotaRingStyle == QuotaRingStyle.Nested;
+        double s = CompactMusicLayout.SafeScale(scale), gap = CompactMusicLayout.Whole(3 * s);
+        double icon = nested ? CompactMusicLayout.StatusRingSize(Settings.QuotaRingStyle, s) : CompactMusicLayout.Whole(14 * s);
+        double iconHeight = nested ? CompactMusicLayout.Whole(icon * .9) : icon;
         // The number starts on a whole device pixel and the badge ends on one. Layout rounding moves a margin that lies between two
         // pixels onto the next (17 DIPs are 25.5 pixels at 150% and become 26), which took the room from the number: a count of two
         // digits no longer fit and, wrapping as every TextBlock does by default (App.xaml), stood on two lines cut by the badge.
@@ -139,15 +142,18 @@ public partial class MainWindow
         number.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
         double digits = number.DesiredSize.Width;
         number.Margin = new Thickness(start, 0, 0, 0);
-        var badge = new Grid { Width = DevicePixels.Up(start + digits, dpi), Height = CompactMusicLayout.Whole(16 * s), Background = Brushes.Transparent };
+        var badge = new Grid { Width = DevicePixels.Up(start + digits, dpi), Height = Math.Max(iconHeight, CompactMusicLayout.Whole(16 * s)), Background = Brushes.Transparent };
         // The tray on the 16 unit grid of the row's other marks (PowerIcons), scaled to the icon's size with the same 1.35 DIP line,
         // rather than a larger drawing stretched to fit, which thickened and blurred it.
         double grid = icon / 16;
         var tray = new Path
         {
             Data = Geometry.Parse("M 1.5,9 L 3.5,3.5 H 12.5 L 14.5,9 V 12.5 A 1,1 0 0 1 13.5,13.5 H 2.5 A 1,1 0 0 1 1.5,12.5 Z M 1.5,9 H 5.5 L 6.5,10.5 H 9.5 L 10.5,9 H 14.5"),
-            Stroke = UI.Brush(Look.Secondary), StrokeThickness = 1.35 / grid, StrokeLineJoin = PenLineJoin.Round, StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round,
-            Width = 16, Height = 16, LayoutTransform = new ScaleTransform(grid, grid), HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Center
+            Stroke = UI.Brush(Look.Secondary), StrokeThickness = nested ? 1.35 : 1.35 / grid,
+            StrokeLineJoin = PenLineJoin.Round, StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round,
+            Width = nested ? icon : 16, Height = nested ? iconHeight : 16, Stretch = nested ? Stretch.Fill : Stretch.None,
+            LayoutTransform = nested ? Transform.Identity : new ScaleTransform(grid, grid),
+            HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Center
         };
         badge.Children.Add(tray); badge.Children.Add(number);
         string tip = Loc.T($"文件中转：{count} 个文件", count == 1 ? "File transfer: 1 file" : $"File transfer: {count} files");
