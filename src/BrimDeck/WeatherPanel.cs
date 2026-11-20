@@ -2,7 +2,6 @@ using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Media;
-using System.Windows.Media.Animation;
 using System.Windows.Shapes;
 using BrimDeck.Core;
 
@@ -68,14 +67,10 @@ public partial class MainWindow
         if (!Settings.ShowsWeather(EffectiveStyle) || _app.CurrentWeather is not { } reading) return null;
         var (icon, condition) = WeatherCondition(reading.Code, reading.Daylight);
         string temperature = WeatherTemperature(reading.Temperature);
-        var text = WeatherText($"{(icon == RainIcon ? "" : icon + " ")}{temperature}{(_app.WeatherStale ? "*" : "")}", 11 * scale);
-        FrameworkElement content = text;
-        if (icon == RainIcon)
-        {
-            var mark = WeatherLineIcon(icon, 14 * scale, text.Foreground);
-            mark.Margin = new Thickness(0, 0, 3 * scale, 0);
-            content = new StackPanel { Orientation = Orientation.Horizontal, Children = { mark, text } };
-        }
+        var text = WeatherText($"{temperature}{(_app.WeatherStale ? "*" : "")}", 11 * scale);
+        var mark = WeatherLineIcon(icon, 14 * scale, text.Foreground);
+        mark.Margin = new Thickness(0, 0, 3 * scale, 0);
+        var content = new StackPanel { Orientation = Orientation.Horizontal, Children = { mark, text } };
         content.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
         content.Width = Math.Ceiling(content.DesiredSize.Width + 2 * scale);
         content.Height = Math.Ceiling(content.DesiredSize.Height);
@@ -119,34 +114,36 @@ public partial class MainWindow
         }
 
         var (icon, condition) = WeatherCondition(reading.Code, reading.Daylight);
-        var accent = colourful ? SkyInk(icon, reading.Daylight) : UI.Brush(Look.Primary);
+        var (background, foreground) = WeatherCardColours(colourful ? icon : null, reading.Daylight);
         var hero = new StackPanel();
         var title = new DockPanel { LastChildFill = true };
         // The page can be built while collapsed. The icon starts when the expanded content becomes visible.
-        var skyIcon = colourful && icon == RainIcon
-            ? ColourfulRainIcon(48, Animates)
-            : WeatherLineIcon(icon, 36, accent, animate: colourful && Animates);
+        var skyIcon = colourful ? ColourfulWeatherIcon(icon, Animates) ?? WeatherLineIcon(icon, 36, foreground)
+            : WeatherLineIcon(icon, 36, foreground);
         skyIcon.Margin = new Thickness(12, 0, 0, 0);
         DockPanel.SetDock(skyIcon, System.Windows.Controls.Dock.Right);
         title.Children.Add(skyIcon);
         var temperature = WeatherText(WeatherTemperature(reading.Temperature, true), 34);
-        temperature.Foreground = accent;
+        temperature.Foreground = foreground;
         temperature.FontWeight = FontWeights.SemiBold;
         title.Children.Add(temperature);
         hero.Children.Add(title);
         var today = reading.Days.FirstOrDefault();
         var summary = new DockPanel { LastChildFill = true, Margin = new Thickness(0, 7, 0, 0) };
         var extremes = WeatherText(WeatherExtremes(today), 13);
+        extremes.Foreground = foreground;
         extremes.Margin = new Thickness(12, 0, 0, 0);
         DockPanel.SetDock(extremes, System.Windows.Controls.Dock.Right);
         summary.Children.Add(extremes);
-        summary.Children.Add(WeatherText($"{condition} · {WeatherPlace(reading)}", 13));
+        var location = WeatherText($"{condition} · {WeatherPlace(reading)}", 13);
+        location.Foreground = foreground;
+        summary.Children.Add(location);
         hero.Children.Add(summary);
         rows.Children.Add(new Border
         {
             Child = hero, Padding = new Thickness(14, 10, 14, 10), CornerRadius = new CornerRadius(12),
             BorderBrush = UI.Brush(Look.Hex("rim")), BorderThickness = new Thickness(1),
-            Background = WeatherCardBackground(colourful ? accent : null)
+            Background = background
         });
         foreach (var day in reading.Days.Skip(1))
         {
@@ -176,20 +173,11 @@ public partial class MainWindow
         rows.Children.Add(credit);
     }
 
-    private Brush SkyInk(string icon, bool daylight) => new SolidColorBrush(Look.Readable(icon switch
-    {
-        "☀" => Color.FromRgb(245, 173, 49),
-        "☾" => Color.FromRgb(169, 164, 255),
-        RainIcon or "❄" => Color.FromRgb(105, 181, 230),
-        "ϟ" => Color.FromRgb(190, 156, 245),
-        _ => daylight ? Color.FromRgb(120, 174, 230) : Color.FromRgb(157, 163, 228)
-    }, 5.5));
-
-    private static FrameworkElement WeatherLineIcon(string icon, double size, Brush ink, bool animate = false)
+    private static FrameworkElement WeatherLineIcon(string icon, double size, Brush ink)
     {
         if (icon == RainIcon) return WeatherRainIcon(size, ink);
         const string cloud = "M 5,19 A 3.5,3.5 0 0 1 5,12 A 5,5 0 0 1 14.8,11 A 4,4 0 1 1 17,19 Z";
-        var mark = new Path
+        return new Path
         {
             Data = Geometry.Parse(icon switch
             {
@@ -206,16 +194,6 @@ public partial class MainWindow
             StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round, StrokeLineJoin = PenLineJoin.Round,
             VerticalAlignment = VerticalAlignment.Center, IsHitTestVisible = false
         };
-        if (animate)
-        {
-            var shift = new TranslateTransform();
-            mark.RenderTransform = shift;
-            mark.IsVisibleChanged += (_, _) => shift.BeginAnimation(TranslateTransform.YProperty, mark.IsVisible
-                ? new DoubleAnimation(0, 4, TimeSpan.FromSeconds(1.4))
-                { AutoReverse = true, RepeatBehavior = RepeatBehavior.Forever, EasingFunction = Soft.InOut }
-                : null);
-        }
-        return mark;
     }
 
     private static Viewbox WeatherRainIcon(double size, Brush ink)
@@ -230,16 +208,39 @@ public partial class MainWindow
         return new Viewbox { Child = drawing, Width = size, Height = size, IsHitTestVisible = false, VerticalAlignment = VerticalAlignment.Center };
     }
 
-    private Brush WeatherCardBackground(Brush? accent)
+    private (Brush Background, Brush Foreground) WeatherCardColours(string? icon, bool daylight)
     {
-        var surface = PanelTheme.ToColor(Look.Current["surface"]);
-        if (accent is not SolidColorBrush brush) return new SolidColorBrush(surface);
-        var tint = brush.Color;
-        return new LinearGradientBrush(
-            Color.FromRgb((byte)(surface.R + (tint.R - surface.R) * .12),
-                (byte)(surface.G + (tint.G - surface.G) * .12),
-                (byte)(surface.B + (tint.B - surface.B) * .12)),
-            surface, new Point(0, 0), new Point(1, 1));
+        var surface = Look.Current.Surface;
+        var tint = icon switch
+        {
+            "☀" => "#C88216",
+            "☾" => "#46469A",
+            "⛅" => daylight ? "#AF782C" : "#565597",
+            "☁" => "#687582",
+            "≋" => "#648785",
+            RainIcon => "#236BAB",
+            "❄" => "#5396B9",
+            "ϟ" => "#8C49AB",
+            _ => null
+        };
+        var baseBrush = new SolidColorBrush(PanelTheme.ToColor(surface));
+        if (tint is null) return (baseBrush, UI.Brush(Look.Primary));
+
+        var hue = ThemeColor.Parse(tint) with { A = Look.Current.IsDark ? (byte)166 : (byte)70 };
+        var highlight = hue.Over(surface);
+        var midpoint = (hue with { A = (byte)(hue.A / 3) }).Over(surface);
+        var ink = Look.Current["textPrimary"].EnsureContrast([highlight, midpoint, surface], 4.5);
+        var wash = new LinearGradientBrush
+        {
+            StartPoint = new Point(0, 0), EndPoint = new Point(1, .8),
+            GradientStops =
+            {
+                new GradientStop(PanelTheme.ToColor(highlight), 0),
+                new GradientStop(PanelTheme.ToColor(midpoint), .52),
+                new GradientStop(PanelTheme.ToColor(surface), 1)
+            }
+        };
+        return (wash, new SolidColorBrush(PanelTheme.ToColor(ink)));
     }
 
     private string WeatherExtremes(WeatherDay? day) =>
