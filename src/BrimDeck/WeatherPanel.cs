@@ -77,7 +77,7 @@ public partial class MainWindow
         var mark = WeatherLineIcon(icon, iconHeight, text.Foreground, matchHeight: nested);
         if (nested && mark is Path path && path.Data.Bounds is { Height: > 0 } bounds)
             path.Width = Math.Min(statusSize, path.StrokeThickness + (iconHeight - path.StrokeThickness) * bounds.Width / bounds.Height);
-        mark.Margin = new Thickness(0, 0, 3 * scale, 0);
+        mark.Margin = new Thickness(0, 0, (Settings.QuotaRingStyle == QuotaRingStyle.Nested ? 5 : 3) * scale, 0);
         var content = new StackPanel { Orientation = Orientation.Horizontal, Children = { mark, text } };
         content.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
         content.Width = Math.Ceiling(content.DesiredSize.Width + 2 * scale);

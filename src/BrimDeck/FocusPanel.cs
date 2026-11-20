@@ -52,9 +52,13 @@ public partial class MainWindow
         _ => ""
     };
 
-    private string FocusBadgeLabel() => _app.FocusNotice == FocusPhase.Idle
-        ? $"{FocusTime(_app.FocusSession.Remaining(DateTimeOffset.UtcNow))}  {FocusPhaseLabel()}"
-        : FocusNoticeLabel();
+    private string FocusBadgeLabel()
+    {
+        if (_app.FocusNotice != FocusPhase.Idle) return FocusNoticeLabel();
+        var session = _app.FocusSession;
+        var label = session.Running ? FocusPhaseLabel() : Loc.T("已暂停", "Paused");
+        return $"{FocusTime(session.Remaining(DateTimeOffset.UtcNow))}  {label}";
+    }
 
     private FrameworkElement? CompactFocus(double scale)
     {
