@@ -12,9 +12,9 @@ public partial class MainWindow
 {
     private const string RainIcon = "rain";
     private const string RainCloud = "M 5.5,15 A 3.5,3.5 0 0 1 5,8 A 5,5 0 0 1 14.6,7 A 4.1,4.1 0 0 1 18,15";
-    private const string RainDrops = "M 8,15 L 6.5,19 M 12.5,16 L 11,20 M 17,15 L 15.5,19";
+    private static readonly string[] RainDrops = ["M 8,15 L 6.5,19", "M 12.5,16 L 11,20", "M 17,15 L 15.5,19"];
     private (WeatherReading? Reading, bool Loading, bool Setup, bool Stale, bool Fahrenheit, bool Colourful,
-        bool Expanded, bool Motion, int Theme, string Language)? _weatherView;
+        bool Motion, int Theme, string Language)? _weatherView;
 
     private void InitializeWeather()
     {
@@ -100,7 +100,7 @@ public partial class MainWindow
 
         bool colourful = Settings.ColourfulWeatherCard && !Look.HighContrast;
         var view = (_app.CurrentWeather, _app.WeatherLoading, _app.WeatherNeedsLocation, _app.WeatherStale,
-            Settings.WeatherFahrenheit, colourful, _expanded, Animates, Look.Generation, Loc.Language);
+            Settings.WeatherFahrenheit, colourful, Animates, Look.Generation, Loc.Language);
         if (_weatherView == view && WeatherContent.Children.Count > 0) return;
         _weatherView = view;
         var rows = new StackPanel();
@@ -122,7 +122,10 @@ public partial class MainWindow
         var accent = colourful ? SkyInk(icon, reading.Daylight) : UI.Brush(Look.Primary);
         var hero = new StackPanel();
         var title = new DockPanel { LastChildFill = true };
-        var skyIcon = WeatherLineIcon(icon, 36, accent, animate: colourful && Animates && _expanded);
+        // The page can be built while collapsed. The icon starts when the expanded content becomes visible.
+        var skyIcon = colourful && icon == RainIcon
+            ? ColourfulRainIcon(48, Animates)
+            : WeatherLineIcon(icon, 36, accent, animate: colourful && Animates);
         skyIcon.Margin = new Thickness(12, 0, 0, 0);
         DockPanel.SetDock(skyIcon, System.Windows.Controls.Dock.Right);
         title.Children.Add(skyIcon);
@@ -184,7 +187,7 @@ public partial class MainWindow
 
     private static FrameworkElement WeatherLineIcon(string icon, double size, Brush ink, bool animate = false)
     {
-        if (icon == RainIcon) return WeatherRainIcon(size, ink, animate);
+        if (icon == RainIcon) return WeatherRainIcon(size, ink);
         const string cloud = "M 5,19 A 3.5,3.5 0 0 1 5,12 A 5,5 0 0 1 14.8,11 A 4,4 0 1 1 17,19 Z";
         var mark = new Path
         {
@@ -203,47 +206,28 @@ public partial class MainWindow
             StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round, StrokeLineJoin = PenLineJoin.Round,
             VerticalAlignment = VerticalAlignment.Center, IsHitTestVisible = false
         };
-        if (animate) AnimateWeatherIcon(mark, 4, TimeSpan.FromSeconds(1.4), reverse: true);
+        if (animate)
+        {
+            var shift = new TranslateTransform();
+            mark.RenderTransform = shift;
+            mark.IsVisibleChanged += (_, _) => shift.BeginAnimation(TranslateTransform.YProperty, mark.IsVisible
+                ? new DoubleAnimation(0, 4, TimeSpan.FromSeconds(1.4))
+                { AutoReverse = true, RepeatBehavior = RepeatBehavior.Forever, EasingFunction = Soft.InOut }
+                : null);
+        }
         return mark;
     }
 
-    private static Viewbox WeatherRainIcon(double size, Brush ink, bool animate)
+    private static Viewbox WeatherRainIcon(double size, Brush ink)
     {
         Path Stroke(string data) => new()
         {
             Data = Geometry.Parse(data), Stroke = ink, StrokeThickness = 1.65,
             StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round
         };
-        var drops = Stroke(RainDrops);
-        var drawing = new Canvas { Width = 24, Height = 24, Children = { Stroke(RainCloud), drops } };
-        if (animate) AnimateWeatherIcon(drops, 3, TimeSpan.FromMilliseconds(720), reverse: false);
+        var drawing = new Canvas { Width = 24, Height = 27, Children = { Stroke(RainCloud) } };
+        foreach (var drop in RainDrops) drawing.Children.Add(Stroke(drop));
         return new Viewbox { Child = drawing, Width = size, Height = size, IsHitTestVisible = false, VerticalAlignment = VerticalAlignment.Center };
-    }
-
-    private static void AnimateWeatherIcon(FrameworkElement target, double distance, TimeSpan duration, bool reverse)
-    {
-        var shift = new TranslateTransform();
-        target.RenderTransform = shift;
-        void Update()
-        {
-            shift.BeginAnimation(TranslateTransform.YProperty, target.IsVisible
-                ? new DoubleAnimation(0, distance, duration)
-                {
-                    AutoReverse = reverse, RepeatBehavior = RepeatBehavior.Forever,
-                    EasingFunction = reverse ? Soft.InOut : null
-                }
-                : null);
-            if (!reverse)
-                target.BeginAnimation(OpacityProperty, target.IsVisible
-                    ? new DoubleAnimationUsingKeyFrames
-                    {
-                        Duration = duration, RepeatBehavior = RepeatBehavior.Forever,
-                        KeyFrames = { new LinearDoubleKeyFrame(1, KeyTime.FromPercent(.35)), new LinearDoubleKeyFrame(0, KeyTime.FromPercent(1)) }
-                    }
-                    : null);
-        }
-        target.IsVisibleChanged += (_, _) => Update();
-        Update();
     }
 
     private Brush WeatherCardBackground(Brush? accent)
