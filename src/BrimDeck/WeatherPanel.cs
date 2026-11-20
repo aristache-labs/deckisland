@@ -70,7 +70,11 @@ public partial class MainWindow
         var (icon, condition) = WeatherCondition(reading.Code, reading.Daylight);
         string temperature = WeatherTemperature(reading.Temperature);
         var text = WeatherText($"{temperature}{(_app.WeatherStale ? "*" : "")}", 11 * scale);
-        var mark = WeatherLineIcon(icon, 14 * scale, text.Foreground);
+        bool nested = Settings.QuotaRingStyle == QuotaRingStyle.Nested && icon != "–";
+        double iconHeight = nested ? CompactMusicLayout.StatusRingSize(Settings.QuotaRingStyle, scale) : 14 * scale;
+        var mark = WeatherLineIcon(icon, iconHeight, text.Foreground, matchHeight: nested);
+        if (nested && mark is Path path && path.Data.Bounds is { Height: > 0 } bounds)
+            path.Width = path.StrokeThickness + (iconHeight - path.StrokeThickness) * bounds.Width / bounds.Height;
         mark.Margin = new Thickness(0, 0, 3 * scale, 0);
         var content = new StackPanel { Orientation = Orientation.Horizontal, Children = { mark, text } };
         content.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
