@@ -17,6 +17,7 @@ public partial class MainWindow
             "☀" => ("sunny", 20, 1000),
             "☾" => ("clear-night", 120, 6000),
             "⛅" => ("partly-cloudy-day", 20, 1000),
+            PartlyCloudyNight => ("partly-cloudy-night", 60, 3000),
             "☁" => ("cloudy", 40, 2000),
             "≋" => ("fog", 57, 2833),
             "❄" => ("snow", 20, 1000),

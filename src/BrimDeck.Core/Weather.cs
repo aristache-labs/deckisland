@@ -20,7 +20,8 @@ public sealed record WeatherPoint(string Name, double Latitude, double Longitude
         latitude is >= -90 and <= 90 && longitude is >= -180 and <= 180;
 }
 
-public sealed record WeatherDay(DateOnly Date, int? Code, double? High, double? Low);
+public sealed record WeatherDay(DateOnly Date, int? Code, double? High, double? Low,
+    double? PrecipitationProbability = null, double? PrecipitationMillimetres = null, double? SnowfallCentimetres = null);
 public sealed record WeatherReading(WeatherPoint Place, double Temperature, int? Code, bool Daylight, IReadOnlyList<WeatherDay> Days);
 public sealed record WeatherUpdate(WeatherReading? Reading, bool Stale)
 {
@@ -54,7 +55,7 @@ public static class Weather
     public static async Task<WeatherReading?> Fetch(WeatherPoint place, CancellationToken token)
     {
         string coordinates = FormattableString.Invariant($"latitude={place.Latitude}&longitude={place.Longitude}");
-        string url = $"https://api.open-meteo.com/v1/forecast?{coordinates}&timezone=auto&forecast_days={ForecastDays}&current=temperature_2m,weather_code,is_day&daily=weather_code,temperature_2m_max,temperature_2m_min";
+        string url = $"https://api.open-meteo.com/v1/forecast?{coordinates}&timezone=auto&forecast_days={ForecastDays}&current=temperature_2m,weather_code,is_day&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,snowfall_sum";
         return Parse(place, await Http.GetFromJsonAsync<JsonElement>(url, token).ConfigureAwait(false));
     }
 
@@ -97,7 +98,9 @@ public static class Weather
         for (int i = 0; i < ForecastDays; i++)
         {
             if (DateOnly.TryParseExact(Str(At(daily, "time", i)), "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
-                days.Add(new(date, Code(At(daily, "weather_code", i)), Number(At(daily, "temperature_2m_max", i)), Number(At(daily, "temperature_2m_min", i))));
+                days.Add(new(date, Code(At(daily, "weather_code", i)), Number(At(daily, "temperature_2m_max", i)),
+                    Number(At(daily, "temperature_2m_min", i)), Number(At(daily, "precipitation_probability_max", i)),
+                    Number(At(daily, "precipitation_sum", i)), Number(At(daily, "snowfall_sum", i))));
         }
         return new(place, temperature, Code(Field(current, "weather_code")), Number(Field(current, "is_day")) != 0, days);
     }
