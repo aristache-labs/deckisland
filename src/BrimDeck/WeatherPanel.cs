@@ -172,21 +172,18 @@ public partial class MainWindow
                 ColumnDefinitions =
                 {
                     new ColumnDefinition { Width = GridLength.Auto, SharedSizeGroup = "WeatherDate" },
-                    new ColumnDefinition(),
-                    new ColumnDefinition(),
+                    new ColumnDefinition { MinWidth = 8 },
+                    new ColumnDefinition { Width = GridLength.Auto, SharedSizeGroup = "WeatherConditions" },
+                    new ColumnDefinition { MinWidth = 8 },
+                    new ColumnDefinition { Width = GridLength.Auto, SharedSizeGroup = "WeatherPrecipitationTotal" },
+                    new ColumnDefinition { MinWidth = 8 },
                     new ColumnDefinition { Width = GridLength.Auto, SharedSizeGroup = "WeatherRange" }
                 }
             };
             void AddColumn(FrameworkElement element, int column)
             {
-                element.HorizontalAlignment = column switch
-                {
-                    0 => HorizontalAlignment.Left,
-                    3 => HorizontalAlignment.Right,
-                    _ => HorizontalAlignment.Center
-                };
-                if (column is 1 or 2) element.Margin = new Thickness(5, 0, 5, 0);
-                Grid.SetColumn(element, column);
+                element.HorizontalAlignment = column == 3 ? HorizontalAlignment.Right : HorizontalAlignment.Left;
+                Grid.SetColumn(element, column * 2);
                 dayRow.Children.Add(element);
             }
             var when = WeatherText(day.Date.ToString("d ddd", Loc.Culture), 12);
@@ -196,7 +193,22 @@ public partial class MainWindow
             chance.Margin = new Thickness(0, 0, 6, 0);
             var mark = WeatherLineIcon(dayIcon, 17, ink);
             mark.Margin = new Thickness(0, 0, 8, 0);
-            AddColumn(new DockPanel { Children = { chance, mark, WeatherText(dayCondition, 12) } }, 1);
+            var conditions = new Grid
+            {
+                ColumnDefinitions =
+                {
+                    new ColumnDefinition { Width = GridLength.Auto, SharedSizeGroup = "WeatherProbability" },
+                    new ColumnDefinition { Width = GridLength.Auto },
+                    new ColumnDefinition()
+                }
+            };
+            var description = WeatherText(dayCondition, 12);
+            Grid.SetColumn(mark, 1);
+            Grid.SetColumn(description, 2);
+            conditions.Children.Add(chance);
+            conditions.Children.Add(mark);
+            conditions.Children.Add(description);
+            AddColumn(conditions, 1);
             AddColumn(WeatherPrecipitation(day, ink, probability: false), 2);
             AddColumn(WeatherText(WeatherExtremes(day, abbreviated: true), 12), 3);
             rows.Children.Add(new Border
@@ -208,9 +220,9 @@ public partial class MainWindow
         if (_app.WeatherStale) rows.Children.Add(WeatherText(Loc.T("数据未更新", "Weather data is stale"), 12));
     }
 
-    private static FrameworkElement WeatherLineIcon(string icon, double size, Brush ink)
+    private static FrameworkElement WeatherLineIcon(string icon, double size, Brush ink, bool matchHeight = false)
     {
-        if (icon == RainIcon) return WeatherRainIcon(size, ink);
+        if (icon == RainIcon && !matchHeight) return WeatherRainIcon(size, ink);
         const string cloud = "M 5,19 A 3.5,3.5 0 0 1 5,12 A 5,5 0 0 1 14.8,11 A 4,4 0 1 1 17,19 Z";
         return new Path
         {
@@ -221,13 +233,14 @@ public partial class MainWindow
                 "⛅" => cloud + " M 8,8 A 3,3 0 0 1 13,6 M 10,2 V 3 M 4.5,4.5 L 5.5,5.5 M 15.5,4.5 L 14.5,5.5",
                 PartlyCloudyNight => cloud + " M 7,8 A 5,5 0 0 1 11,2 A 4,4 0 0 0 15,7",
                 "☁" => cloud,
+                RainIcon => RainCloud + " " + string.Join(" ", RainDrops),
                 "≋" => "M 4,7 H 18 M 7,12 H 21 M 3,17 H 17",
                 "❄" => "M 12,3 V 21 M 4.2,7.5 L 19.8,16.5 M 4.2,16.5 L 19.8,7.5 M 9,5 L 12,8 L 15,5 M 9,19 L 12,16 L 15,19",
                 WaterIcon => "M 12,2 C 10,6 5,10 5,15 A 7,7 0 0 0 19,15 C 19,10 14,6 12,2 Z",
                 "ϟ" => "M 13,2 L 5,14 H 11 L 10,22 L 19,10 H 13 Z",
                 _ => "M 7,12 H 17"
             }),
-            Width = size, Height = size, Stretch = Stretch.Uniform, Stroke = ink, StrokeThickness = 1.6,
+            Width = matchHeight ? size * 1.25 : size, Height = size, Stretch = Stretch.Uniform, Stroke = ink, StrokeThickness = 1.6,
             StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round, StrokeLineJoin = PenLineJoin.Round,
             VerticalAlignment = VerticalAlignment.Center, IsHitTestVisible = false
         };
@@ -308,7 +321,7 @@ public partial class MainWindow
         if (valueFirst) metric.Children.Add(figures);
         if (icon is not null && icon != sharedIcon)
         {
-            var mark = WeatherLineIcon(icon, hero ? 21 : 14, foreground);
+            var mark = WeatherLineIcon(icon, hero ? 21 : 14, foreground, matchHeight: hero);
             mark.Margin = valueFirst ? new Thickness(4, 0, 0, 0) : new Thickness(0, 0, 5, 0);
             metric.Children.Add(mark);
         }
