@@ -42,7 +42,10 @@ public partial class SettingsWindow
         options.Children.Add(Row(Loc.T("天气位置", "Weather location"), mode));
         options.Children.Add(Row(Loc.T("温度单位", "Temperature unit"), units));
         options.Children.Add(Row(Loc.T("展开卡片样式", "Expanded card style"), cardStyle));
-        options.Children.Add(TextLine(Loc.T("自动定位会将近似坐标发送给 Open-Meteo。", "Automatic location sends approximate coordinates to Open-Meteo."), 12, TextSecondary));
+        var disclosure = TextLine(Loc.T("自动定位将近似坐标发送给 Open-Meteo 获取预报，并发送给 BigDataCloud 查询城市和地区。",
+            "Automatic location sends approximate coordinates to Open-Meteo for the forecast and to BigDataCloud for the city and region."), 12, TextSecondary);
+        disclosure.TextWrapping = TextWrapping.Wrap;
+        options.Children.Add(disclosure);
         var actions = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 4, 0, 12) };
         var retry = ActionButton(Loc.T("重试自动定位", "Retry automatic location"), async () => await _app.RequestWeatherLocation());
         actions.Children.Add(retry);
@@ -143,7 +146,8 @@ public partial class SettingsWindow
         options.Children.Add(results);
         options.Children.Add(status);
         Group(Row(Loc.T("天气数据", "Weather data"), Link("Open-Meteo ↗", Weather.Attribution)),
-            Row(Loc.T("地理数据", "Location data"), Link("GeoNames ↗", Weather.LocationAttribution)));
+            Row(Loc.T("地理数据", "Location data"), Link("GeoNames ↗", Weather.LocationAttribution)),
+            Row(Loc.T("自动位置名称", "Automatic location names"), Link("BigDataCloud ↗", Weather.AutomaticLocationAttribution)));
     }
 
     private void WeatherSizeControls()

@@ -7,6 +7,9 @@ namespace BrimDeck.Core;
 public sealed record WeatherCity(string Name, string? Region, string? Country, double Latitude, double Longitude)
 {
     public bool Valid => !string.IsNullOrWhiteSpace(Name) && WeatherPoint.Valid(Latitude, Longitude);
+    public string Label => FormatLabel(Name, Region);
+    internal static string FormatLabel(string name, string? region) =>
+        string.IsNullOrWhiteSpace(region) || name.Equals(region, StringComparison.OrdinalIgnoreCase) ? name : $"{name}, {region}";
     public override string ToString() => string.Join(" · ", new[] { Name, Region, Country }
         .Where(part => !string.IsNullOrWhiteSpace(part)).Distinct());
 }
@@ -31,9 +34,11 @@ public sealed record WeatherUpdate(WeatherReading? Reading, bool Stale)
 
 public static class Weather
 {
+    private const int ForecastDays = 4;
     private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(12) };
     public const string Attribution = "https://open-meteo.com/";
     public const string LocationAttribution = "https://www.geonames.org/";
+    public const string AutomaticLocationAttribution = "https://www.bigdatacloud.com/docs/free-api/free-reverse-geocode-to-city-api";
 
     public static async Task<IReadOnlyList<WeatherCity>> Search(string query, bool chinese, CancellationToken token)
     {
@@ -49,8 +54,38 @@ public static class Weather
     public static async Task<WeatherReading?> Fetch(WeatherPoint place, CancellationToken token)
     {
         string coordinates = FormattableString.Invariant($"latitude={place.Latitude}&longitude={place.Longitude}");
-        string url = $"https://api.open-meteo.com/v1/forecast?{coordinates}&timezone=auto&forecast_days=3&current=temperature_2m,weather_code,is_day&daily=weather_code,temperature_2m_max,temperature_2m_min";
+        string url = $"https://api.open-meteo.com/v1/forecast?{coordinates}&timezone=auto&forecast_days={ForecastDays}&current=temperature_2m,weather_code,is_day&daily=weather_code,temperature_2m_max,temperature_2m_min";
         return Parse(place, await Http.GetFromJsonAsync<JsonElement>(url, token).ConfigureAwait(false));
+    }
+
+    public static async Task<string?> ResolveDeviceLocation(WeatherPoint point, CancellationToken token)
+    {
+        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(token);
+        deadline.CancelAfter(TimeSpan.FromSeconds(3));
+        string coordinates = FormattableString.Invariant($"latitude={point.Latitude}&longitude={point.Longitude}");
+        string url = $"https://api.bigdatacloud.net/data/reverse-geocode-client?{coordinates}&localityLanguage=default";
+        return ParseDeviceLocation(await Http.GetFromJsonAsync<JsonElement>(url, deadline.Token).ConfigureAwait(false));
+    }
+
+    public static string? ParseDeviceLocation(JsonElement response)
+    {
+        if (Str(Field(response, "lookupSource"))?.StartsWith("ip", StringComparison.OrdinalIgnoreCase) == true) return null;
+        var city = Str(Field(response, "city"));
+        if (string.IsNullOrWhiteSpace(city)) city = Str(Field(response, "locality"));
+        if (string.IsNullOrWhiteSpace(city)) return null;
+
+        string? region = Str(Field(response, "principalSubdivision"));
+        var divisions = Field(Field(response, "localityInfo"), "administrative");
+        if (divisions.ValueKind == JsonValueKind.Array)
+        {
+            // Counties are level 4 in Romania (the principal subdivision) and level 6 in the US.
+            var country = Str(Field(response, "countryCode"));
+            int? countyLevel = country == "RO" ? 4 : country == "US" ? 6 : null;
+            if (countyLevel is not null)
+                region = divisions.EnumerateArray().Where(item => Code(Field(item, "adminLevel")) == countyLevel)
+                    .Select(item => Str(Field(item, "name"))).FirstOrDefault(name => !string.IsNullOrWhiteSpace(name)) ?? region;
+        }
+        return WeatherCity.FormatLabel(city, region);
     }
 
     public static WeatherReading? Parse(WeatherPoint place, JsonElement response)
@@ -58,8 +93,8 @@ public static class Weather
         var current = Field(response, "current");
         if (Number(Field(current, "temperature_2m")) is not { } temperature) return null;
         var daily = Field(response, "daily");
-        var days = new List<WeatherDay>(3);
-        for (int i = 0; i < 3; i++)
+        var days = new List<WeatherDay>(ForecastDays);
+        for (int i = 0; i < ForecastDays; i++)
         {
             if (DateOnly.TryParseExact(Str(At(daily, "time", i)), "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
                 days.Add(new(date, Code(At(daily, "weather_code", i)), Number(At(daily, "temperature_2m_max", i)), Number(At(daily, "temperature_2m_min", i))));

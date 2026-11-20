@@ -167,10 +167,6 @@ public partial class MainWindow
             });
         }
         if (_app.WeatherStale) rows.Children.Add(WeatherText(Loc.T("数据未更新", "Weather data is stale"), 12));
-        var credit = new Button { Style = (Style)FindResource("PanelTextButton"), Content = "Open-Meteo ↗",
-            HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(6, 3, 0, 0) };
-        credit.Click += (_, _) => UI.OpenUrl(Weather.Attribution);
-        rows.Children.Add(credit);
     }
 
     private static FrameworkElement WeatherLineIcon(string icon, double size, Brush ink)

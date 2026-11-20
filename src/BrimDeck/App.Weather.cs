@@ -14,6 +14,7 @@ public partial class App
     private CancellationTokenSource? _weatherRequest;
     private bool _weatherPermissionPending;
     private bool _weatherDenied;
+    private (double Latitude, double Longitude, string Label)? _weatherLocality;
     internal WeatherReading? CurrentWeather { get; private set; }
     internal bool WeatherLoading { get; private set; }
     internal bool WeatherStale { get; private set; }
@@ -89,7 +90,27 @@ public partial class App
         NotifyWeather();
         var point = automatic && !_weatherDenied ? await WindowsWeatherPoint(token) : null;
         if (token.IsCancellationRequested) return;
-        point ??= city is null ? null : new WeatherPoint(city.Name, city.Latitude, city.Longitude);
+        if (point is not null)
+        {
+            if (_weatherLocality is { } locality && locality.Latitude == point.Latitude && locality.Longitude == point.Longitude)
+                point = point with { Name = locality.Label };
+            else
+            {
+                try
+                {
+                    var label = await Weather.ResolveDeviceLocation(point, token);
+                    if (token.IsCancellationRequested) return;
+                    if (label is not null)
+                    {
+                        _weatherLocality = (point.Latitude, point.Longitude, label);
+                        point = point with { Name = label };
+                    }
+                }
+                catch (Exception ex) when (ex is HttpRequestException or JsonException or OperationCanceledException) { }
+            }
+        }
+        else if (city is not null) point = new WeatherPoint(city.Label, city.Latitude, city.Longitude);
+        if (token.IsCancellationRequested) return;
         WeatherReading? reading = null;
         try { if (point is not null) reading = await Weather.Fetch(point, token); }
         catch (Exception ex) when (ex is HttpRequestException or JsonException or OperationCanceledException) { }
