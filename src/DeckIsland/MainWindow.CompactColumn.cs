@@ -53,7 +53,7 @@ public partial class MainWindow
         var clock = Show(CompactPart.Clock) && Settings.ShowsClock(EffectiveStyle) ? new ClockFace(Settings.ClockStyle, Settings.Uses24HourClock, Settings.ClockSeconds, ClockFace.Palette(Settings, CoverColor, Look), DateTime.Now, scale, Look, vertical: true) : null;
         var transfer = TransferBadge(scale, Show(CompactPart.Transfer));
         var devices = Show(CompactPart.Devices) ? CompactDevices(scale) : null;
-        var weather = Show(CompactPart.Weather) ? CompactWeather(scale) : null;
+        var weather = Show(CompactPart.Weather) ? CompactWeather(scale, vertical: true) : null;
         // The date (Minimal only) takes the focus slot: a running session leaves Minimal showing only the session.
         var focus = Show(CompactPart.Focus) ? CompactFocus(scale) : CompactDate(scale);
         var layout = CompactMusicLayout.Calculate(10000, scale, media, apps.Count, text.Length > 0, FixedFace(CompactMusicLayout.Gap(scale), clock?.ReservedWidth ?? 0, transfer?.Width ?? 0, devices?.PreferredWidth ?? 0), 0, equalizer, Settings.EqualizerBars, ring: QuotaRing.Diameter(Settings.QuotaRingStyle));

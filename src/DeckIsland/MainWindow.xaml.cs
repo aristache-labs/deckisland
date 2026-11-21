@@ -537,7 +537,9 @@ public partial class MainWindow : Window
     private double Corner(double radius) => Math.Max(0, radius * CornerFactor);
     private CollapsedShape Rounded(CollapsedShape shape)
     {
-        double limit = Math.Max(0, Math.Min(shape.Surface.Width, shape.Surface.Height) / 2), factor = CornerFactor;
+        // Half the height setting, as CollapsedGeometry.NotchCurves takes it, so the width it grows by is what the corners take (on a side
+        // edge the surface is deeper than that).
+        double limit = Math.Max(0, CollapsedLimits.BaseHeight * shape.Scale / 2), factor = CornerFactor;
         double Fit(double radius) => Math.Min(radius * factor, Math.Max(radius, limit));
         return shape.Style == CompactStyle.Line ? shape : shape with { BottomRadius = Fit(shape.BottomRadius), TopRadius = Fit(shape.TopRadius), Shoulder = Fit(shape.Shoulder) };
     }
