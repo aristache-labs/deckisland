@@ -159,4 +159,20 @@
   <Style x:Key="PanelOutlineButton" TargetType="Button" BasedOn="{StaticResource PanelTextButton}">
     <Setter Property="BorderBrush" Value="{DynamicResource PanelPopupBorder}"/>
   </Style>
+  <Style x:Key="WidgetSurfaceButton" TargetType="Button" BasedOn="{StaticResource PanelIconButton}">
+    <Setter Property="Width" Value="Auto"/><Setter Property="Height" Value="Auto"/>
+    <Setter Property="HorizontalContentAlignment" Value="Stretch"/><Setter Property="VerticalContentAlignment" Value="Stretch"/>
+    <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Button">
+      <Grid>
+        <Border Background="{TemplateBinding Background}" CornerRadius="15"/>
+        <Border x:Name="HoverLayer" Background="{DynamicResource PanelHover}" CornerRadius="15" Opacity="0"/>
+        <Border x:Name="PressLayer" Background="{DynamicResource PanelPressed}" CornerRadius="15" Opacity="0"/>
+        <ContentPresenter Margin="{TemplateBinding Padding}" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+      </Grid>
+      <ControlTemplate.Triggers>
+        <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value=".45"/></Trigger>
+      </ControlTemplate.Triggers>
+    </ControlTemplate></Setter.Value></Setter>
+  </Style>
 </ResourceDictionary>

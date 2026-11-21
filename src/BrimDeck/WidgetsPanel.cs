@@ -2,7 +2,9 @@ using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Documents;
 using System.Windows.Threading;
+using System.Windows.Media;
 using BrimDeck.Core;
 using BrimDeck.Native;
 
@@ -46,17 +48,23 @@ public partial class MainWindow
             WidgetsContent.Children.Add(grid);
             if (Settings.RemindersPage)
             {
-                var bell = WidgetAction("", () => SelectPage(DeckPage.Reminders));
-                bell.Content = new System.Windows.Shapes.Path
+                var face = new Grid
                 {
-                    Data = System.Windows.Media.Geometry.Parse("M 2,11 C 4,9 4,8 4,6 A 4,4 0 0 1 12,6 C 12,8 12,9 14,11 Z M 6,14 A 2,2 0 0 0 10,14"),
-                    Stroke = UI.Brush(Look.Primary), StrokeThickness = 1.4, Width = 16, Height = 16
+                    Children =
+                    {
+                        new System.Windows.Shapes.Ellipse { Stroke = UI.Brush(Look.Hex("popupBorder")) },
+                        WidgetGlyph("M3,11 C4.5,9.5 4.5,8.5 4.5,6.5 A3.5,3.5 0 0 1 11.5,6.5 C11.5,8.5 11.5,9.5 13,11 Z M6.5,13.5 Q8,15.5 9.5,13.5",
+                            UI.Brush(Look.Primary), filled: false)
+                    }
                 };
-                AutomationProperties.SetName(bell, Loc.T("提醒", "Reminders"));
-                bell.Height = 34; bell.Width = 34; bell.Padding = new Thickness(0);
+                string label = Loc.T("提醒", "Reminders");
+                var bell = WidgetSurface(face, label, () => SelectPage(DeckPage.Reminders));
+                bell.ToolTip = label;
+                bell.Height = bell.Width = 38;
+                bell.Background = UI.Brush(Look.Hex("popup"));
                 bell.HorizontalAlignment = HorizontalAlignment.Center;
                 bell.VerticalAlignment = VerticalAlignment.Center;
-                bell.Background = UI.Brush(Look.Hex("popup"));
+                bell.Clip = new EllipseGeometry(new Point(19, 19), 19, 19);
                 WidgetsContent.Children.Add(bell);
             }
         }
@@ -102,6 +110,8 @@ public partial class MainWindow
         bool detailed = DeckPages.Shown(Settings, page);
         bool setup = kind == WidgetKind.Weather && !Settings.WeatherEnabled || kind == WidgetKind.Focus && !Settings.FocusPage ||
             kind == WidgetKind.Quotas && Settings.ConfiguredApps.Count == 0;
+        if (!setup && kind == WidgetKind.Weather) return WeatherWidget(frame, detailed);
+        if (!setup && kind == WidgetKind.Focus) return FocusWidget(frame, detailed);
         if (detailed || setup)
         {
             var link = WidgetAction(setup ? $"{name} · {configureLabel}" : name,
@@ -117,40 +127,7 @@ public partial class MainWindow
         detail.Foreground = UI.Brush(Look.Secondary);
         body.Children.Add(value);
         body.Children.Add(detail);
-        if (kind == WidgetKind.Weather)
-        {
-            body.Children.Remove(value);
-            var sky = new Border { Margin = new Thickness(0, 0, 7, 0) };
-            body.Children.Insert(body.Children.IndexOf(detail), new StackPanel
-            {
-                Orientation = Orientation.Horizontal, Children = { sky, value }
-            });
-            (string Icon, bool Colourful)? drawn = null;
-            var configure = WidgetAction(configureLabel, () => _app.OpenSettingsPage(settingsPage));
-            configure.HorizontalAlignment = HorizontalAlignment.Left;
-            body.Children.Add(configure);
-            _widgetUpdates.Add(() =>
-            {
-                configure.Visibility = _app.WeatherNeedsLocation ? Visibility.Visible : Visibility.Collapsed;
-                if (_app.CurrentWeather is not { } reading)
-                {
-                    value.Text = _app.WeatherLoading ? Loc.T("正在加载天气…", "Loading weather…") : Loc.T("天气不可用", "Weather unavailable");
-                    sky.Child = null; drawn = null; detail.Text = ""; return;
-                }
-                var (icon, condition) = WeatherCondition(reading.Code, reading.Daylight);
-                var appearance = (icon, Settings.ColourfulWeatherCard);
-                if (drawn != appearance)
-                {
-                    drawn = appearance;
-                    sky.Child = (appearance.ColourfulWeatherCard ? ColourfulWeatherIcon(icon, Animates) : null)
-                        ?? WeatherLineIcon(icon, 20, value.Foreground);
-                    sky.Width = sky.Height = 24;
-                }
-                value.Text = $"{WeatherTemperature(reading.Temperature, true)}{(_app.WeatherStale ? "*" : "")} · {WeatherExtremes(reading.Days.FirstOrDefault(), abbreviated: true)}";
-                detail.Text = $"{condition} · {WeatherPlace(reading)}";
-            });
-        }
-        else if (kind == WidgetKind.Monitor)
+        if (kind == WidgetKind.Monitor)
         {
             _widgetUpdates.Add(() =>
             {
@@ -170,27 +147,6 @@ public partial class MainWindow
                 detail.Text = devices.Length < 2 ? "" : $"{devices[1].Name} · {devices[1].Percent}%";
             });
         }
-        else if (kind == WidgetKind.Focus)
-        {
-            var toggle = WidgetAction("", () => _app.ToggleFocus(Profile));
-            var reset = WidgetAction(Loc.T("重置", "Reset"), _app.ResetFocus);
-            var less = WidgetAction("−", () => AdjustFocus(-1));
-            var more = WidgetAction("+", () => AdjustFocus(1));
-            AutomationProperties.SetName(less, Loc.T("减少一分钟", "Decrease focus by one minute"));
-            AutomationProperties.SetName(more, Loc.T("增加一分钟", "Increase focus by one minute"));
-            body.Children.Add(new WrapPanel { Children = { toggle, reset, less, more } });
-            _widgetUpdates.Add(() =>
-            {
-                var session = _app.FocusSession;
-                bool idle = session.Phase == FocusPhase.Idle;
-                value.Text = $"{FocusTime(idle ? TimeSpan.FromMinutes(Settings.FocusMinutes) : session.Remaining(DateTimeOffset.UtcNow))} · {FocusPhaseLabel()}";
-                toggle.Content = idle ? Loc.T("开始", "Start") : session.Running ? Loc.T("暂停", "Pause") : Loc.T("继续", "Resume");
-                AutomationProperties.SetName(toggle, (string)toggle.Content);
-                reset.IsEnabled = !idle;
-                less.IsEnabled = idle && Settings.FocusMinutes > FocusTimer.MinimumMinutes;
-                more.IsEnabled = idle && Settings.FocusMinutes < FocusTimer.MaximumMinutes;
-            });
-        }
         else
         {
             body.Children.Remove(value); body.Children.Remove(detail);
@@ -207,6 +163,178 @@ public partial class MainWindow
             });
         }
         return frame;
+    }
+
+    private Button WidgetSurface(object content, string label, Action action)
+    {
+        var button = WidgetAction(label, action);
+        button.Style = (Style)FindResource("WidgetSurfaceButton");
+        button.Content = content;
+        return button;
+    }
+
+    private static FrameworkElement WidgetGlyph(string geometry, Brush ink, bool filled = true)
+    {
+        var canvas = new Canvas { Width = 16, Height = 16, IsHitTestVisible = false,
+            HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+        canvas.Children.Add(new System.Windows.Shapes.Path
+        {
+            Data = Geometry.Parse(geometry), Fill = filled ? ink : null, Stroke = filled ? null : ink,
+            StrokeThickness = 1.5, StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round,
+            StrokeLineJoin = PenLineJoin.Round
+        });
+        return canvas;
+    }
+
+    private Border WeatherWidget(Border frame, bool detailed)
+    {
+        frame.CornerRadius = new CornerRadius(16);
+        var baseFill = frame.Background;
+        var ink = UI.Brush(Look.Primary);
+        var temperature = WeatherText("", 32);
+        temperature.FontWeight = FontWeights.SemiBold;
+        var sky = new Border { Width = 35, Height = 35, Margin = new Thickness(0, 0, 9, 0), VerticalAlignment = VerticalAlignment.Center };
+        DockPanel.SetDock(sky, System.Windows.Controls.Dock.Left);
+        var headline = new DockPanel { Children = { sky, temperature } };
+        var place = WeatherText("", 12);
+        place.TextWrapping = TextWrapping.NoWrap;
+        var range = WeatherText("", 12);
+        range.FontWeight = FontWeights.SemiBold;
+        range.Margin = new Thickness(8, 0, 0, 0);
+        DockPanel.SetDock(range, System.Windows.Controls.Dock.Right);
+        var footer = new DockPanel { VerticalAlignment = VerticalAlignment.Bottom, Children = { range, place } };
+        var body = new Grid();
+        body.RowDefinitions.Add(new RowDefinition());
+        body.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        Grid.SetRow(footer, 1);
+        body.Children.Add(headline);
+        body.Children.Add(footer);
+        var trigger = WidgetSurface(body, Loc.T("打开天气", "Open weather"), () =>
+        {
+            if (detailed && _app.CurrentWeather is not null) SelectPage(DeckPage.Weather);
+            else _app.OpenSettingsPage(SettingsWindow.WeatherSettingsPage);
+        });
+        frame.Padding = new Thickness(0);
+        trigger.Padding = new Thickness(14, 8, 14, 10);
+        frame.Child = trigger;
+
+        (string Icon, bool Colourful, bool Motion)? drawn = null;
+        _widgetUpdates.Add(() =>
+        {
+            if (_app.CurrentWeather is not { } reading)
+            {
+                temperature.FontSize = 15;
+                temperature.Text = _app.WeatherLoading ? Loc.T("正在加载天气…", "Loading weather…")
+                    : _app.WeatherNeedsLocation ? Loc.T("选择城市", "Choose a city") : Loc.T("天气不可用", "Weather unavailable");
+                place.Text = _app.WeatherLoading ? "" : Loc.T("天气设置", "Weather settings");
+                sky.Visibility = Visibility.Collapsed;
+                range.Text = "";
+                frame.Background = baseFill;
+                temperature.Foreground = place.Foreground = range.Foreground = ink;
+                AutomationProperties.SetName(trigger, Loc.T("打开天气设置", "Open weather settings"));
+                trigger.ClearValue(ToolTipProperty);
+                drawn = null;
+                return;
+            }
+            var (icon, condition) = WeatherCondition(reading.Code, reading.Daylight);
+            var appearance = (Icon: icon, Colourful: Settings.ColourfulWeatherCard && !Look.HighContrast, Motion: Animates);
+            if (drawn != appearance)
+            {
+                drawn = appearance;
+                var (background, foreground) = appearance.Colourful ? WeatherCardColours(icon) : (baseFill, ink);
+                frame.Background = background;
+                temperature.Foreground = place.Foreground = range.Foreground = foreground;
+                var graphic = appearance.Colourful ? ColourfulWeatherIcon(icon, appearance.Motion) : null;
+                sky.Child = new Viewbox { Child = graphic ?? WeatherLineIcon(icon, 32, foreground) };
+                sky.Visibility = Visibility.Visible;
+            }
+            string location = WeatherPlace(reading);
+            temperature.FontSize = 32;
+            temperature.Text = WeatherTemperature(reading.Temperature);
+            place.Text = $"{condition} · {location}";
+            range.Text = WeatherExtremes(reading.Days.FirstOrDefault(), abbreviated: true);
+            if (_app.WeatherStale) place.Text += " *";
+            string action = detailed ? Loc.T("打开天气", "Open weather") : Loc.T("打开天气设置", "Open weather settings");
+            string stale = _app.WeatherStale ? $" · {Loc.T("数据未更新", "Weather data is stale")}" : "";
+            AutomationProperties.SetName(trigger, $"{action} · {WeatherTemperature(reading.Temperature, true)} · {condition} · {location} · {range.Text}{stale}");
+            trigger.ToolTip = $"{condition} · {location}{stale}";
+        });
+        return frame;
+    }
+
+    private Border FocusWidget(Border frame, bool detailed)
+    {
+        frame.CornerRadius = new CornerRadius(16);
+        frame.Padding = new Thickness(12, 6, 10, 6);
+        var primary = UI.Brush(Look.Primary);
+        var face = new Grid { Width = 62, Height = 62, Margin = new Thickness(0, 0, 8, 0), VerticalAlignment = VerticalAlignment.Center };
+        var dial = new FocusDial { IsHitTestVisible = false };
+        var reading = WeatherText("", 14);
+        reading.HorizontalAlignment = HorizontalAlignment.Center;
+        reading.FontWeight = FontWeights.SemiBold;
+        Typography.SetNumeralAlignment(reading, FontNumeralAlignment.Tabular);
+        face.Children.Add(dial);
+        face.Children.Add(reading);
+
+        var heading = WeatherText("", 15);
+        heading.FontWeight = FontWeights.SemiBold;
+        var detail = WeatherText("", 11);
+        detail.Foreground = UI.Brush(Look.Secondary);
+        var play = WidgetGlyph("M5,2.5 L13,8 L5,13.5 Z", UI.Brush(Look.Hex("surface")));
+        var pause = WidgetGlyph("M4,3 H6.5 V13 H4 Z M9.5,3 H12 V13 H9.5 Z", UI.Brush(Look.Hex("surface")));
+        var toggle = RoundAction(play, () => _app.ToggleFocus(Profile), true);
+        var reset = RoundAction(WidgetGlyph("M3,7 A5,5 0 1 1 4.5,11.5 M3,3.5 V7 H6.5", primary, filled: false), _app.ResetFocus);
+        var less = RoundAction("−", () => AdjustFocus(-1));
+        var more = RoundAction("+", () => AdjustFocus(1));
+        AutomationProperties.SetName(reset, Loc.T("重置", "Reset timer"));
+        AutomationProperties.SetName(less, Loc.T("减少一分钟", "Decrease focus by one minute"));
+        AutomationProperties.SetName(more, Loc.T("增加一分钟", "Increase focus by one minute"));
+        reset.ToolTip = AutomationProperties.GetName(reset);
+        var actions = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 4, 0, 0),
+            Children = { toggle, less, more, reset } };
+        var content = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+        if (detailed)
+        {
+            var headingLink = WidgetSurface(heading, Loc.T("打开专注计时器", "Open Focus timer"), () => SelectPage(DeckPage.Focus));
+            headingLink.HorizontalAlignment = HorizontalAlignment.Left;
+            content.Children.Add(headingLink);
+        }
+        else content.Children.Add(heading);
+        content.Children.Add(detail);
+        content.Children.Add(actions);
+        frame.Child = new DockPanel { Children = { face, content } };
+        _widgetUpdates.Add(() =>
+        {
+            var session = _app.FocusSession;
+            bool idle = session.Phase == FocusPhase.Idle;
+            reading.Text = FocusTime(idle ? TimeSpan.FromMinutes(Settings.FocusMinutes) : session.Remaining(DateTimeOffset.UtcNow));
+            heading.Text = FocusPhaseLabel();
+            detail.Text = idle ? Loc.T($"{Settings.FocusMinutes} + {Settings.BreakMinutes} 分钟", $"{Settings.FocusMinutes} + {Settings.BreakMinutes} min")
+                : session.Running ? Loc.T("进行中", "In progress") : Loc.T("已暂停", "Paused");
+            dial.Update(session, Animates);
+            toggle.Content = session.Running ? pause : play;
+            string action = idle ? Loc.T("开始", "Start") : session.Running ? Loc.T("暂停", "Pause") : Loc.T("继续", "Resume");
+            AutomationProperties.SetName(toggle, action);
+            toggle.ToolTip = action;
+            reset.Visibility = idle ? Visibility.Collapsed : Visibility.Visible;
+            less.Visibility = more.Visibility = idle ? Visibility.Visible : Visibility.Collapsed;
+            less.IsEnabled = Settings.FocusMinutes > FocusTimer.MinimumMinutes;
+            more.IsEnabled = Settings.FocusMinutes < FocusTimer.MaximumMinutes;
+        });
+        return frame;
+
+        Button RoundAction(object glyph, Action action, bool main = false)
+        {
+            var button = WidgetSurface(glyph, "", action);
+            button.Width = button.Height = 27;
+            button.Margin = new Thickness(0, 0, 4, 0);
+            button.HorizontalContentAlignment = HorizontalAlignment.Center;
+            button.VerticalContentAlignment = VerticalAlignment.Center;
+            button.Background = main ? primary : UI.Brush(Look.Hex("fillSelected"));
+            button.Foreground = main ? UI.Brush(Look.Hex("surface")) : primary;
+            button.FontSize = 14;
+            return button;
+        }
     }
 
     private CompactPart[]? MinimalParts()
