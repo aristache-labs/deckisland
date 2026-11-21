@@ -15,6 +15,8 @@ public partial class MainWindow
     private StackPanel? _reminderRows;
     private StackPanel? _reminderEmpty;
     private (int Theme, string Language, string TimePattern) _reminderAppearance;
+    // The list changed while the page was not the one shown, so the rows it holds are old; it is filled again when it is shown.
+    private bool _reminderStale;
     internal bool CanShowReminder => Settings.RemindersPage && IsVisible && !IsSuppressed && !DisplayPower.Off && !_preview;
 
     private void InitializeReminders()
@@ -97,6 +99,7 @@ public partial class MainWindow
             SetExpanded(false);
         if (Settings.RemindersPage && CurrentPage == DeckPage.Reminders && _reminderRows is not null)
             FillReminderRows();
+        else _reminderStale = true;
     }
 
     private void RenderReminders()
@@ -111,7 +114,11 @@ public partial class MainWindow
         ApplyHeader(Settings.UsagePage ? header.WithControlsOf(CachedUsageHeader()) : header);
         RemindersContent.Margin = new Thickness(_header.Side, 0, _header.Side, MonitorBottom(height));
         var appearance = (Look.Generation, Loc.Language, Settings.TimePattern);
-        if (RemindersContent.Children.Count > 0 && _reminderAppearance == appearance) return;
+        if (RemindersContent.Children.Count > 0 && _reminderAppearance == appearance)
+        {
+            if (_reminderStale) FillReminderRows();
+            return;
+        }
         _reminderAppearance = appearance;
         RemindersContent.Children.Clear();
         var body = new DockPanel();
@@ -163,6 +170,7 @@ public partial class MainWindow
     private void FillReminderRows()
     {
         if (_reminderRows is not { } rows || _reminderEmpty is not { } empty) return;
+        _reminderStale = false;
         rows.Children.Clear();
         var now = DateTimeOffset.Now;
         foreach (var item in _app.OrderedReminders)

@@ -16,7 +16,7 @@ public partial class MainWindow
     private Border TodoWidget(Border frame)
     {
         frame.CornerRadius = new CornerRadius(Corner(16));
-        frame.Padding = new Thickness(WidgetSide, 8, WidgetSide - 6, 8);
+        frame.Padding = new Thickness(WidgetSide, 8, WidgetSide, 8);
         IReadOnlyList<TodoItem>? drawn = null;
         _widgetUpdates.Add(() =>
         {
@@ -82,8 +82,9 @@ public partial class MainWindow
         var row = new DockPanel { Children = { TodoMark(item.Done, accent, Look.Secondary, Look.Hex("surface"), 16), text } };
         var button = WidgetSurface(row, (item.Done ? Loc.T("标为未完成：", "Mark not done: ") : Loc.T("标为完成：", "Mark done: ")) + item.Text,
             () => _app.UpdateTodos(list => Todos.Toggle(list, item.Id)));
-        button.Padding = new Thickness(0, 3, 6, 3);
-        button.Margin = new Thickness(-2, 3, 0, 0);
+        // The hover shape reaches 8 beyond the ring and the text, so they stay on the card's side margins like the other widgets' content.
+        button.Padding = new Thickness(8, 3, 8, 3);
+        button.Margin = new Thickness(-8, 3, -8, 0);
         button.HorizontalContentAlignment = HorizontalAlignment.Left;
         return button;
     }
