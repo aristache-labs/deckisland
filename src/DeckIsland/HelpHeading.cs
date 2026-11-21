@@ -28,7 +28,9 @@ internal sealed class HelpHeading : Panel
     protected override Size MeasureOverride(Size available)
     {
         var free = new Size(double.PositiveInfinity, available.Height);
-        _label.Measure(free); _icon.Measure(free);
+        _icon.Measure(free);
+        // The label gets what the icon leaves, so a label that wraps (the card rows', SettingsGeneral) breaks instead of being cut.
+        _label.Measure(new Size(Math.Max(0, available.Width - _icon.DesiredSize.Width), available.Height));
         return new Size(_label.DesiredSize.Width + _icon.DesiredSize.Width, Math.Max(_label.DesiredSize.Height, _icon.DesiredSize.Height));
     }
 

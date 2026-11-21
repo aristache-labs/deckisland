@@ -224,12 +224,13 @@
         <Border x:Name="Chrome" CornerRadius="12" BorderBrush="{DynamicResource SettingsBorder}" BorderThickness="1.5" Padding="3">
           <ContentPresenter x:Name="Preview" HorizontalAlignment="Stretch"/>
         </Border>
-        <Grid Height="30" Margin="8,4,8,0">
-          <TextBlock Text="{TemplateBinding Tag}" Foreground="{TemplateBinding Foreground}" FontSize="{TemplateBinding FontSize}" FontWeight="{TemplateBinding FontWeight}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-          <Border x:Name="Selection" Width="14" Height="14" CornerRadius="7" Background="{DynamicResource SettingsAccent}" HorizontalAlignment="Right" VerticalAlignment="Center" Visibility="Hidden">
+        <!-- The tick follows the name, the two centered together; hidden, it still keeps its place so names do not shift. -->
+        <StackPanel Height="30" Margin="8,4,8,0" Orientation="Horizontal" HorizontalAlignment="Center">
+          <TextBlock Text="{TemplateBinding Tag}" Foreground="{TemplateBinding Foreground}" FontSize="{TemplateBinding FontSize}" FontWeight="{TemplateBinding FontWeight}" VerticalAlignment="Center"/>
+          <Border x:Name="Selection" Width="14" Height="14" CornerRadius="7" Margin="6,0,0,0" Background="{DynamicResource SettingsAccent}" VerticalAlignment="Center" Visibility="Hidden">
             <Path Data="M 3.5,7 L 6,9.5 L 10.5,4.5" Stroke="White" StrokeThickness="1.4" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
           </Border>
-        </Grid>
+        </StackPanel>
       </StackPanel>
       <ControlTemplate.Triggers>
         <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Chrome" Property="BorderBrush" Value="#74747C"/><Setter Property="Foreground" Value="{DynamicResource SettingsTextPrimary}"/></Trigger>

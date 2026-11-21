@@ -66,6 +66,7 @@ public sealed partial class SettingsWindow
     private void ShowStyleOptions(CompactStyle style, CompactStyle? previous)
     {
         if (_styleOptions is not { } host) return;
+        _cardBody = null;
         var incoming = Collect(() => { StyleOptions(style); CollapsedSizeOptions(style); });
         SwapOptions(host, incoming, previous is { } from && from != style ? (style > from ? 1 : -1) : 0);
     }
@@ -90,10 +91,13 @@ public sealed partial class SettingsWindow
     }
     private void StyleOptions(CompactStyle style)
     {
-        SectionTitle(Loc.T("显示内容 · ", "Content · ") + StyleName(style));
+        SectionTitle(Loc.T("显示内容 · ", "Content · ") + StyleName(style), description: style == CompactStyle.Line
+            ? Loc.T("指示条在音乐播放时显示的内容。", "What the line shows while music plays.")
+            : Loc.T("收起时显示的项目，从左到右排列。拖动把手可调整顺序。", "What the collapsed island shows, left to right. Drag a handle to reorder."));
         if (style == CompactStyle.Line)
         {
-            Group(Toggle(Loc.T("显示播放进度", "Show playback progress"), S.MusicIndicatorProgress, v => Change(s => s.MusicIndicatorProgress = v)));
+            Group(Describe(Toggle(Loc.T("显示播放进度", "Show playback progress"), S.MusicIndicatorProgress, v => Change(s => s.MusicIndicatorProgress = v)),
+                Loc.T("沿指示条显示歌曲的进度。", "Fill the line as the song plays.")));
             return;
         }
         MinimalSettings(style);

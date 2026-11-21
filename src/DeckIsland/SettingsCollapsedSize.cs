@@ -30,14 +30,14 @@ public sealed partial class SettingsWindow
     private bool Across(CompactStyle style) => S.CompactEdge(style) is ScreenEdge.Left or ScreenEdge.Right;
 
     // The edge the notch or the line hangs from. A new edge builds the page again, for the names of the rows and the anchor row.
-    private FrameworkElement EdgeRow(CompactStyle style) => MusicChoice(Loc.T("贴靠位置", "Edge"), S.CompactEdge(style),
+    private FrameworkElement EdgeRow(CompactStyle style) => Describe(MusicChoice(Loc.T("贴靠位置", "Edge"), S.CompactEdge(style),
         [(ScreenEdge.Top, Loc.T("顶部", "Top")), (ScreenEdge.Bottom, Loc.T("底部", "Bottom")), (ScreenEdge.Left, Loc.T("左侧", "Left")), (ScreenEdge.Right, Loc.T("右侧", "Right"))],
         value =>
         {
             if (S.CompactEdge(style) == value) return;
             Change(s => { if (style == CompactStyle.Line) s.LineEdge = value; else if (style == CompactStyle.Capsule) s.CapsuleEdge = value; else s.NotchEdge = value; });
             ShowPage(1);
-        });
+        }), Loc.T("面板贴靠的屏幕边缘。", "The screen edge the island sits on."));
 
     // Whether the notch or the line covers a taskbar on its edge or hangs from its inner edge; shown only where the edge has a
     // taskbar on the main panel's display, as elsewhere the two are the same.
@@ -46,19 +46,20 @@ public sealed partial class SettingsWindow
         var edge = S.CompactEdge(style);
         if (!_app.PreviewDeck.TaskbarOn(edge)) return null;
         var chosen = DeckSettings.Anchor(style, edge, style == CompactStyle.Line ? S.LineAnchor : S.NotchAnchor);
-        return MusicChoice(Loc.T("贴在", "Hang from"), chosen, [(EdgeAnchor.Screen, Loc.T("屏幕边缘", "Screen edge")), (EdgeAnchor.Taskbar, Loc.T("任务栏边缘", "Taskbar edge"))],
+        return Describe(MusicChoice(Loc.T("贴在", "Hang from"), chosen, [(EdgeAnchor.Screen, Loc.T("屏幕边缘", "Screen edge")), (EdgeAnchor.Taskbar, Loc.T("任务栏边缘", "Taskbar edge"))],
             value =>
             {
                 _builtDock = (style, S.CompactEdge(style), value);
                 ChangeCollapsed(s => { if (style == CompactStyle.Line) s.LineAnchor = value; else s.NotchAnchor = value; });
-            });
+            }), Loc.T("覆盖任务栏，或贴在任务栏旁边。", "Cover the taskbar or sit beside it."));
     }
 
     private void CollapsedSizeOptions(CompactStyle style)
     {
         var reset = KeepPreview(ActionButton(Loc.T("恢复默认尺寸", "Reset to default size"), () => ResetCollapsedSize(style))); reset.FontSize = 11;
         AutomationProperties.SetName(reset, Loc.T("恢复" + StyleName(style) + "的默认尺寸", "Reset " + StyleName(style) + " to default size"));
-        SectionTitle(Loc.T("尺寸与位置 · ", "Size and position · ") + StyleName(style), reset);
+        SectionTitle(Loc.T("尺寸与位置 · ", "Size and position · ") + StyleName(style), reset,
+            description: Loc.T("面板贴靠的位置和它的大小。", "Where the island sits and how big it is."));
         switch (style)
         {
             case CompactStyle.Notch:
@@ -170,7 +171,7 @@ public sealed partial class SettingsWindow
         AutomationProperties.SetName(toggle, title);
         toggle.Checked += (_, _) => ChangeCollapsed(s => s.SetCompactAutoWidth(style, true));
         toggle.Unchecked += (_, _) => { double shown = ShownWidth(style); ChangeCollapsed(s => { s.SetCompactWidth(style, shown); s.SetCompactAutoWidth(style, false); }); };
-        var row = Row(title, toggle);
+        var row = Describe(Row(title, toggle), Loc.T("随显示的内容伸缩。", "Grow and shrink with what it shows."));
         row.Tag = toggle;
         return row;
     }

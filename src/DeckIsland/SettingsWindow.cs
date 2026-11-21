@@ -358,7 +358,8 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
             var reset=ActionButton(Loc.T("恢复默认", "Restore defaults"),()=>{ if(Confirm(Loc.T("恢复默认", "Restore defaults"),ResetConfirmText(page),Loc.T("恢复默认", "Restore defaults")))ResetPage(); }); reset.FontSize=11; DockPanel.SetDock(reset,Dock.Right); head.Children.Add(reset);
         }
         head.Children.Add(page == 7 ? Wordmark(28) : TextLine(_pages[page],24,TextPrimary,FontWeights.SemiBold)); _content.Children.Add(head);
-        if (page == 0) GeneralHeader(head);
+        if (page == 0) PageHeader(head, Loc.T("启动、外观以及 DeckIsland 在桌面上的行为。", "Startup, appearance and how DeckIsland behaves on your desktop."));
+        if (page == 1) PageHeader(head, Loc.T("面板收起时的样子、显示的内容和位置。", "How the island looks, what it shows and where it sits while closed."));
         switch(page) { case WidgetsSettingsPage: WidgetsSettings(); break; case NotificationsSettingsPage: NotificationsSettings(); break; case CallsSettingsPage: CallsSettings(); break; case 0: General(); break; case 1: Compact(); break; case 2: Expanded(); break; case 3: Pages(); break; case 4: ModelPrices(); break; case 5: MusicStyle(); break; case 6: Players(); break; case 7: About(); break; case ThemePage: ThemesPage(); break; case MonitorSettingsPage: MonitorSettings(); break; case SensorsPage: SensorsSettings(); break; case HotkeysPage: HotkeysSettings(); break; case DevicesSettingsPage: DevicesSettings(); break; case ClipboardSettingsPage: ClipboardSettings(); break; case TransferSettingsPage: TransferSettings(); break; case ClipboardSyncSettingsPage: ClipboardSyncSettings(); break; case ShelfLayoutSettingsPage: ShelfLayoutSettings(); break; case MusicGesturesPage: MusicGesturesSettings(); break; case ProfilesPage: ProfilesSettings(); break; }
         if (_content.Children[^1] is Border lastGroup) lastGroup.Margin = new Thickness(lastGroup.Margin.Left, lastGroup.Margin.Top, lastGroup.Margin.Right, 0);
         // Apply the offset before the frame is drawn, so the rebuilt page never shows its top for a frame.
@@ -496,12 +497,12 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
     }
     private void Compact()
     {
-        SectionTitle(Loc.T("快捷操作", "Shortcuts"));
-        Group(GripDoubleClickRow());
-        SectionTitle(Loc.T("收起样式", "Collapsed style"));
+        _cardBody = null;
+        SectionTitle(Loc.T("快捷操作", "Shortcuts"), description: Loc.T("收起面板两端的快捷操作。", "Quick actions at the ends of the collapsed island."));
+        Group(Describe(GripDoubleClickRow(), Loc.T("双击面板两端的把手时执行的操作。", "What a double click on a handle at either end does.")));
         // The grid clips at its own bounds, so each card keeps 3 DIP or more of its cell free on every side of the
-        // keyboard focus ring: 6 DIP left and right (the grid overhangs the page by the same amount) and 3 DIP above.
-        var styles=new UniformGrid { Columns=3,Margin=new Thickness(-6,0,-6,24) };
+        // keyboard focus ring: 6 DIP left and right (the grid overhangs the card's padding by the same amount) and 3 DIP above.
+        var styles=new UniformGrid { Columns=3,Margin=new Thickness(-6,13,-6,18) };
         _styleCards.Clear();
         foreach(var style in Enum.GetValues<CompactStyle>())
         {
@@ -510,7 +511,8 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
             _styleCards[style]=button;
         }
         _styleOptions=new Grid();
-        _content.Children.Add(styles); _content.Children.Add(_styleOptions); ShowStyleOptions(S.Style,null);
+        Card(Loc.T("收起样式", "Collapsed style"), Loc.T("面板收起时的形状。下面的选项属于所选样式。", "The island's shape while closed. The options below belong to the chosen style."), null, styles);
+        _content.Children.Add(_styleOptions); ShowStyleOptions(S.Style,null);
     }
     // One row per expanded page: its switch at the right, and its sizes under the row while the row is open, set in
     // from the row's title. A row opens and closes only by its own arrow or a click on it, whether or not its page is shown.
@@ -1237,8 +1239,15 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
         return panel;
     }
 
-    private void SectionTitle(string title, FrameworkElement? action = null, Func<string>? help = null)
+    // The Collapsed view page is laid out in General's cards (Card): there a section title heads the card its next group
+    // opens, and a group with no title of its own joins the card above it.
+    private bool CardPage => _page == 1;
+    private (string Title, string Description, FrameworkElement? Action)? _cardTitle;
+    private StackPanel? _cardBody;
+
+    private void SectionTitle(string title, FrameworkElement? action = null, Func<string>? help = null, string description = "")
     {
+        if (CardPage) { _cardTitle = (title, description, action); return; }
         var row = new DockPanel { Margin = new Thickness(0, 0, 0, 8) };
         if (action is not null) { DockPanel.SetDock(action, Dock.Right); action.VerticalAlignment = VerticalAlignment.Center; row.Children.Add(action); }
         var label = TextLine(title, 11, TextSecondary); label.VerticalAlignment = VerticalAlignment.Center;
@@ -1253,6 +1262,13 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
 
     private void Group(params FrameworkElement[] rows)
     {
+        if (CardPage)
+        {
+            if (_cardTitle is { } heading) { _cardTitle = null; _cardBody = Card(heading.Title, heading.Description, heading.Action, rows); }
+            else if (_cardBody is { } body) CardRows(body, rows);
+            else _cardBody = Card("", "", null, rows);
+            return;
+        }
         var panel = new StackPanel();
         foreach (var row in rows)
         {

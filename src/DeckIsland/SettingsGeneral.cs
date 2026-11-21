@@ -29,11 +29,11 @@ public partial class SettingsWindow
     }
 
     // The page's title gets a line about the page under it and a rule below, as the reference pages head theirs.
-    private void GeneralHeader(DockPanel head)
+    private void PageHeader(DockPanel head, string line)
     {
         var title = head.Children[^1];
         head.Children.Remove(title);
-        var about = TextLine(Loc.T("启动、外观以及 DeckIsland 在桌面上的行为。", "Startup, appearance and how DeckIsland behaves on your desktop."), 13, TextSecondary);
+        var about = TextLine(line, 13, TextSecondary);
         about.Margin = new Thickness(0, 4, 0, 0); about.TextWrapping = TextWrapping.Wrap;
         head.Children.Add(new StackPanel { Children = { title, about } });
         head.Margin = new Thickness(0, 0, 0, 18);
@@ -41,25 +41,48 @@ public partial class SettingsWindow
     }
 
     // A section: its title and what it is for in a header, a line, then the rows with a thin line between them.
-    private void GeneralCard(string title, string description, params FrameworkElement[] rows)
+    private void GeneralCard(string title, string description, params FrameworkElement[] rows) => Card(title, description, null, rows);
+
+    // The same card with an optional action at the right of its header (a reset link); returns the body, which later rows can
+    // join (CardRows). A card without a title has no header.
+    private StackPanel Card(string title, string description, FrameworkElement? action, params FrameworkElement[] rows)
     {
-        var name = TextLine(title, 15, TextPrimary, FontWeights.SemiBold);
-        var about = TextLine(description, 12.5, TextSecondary);
-        about.TextWrapping = TextWrapping.Wrap; about.Margin = new Thickness(0, 3, 0, 0);
-        var header = new StackPanel { Margin = new Thickness(20, 16, 20, 14), Children = { name } };
-        if (description.Length > 0) header.Children.Add(about);
         var body = new StackPanel { Margin = new Thickness(20, 2, 20, 2) };
-        foreach (var row in rows.Select(Reflow))
+        CardRows(body, rows);
+        var frame = new StackPanel();
+        if (title.Length > 0)
         {
-            if (body.Children.Count > 0 && row.Tag as string != NoDivider) body.Children.Add(Divide());
-            body.Children.Add(row);
+            var about = TextLine(description, 12.5, TextSecondary);
+            about.TextWrapping = TextWrapping.Wrap; about.Margin = new Thickness(0, 3, 0, 0);
+            var text = new StackPanel { Children = { TextLine(title, 15, TextPrimary, FontWeights.SemiBold) } };
+            if (description.Length > 0) text.Children.Add(about);
+            var header = new DockPanel { Margin = new Thickness(20, 16, 20, 14) };
+            if (action is not null) { DockPanel.SetDock(action, Dock.Right); action.VerticalAlignment = VerticalAlignment.Center; action.Margin = new Thickness(16, 0, 0, 0); header.Children.Add(action); }
+            header.Children.Add(text);
+            frame.Children.Add(header); frame.Children.Add(new Border { Height = 1, Background = UI.Brush(Divider) });
         }
+        frame.Children.Add(body);
         Target.Children.Add(new Border
         {
             Background = UI.Brush(_palette.Card), BorderBrush = UI.Brush(_palette.Border), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(12),
-            Margin = new Thickness(0, 0, 0, 20),
-            Child = new StackPanel { Children = { header, new Border { Height = 1, Background = UI.Brush(Divider) }, body } }
+            Margin = new Thickness(0, 0, 0, 20), Child = frame
         });
+        return body;
+    }
+
+    // Rows join a card's body with a thin line before each; a hidden row hides its line too.
+    private void CardRows(StackPanel body, IEnumerable<FrameworkElement> rows)
+    {
+        foreach (var row in rows.Select(Reflow))
+        {
+            if (body.Children.Count > 0 && row.Tag as string != NoDivider)
+            {
+                var line = Divide();
+                line.SetBinding(VisibilityProperty, new System.Windows.Data.Binding(nameof(Visibility)) { Source = row });
+                body.Children.Add(line);
+            }
+            body.Children.Add(row);
+        }
     }
 
     private Border Divide() => new() { Height = 1, Background = UI.Brush(_palette.RowDivider) };
@@ -76,12 +99,40 @@ public partial class SettingsWindow
                 Columns(grid);
                 foreach (var child in grid.Children.OfType<FrameworkElement>())
                 {
-                    if (Grid.GetColumn(child) == 1) { child.HorizontalAlignment = HorizontalAlignment.Left; continue; }
+                    if (Grid.GetColumn(child) == 1)
+                    {
+                        child.HorizontalAlignment = HorizontalAlignment.Left;
+                        // A wide control (the double-click choices) narrows its row's label column instead of being cut off at the
+                        // narrowest window.
+                        child.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+                        grid.ColumnDefinitions[1].MinWidth = child.DesiredSize.Width;
+                        continue;
+                    }
                     child.Margin = new Thickness(0, 0, 20, 0);
                     Wrap(child);
                     if (child is StackPanel labels && AutomationProperties.GetHelpText(grid) is { Length: > 0 } text) labels.Children.Add(Description(text));
                 }
                 return grid;
+            // A size slider (SizeRow): its slider and number chip move into the control column together, and its note stays under them.
+            case Grid { ColumnDefinitions.Count: 3, RowDefinitions.Count: 2 } size when size.Children.OfType<Slider>().FirstOrDefault() is { } slider:
+                var chip = size.Children.OfType<FrameworkElement>().First(child => Grid.GetColumn(child) == 2);
+                var label = size.Children.OfType<FrameworkElement>().First(child => Grid.GetColumn(child) == 0);
+                size.Children.Remove(slider); size.Children.Remove(chip);
+                var controls = new Grid { ColumnDefinitions = { new ColumnDefinition(), new ColumnDefinition { Width = GridLength.Auto } } };
+                Grid.SetColumn(slider, 0); Grid.SetColumn(chip, 1);
+                controls.Children.Add(slider); controls.Children.Add(chip);
+                Grid.SetColumn(controls, 1); size.Children.Add(controls);
+                Wrap(label);
+                if (AutomationProperties.GetHelpText(size) is { Length: > 0 } note)
+                {
+                    size.Children.Remove(label);
+                    var named = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Children = { label, Description(note) } };
+                    size.Children.Add(named); label = named;
+                }
+                label.Margin = new Thickness(0, 0, 20, 0);
+                size.RowDefinitions[0].Height = GridLength.Auto; size.RowDefinitions[0].MinHeight = 24;
+                Columns(size);
+                return size;
             case Border { Child: CheckBox toggle } frame when toggle.Content is TextBlock:
                 frame.Child = null;
                 toggle.Content = null; toggle.Padding = new Thickness(0);

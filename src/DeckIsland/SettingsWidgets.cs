@@ -77,6 +77,6 @@ public sealed partial class SettingsWindow
         one.SelectionChanged += (_, _) => Save();
         two.SelectionChanged += (_, _) => Save();
         rows.Children.Add(Row(firstLabel, one)); rows.Children.Add(Row(secondLabel, two));
-        Group(Row(title, mode), rows);
+        Group(Describe(Row(title, mode), Loc.T("完整显示下面的所有项目；精简只显示选定的两项。", "Full shows every part below; Minimal only the two you pick.")), rows);
     }
 }

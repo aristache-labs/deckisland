@@ -189,6 +189,17 @@ internal sealed class Renderer(App app, string output, string language, string[]
                 await SettingsPage("general-light", 0, height: 2900, theme: SettingsTheme.Light);
                 await SettingsPage("general-narrow", 0, height: 2900, width: 840);
             }
+            // The Collapsed view settings page in the same cards: dark and light, the narrowest window, and the other two styles; for checking.
+            if (scenes.Contains("collapsed"))
+            {
+                await SettingsPage("collapsed-dark", 1, height: 2400);
+                await SettingsPage("collapsed-light", 1, height: 2400, theme: SettingsTheme.Light);
+                await SettingsPage("collapsed-narrow", 1, height: 2400, width: 840);
+                var style = _settings.Style;
+                _settings.Style = CompactStyle.Capsule; await SettingsPage("collapsed-capsule", 1, height: 2400);
+                _settings.Style = CompactStyle.Line; await SettingsPage("collapsed-line", 1, height: 1600);
+                _settings.Style = style;
+            }
             if (scenes.Contains("hover-weather"))
             {
                 _settings.ColourfulWeatherCard = true; _settings.WeatherEnabled = true;
