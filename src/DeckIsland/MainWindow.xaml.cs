@@ -534,7 +534,7 @@ public partial class MainWindow : Window
     }
     private CollapsedShape ShapeFor(CompactStyle style)
     {
-        double? wanted = (Settings.Minimal(style) || Settings.CompactAutoWidth(style)) && !double.IsNaN(_compactWanted) ? _compactWanted : null;
+        double? wanted = (Settings.Minimal(style) || Settings.CompactAutoWidth(style) || _hudMessage is not null) && !double.IsNaN(_compactWanted) ? _compactWanted : null;
         // The capsule keeps its place on the screen; docked with the bottom (MainWindow.Edge.cs) it is only seen from there.
         if (style == CompactStyle.Capsule && _frame.Edge != ScreenEdge.Top)
         {

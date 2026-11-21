@@ -1175,6 +1175,7 @@ public partial class MainWindow
         var shape = Collapsed; _compactRendered = shape;
         double scale = CompactMusicLayout.SafeScale(shape.Scale);
         double contentWidth = CompactContentWidth(shape);
+        if (_hudMessage is { } hud) { RenderCompactHud(hud, scale, contentWidth); return; }
         var minimal = MinimalParts();
         bool Show(CompactPart part) => minimal is null || minimal.Contains(part);
         bool media = !FocusCompactOnly && Show(CompactPart.Music) && Settings.ShowsMusic(EffectiveStyle) && _mediaTrack is { State: not MediaState.Stopped };

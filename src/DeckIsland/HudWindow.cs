@@ -33,6 +33,8 @@ internal sealed class HudWindow : Window
         [HudIcon.Notice] = "M3.5,14.5 C6,12.5 5.5,11.5 5.5,8.5 A4.5,4.5 0 0 1 14.5,8.5 C14.5,11.5 14,12.5 16.5,14.5 Z M8,17 A2,2 0 0 0 12,17"
     };
 
+    internal static Geometry IconGeometry(HudIcon icon) => Geometry.Parse(Icons[icon]);
+
     private readonly DispatcherTimer _hide = new();
     private readonly Border _pill = new() { CornerRadius = new CornerRadius(0, 0, 18, 18), Padding = new Thickness(16, 0, 16, 0), Height = 38 };
     private readonly Path _icon = new() { Width = 17, Height = 17, Stretch = Stretch.Uniform, StrokeThickness = 1.6, StrokeLineJoin = PenLineJoin.Round,

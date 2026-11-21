@@ -18,10 +18,21 @@ public partial class App
     private readonly List<IDisposable> _hudSources = [];
     private readonly List<object> _hudKeep = [];
 
+    // The collapsed island shows it in place and takes its width; a panel that cannot (open, hidden, a line) gets the floating one.
     private void ShowHud(HudMessage message)
     {
+        message = message with { Hold = message.Hold ?? HudHold };
+        bool inline = false;
+        foreach (var deck in Decks.ToList()) inline |= deck.ShowHudInline(message);
+        if (inline) { _hud?.Clear(message.Key); return; }
         _hud ??= new HudWindow();
-        _hud.Present(message with { Hold = message.Hold ?? HudHold }, PanelTheme.Main);
+        _hud.Present(message, PanelTheme.Main);
+    }
+
+    private void ClearHud(string key)
+    {
+        foreach (var deck in Decks.ToList()) deck.ClearHud(key);
+        _hud?.Clear(key);
     }
 
     private void InitializeHud()
@@ -191,7 +202,7 @@ public partial class App
             if (!Settings.HudDownloads)
             {
                 partial.Clear(); done.Clear();
-                if (showing) { _hud?.Clear("download"); showing = false; }
+                if (showing) { ClearHud("download"); showing = false; }
                 return;
             }
             foreach (var path in partial.Keys.ToList())
@@ -211,7 +222,7 @@ public partial class App
             var active = partial.Where(item => item.Value.Speed > 0).OrderByDescending(item => item.Value.Speed).ToList();
             if (active.Count == 0)
             {
-                if (showing) { _hud?.Clear("download"); showing = false; }
+                if (showing) { ClearHud("download"); showing = false; }
                 return;
             }
             string title = active.Count > 1 ? $"{active.Count} downloads" : Path.GetFileNameWithoutExtension(active[0].Key);
