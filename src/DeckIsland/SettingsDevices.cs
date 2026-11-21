@@ -34,15 +34,15 @@ public partial class SettingsWindow
         Target.Children.Add(holder);
 
         // Whether the notch and the capsule show the devices is set with their other parts (收起外观 › 显示内容).
-        SectionTitle(Loc.T("收起时", "When collapsed"));
+        SectionTitle(Loc.T("收起时", "When collapsed"), description: Loc.T("收起时设备电量的样子。", "How the batteries look on the collapsed island."));
         _devicePreview = new Border { Height = 96, CornerRadius = new CornerRadius(8), Background = UI.Brush(Inset), BorderBrush = UI.Brush(Divider), BorderThickness = new Thickness(1),
-            Margin = new Thickness(0, 0, 0, 12) };
+            Margin = new Thickness(0, 14, 0, 2) };
         Target.Children.Add(_devicePreview);
         FillDevicePreview();
         Group(Toggle(Loc.T("显示数字", "Show figures"), S.DeviceFigures, value => { Change(s => s.DeviceFigures = value); FillDevicePreview(); }));
 
         // The thresholds color the page and the collapsed row alike. Getting low stays above low: its choices start above it.
-        SectionTitle(Loc.T("电量阈值", "Battery thresholds"));
+        SectionTitle(Loc.T("电量阈值", "Battery thresholds"), description: Loc.T("电量偏低和过低时的界线。", "Where a battery counts as getting low, and as low."));
         var warning = new ComboBox { Width = 110, Style = (Style)FindResource("SettingsCombo") };
         var low = new ComboBox { Width = 110, Style = (Style)FindResource("SettingsCombo"), ItemsSource = Devices.LowChoices.Select(percent => $"{percent}%").ToList(),
             SelectedIndex = Math.Max(0, Devices.LowChoices.ToList().IndexOf(S.DeviceLowPercent)) };
@@ -74,7 +74,7 @@ public partial class SettingsWindow
         Group(Row(Loc.T("预警阈值", "Warning threshold"), warning, help: () => Loc.T("电量不高于此值时显示为偏低，使用预警颜色。", "At or under this level a battery shows as getting low, in its warning color.")),
             Row(Loc.T("告警阈值", "Critical threshold"), low, help: () => Loc.T("电量不高于此值时显示为低电量，使用告警颜色。", "At or under this level a battery shows as low, in its critical color.")));
 
-        SectionTitle(Loc.T("设备", "Devices"));
+        SectionTitle(Loc.T("设备", "Devices"), description: Loc.T("每台设备的颜色，以及在哪里显示。", "Each device's colors, and where it shows."));
         var headings = DeviceColumns(); headings.Height = 34;
         AddHeadings(headings, new[]
         {
@@ -91,7 +91,7 @@ public partial class SettingsWindow
         var table = new StackPanel();
         table.Children.Add(headings);
         table.Children.Add(new Border { Child = _deviceRows, BorderBrush = UI.Brush(_palette.RowDivider), BorderThickness = new Thickness(0, 1, 0, 0) });
-        Target.Children.Add(new Border { Child = table, BorderBrush = UI.Brush(Divider), BorderThickness = new Thickness(0, 1, 0, 0), Margin = new Thickness(0, 0, 0, 28) });
+        Target.Children.Add(new Border { Child = table, Margin = new Thickness(-12, 4, -12, 6) });
         _deviceRowsKey = "";
         FillDeviceRows(_deviceRows);
     }

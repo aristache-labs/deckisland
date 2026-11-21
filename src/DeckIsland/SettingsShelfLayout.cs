@@ -33,6 +33,7 @@ public partial class SettingsWindow
             clips.Visibility = shown != ShelfShown.Files ? Visibility.Visible : Visibility.Collapsed;
             files.Visibility = shown != ShelfShown.Clipboard ? Visibility.Visible : Visibility.Collapsed;
         }
+        SectionTitle(Loc.T("显示内容", "Show"), description: Loc.T("中转站显示剪贴板、文件中转，或两者都显示。", "The clipboard, the file transfer, or both."));
         Group(MusicChoice(Loc.T("显示内容", "Show"), S.ShelfShown,
             [(ShelfShown.Clipboard, Loc.T("剪贴板", "Clipboard")), (ShelfShown.Files, Loc.T("文件中转", "File transfer")), (ShelfShown.Both, Loc.T("都显示", "Both"))],
             value => { Change(s => s.ShelfShown = value); Show(value); }));
@@ -49,7 +50,8 @@ public partial class SettingsWindow
                 // The widths' slider reaches as far as the way chosen lets the file transfer narrow.
                 if (_shareSlider is { } slider) slider.Maximum = 100 - ShelfLayout.LeastShare(value);
             }, value => ShelfViewPreview.Create(value, _palette)));
-        Target.Children.Add(arranging); Target.Children.Add(clips); Target.Children.Add(files);
+        // Each holds cards of its own, beside the one above (Outer).
+        Outer.Children.Add(arranging); Outer.Children.Add(clips); Outer.Children.Add(files);
         Show(S.ShelfShown);
     }
 
@@ -58,7 +60,7 @@ public partial class SettingsWindow
     private void ViewCards<T>(string title, string group, IReadOnlyList<(T Value, string Name)> choices, T current, Action<T> choose, Func<T, FrameworkElement> preview) where T : struct, Enum
     {
         SectionTitle(title);
-        var cards = new UniformGrid { Columns = choices.Count, Margin = new Thickness(-6, 0, -6, 12) };
+        var cards = new UniformGrid { Columns = choices.Count, Margin = new Thickness(-6, 12, -6, 12) };
         foreach (var (value, name) in choices)
         {
             var card = new RadioButton
@@ -75,10 +77,10 @@ public partial class SettingsWindow
 
     private void Arrangement()
     {
-        SectionTitle(Loc.T("排列方式", "Arrangement"));
+        SectionTitle(Loc.T("排列方式", "Arrangement"), description: Loc.T("两栏并排，或叠在一起切换。", "The two columns side by side, or stacked to switch between."));
         // Two cards over the whole row, as the collapsed style's three are, with the same room for the focus ring. Their diagrams
         // are wider than those, so the cards are no taller (ShelfArrangementPreview).
-        var cards = new UniformGrid { Columns = 2, Margin = new Thickness(-6, 0, -6, 24) };
+        var cards = new UniformGrid { Columns = 2, Margin = new Thickness(-6, 12, -6, 12) };
         var options = new Grid();
         // The settings of an arrangement: side by side the widths, stacked the ways of switching. Chosen on its card, they take the
         // place of the other's, as the collapsed style's options do.
@@ -121,7 +123,8 @@ public partial class SettingsWindow
             };
             cards.Children.Add(card);
         }
-        Target.Children.Add(cards); Target.Children.Add(options);
+        // The cards in the arrangement's card; its options, cards of their own, after it.
+        Target.Children.Add(cards); Outer.Children.Add(options);
         Show(S.ShelfArrangement, null);
     }
 

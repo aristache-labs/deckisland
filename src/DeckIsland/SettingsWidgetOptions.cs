@@ -16,6 +16,7 @@ public sealed partial class SettingsWindow
     // and a line of help under it. The gallery above already shows how the widget looks.
     private void WidgetOptions()
     {
+        _cardBody = null;
         // A heading over the option cards, as the cards above head themselves (Card).
         var heading = TextLine(Loc.T("小组件选项", "Widget options"), 15, TextPrimary, FontWeights.SemiBold);
         var about = TextLine(Loc.T("有选项的小组件，各占一张卡片。", "The widgets that have options, a card each."), 12.5, TextSecondary);

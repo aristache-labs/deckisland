@@ -56,8 +56,10 @@ public sealed partial class SettingsWindow
         }
         Refresh();
         // The options stay available while the page is off, so they can be set before it is shown.
-        SectionTitle(Loc.T("通用", "General"));
-        Group(Row(Loc.T("各项颜色", "Reading colors"), roles),
+        SectionTitle(Loc.T("通用", "General"), description: Loc.T("各项读数的颜色。", "The colors of the readings."));
+        // In a card the colors take the card's whole width under their name, four to a row however wide the window is.
+        if (CardPage) roles.Width = double.NaN;
+        Group(CardPage ? Stacked(Loc.T("各项颜色", "Reading colors"), roles) : Row(Loc.T("各项颜色", "Reading colors"), roles),
             QuickRow(Loc.T("快捷预设", "Presets"), presets),
             GpuChoiceRow(),
             MusicChoice(Loc.T("核心显示", "Core display"), S.CoreDisplay,
@@ -72,7 +74,7 @@ public sealed partial class SettingsWindow
                 help: Loc.T("与 Windows 流量统计一致，最近的流量稍后计入。当天从 0 点算起。",
                     "Matches Windows' data usage; recent traffic is counted a little later. Today counts from midnight.")));
         CompactMonitorOptions();
-        SectionTitle(Loc.T("展开时", "When expanded"));
+        SectionTitle(Loc.T("展开时", "When expanded"), description: Loc.T("展开后的系统监控页面显示什么。", "What the open system monitor page shows."));
         // What the page shows (chips, the temperatures among them, and a sketch of the page whose blocks are dragged to order it), then
         // how the process list looks and how often the page updates. The frame rate's permission note and the stopped sensors' notes
         // stay under the chips. Which of the CPU and the GPU is large is chosen on the page, by clicking the small one. The choices
@@ -83,7 +85,7 @@ public sealed partial class SettingsWindow
                 [(MonitorProcessView.Auto, Loc.T("自动", "Auto")), (MonitorProcessView.Compact, Loc.T("简略", "Compact")), (MonitorProcessView.Detailed, Loc.T("详细", "Detailed"))],
                 v => Resize(s => s.MonitorProcessView = v, DeckPage.Monitor), keepPreview: true),
             MusicChoice(Loc.T("刷新间隔", "Update interval"), S.MonitorInterval, [(1, Loc.T("1 秒", "1 s")), (2, Loc.T("2 秒", "2 s"))], v => Change(s => s.MonitorInterval = v)));
-        SectionTitle(Loc.T("来源", "Sources"));
+        SectionTitle(Loc.T("来源", "Sources"), description: Loc.T("读数从哪里来。", "Where the readings come from."));
         Group(MusicChoice(Loc.T("显卡占用率", "GPU usage"), S.MonitorGpuUsage,
             [(GpuUsageSource.Driver, Loc.T("显卡驱动", "GPU driver")), (GpuUsageSource.Windows, "Windows")], v => Change(s => s.MonitorGpuUsage = v),
             help: Loc.T("显卡驱动：与 nvidia-smi、HWiNFO 一致；驱动没有读数时使用 Windows。Windows：与任务管理器一致，驱动读数不正确时选择。",
@@ -318,7 +320,7 @@ public sealed partial class SettingsWindow
         void Refresh() { syncing = true; try { foreach (var update in refresh) update(); } finally { syncing = false; } }
         _refreshReadings = Refresh;
         void Edit(Action<DeckSettings> edit) { if (syncing) return; Change(edit); Refresh(); }
-        SectionTitle(Loc.T("收起时", "When collapsed"));
+        SectionTitle(Loc.T("收起时", "When collapsed"), description: Loc.T("收起时显示哪些读数。", "Which readings the collapsed island shows."));
 
         var rows = new StackPanel();
         foreach (var reading in S.CompactReadings) rows.Children.Add(ReadingRow(reading.Item, rows, refresh, Edit));

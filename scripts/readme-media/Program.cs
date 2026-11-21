@@ -258,6 +258,15 @@ internal sealed class Renderer(App app, string output, string language, string[]
                     await SettingsPage(name + "-narrow", page, height: 3200, width: 840, theme: SettingsTheme.Light);
                 }
             }
+            // System monitor, Enhanced sensors, the shelf pages, Device batteries and About in the same cards; for checking.
+            if (scenes.Contains("cards-rest"))
+            {
+                foreach (var (name, page) in new[] { ("monitor", 9), ("sensors", 10), ("shelf-layout", 17), ("clipboard", 13), ("transfer", 14), ("devices", 12), ("about", 7) })
+                {
+                    await SettingsPage(name + "-dark", page, height: 3600);
+                    await SettingsPage(name + "-narrow", page, height: 3600, width: 840, theme: SettingsTheme.Light);
+                }
+            }
             if (scenes.Contains("hover-weather"))
             {
                 _settings.ColourfulWeatherCard = true; _settings.WeatherEnabled = true;

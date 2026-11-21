@@ -50,11 +50,12 @@ public partial class SettingsWindow
         var length = MusicChoice(Loc.T("保存时长", "Keep for"), S.ClipboardKeepFor, [.. Enum.GetValues<HistoryLength>().Select(value => (value, LengthName(value)))],
             value => { Change(s => s.ClipboardKeepFor = value); ShowPage(_page); }, enabled: S.ClipboardKeepHistory, width: 216,
             help: Loc.T("从最后一次复制起计算。", "Counted from the last copy."));
+        SectionTitle(Loc.T("历史", "History"), description: Loc.T("记录哪些内容，以及保留多久。", "What is recorded, and for how long."));
         Group(record, _excludedHost = new Border { Child = ExcludedAppsContent() }, keep, length);
-        SectionTitle(Loc.T("分类", "Categories"), help: () => Loc.T("一条内容可以放进多个分类。关闭“一直保留”的分类，其中的内容与普通历史一样清除。单击筛选按钮设置自动放入的规则。拖动调整顺序。",
+        SectionTitle(Loc.T("分类", "Categories"), description: Loc.T("自己整理的分组，拖动可调整顺序。", "Groups of your own; drag to reorder."), help: () => Loc.T("一条内容可以放进多个分类。关闭“一直保留”的分类，其中的内容与普通历史一样清除。单击筛选按钮设置自动放入的规则。拖动调整顺序。",
             "An entry can be in several categories. What is in a category with Keep off is cleared with the rest of the history. The filter button sets what goes in by itself. Drag to reorder."));
         CategoryList(ShelfSide.Clipboard);
-        SectionTitle(Loc.T("常用", "Favorites"));
+        SectionTitle(Loc.T("常用", "Favorites"), description: Loc.T("随时可以粘贴的固定内容。", "Fixed entries, ready to paste at any time."));
         FavoritesList();
     }
 
@@ -118,6 +119,7 @@ public partial class SettingsWindow
     private void TransferSettings()
     {
         WatchShelf();
+        SectionTitle(Loc.T("拖出", "Dragging out"), description: Loc.T("把文件从灵动岛拖出时会发生什么。", "What happens when you drag a file off the island."));
         // One choice for both buttons: the right button always does what the left does not.
         Group(MusicChoice(Loc.T("拖出文件", "Drag files out"), S.TransferDragOut,
                 [(TransferDragOut.Copy, Loc.T("左键复制，右键移动", "Left copies, right moves")), (TransferDragOut.Move, Loc.T("左键移动，右键复制", "Left moves, right copies"))],
@@ -128,7 +130,7 @@ public partial class SettingsWindow
                     "Copy: the original stays where it is, a copy goes to the new place, and the file stays in the file transfer.\nMove: the original goes to the new place and leaves the file transfer.\nChat apps and browsers cannot take a move; files dragged there are always copied.")),
             Toggle(Loc.T("移动到不支持移动的目标后，从中转站移除", "Remove from transfer after a move to a copy-only target"),
                 S.TransferRemoveAfterCopyDrop, value => Change(s => s.TransferRemoveAfterCopyDrop = value)));
-        SectionTitle(Loc.T("分类", "Categories"), help: () => Loc.T("一个文件可以放进多个分类。单击筛选按钮设置自动放入的规则。拖动调整顺序。原文件不受影响。",
+        SectionTitle(Loc.T("分类", "Categories"), description: Loc.T("自己整理的分组，拖动可调整顺序。", "Groups of your own; drag to reorder."), help: () => Loc.T("一个文件可以放进多个分类。单击筛选按钮设置自动放入的规则。拖动调整顺序。原文件不受影响。",
             "A file can be in several categories. The filter button sets what goes in by itself. Drag to reorder. The original files are not touched."));
         CategoryList(ShelfSide.Files);
     }

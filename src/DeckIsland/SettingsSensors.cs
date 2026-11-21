@@ -36,9 +36,9 @@ public sealed partial class SettingsWindow
         var service = new StepState(this);
         var reading = TextLine("", 12.5, TextSecondary);
         var readingRow = Row(Loc.T("当前读数", "Reading now"), reading);
-        SectionTitle(Loc.T("第一步：PawnIO 驱动", "Step 1: PawnIO driver"));
+        SectionTitle(Loc.T("第一步：PawnIO 驱动", "Step 1: PawnIO driver"), description: Loc.T("读取处理器所需的驱动。", "The driver that reads the processor."));
         Group(Row("PawnIO", pawnIo.Root, pawnIo.Detail));
-        SectionTitle(Loc.T("第二步：传感器服务", "Step 2: Sensor service"));
+        SectionTitle(Loc.T("第二步：传感器服务", "Step 2: Sensor service"), description: Loc.T("通过驱动读取温度和功耗的服务。", "The service that reads temperature and power through the driver."));
         Group(Row(Loc.T("传感器服务", "Sensor service"), service.Root, service.Detail), readingRow);
         var fallback = TextLine(Loc.T("未启用时，也会读取正在运行的 HWiNFO（需打开共享内存）或 LibreHardwareMonitor（需打开远程网页服务）。",
             "Until then, a running HWiNFO (with shared memory on) or LibreHardwareMonitor (with its remote web server on) is read too."), 12, TextTertiary);

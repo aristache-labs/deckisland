@@ -60,7 +60,7 @@ public sealed partial class SettingsWindow
 
         var toggle = ActionButton((_themeAdvancedOpen ? Loc.T("收起高级设置", "Hide advanced") : Loc.T("高级设置", "Advanced")) + (_themeAdvancedOpen ? " ▴" : " ▾"),
             () => { _themeAdvancedOpen = !_themeAdvancedOpen; RebuildThemePage(); });
-        toggle.Style = (Style)FindResource("SettingsLink"); toggle.HorizontalAlignment = HorizontalAlignment.Left; toggle.Margin = new Thickness(2, -6, 0, 20);
+        toggle.Style = (Style)FindResource("SettingsLink"); toggle.HorizontalAlignment = HorizontalAlignment.Left; toggle.Margin = new Thickness(0, 4, 0, 14);
         AutomationProperties.SetName(toggle, Loc.T("高级颜色设置", "Advanced color settings"));
         Target.Children.Add(toggle);
         if (!_themeAdvancedOpen) return;
@@ -84,7 +84,7 @@ public sealed partial class SettingsWindow
             EffectRow(theme, draft, palette, "scanlines", Loc.T("扫描线", "Scan lines"), .01, Percent));
         var rest = TextLine(Loc.T("表面渐变、边缘渐变、时间的预设颜色与渐变，以及颜色选择器的预设色，仍需在主题文件中修改。",
             "The surface and rim gradients, the clock's preset colors and gradients, and the color picker's presets are still set in the theme file."), 11.5, TextTertiary);
-        rest.TextWrapping = TextWrapping.Wrap; rest.Margin = new Thickness(2, -8, 0, 24);
+        rest.TextWrapping = TextWrapping.Wrap; rest.Margin = new Thickness(0, 4, 0, 16);
         Target.Children.Add(rest);
     }
 

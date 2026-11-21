@@ -368,6 +368,12 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
         if (page == 5) PageHeader(head, Loc.T("音乐在灵动岛上收起和展开时的样子。", "How music looks on the island, collapsed and open."));
         if (page == 6) PageHeader(head, Loc.T("针对特定音乐播放器的设置。", "Settings for particular music players."));
         if (page == MusicGesturesPage) PageHeader(head, Loc.T("在音乐页面上拖动和滑动时执行的操作。", "What drags and swipes do on the music page."));
+        if (page == MonitorSettingsPage) PageHeader(head, Loc.T("系统监控的颜色、读数和数据来源。", "The colors, readings and sources of the system monitor."));
+        if (page == ShelfLayoutSettingsPage) PageHeader(head, Loc.T("中转站里剪贴板和文件中转的布局。", "How the shelf lays out the clipboard and the file transfer."));
+        if (page == ClipboardSettingsPage) PageHeader(head, Loc.T("剪贴板记录哪些内容、保留多久，以及如何分类。", "What the clipboard keeps, for how long, and how it sorts it."));
+        if (page == TransferSettingsPage) PageHeader(head, Loc.T("暂放在灵动岛上、稍后再拖出的文件。", "Files you park on the island to drag out later."));
+        if (page == ClipboardSyncSettingsPage) PageHeader(head, Loc.T("在这台电脑和其他设备之间同步复制的内容。", "Sync what you copy between this PC and your other devices."));
+        if (page == DevicesSettingsPage) PageHeader(head, Loc.T("已连接设备的电量，收起时和展开时。", "The battery levels of your connected devices, collapsed and open."));
         if (page == CallsSettingsPage) PageHeader(head, Loc.T("通话时灵动岛显示的计时、静音和设备检查。", "The timer, mute and device check the island offers during calls."));
         if (page == ThemePage) PageHeader(head, Loc.T("刘海、胶囊和展开面板的配色与外观。", "The colors and look of the notch, capsule and open panel."));
         if (page == HotkeysPage) PageHeader(head, Loc.T("在任何地方都能使用的快捷键。", "Keyboard shortcuts that work from anywhere."));
@@ -1248,9 +1254,9 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
     private void About()
     {
         var description=TextLine(Loc.T("Windows 顶部悬浮面板。", "A floating panel at the top of the Windows screen."),13,TextSecondary);description.Margin=new Thickness(0,0,0,30);_content.Children.Add(description);
-        SectionTitle(Loc.T("软件更新", "Software update"));
+        SectionTitle(Loc.T("软件更新", "Software update"), description: Loc.T("检查并安装新版本。", "Check for and install new versions."));
         _aboutUpdateView = CreateUpdateView(true); Group(_aboutUpdateView.Root);
-        SectionTitle(Loc.T("项目信息", "Project"));
+        SectionTitle(Loc.T("项目信息", "Project"), description: Loc.T("版本、许可证和联系方式。", "Version, license and where to reach us."));
         // What's new sits beside the version number, where someone looking for this version's changes looks first.
         var version = new StackPanel { Orientation = Orientation.Horizontal };
         var current = TextLine(_app.Updates.CurrentVersion,12,TextSecondary); current.VerticalAlignment = VerticalAlignment.Center; version.Children.Add(current);
@@ -1274,23 +1280,35 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
 
     // Sections and groups are added to the page, or to the panel being collected while one is.
     private Panel? _target;
-    private Panel Target => _target ?? _content;
+    // On a card page, what a section is given goes into its card, made when the first thing is put under its title (OpenCard);
+    // the cards themselves go where sections go (Outer).
+    private Panel Target => OpenCard() ?? Outer;
+    private Panel Outer => _target ?? _content;
+    private StackPanel? OpenCard()
+    {
+        if (!CardPage) return null;
+        if (_cardTitle is { } heading) { _cardTitle = null; _cardBody = CardFrame(heading.Title, heading.Description, heading.Action, heading.Help, body: true); }
+        return _cardBody;
+    }
+    // What is collected is built apart (a page row's sizes, the chosen style's options), outside any card open on the page.
     private StackPanel Collect(Action build)
     {
         var panel = new StackPanel(); var previous = _target; _target = panel;
-        try { build(); } finally { _target = previous; }
+        var (title, open) = (_cardTitle, _cardBody); _cardTitle = null; _cardBody = null;
+        try { build(); } finally { _target = previous; _cardTitle = title; _cardBody = open; }
         return panel;
     }
 
     // The Collapsed view page is laid out in General's cards (Card): there a section title heads the card its next group
     // opens, and a group with no title of its own joins the card above it.
-    private bool CardPage => _page is 1 or 2 or 3 or 5 or 6 or MusicGesturesPage or WidgetsSettingsPage or NotificationsSettingsPage or CallsSettingsPage or ThemePage or HotkeysPage or ProfilesPage;
+    private bool CardPage => _page is 1 or 2 or 3 or 5 or 6 or 7 or MusicGesturesPage or MonitorSettingsPage or SensorsPage or ShelfLayoutSettingsPage or ClipboardSettingsPage
+        or TransferSettingsPage or ClipboardSyncSettingsPage or DevicesSettingsPage or WidgetsSettingsPage or NotificationsSettingsPage or CallsSettingsPage or ThemePage or HotkeysPage or ProfilesPage;
     private (string Title, string Description, FrameworkElement? Action, Func<string>? Help)? _cardTitle;
     private StackPanel? _cardBody;
 
     private void SectionTitle(string title, FrameworkElement? action = null, Func<string>? help = null, string description = "")
     {
-        if (CardPage) { _cardTitle = (title, description, action, help); return; }
+        if (CardPage) { _cardTitle = (title, description, action, help); _cardBody = null; return; }
         var row = new DockPanel { Margin = new Thickness(0, 0, 0, 8) };
         if (action is not null) { DockPanel.SetDock(action, Dock.Right); action.VerticalAlignment = VerticalAlignment.Center; row.Children.Add(action); }
         var label = TextLine(title, 11, TextSecondary); label.VerticalAlignment = VerticalAlignment.Center;
@@ -1307,8 +1325,7 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
     {
         if (CardPage)
         {
-            if (_cardTitle is { } heading) { _cardTitle = null; _cardBody = Card(heading.Title, heading.Description, heading.Action, heading.Help, rows); }
-            else if (_cardBody is { } body) CardRows(body, rows);
+            if (OpenCard() is { } body) CardRows(body, rows);
             else _cardBody = Card("", "", null, null, rows);
             return;
         }

@@ -45,13 +45,20 @@ public partial class SettingsWindow
 
     // The same card with an optional action at the right of its header (a reset link) and an info icon after its title; returns
     // the body, which later rows can join (CardRows). A card without a title has no header.
+    // A card with nothing under its header (a player that needs no setup) ends with the header.
     private StackPanel Card(string title, string description, FrameworkElement? action, Func<string>? help, params FrameworkElement[] rows)
     {
-        var body = new StackPanel { Margin = new Thickness(20, 2, 20, 2) };
+        var body = CardFrame(title, description, action, help, rows.Length > 0);
         CardRows(body, rows);
+        return body;
+    }
+
+    // The card's frame, added where sections go (Outer), and its body, empty, for what goes under the header.
+    private StackPanel CardFrame(string title, string description, FrameworkElement? action, Func<string>? help, bool body)
+    {
+        var rows = new StackPanel { Margin = new Thickness(20, 2, 20, 2) };
         var frame = new StackPanel();
-        // A card with nothing under its header (a player that needs no setup) ends with the header.
-        bool empty = rows.Length == 0;
+        bool empty = !body;
         if (title.Length > 0)
         {
             var about = TextLine(description, 12.5, TextSecondary);
@@ -65,13 +72,13 @@ public partial class SettingsWindow
             frame.Children.Add(header);
             if (!empty) frame.Children.Add(new Border { Height = 1, Background = UI.Brush(Divider) });
         }
-        if (!empty) frame.Children.Add(body);
-        Target.Children.Add(new Border
+        if (!empty) frame.Children.Add(rows);
+        Outer.Children.Add(new Border
         {
             Background = UI.Brush(_palette.Card), BorderBrush = UI.Brush(_palette.Border), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(12),
             Margin = new Thickness(0, 0, 0, 20), Child = frame
         });
-        return body;
+        return rows;
     }
 
     // Rows join a card's body with a thin line before each; a hidden row hides its line too.
@@ -186,6 +193,13 @@ public partial class SettingsWindow
         var line = TextLine(text, 12.5, TextTertiary);
         line.TextWrapping = TextWrapping.Wrap; line.Margin = new Thickness(0, 2, 0, 0);
         return line;
+    }
+
+    // A control too wide for the control column, under its name across the whole card.
+    private StackPanel Stacked(string title, FrameworkElement control)
+    {
+        control.Margin = new Thickness(0, 8, 0, 0);
+        return new StackPanel { Margin = new Thickness(0, 14, 0, 12), Children = { SettingLabel(title), control } };
     }
 
     // A slider and its number box together, the same length on every slider row.
