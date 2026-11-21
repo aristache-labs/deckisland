@@ -8,4 +8,6 @@
     <dpiAwareness xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">PerMonitorV2</dpiAwareness>
     <longPathAware xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">true</longPathAware>
   </windowsSettings></application>
+  <!-- Names the sparse package scripts/notifications/register.ps1 registers; without that package the app runs as usual, without an identity. -->
+  <msix xmlns="urn:schemas-microsoft-com:msix.v1" publisher="CN=BrimDeck Dev" packageName="BrimDeck.Notifications" applicationId="BrimDeck"/>
 </assembly>

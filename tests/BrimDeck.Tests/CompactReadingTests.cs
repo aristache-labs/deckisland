@@ -303,6 +303,14 @@ internal static class CompactReadingTests
             QuotaAgentProcesses.IsRunning(new AppEntry { QuotaSource = ProviderId.Codex }, name => name == "codex-x86_64-pc-windows-msvc.exe")
             && QuotaAgentProcesses.IsRunning(new AppEntry { QuotaSource = ProviderId.Custom, DisplayName = "Hermes" }, name => name == "Hermes.exe")
             && !QuotaAgentProcesses.IsRunning(new AppEntry { QuotaSource = ProviderId.Claude }, _ => false));
+        check("HUD: speeds, program names from the privacy store, ignored apps and the 24-notice log",
+            HudFormat.Speed(821 * 1024) == "821 KB/s" && HudFormat.Speed(1.5 * 1024 * 1024) == "1.5 MB/s" && HudFormat.Speed(12) == "12 B/s"
+            && HudFormat.AppName("C:#Program Files#Zoom#zoom.exe") == "zoom" && HudFormat.AppName("Microsoft.WindowsCamera_8wekyb3d8bbwe") == "Microsoft.WindowsCamera_8wekyb3d8bbwe"
+            && HudFormat.Ignored(["Zoom.exe"], "zoom") && !HudFormat.Ignored(["teams"], "zoom")
+            && Enumerable.Range(0, 30).Aggregate(new NoticeLog(), (log, i) => { log.Add(new NoticeItem("a", $"t{i}", "", DateTimeOffset.Now)); return log; }) is { Items: { Count: 24 } items } && items[0].Title == "t29");
+        check("Notifications and HUDs: old files get every readout on and a 5 second notice; the time is kept in range",
+            Read("{}") is { HudVolume: true, HudLocks: true, SensorIndicator: true, MirrorNotifications: true, NotificationSeconds: 5 }
+            && Read("""{"NotificationSeconds":99}""").NotificationSeconds == 15);
         CompactPart[] standard = [CompactPart.Rings, CompactPart.Music, CompactPart.Monitor, CompactPart.Transfer, CompactPart.Devices, CompactPart.Equalizer, CompactPart.Clock, CompactPart.Weather, CompactPart.Focus];
         check("Compact order: the default order appends Weather after the clock", new DeckSettings().NotchOrder.SequenceEqual(standard)
             && CompactParts.Default.SequenceEqual(standard));

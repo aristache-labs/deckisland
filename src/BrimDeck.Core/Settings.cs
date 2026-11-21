@@ -720,6 +720,18 @@ public sealed class DeckSettings
     public CompactPart? CapsuleMinimalSecond { get; set; } = CompactPart.Weather;
     public bool Minimal(CompactStyle style) => style == CompactStyle.Notch ? NotchMinimal : style == CompactStyle.Capsule && CapsuleMinimal;
     public bool RemindersPage { get; set; }
+    // Notifications and HUDs: short readouts the island shows under the collapsed row, and the notices it mirrors.
+    public bool MirrorNotifications { get; set; } = true;
+    public int NotificationSeconds { get; set; } = 5;
+    public bool KeepNoticesLonger { get; set; }
+    public bool HudVolume { get; set; } = true;
+    public bool HudBrightness { get; set; } = true;
+    public bool HudBattery { get; set; } = true;
+    public bool HudBluetooth { get; set; } = true;
+    public bool HudLocks { get; set; } = true;
+    public bool HudDownloads { get; set; } = true;
+    public bool SensorIndicator { get; set; } = true;
+    public List<string> SensorIgnoredApps { get; set; } = [];
     public ReminderSound ReminderSound { get; set; } = ReminderSound.Once;
     public List<Reminder> Reminders { get; set; } = [];
     public double RemindersWidth { get; set; } = 490;
@@ -922,6 +934,7 @@ public sealed class DeckSettings
         copy.MonitorCustomColors = (MonitorCustomColors ?? new()).Copy();
         copy._notchOrder = [.. _notchOrder]; copy._capsuleOrder = [.. _capsuleOrder]; copy._pageOrder = [.. _pageOrder];
         copy.Reminders = [.. Reminders ?? []];
+        copy.SensorIgnoredApps = [.. SensorIgnoredApps ?? []];
         copy.ClockGradient = [.. ClockGradient ?? [.. ClockColors.Sunset]];
         copy.DisplayMonitors = [.. DisplayMonitors ?? []];
         copy.ThemeChoices = (ThemeChoices ?? []).ToDictionary(pair => pair.Key, pair => pair.Value.Copy());
@@ -964,6 +977,8 @@ public sealed class DeckSettings
         if (WeatherCity is { Valid: false }) WeatherCity = null;
         WidgetsWidth = double.IsFinite(WidgetsWidth) ? Math.Clamp(WidgetsWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : 540;
         WidgetsHeight = double.IsFinite(WidgetsHeight) ? Math.Clamp(WidgetsHeight, 220, DeckPages.MaxHeight) : 292;
+        NotificationSeconds = Math.Clamp(NotificationSeconds, 2, 15);
+        SensorIgnoredApps = [.. (SensorIgnoredApps ?? []).Where(name => !string.IsNullOrWhiteSpace(name)).Select(name => name.Trim()).Distinct(StringComparer.OrdinalIgnoreCase)];
         Reminders = Reminder.Normalize(Reminders);
         if (!Enum.IsDefined(ReminderSound)) ReminderSound = ReminderSound.Once;
         RemindersWidth = double.IsFinite(RemindersWidth) ? Math.Clamp(RemindersWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : 490;
