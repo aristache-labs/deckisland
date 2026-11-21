@@ -180,6 +180,7 @@ public partial class MainWindow
     private FrameworkElement NoticeStack(string key, IReadOnlyList<NoticeItem> items)
     {
         int shown = Math.Clamp(_noticeTop.GetValueOrDefault(key), 0, items.Count - 1);
+        var mark = new ContentControl { HorizontalContentAlignment = HorizontalAlignment.Left };
         var body = new ContentControl { HorizontalContentAlignment = HorizontalAlignment.Stretch, ClipToBounds = true };
         var age = NoticeAgeText();
         var badge = WeatherText($"+{items.Count - 1}", 12);
@@ -195,7 +196,7 @@ public partial class MainWindow
         var next = NoticeAction("›", 15, Loc.T("下一条", "Next notice"));
         var actions = new StackPanel { Orientation = Orientation.Horizontal, Children = { expand, previous, position, next } };
 
-        var card = NoticeCard(body, age, actions, badge, OpenStack, out var surface);
+        var card = NoticeCard(mark, body, age, actions, badge, OpenStack, out var surface);
         expand.Click += (_, _) => OpenStack();
         previous.Click += (_, _) => Step(-1);
         next.Click += (_, _) => Step(1);
@@ -218,6 +219,7 @@ public partial class MainWindow
         void Show(int direction)
         {
             var item = items[shown];
+            mark.Content = NoticeAppMark(item);
             string detail = NoticeDetail(item);
             var content = NoticeBody(item, detail, wrap: false, out var line);
             body.Content = content;
@@ -241,7 +243,7 @@ public partial class MainWindow
     private FrameworkElement NoticeRow(NoticeItem item)
     {
         string key = $"{NoticeGroup(item)}|{item.Title}|{item.At.Ticks}";
-        bool canOpenApp = item.AppId is { Length: > 0 };
+        bool canOpenApp = CanOpenNoticeApp(item);
         bool expanded = _noticeExpanded.Contains(key);
         string detail = NoticeDetail(item);
         var body = NoticeBody(item, detail, expanded, out var line);
@@ -287,7 +289,7 @@ public partial class MainWindow
             footer = bar;
         }
 
-        var card = NoticeCard(body, age, actions, null, Activate, out var surface, footer);
+        var card = NoticeCard(NoticeAppMark(item), body, age, actions, null, Activate, out var surface, footer);
         AutomationProperties.SetName(surface, NoticeLabel(item));
         card.Margin = new Thickness(0, 0, 0, 4);
         return card;
@@ -328,23 +330,28 @@ public partial class MainWindow
     }
 
     // The card button covers the row. Its age, content and secondary buttons sit above it as siblings.
-    private Grid NoticeCard(FrameworkElement body, TextBlock age, StackPanel actions, TextBlock? badge, Action activate, out Button surface,
+    private Grid NoticeCard(FrameworkElement mark, FrameworkElement body, TextBlock age, StackPanel actions, TextBlock? badge, Action activate, out Button surface,
         FrameworkElement? footer = null)
     {
         var card = new Grid();
+        card.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         card.ColumnDefinitions.Add(new ColumnDefinition());
         card.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
         var background = new Border { Background = UI.Brush(Look.Hex("fill")), CornerRadius = new CornerRadius(Corner(10)), IsHitTestVisible = false };
-        Grid.SetColumnSpan(background, 2);
+        Grid.SetColumnSpan(background, 3);
         card.Children.Add(background);
         surface = WidgetSurface("", "", activate);
         surface.Background = Brushes.Transparent;
-        Grid.SetColumnSpan(surface, 2);
+        Grid.SetColumnSpan(surface, 3);
         card.Children.Add(surface);
 
+        mark.Margin = new Thickness(8, 6, 10, 6);
+        mark.VerticalAlignment = footer is null ? VerticalAlignment.Center : VerticalAlignment.Top;
+        card.Children.Add(mark);
         body.IsHitTestVisible = false;
-        body.Margin = new Thickness(8, 6, 0, 6);
+        body.Margin = new Thickness(0, 6, 0, 6);
+        Grid.SetColumn(body, 1);
         card.Children.Add(body);
 
         var tools = new Grid { HorizontalAlignment = HorizontalAlignment.Right };
@@ -352,7 +359,7 @@ public partial class MainWindow
         if (badge is not null) tools.Children.Add(badge);
         tools.Children.Add(actions);
         var side = new StackPanel { VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(8, 5, 6, 3), Children = { age, tools } };
-        Grid.SetColumn(side, 1);
+        Grid.SetColumn(side, 2);
         card.Children.Add(side);
         if (footer is not null)
         {
@@ -361,7 +368,7 @@ public partial class MainWindow
             Grid.SetRowSpan(background, 2);
             Grid.SetRowSpan(surface, 2);
             Grid.SetRow(footer, 1);
-            Grid.SetColumnSpan(footer, 2);
+            Grid.SetColumnSpan(footer, 3);
             card.Children.Add(footer);
         }
 
@@ -400,10 +407,7 @@ public partial class MainWindow
         line.Foreground = UI.Brush(Look.Secondary);
         line.TextWrapping = wrap ? TextWrapping.Wrap : TextWrapping.NoWrap;
         line.TextTrimming = wrap ? TextTrimming.None : TextTrimming.CharacterEllipsis;
-        var text = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Children = { title, line } };
-        var mark = NoticeMark(item);
-        if (wrap) mark.VerticalAlignment = VerticalAlignment.Top;
-        return new DockPanel { Children = { mark, text } };
+        return new StackPanel { VerticalAlignment = VerticalAlignment.Center, Children = { title, line } };
     }
 
     private Button NoticeAction(string glyph, double size, string name)
@@ -430,11 +434,43 @@ public partial class MainWindow
     }
 
     // Opens the app that sent a notice: Windows starts it, or brings it forward, from its id in the Apps folder.
+    private static bool CanOpenNoticeApp(NoticeItem item) => item.AppId is { Length: > 0 } id && !id.Contains('"');
+
     private static void OpenNoticeApp(NoticeItem item)
     {
-        if (item.AppId is not { Length: > 0 } id || id.Contains('"')) return;
-        try { Process.Start(new ProcessStartInfo("explorer.exe", $"\"shell:AppsFolder\\{id}\"") { UseShellExecute = true }); }
+        if (!CanOpenNoticeApp(item)) return;
+        try { Process.Start(new ProcessStartInfo("explorer.exe", $"\"shell:AppsFolder\\{item.AppId}\"") { UseShellExecute = true }); }
         catch (Exception error) when (error is Win32Exception or InvalidOperationException) { }
+    }
+
+    private FrameworkElement NoticeAppMark(NoticeItem item)
+    {
+        var mark = NoticeMark(item);
+        mark.IsHitTestVisible = false;
+        if (!CanOpenNoticeApp(item)) return mark;
+
+        var link = new System.Windows.Shapes.Path
+        {
+            Data = Geometry.Parse("M7,3 H3 V13 H13 V9 M8,2 H14 V8 M14,2 L7,9"),
+            Stroke = UI.Brush(Look.Primary), StrokeThickness = 1.4, Stretch = Stretch.Uniform,
+            Width = 14, Height = 14, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center,
+            StrokeLineJoin = PenLineJoin.Round, StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round
+        };
+        var overlay = new Border
+        {
+            Background = UI.Brush(Look.Hex("fill")), CornerRadius = new CornerRadius(Corner(7)),
+            Child = link, Visibility = Visibility.Hidden
+        };
+        var button = WidgetSurface(new Grid { IsHitTestVisible = false, Children = { mark, overlay } },
+            Loc.T("从图标打开 ", "Open from icon: ") + item.App, () => OpenNoticeApp(item));
+        button.Width = mark.Width;
+        button.Height = mark.Height;
+        button.MouseEnter += (_, _) => UpdateOverlay();
+        button.MouseLeave += (_, _) => UpdateOverlay();
+        button.IsKeyboardFocusedChanged += (_, _) => UpdateOverlay();
+
+        void UpdateOverlay() => overlay.Visibility = button.IsMouseOver || button.IsKeyboardFocused ? Visibility.Visible : Visibility.Hidden;
+        return button;
     }
 
     // The app's picture, or a bell on a rounded square when Windows gave none.
@@ -442,7 +478,7 @@ public partial class MainWindow
     {
         const double size = 30;
         var tile = new Border { Width = size, Height = size, CornerRadius = new CornerRadius(Corner(7)), Background = UI.Brush(Look.Hex("fillSelected")),
-            Margin = new Thickness(0, 0, 10, 0), VerticalAlignment = VerticalAlignment.Center };
+            VerticalAlignment = VerticalAlignment.Center };
         if (item.Picture is { Length: > 0 } bytes && !Look.HighContrast)
         {
             try
