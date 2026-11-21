@@ -13,6 +13,7 @@ public partial class MainWindow
     private Button? _reminderAlertSnooze;
     internal Guid? ReminderAlertId { get; private set; }
     private StackPanel? _reminderRows;
+    private StackPanel? _reminderEmpty;
     private (int Theme, string Language) _reminderAppearance;
     internal bool CanShowReminder => Settings.RemindersPage && IsVisible && !IsSuppressed && !DisplayPower.Off && !_preview;
 
@@ -118,7 +119,7 @@ public partial class MainWindow
         DockPanel.SetDock(actions, System.Windows.Controls.Dock.Bottom);
         actions.Children.Add(ReminderButton(Loc.T("新提醒", "New reminder"), () =>
         {
-            var dialog = new ReminderDialog(Settings.Theme);
+            var dialog = new ReminderDialog(Settings.Theme, Look.Current);
             if (dialog.ShowDialog() == true && dialog.Reminder is { } item) _app.AddReminder(item);
         }));
         actions.Children.Add(ReminderButton("+15 min", () => QuickReminder(DateTimeOffset.Now.AddMinutes(15))));
@@ -127,7 +128,22 @@ public partial class MainWindow
             QuickReminder(Reminder.AtLocal(DateTime.Today.AddDays(1).AddHours(9), TimeZoneInfo.Local))));
         body.Children.Add(actions);
         _reminderRows = new StackPanel();
-        body.Children.Add(new ScrollViewer { Content = _reminderRows, VerticalScrollBarVisibility = ScrollBarVisibility.Auto });
+        _reminderEmpty = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 8, 0), IsHitTestVisible = false };
+        var emptyTitle = WeatherText(Loc.T("还没有待办提醒。", "Nothing to remember yet."), 15);
+        emptyTitle.FontWeight = FontWeights.SemiBold;
+        var emptyHint = WeatherText(Loc.T("选择“新提醒”，填写事项和时间。", "Choose New reminder to set what and when."), 13);
+        emptyHint.Foreground = UI.Brush(Look.Secondary);
+        emptyHint.Margin = new Thickness(0, 4, 0, 0);
+        foreach (var line in new[] { emptyTitle, emptyHint })
+        {
+            line.TextWrapping = TextWrapping.Wrap;
+            line.TextAlignment = TextAlignment.Center;
+            _reminderEmpty.Children.Add(line);
+        }
+        body.Children.Add(new Grid
+        {
+            Children = { new ScrollViewer { Content = _reminderRows, VerticalScrollBarVisibility = ScrollBarVisibility.Auto }, _reminderEmpty }
+        });
         RemindersContent.Children.Add(body);
         FillReminderRows();
     }
@@ -146,7 +162,7 @@ public partial class MainWindow
 
     private void FillReminderRows()
     {
-        if (_reminderRows is not { } rows) return;
+        if (_reminderRows is not { } rows || _reminderEmpty is not { } empty) return;
         rows.Children.Clear();
         var now = DateTimeOffset.Now;
         foreach (var item in _app.OrderedReminders)
@@ -170,6 +186,6 @@ public partial class MainWindow
             rows.Children.Add(new Border { Child = row, Padding = new Thickness(8, 4, 4, 4), Margin = new Thickness(0, 0, 0, 4),
                 CornerRadius = new CornerRadius(8), Background = UI.Brush(Look.Hex(due ? "fillSelected" : "fill")) });
         }
-        if (rows.Children.Count == 0) rows.Children.Add(WeatherText(Loc.T("没有待处理的提醒。", "No pending reminders."), 13));
+        empty.Visibility = rows.Children.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 }
