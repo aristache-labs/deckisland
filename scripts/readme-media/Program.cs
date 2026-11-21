@@ -180,6 +180,14 @@ internal sealed class Renderer(App app, string output, string language, string[]
             // The file transfer's settings, and the word beside the pointer while files are dragged out; for checking.
             // The widget gallery with its live previews and the Clock and Countdown options; for checking, not for the README.
             // The To do widget, its card in the gallery and its window, with a few invented items; for checking.
+            // Sun and moon and Progress in their gallery cards, and the eight phases of the drawn moon; for checking.
+            if (scenes.Contains("sun-moon"))
+            {
+                _settings.WidgetSlots = [WidgetKind.SunMoon, WidgetKind.Progress, WidgetKind.Clock, WidgetKind.Empty];
+                Program.SetProperty(app, "CurrentWeather", new WeatherReading(new WeatherPoint("Gruiu", 44.63, 26.19), 14, 3, false, []));
+                await SettingsPage("sun-moon-settings", 22, height: 2300);
+                await MoonStrip();
+            }
             // The Note and Screen time widgets in their gallery cards and the note's window, with invented data; for checking.
             if (scenes.Contains("note-screen"))
             {
@@ -1582,6 +1590,31 @@ internal sealed class Renderer(App app, string output, string language, string[]
         Write(bitmap, Path.Combine(output, "todo-dialog.png"));
         Console.WriteLine("todo-dialog");
         try { dialog.Close(); } catch (InvalidOperationException) { }
+    }
+
+    // The eight phases of the drawn moon side by side, each with its name, on the panel's dark surface.
+    private async Task MoonStrip()
+    {
+        const double scale = 1.5, size = 56;
+        var moon = typeof(MainWindow).GetMethod("Moon", Program.Any)!;
+        var row = new System.Windows.Controls.StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal, Margin = new Thickness(16) };
+        foreach (var kind in Enum.GetValues<MoonPhaseKind>())
+        {
+            double cycle = (int)kind / 8.0;
+            var phase = new MoonPhase(cycle, (1 - Math.Cos(2 * Math.PI * cycle)) / 2, kind);
+            var drawn = (FrameworkElement)moon.Invoke(null, [phase, size, new SolidColorBrush(Colors.White), new SolidColorBrush(Color.FromRgb(0x2A, 0x2D, 0x34))])!;
+            var label = new System.Windows.Controls.TextBlock { Text = phase.Name, Foreground = Brushes.Gainsboro, FontSize = 11, TextAlignment = TextAlignment.Center,
+                Width = 84, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 8, 0, 0) };
+            row.Children.Add(new System.Windows.Controls.StackPanel { Margin = new Thickness(0, 0, 6, 0), Width = 84, Children = { drawn, label } });
+        }
+        var root = new System.Windows.Controls.Border { Background = new SolidColorBrush(Color.FromRgb(0x14, 0x14, 0x16)), Child = row };
+        root.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity)); root.Arrange(new Rect(root.DesiredSize));
+        await Settle();
+        root.UpdateLayout();
+        var bitmap = new RenderTargetBitmap((int)(root.DesiredSize.Width * scale), (int)(root.DesiredSize.Height * scale), 96 * scale, 96 * scale, PixelFormats.Pbgra32);
+        bitmap.Render(root); bitmap.Freeze();
+        Write(bitmap, Path.Combine(output, "moons.png"));
+        Console.WriteLine("moons");
     }
 
     private async Task SettingsPage(string name, int page, double height = 640, bool tips = false)

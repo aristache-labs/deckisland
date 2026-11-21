@@ -166,6 +166,8 @@ public partial class MainWindow
         if (kind == WidgetKind.Todo) return TodoWidget(frame);
         if (kind == WidgetKind.Note) return NoteWidget(frame);
         if (kind == WidgetKind.ScreenTime) return ScreenTimeWidget(frame);
+        if (kind == WidgetKind.SunMoon) return SunMoonWidget(frame);
+        if (kind == WidgetKind.Progress) return ProgressWidget(frame);
         if (kind == WidgetKind.Devices) return DevicesWidget(frame, detailed);
         if (!setup && kind == WidgetKind.Quotas) return QuotasWidget(frame, detailed);
         if (!setup && kind == WidgetKind.Weather) return WeatherWidget(frame, detailed);

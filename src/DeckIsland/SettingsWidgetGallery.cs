@@ -148,6 +148,8 @@ public sealed partial class SettingsWindow
         WidgetKind.Countdown => Loc.T("距离你设定的日期还有几天。", "Days left until a date you set."),
         WidgetKind.Todo => Loc.T("一个可以勾选、排序的简短清单。", "A short list you tick off and put in order."),
         WidgetKind.Note => Loc.T("一张直接在岛上书写的便签。", "A sticky note you write on right there."),
+        WidgetKind.SunMoon => Loc.T("所在地的日出和日落，以及今晚的月相。", "Sunrise and sunset where you are, and tonight's moon phase."),
+        WidgetKind.Progress => Loc.T("今天、本周、本月和今年已经过去了多少。", "How much of today, this week, this month and this year has passed."),
         WidgetKind.ScreenTime => Loc.T("今天每个应用在前台多久，只在这台电脑上统计和保存。", "How long each app was in front today, counted and kept on this PC only."),
         _ => ""
     };

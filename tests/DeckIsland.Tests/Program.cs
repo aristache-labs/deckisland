@@ -32,6 +32,9 @@ try
     TemperatureUnitTests.Run(Check);
     NetworkUnitTests.Run(Check);
     ScreenTimeTests.Run(Check);
+    SunMoonTests.Run(Check);
+    SunPlaceTests.Run(Check);
+    PeriodProgressTests.Run(Check);
     await MusicTests.Run(Check);
     await AppleMusicLyricsTests.Run(root, Check);
     await QueMusicLyricsTests.Run(root, Check);
