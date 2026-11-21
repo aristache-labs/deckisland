@@ -20,7 +20,7 @@ public static class WidgetLayout
     {
         CompactPart[] active = [.. new[] { (CompactPart.Focus, focus), (CompactPart.Transfer, transfer), (CompactPart.Music, music) }
             .Where(item => item.Item2).Select(item => item.Item1).Take(2)];
-        return active.Length > 0 ? active : [.. new[] { first, second }.OfType<CompactPart>().Where(part => Enum.IsDefined(part)).Distinct()];
+        return active.Length > 0 ? active : [.. new[] { first, second }.OfType<CompactPart>().Where(part => Enum.IsDefined(part) && part != CompactPart.Focus).Distinct()];
     }
 
     public static string Name(WidgetKind kind) => kind switch

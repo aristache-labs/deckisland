@@ -72,7 +72,7 @@ public sealed partial class SettingsWindow
         };
         var first = capsule ? S.CapsuleMinimalFirst : S.NotchMinimalFirst;
         var second = capsule ? S.CapsuleMinimalSecond : S.NotchMinimalSecond;
-        var parts = Enum.GetValues<CompactPart>();
+        var parts = Enum.GetValues<CompactPart>().Where(part => part != CompactPart.Focus).ToArray();
         string Name(CompactPart part) => part switch
         {
             CompactPart.Clock => Loc.T("时钟", "Clock"), CompactPart.Rings => Loc.T("配额环", "Quota rings"),
@@ -82,7 +82,7 @@ public sealed partial class SettingsWindow
             _ => WidgetLayout.Name(WidgetKind.Weather)
         };
         string firstLabel = Loc.T("第一项", "First item"), secondLabel = Loc.T("第二项", "Second item");
-        var one = WidgetChoice(firstLabel, parts.Select(Name), first is { } a ? Array.IndexOf(parts, a) : (int)CompactPart.Clock);
+        var one = WidgetChoice(firstLabel, parts.Select(Name), first is { } a && Array.IndexOf(parts, a) >= 0 ? Array.IndexOf(parts, a) : Array.IndexOf(parts, CompactPart.Clock));
         var two = WidgetChoice(secondLabel, new[] { WidgetLayout.Name(WidgetKind.Empty) }.Concat(parts.Select(Name)),
             second is { } b ? Array.IndexOf(parts, b) + 1 : 0);
         void Save()

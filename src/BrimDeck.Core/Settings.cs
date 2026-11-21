@@ -734,8 +734,7 @@ public sealed class DeckSettings
     public int BreakMinutes { get; set; } = 5;
     public double FocusWidth { get; set; } = 440;
     public double FocusHeight { get; set; } = 180;
-    public bool ShowsFocus(CompactStyle style) => FocusPage &&
-        (style == CompactStyle.Notch ? NotchFocus : style == CompactStyle.Capsule && CapsuleFocus);
+    public bool ShowsFocus(CompactStyle style) => FocusPage && style is CompactStyle.Notch or CompactStyle.Capsule;
     public bool WeatherPage { get; set; } = true;
     public bool NotchWeather { get; set; } = true;
     public bool CapsuleWeather { get; set; } = true;

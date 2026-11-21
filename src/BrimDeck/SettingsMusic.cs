@@ -65,7 +65,8 @@ public sealed partial class SettingsWindow
         // The rows are in the order the collapsed row shows the parts, left to right; only the cover keeps its place at the left.
         var rows = new StackPanel();
         _partOptions.Clear();
-        foreach (var part in S.CompactOrder(style))
+        // Focus has no switch: it shows in the collapsed row whenever a session runs.
+        foreach (var part in S.CompactOrder(style).Where(part => part != CompactPart.Focus))
             rows.Children.Add(part switch { CompactPart.Clock => ClockRow(style, rows), _ => PartRow(style, part, rows) });
         UpdateDividers(rows);
         Group(rows);
