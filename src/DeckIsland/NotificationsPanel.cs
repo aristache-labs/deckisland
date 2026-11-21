@@ -161,7 +161,7 @@ public partial class MainWindow
     {
         Button Step(string glyph, int by, string name)
         {
-            var button = new Button { Content = glyph, Style = (Style)FindResource("PanelOutlineButton"), MinWidth = 24, Padding = new Thickness(6, 0, 6, 0), Margin = new Thickness(2, 0, 0, 0) };
+            var button = FlatGlyph(glyph, 14);
             AutomationProperties.SetName(button, name);
             button.Click += (_, _) =>
             {
@@ -179,7 +179,7 @@ public partial class MainWindow
         var position = WeatherText($"{shown + 1} / {count}", 12);
         position.Foreground = UI.Brush(Look.Secondary);
         position.VerticalAlignment = VerticalAlignment.Center;
-        position.Margin = new Thickness(4, 0, 4, 0);
+        position.Margin = new Thickness(2, 0, 2, 0);
         // The row's hover strip already holds the expand arrow; the stepper follows it, a little apart.
         if (row.Tag is StackPanel controls)
         {
@@ -199,6 +199,20 @@ public partial class MainWindow
         return row;
     }
 
+    // A bare glyph for a button, with no background or outline: dim, and full strength under the pointer.
+    private Button FlatGlyph(string glyph, double size)
+    {
+        var presenter = new FrameworkElementFactory(typeof(ContentPresenter), "Glyph");
+        presenter.SetValue(UIElement.OpacityProperty, .65);
+        presenter.SetValue(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Center);
+        presenter.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
+        var template = new ControlTemplate(typeof(Button)) { VisualTree = presenter };
+        var hover = new Trigger { Property = UIElement.IsMouseOverProperty, Value = true };
+        hover.Setters.Add(new Setter(UIElement.OpacityProperty, 1d, "Glyph"));
+        template.Triggers.Add(hover);
+        return new Button { Content = glyph, Template = template, FontSize = size, Foreground = UI.Brush(Look.Primary), Padding = new Thickness(5, 0, 5, 0), Cursor = System.Windows.Input.Cursors.Hand, Background = Brushes.Transparent };
+    }
+
     // One notice as a pressable row: the picture, the title over the message, its age (and how many more are stacked under it).
     private FrameworkElement NoticeRow(NoticeItem item, int more, Action press, bool margin = true)
     {
@@ -208,16 +222,20 @@ public partial class MainWindow
         age.Foreground = UI.Brush(Look.Secondary);
         age.HorizontalAlignment = HorizontalAlignment.Right;
         side.Children.Add(age);
+        TextBlock? badge = null;
         if (more > 0)
         {
-            var badge = WeatherText($"+{more}", 12);
+            badge = WeatherText($"+{more}", 12);
             badge.FontWeight = FontWeights.SemiBold;
             badge.Foreground = UI.Brush(Look.Readable(Look.Hex("accent"), 4.5));
             badge.HorizontalAlignment = HorizontalAlignment.Right;
-            side.Children.Add(badge);
         }
         DockPanel.SetDock(side, System.Windows.Controls.Dock.Right);
         row.Children.Add(side);
+        // Under the age: the "+n" of a stack, which the arrows take the place of while the pointer is on the row.
+        var controls = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Opacity = 0 };
+        side.Children.Add(new Grid { HorizontalAlignment = HorizontalAlignment.Right, Children = { controls } });
+        if (badge is not null) ((Grid)side.Children[^1]).Children.Insert(0, badge);
         row.Children.Add(NoticeMark(item));
         string noticeKey = $"{NoticeGroup(item)}|{item.Title}|{item.At.Ticks}";
         bool expanded = _noticeExpanded.Contains(noticeKey);
@@ -240,24 +258,16 @@ public partial class MainWindow
         var button = WidgetSurface(frame, label, press);
         button.ToolTip = more > 0 ? Loc.T("展开此应用的通知", "Open the stack") : item.AppId is { Length: > 0 } ? Loc.T("打开应用", "Open the app") : label;
 
-        // The expand arrow (and, on a stack, its stepper) shows over the right side of the row while the pointer or the keyboard is on it.
-        var controls = new StackPanel { Orientation = Orientation.Horizontal };
+        // The expand arrow (and, on a stack, its stepper) is in the row, before the age, and shows while the pointer or the keyboard is on it.
         var host = new Grid { Children = { button }, Tag = controls };
         if (detail.Length > 0)
         {
-            var arrow = new Button { Content = expanded ? "˄" : "˅", Style = (Style)FindResource("PanelOutlineButton"), MinWidth = 24, Padding = new Thickness(6, 0, 6, 0) };
+            var arrow = FlatGlyph(expanded ? "˄" : "˅", 12);
             AutomationProperties.SetName(arrow, expanded ? Loc.T("收起通知", "Collapse the notice") : Loc.T("展开通知", "Expand the notice"));
             arrow.Click += (_, _) => { if (!_noticeExpanded.Remove(noticeKey)) _noticeExpanded.Add(noticeKey); FillNoticeRows(); };
             controls.Children.Add(arrow);
         }
-        var strip = new Border
-        {
-            Child = controls, Background = UI.Brush(Look.Hex("fillSelected")), CornerRadius = new CornerRadius(Corner(8)), Padding = new Thickness(3),
-            HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = expanded ? VerticalAlignment.Top : VerticalAlignment.Center,
-            Margin = new Thickness(0, expanded ? 8 : 0, 64, 0), Opacity = 0
-        };
-        host.Children.Add(strip);
-        void Update() => strip.Opacity = host.IsMouseOver || host.IsKeyboardFocusWithin ? 1 : 0;
+        void Update() { bool on = host.IsMouseOver || host.IsKeyboardFocusWithin; controls.Opacity = on ? 1 : 0; if (badge is not null) badge.Opacity = on ? 0 : 1; }
         host.MouseEnter += (_, _) => Update();
         host.MouseLeave += (_, _) => Update();
         host.IsKeyboardFocusWithinChanged += (_, _) => Update();
