@@ -470,22 +470,8 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
             followRow = Toggle(Loc.T("字体应用到设置窗口", "Apply font to settings window"), S.SettingsFollowsFont,
                 on => { Change(s => s.SettingsFollowsFont = on); RebuildTheme(); });
         }
-        var timeFormats = new UniformGrid { Columns = 3, Width = 292 };
-        foreach (var (format, name) in new[]
-        {
-            (ClockTimeFormat.System, Loc.T("跟随系统", "System")),
-            (ClockTimeFormat.Hour12, Loc.T("12 小时制", "12-hour")),
-            (ClockTimeFormat.Hour24, Loc.T("24 小时制", "24-hour"))
-        })
-        {
-            var choice = new RadioButton { Style = (Style)FindResource("SettingsSegment"), Content = name,
-                IsChecked = S.TimeFormat == format, GroupName = "TimeFormat" };
-            AutomationProperties.SetName(choice, name);
-            choice.Checked += (_, _) => Change(s => s.TimeFormat = format);
-            timeFormats.Children.Add(choice);
-        }
         Group(Row(Loc.T("主题", "Theme"),SegmentBorder(themes)),Row(Loc.T("语言", "Language"),language),
-            Row(Loc.T("时间格式", "Time format"), SegmentBorder(timeFormats)),Row(Loc.T("缩放", "Scale"),scale),Dimension(Loc.T("圆角（%）", "Corners (%)"), S.CornerPercent, 0, 100, v => Change(s => s.CornerPercent = (int)v), "%", 5),transparency,
+            Row(Loc.T("缩放", "Scale"),scale),Dimension(Loc.T("圆角（%）", "Corners (%)"), S.CornerPercent, 0, 100, v => Change(s => s.CornerPercent = (int)v), "%", 5),transparency,
             fontRow,followRow,Row(Loc.T("字体预览", "Font preview"),fontSample));
         Interaction(); WindowRules();
     }

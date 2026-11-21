@@ -38,6 +38,51 @@ public sealed partial class SettingsWindow
             };
             Group(Row(label, choice));
         }
+        ClockWidgetSettings();
+    }
+
+    // Time format applies to every clock in DeckIsland; the cities are the Clock widget's.
+    private void ClockWidgetSettings()
+    {
+        SectionTitle(WidgetLayout.Name(WidgetKind.Clock));
+        var timeFormats = new UniformGrid { Columns = 3, Width = 292 };
+        foreach (var (format, name) in new[]
+        {
+            (ClockTimeFormat.System, Loc.T("跟随系统", "System")),
+            (ClockTimeFormat.Hour12, Loc.T("12 小时制", "12-hour")),
+            (ClockTimeFormat.Hour24, Loc.T("24 小时制", "24-hour"))
+        })
+        {
+            var choice = new RadioButton { Style = (Style)FindResource("SettingsSegment"), Content = name,
+                IsChecked = S.TimeFormat == format, GroupName = "TimeFormat" };
+            AutomationProperties.SetName(choice, name);
+            choice.Checked += (_, _) => Change(s => s.TimeFormat = format);
+            timeFormats.Children.Add(choice);
+        }
+        var rows = new List<FrameworkElement> { Row(Loc.T("时间格式", "Time format"), SegmentBorder(timeFormats)) };
+        string none = Loc.T("无", "None");
+        string[] names = [none, .. WorldClocks.Cities.Select(item => item.City)];
+        string[] labels = [Loc.T("第一个城市", "First city"), Loc.T("第二个城市", "Second city"), Loc.T("第三个城市", "Third city")];
+        for (int i = 0; i < WorldClocks.Maximum; i++)
+        {
+            int index = i;
+            string current = index < S.WorldClocks.Count ? S.WorldClocks[index] : "";
+            var city = WidgetChoice(labels[i], names, Math.Max(0, Array.IndexOf(names, current)));
+            city.SelectionChanged += (_, _) =>
+            {
+                if (city.SelectedIndex < 0) return;
+                string picked = city.SelectedIndex == 0 ? "" : names[city.SelectedIndex];
+                Change(s =>
+                {
+                    var list = new List<string>(s.WorldClocks);
+                    while (list.Count < WorldClocks.Maximum) list.Add("");
+                    list[index] = picked;
+                    s.WorldClocks = list;
+                });
+            };
+            rows.Add(Row(labels[i], city));
+        }
+        Group([.. rows]);
     }
 
     private void WidgetSizeControls()

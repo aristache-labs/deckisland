@@ -513,6 +513,7 @@ public sealed class DeckSettings
     public ClockColor ClockColor { get; set; }
     public string ClockCustomColor { get; set; } = ClockColors.DefaultCustom;
     public List<string> ClockGradient { get; set; } = [.. ClockColors.Sunset];
+    public List<string> WorldClocks { get; set; } = [];
     public ClockTimeFormat TimeFormat { get; set; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public bool? Clock24Hour { get; set; }
     [JsonIgnore] public string TimePattern => TimeFormat switch
@@ -965,6 +966,7 @@ public sealed class DeckSettings
         copy.Reminders = [.. Reminders ?? []];
         copy.SensorIgnoredApps = [.. SensorIgnoredApps ?? []];
         copy.ClockGradient = [.. ClockGradient ?? [.. ClockColors.Sunset]];
+        copy.WorldClocks = [.. WorldClocks ?? []];
         copy.DisplayMonitors = [.. DisplayMonitors ?? []];
         copy.ThemeChoices = (ThemeChoices ?? []).ToDictionary(pair => pair.Key, pair => pair.Value.Copy());
         copy.FullscreenRules = FullscreenRules.Select(rule => rule with { }).ToList();
@@ -1095,6 +1097,7 @@ public sealed class DeckSettings
         ClockCustomColor = AppPresets.NormalizeColor(ClockCustomColor) is { Length: > 0 } custom ? custom : ClockColors.DefaultCustom;
         var stops = (ClockGradient ?? []).Select(AppPresets.NormalizeColor).ToList();
         ClockGradient = stops.Count == 3 && stops.All(stop => stop.Length > 0) ? stops : [.. ClockColors.Sunset];
+        WorldClocks = Core.WorldClocks.Normalize(WorldClocks);
         if (!Enum.IsDefined(DefaultPage)) DefaultPage = DefaultDeckPage.Last;
         if (!Enum.IsDefined(LastPage)) LastPage = DeckPage.Usage;
         OpenDelay = Math.Clamp(OpenDelay, 0, 2000);
