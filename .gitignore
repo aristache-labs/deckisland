@@ -41,3 +41,5 @@ TokenEconomizer/
 dev-docs/
 TokenEconomizer
 TokenEconomizer/
+# WPF build temp projects
+*_wpftmp.csproj
