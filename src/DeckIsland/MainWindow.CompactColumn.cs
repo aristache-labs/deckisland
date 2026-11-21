@@ -30,6 +30,7 @@ public partial class MainWindow
         var shape = Collapsed; _compactRendered = shape;
         double scale = CompactMusicLayout.SafeScale(shape.Scale), dpi = VisualTreeHelper.GetDpi(this).DpiScaleX;
         double column = SnapDown(ColumnWidth(shape), dpi), room = SnapDown(CompactContentWidth(shape), dpi);
+        if (_hudMessage is { } hud) { RenderHudColumn(hud, scale, dpi, column, room); return; }
         var minimal = MinimalParts();
         bool Show(CompactPart part) => minimal is null || minimal.Contains(part);
         bool media = !FocusCompactOnly && Show(CompactPart.Music) && Settings.ShowsMusic(EffectiveStyle) && _mediaTrack is { State: not MediaState.Stopped };

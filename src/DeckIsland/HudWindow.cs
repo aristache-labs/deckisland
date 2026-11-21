@@ -81,7 +81,7 @@ internal sealed class HudWindow : Window
     {
         _pill.Background = UI.Brush(look.Hex("surface"));
         var ink = UI.Brush(look.Primary);
-        _icon.Stroke = ink; _text.Foreground = ink;
+        _icon.Stroke = message.Lit ? UI.Brush(look.Hex("accent")) : ink; _text.Foreground = ink;
         _figure.Foreground = UI.Brush(look.Secondary);
         _track.Background = UI.Brush(look.Hex("track"));
         _fill.Background = UI.Brush(look.Hex("accent"));

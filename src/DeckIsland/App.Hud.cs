@@ -61,7 +61,7 @@ public partial class App
             {
                 bool on = (GetKeyState(code) & 1) != 0;
                 if (state.TryGetValue(key, out bool previous) && previous != on && Settings.HudLocks)
-                    ShowHud(new($"lock:{key}", HudIcon.Lock, $"{HudFormat.LockName(key)} {(on ? "on" : "off")}", On: on));
+                    ShowHud(new($"lock:{key}", HudIcon.Lock, $"{HudFormat.LockName(key)} {(on ? "on" : "off")}", On: on, Lit: on));
                 state[key] = on;
             }
         };
@@ -69,24 +69,39 @@ public partial class App
         _hudKeep.Add(timer);
     }
 
-    // ----- Volume -----
+    // ----- Volume (follows the default output device when it changes) -----
     private void StartVolume()
     {
         try
         {
             var enumerator = new MMDeviceEnumerator();
-            var device = enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
-            var started = DateTime.UtcNow;
-            float last = device.AudioEndpointVolume.MasterVolumeLevelScalar;
-            bool muted = device.AudioEndpointVolume.Mute;
-            device.AudioEndpointVolume.OnVolumeNotification += data => Dispatcher.BeginInvoke(() =>
+            MMDevice? device = null;
+            float last = 0;
+            bool muted = false;
+            DateTime attached = default;
+            void Attach()
             {
-                if (DateTime.UtcNow - started < TimeSpan.FromSeconds(2) || !Settings.HudVolume) return;
+                var next = enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
+                if (device is not null && device.ID == next.ID) return;
+                if (device is not null) device.AudioEndpointVolume.OnVolumeNotification -= Changed;
+                device = next;
+                last = next.AudioEndpointVolume.MasterVolumeLevelScalar;
+                muted = next.AudioEndpointVolume.Mute;
+                attached = DateTime.UtcNow;
+                next.AudioEndpointVolume.OnVolumeNotification += Changed;
+            }
+            void Changed(AudioVolumeNotificationData data) => Dispatcher.BeginInvoke(() =>
+            {
+                if (DateTime.UtcNow - attached < TimeSpan.FromSeconds(1) || !Settings.HudVolume) return;
                 if (Math.Abs(data.MasterVolume - last) < .0005f && data.Muted == muted) return;
                 last = data.MasterVolume; muted = data.Muted;
-                ShowHud(new("volume", muted ? HudIcon.Muted : HudIcon.Volume, muted ? "Muted" : "Volume", muted ? 0 : last));
+                ShowHud(new("volume", muted ? HudIcon.Muted : HudIcon.Volume, muted ? "Muted" : "Volume", muted ? 0 : last, Lit: !muted));
             });
-            _hudKeep.Add(device); _hudKeep.Add(enumerator);
+            Attach();
+            var watch = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
+            watch.Tick += (_, _) => { try { Attach(); } catch (Exception error) when (error is COMException or InvalidOperationException) { } };
+            watch.Start();
+            _hudKeep.Add(watch); _hudKeep.Add(enumerator);
         }
         catch (Exception error) when (error is COMException or InvalidOperationException) { }
     }
@@ -100,7 +115,7 @@ public partial class App
             watcher.EventArrived += (_, args) =>
             {
                 if (args.NewEvent["Brightness"] is not byte level) return;
-                Dispatcher.BeginInvoke(() => { if (Settings.HudBrightness) ShowHud(new("brightness", HudIcon.Brightness, "Brightness", level / 100.0)); });
+                Dispatcher.BeginInvoke(() => { if (Settings.HudBrightness) ShowHud(new("brightness", HudIcon.Brightness, "Brightness", level / 100.0, Lit: true)); });
             };
             watcher.Start();
             _hudSources.Add(new Disposer(watcher.Stop));
@@ -125,7 +140,7 @@ public partial class App
             bool nowPlugged = status.AcLine == 1;
             int percent = status.Percent;
             if (plugged is { } before && before != nowPlugged && Settings.HudBattery)
-                ShowHud(new("battery", nowPlugged ? HudIcon.Charging : HudIcon.Battery, nowPlugged ? "Charging" : "Unplugged", percent / 100.0, Figure: $"{percent}%"));
+                ShowHud(new("battery", nowPlugged ? HudIcon.Charging : HudIcon.Battery, nowPlugged ? "Charging" : "Unplugged", percent / 100.0, Figure: $"{percent}%", Lit: nowPlugged));
             plugged = nowPlugged;
             if (nowPlugged) { lowestAlert = 101; return; }
             foreach (int threshold in new[] { 20, 10, 5 })
@@ -161,7 +176,7 @@ public partial class App
                         bool connected = sender.ConnectionStatus == BluetoothConnectionStatus.Connected;
                         int? percent = Devices?.All.FirstOrDefault(item => string.Equals(item.Name, sender.Name, StringComparison.OrdinalIgnoreCase))?.Percent;
                         ShowHud(new($"bluetooth:{sender.DeviceId}", HudIcon.Bluetooth, sender.Name,
-                            Figure: connected ? (percent is { } value ? $"{value}%" : "Connected") : "Disconnected"));
+                            Figure: connected ? (percent is { } value ? $"{value}%" : "Connected") : "Disconnected", Lit: connected));
                     });
                 }
                 catch (Exception error) when (error is COMException or InvalidOperationException) { }
@@ -215,7 +230,7 @@ public partial class App
             }
             if (done.Count > 0)
             {
-                ShowHud(new("download", HudIcon.Done, done.Dequeue(), Figure: "Downloaded", Hold: TimeSpan.FromSeconds(3)));
+                ShowHud(new("download", HudIcon.Done, done.Dequeue(), Figure: "Downloaded", Hold: TimeSpan.FromSeconds(3), Lit: true));
                 showing = false;
                 return;
             }
@@ -226,7 +241,7 @@ public partial class App
                 return;
             }
             string title = active.Count > 1 ? $"{active.Count} downloads" : Path.GetFileNameWithoutExtension(active[0].Key);
-            ShowHud(new("download", HudIcon.Download, title, Figure: HudFormat.Speed(active.Sum(item => item.Value.Speed)), Hold: TimeSpan.Zero));
+            ShowHud(new("download", HudIcon.Download, title, Figure: HudFormat.Speed(active.Sum(item => item.Value.Speed)), Hold: TimeSpan.Zero, Lit: true));
             showing = true;
         };
         timer.Start();

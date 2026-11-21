@@ -3,9 +3,9 @@ namespace DeckIsland.Core;
 public enum HudIcon { Volume, Muted, Brightness, Battery, Charging, Bluetooth, Lock, Download, Done, Notice }
 
 // One readout the island shows under the collapsed row: an icon, a line of text, and on the right a level bar, an on/off dot or a
-// short figure. A message with the same Key as the one shown updates it in place (a volume key held down moves the bar).
+// short figure. Lit colors the icon: something that has just been switched on, never its switching off. A message with the same Key as the one shown updates it in place (a volume key held down moves the bar).
 public sealed record HudMessage(string Key, HudIcon Icon, string Text, double? Level = null, bool? On = null, string? Figure = null,
-    TimeSpan? Hold = null);
+    TimeSpan? Hold = null, bool Lit = false);
 
 public static class HudFormat
 {

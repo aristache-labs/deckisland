@@ -68,7 +68,7 @@ public partial class App
             string title = texts[0], body = string.Join(" ", texts.Skip(1));
             Notices.Add(new NoticeItem(app, title, body, DateTimeOffset.Now));
             double seconds = Settings.NotificationSeconds * (Settings.KeepNoticesLonger ? 2 : 1);
-            ShowHud(new($"notice:{toast.Id}", HudIcon.Notice, body.Length > 0 ? $"{title} · {body}" : title, Figure: app, Hold: TimeSpan.FromSeconds(seconds)));
+            ShowHud(new($"notice:{toast.Id}", HudIcon.Notice, body.Length > 0 ? $"{title} · {body}" : title, Figure: app, Hold: TimeSpan.FromSeconds(seconds), Lit: true));
         }
     }
 }
