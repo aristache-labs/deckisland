@@ -111,7 +111,7 @@ public partial class MainWindow
         foreach (var group in groups)
         {
             var notices = group.ToList();
-            if (notices.Count == 1) { rows.Children.Add(NoticeRow(notices[0], 0, () => OpenNoticeApp(notices[0]))); continue; }
+            if (notices.Count == 1) { rows.Children.Add(NoticeRow(notices[0], 0, null)); continue; }
             bool open = _noticeOpen.Contains(group.Key);
             string app = notices[0].App;
             if (open)
@@ -127,7 +127,7 @@ public partial class MainWindow
                 head.Children.Add(less);
                 head.Children.Add(title);
                 rows.Children.Add(head);
-                foreach (var notice in notices) rows.Children.Add(NoticeRow(notice, 0, () => OpenNoticeApp(notice)));
+                foreach (var notice in notices) rows.Children.Add(NoticeRow(notice, 0, null));
                 continue;
             }
             // Closed: the newest on top of two edges of the ones under it; pressing it opens the stack.
@@ -199,6 +199,30 @@ public partial class MainWindow
         return row;
     }
 
+    // The notice's picture as the button that opens its app: under the pointer a link glyph covers it.
+    private FrameworkElement MarkButton(NoticeItem item, FrameworkElement mark)
+    {
+        if (item.AppId is not { Length: > 0 }) { mark.Margin = new Thickness(0, 0, 10, 0); return mark; }
+        var link = new System.Windows.Shapes.Path
+        {
+            Data = Geometry.Parse("M6,3.5 H3.5 V12.5 H12.5 V10 M8,2.5 H13.5 V8 M13.5,2.5 L7,9"), Stroke = UI.Brush(Look.Primary), StrokeThickness = 1.4, Width = 15, Height = 15,
+            Stretch = Stretch.Uniform, StrokeLineJoin = PenLineJoin.Round, StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center
+        };
+        var cover = new Border { Width = 30, Height = 30, CornerRadius = new CornerRadius(Corner(7)), Background = UI.Brush(Look.Hex("fillSelected")), Child = link, Opacity = 0, IsHitTestVisible = false };
+        var presenter = new FrameworkElementFactory(typeof(ContentPresenter));
+        var button = new Button
+        {
+            Content = new Grid { Children = { mark, cover } }, Template = new ControlTemplate(typeof(Button)) { VisualTree = presenter }, Margin = new Thickness(0, 0, 10, 0),
+            VerticalAlignment = VerticalAlignment.Center, Cursor = System.Windows.Input.Cursors.Hand, Background = Brushes.Transparent, Padding = new Thickness(0)
+        };
+        button.MouseEnter += (_, _) => cover.Opacity = 1;
+        button.MouseLeave += (_, _) => cover.Opacity = 0;
+        button.Click += (_, _) => OpenNoticeApp(item);
+        button.ToolTip = Loc.T("打开应用", "Open the app");
+        AutomationProperties.SetName(button, Loc.T("打开 ", "Open ") + item.App);
+        return button;
+    }
+
     // A bare glyph for a button, with no background or outline: dim, and full strength under the pointer.
     private Button FlatGlyph(string glyph, double size)
     {
@@ -214,7 +238,9 @@ public partial class MainWindow
     }
 
     // One notice as a pressable row: the picture, the title over the message, its age (and how many more are stacked under it).
-    private FrameworkElement NoticeRow(NoticeItem item, int more, Action press, bool margin = true)
+    // Pressing a notice opens or closes its whole message; the app opens from the icon, or from "Open" in the whole message. A stack's top
+    // notice (press given) opens the stack instead.
+    private FrameworkElement NoticeRow(NoticeItem item, int more, Action? press, bool margin = true)
     {
         var row = new DockPanel { LastChildFill = true };
         var side = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 4, 0) };
@@ -236,9 +262,19 @@ public partial class MainWindow
         var controls = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Opacity = 0 };
         side.Children.Add(new Grid { HorizontalAlignment = HorizontalAlignment.Right, Children = { controls } });
         if (badge is not null) ((Grid)side.Children[^1]).Children.Insert(0, badge);
-        row.Children.Add(NoticeMark(item));
+        var mark = NoticeMark(item);
+        mark.Margin = new Thickness(0);
+        row.Children.Add(MarkButton(item, mark));
         string noticeKey = $"{NoticeGroup(item)}|{item.Title}|{item.At.Ticks}";
         bool expanded = _noticeExpanded.Contains(noticeKey);
+        void Toggle() { if (!_noticeExpanded.Remove(noticeKey)) _noticeExpanded.Add(noticeKey); FillNoticeRows(); }
+        Button Arrow()
+        {
+            var arrow = FlatGlyph(expanded ? "˄" : "˅", 12);
+            AutomationProperties.SetName(arrow, expanded ? Loc.T("收起通知", "Collapse the notice") : Loc.T("展开通知", "Expand the notice"));
+            arrow.Click += (_, _) => Toggle();
+            return arrow;
+        }
         var title = WeatherText(item.Title, 13);
         title.FontWeight = FontWeights.SemiBold;
         title.TextTrimming = TextTrimming.CharacterEllipsis;
@@ -251,22 +287,35 @@ public partial class MainWindow
             body.TextWrapping = expanded ? TextWrapping.Wrap : TextWrapping.NoWrap;
             body.TextTrimming = expanded ? TextTrimming.None : TextTrimming.CharacterEllipsis;
             text.Children.Add(body);
+            if (expanded)
+            {
+                // The whole message ends with the sending app, and the arrow back up with "Open" beside it.
+                var foot = new DockPanel { Margin = new Thickness(0, 6, 0, 0) };
+                var buttons = new StackPanel { Orientation = Orientation.Horizontal };
+                DockPanel.SetDock(buttons, System.Windows.Controls.Dock.Right);
+                buttons.Children.Add(Arrow());
+                if (item.AppId is { Length: > 0 })
+                {
+                    var open = new Button { Content = Loc.T("打开", "Open"), Style = (Style)FindResource("PanelOutlineButton"), Padding = new Thickness(12, 3, 12, 3), Margin = new Thickness(6, 0, 0, 0) };
+                    open.Click += (_, _) => OpenNoticeApp(item);
+                    buttons.Children.Add(open);
+                }
+                var from = WeatherText(item.App, 12);
+                from.Foreground = UI.Brush(Look.Tertiary);
+                from.FontWeight = FontWeights.SemiBold;
+                foot.Children.Add(buttons); foot.Children.Add(from);
+                text.Children.Add(foot);
+            }
         }
         row.Children.Add(text);
         string label = $"{item.App}: {item.Title} {item.Body} · {NoticeAge(item.At)}{(more > 0 ? $" · +{more}" : "")}".Trim();
         var frame = new Border { Child = row, Padding = new Thickness(8, 6, 6, 6), CornerRadius = new CornerRadius(Corner(10)), Background = UI.Brush(Look.Hex("fill")) };
-        var button = WidgetSurface(frame, label, press);
-        button.ToolTip = more > 0 ? Loc.T("展开此应用的通知", "Open the stack") : item.AppId is { Length: > 0 } ? Loc.T("打开应用", "Open the app") : label;
+        var button = WidgetSurface(frame, label, press ?? Toggle);
+        button.ToolTip = more > 0 ? Loc.T("展开此应用的通知", "Open the stack") : expanded ? Loc.T("收起通知", "Collapse the notice") : Loc.T("展开通知", "Expand the notice");
 
         // The expand arrow (and, on a stack, its stepper) is in the row, before the age, and shows while the pointer or the keyboard is on it.
         var host = new Grid { Children = { button }, Tag = controls };
-        if (detail.Length > 0)
-        {
-            var arrow = FlatGlyph(expanded ? "˄" : "˅", 12);
-            AutomationProperties.SetName(arrow, expanded ? Loc.T("收起通知", "Collapse the notice") : Loc.T("展开通知", "Expand the notice"));
-            arrow.Click += (_, _) => { if (!_noticeExpanded.Remove(noticeKey)) _noticeExpanded.Add(noticeKey); FillNoticeRows(); };
-            controls.Children.Add(arrow);
-        }
+        if (detail.Length > 0 && !expanded) controls.Children.Add(Arrow());
         void Update() { bool on = host.IsMouseOver || host.IsKeyboardFocusWithin; controls.Opacity = on ? 1 : 0; if (badge is not null) badge.Opacity = on ? 0 : 1; }
         host.MouseEnter += (_, _) => Update();
         host.MouseLeave += (_, _) => Update();
