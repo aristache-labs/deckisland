@@ -5,6 +5,26 @@
       <Border Margin="-3" CornerRadius="9" BorderThickness="2" BorderBrush="{DynamicResource SettingsAccent}"/>
     </ControlTemplate></Setter.Value></Setter>
   </Style>
+  <Style x:Key="ReminderChoice" TargetType="RadioButton">
+    <Setter Property="Height" Value="31"/><Setter Property="Margin" Value="0,0,6,6"/>
+    <Setter Property="Padding" Value="12,0"/><Setter Property="FontSize" Value="13"/>
+    <Setter Property="Cursor" Value="Hand"/><Setter Property="Foreground" Value="{DynamicResource SettingsTextPrimary}"/>
+    <Setter Property="FocusVisualStyle" Value="{StaticResource ControlDialogKeyboardFocus}"/>
+    <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="RadioButton">
+      <Border x:Name="Pill" CornerRadius="16" Background="{DynamicResource SettingsInset}"
+              BorderBrush="{DynamicResource SettingsInputBorder}" BorderThickness="1" Padding="{TemplateBinding Padding}">
+        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+      </Border>
+      <ControlTemplate.Triggers>
+        <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Pill" Property="Background" Value="{DynamicResource SettingsFillHover}"/></Trigger>
+        <Trigger Property="IsChecked" Value="True">
+          <Setter TargetName="Pill" Property="Background" Value="{DynamicResource SettingsTextPrimary}"/>
+          <Setter Property="Foreground" Value="{DynamicResource SettingsSurface}"/>
+          <Setter Property="FontWeight" Value="SemiBold"/>
+        </Trigger>
+      </ControlTemplate.Triggers>
+    </ControlTemplate></Setter.Value></Setter>
+  </Style>
   <Style x:Key="ControlDialogButton" TargetType="Button">
     <Setter Property="MinWidth" Value="124"/><Setter Property="Height" Value="36"/>
     <Setter Property="FontSize" Value="13"/><Setter Property="FontWeight" Value="Medium"/>

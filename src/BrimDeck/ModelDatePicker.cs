@@ -27,6 +27,7 @@ internal sealed class ModelDatePicker : Border
 
     private DateTime _start, _end, _month;
     private bool _editingEnd;
+    private readonly bool _singleFutureDate;
     private readonly PanelPalette _palette;
 
     internal event Action<UsageDateRange>? Applied;
@@ -82,8 +83,9 @@ internal sealed class ModelDatePicker : Border
         public int Cell = -1;
     }
 
-    internal ModelDatePicker(UsageDateRange range, PanelPalette? palette = null)
+    internal ModelDatePicker(UsageDateRange range, PanelPalette? palette = null, bool singleFutureDate = false)
     {
+        _singleFutureDate = singleFutureDate;
         _palette = palette ?? PanelTheme.Main.Current;
         _start = range.Start.Date; _end = range.End.Date; _month = new(_start.Year, _start.Month, 1);
         _styles ??= (ResourceDictionary)Application.LoadComponent(new Uri("/BrimDeck;component/ModelDetailsResources.xaml", UriKind.Relative));
@@ -123,7 +125,7 @@ internal sealed class ModelDatePicker : Border
         _fieldMark = new Border { BorderBrush = Brush("accent"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(Radius), IsHitTestVisible = false,
             HorizontalAlignment = HorizontalAlignment.Left, Width = (Inner - FieldGap) / 2, RenderTransform = _fieldShift };
         Grid.SetColumnSpan(_fieldMark, 3); fields.Children.Add(_fieldMark);
-        _body.Children.Add(fields);
+        if (!singleFutureDate) _body.Children.Add(fields);
 
         // The month and its arrows; the header keeps a second line for the month that leaves.
         var navigation = new Grid { Height = 26, Margin = new Thickness(0, 2, 0, 3) };
@@ -199,7 +201,7 @@ internal sealed class ModelDatePicker : Border
         // The focus ring is drawn in the accent, so on an accent button it stands outside it.
         _apply.FocusVisualStyle = TryFindResource("PanelOutsetKeyboardFocus") as Style;
         actions.Children.Add(_apply);
-        _body.Children.Add(actions);
+        if (!singleFutureDate) _body.Children.Add(actions);
 
         FillMonth();
         Refresh(false, false);
@@ -279,6 +281,14 @@ internal sealed class ModelDatePicker : Border
 
     internal void ChooseDate(DateTime date)
     {
+        if (_singleFutureDate)
+        {
+            if (date.Date < DateTime.Today) return;
+            _start = _end = date.Date;
+            Refresh(Moves, false);
+            ApplySelection();
+            return;
+        }
         if (date.Date > DateTime.Today) return;
         if (_editingEnd) _end = date.Date;
         else { _start = date.Date; _editingEnd = true; }
@@ -340,8 +350,9 @@ internal sealed class ModelDatePicker : Border
             var shown = day == today ? Visibility.Visible : Visibility.Hidden;
             _todayDots[i].Visibility = shown;
             foreach (var marker in _markers) { marker.Figures[i].Text = figure; marker.Dots[i].Visibility = shown; }
-            _days[i].IsEnabled = day <= today;
-            _days[i].Opacity = day <= today ? 1 : Unavailable;
+            bool enabled = _singleFutureDate ? day >= today : day <= today;
+            _days[i].IsEnabled = enabled;
+            _days[i].Opacity = enabled ? 1 : Unavailable;
             AutomationProperties.SetName(_days[i], day.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
         }
         _monthText.Text = Loc.IsEnglish ? _month.ToString("MMMM yyyy", Loc.Culture) : _month.ToString("yyyy 年 M 月", CultureInfo.InvariantCulture);
@@ -380,8 +391,9 @@ internal sealed class ModelDatePicker : Border
         bool error = DatePickerMotion.ShowsError(_start, _end);
         _messageOpen.Set(error ? 1 : 0, motion, now);
         _apply.IsEnabled = SelectedRange is not null;
-        _previous.IsEnabled = _month > DateTime.MinValue.AddMonths(1);
-        _next.IsEnabled = _month.AddMonths(1) <= DateTime.Today;
+        var today = DateTime.Today;
+        _previous.IsEnabled = _singleFutureDate ? _month > new DateTime(today.Year, today.Month, 1) : _month > DateTime.MinValue.AddMonths(1);
+        _next.IsEnabled = _month < new DateTime(9999, 11, 1) && (_singleFutureDate || _month.AddMonths(1) <= today);
         _applyFade.Set(_apply.IsEnabled ? 1 : Unavailable, motion, now);
         _previousFade.Set(_previous.IsEnabled ? 1 : Unavailable, motion, now);
         _nextFade.Set(_next.IsEnabled ? 1 : Unavailable, motion, now);
