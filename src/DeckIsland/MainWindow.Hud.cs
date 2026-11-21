@@ -63,17 +63,13 @@ public partial class MainWindow
         double total = Math.Min(Math.Round(240 * scale), maxWidth);
         var grid = new Grid { Width = total, VerticalAlignment = VerticalAlignment.Center, ToolTip = hud.Label ?? hud.Text };
         System.Windows.Automation.AutomationProperties.SetName(grid, hud.Label ?? hud.Text);
-        var mark = new Path
-        {
-            Data = HudWindow.IconGeometry(hud.Icon), Stroke = UI.Brush(hud.Lit ? Look.Hex("accent") : Look.Primary), StrokeThickness = Math.Max(1, 1.4 * scale),
-            Stretch = System.Windows.Media.Stretch.Uniform, Width = icon, Height = icon, StrokeLineJoin = System.Windows.Media.PenLineJoin.Round,
-            StrokeStartLineCap = System.Windows.Media.PenLineCap.Round, StrokeEndLineCap = System.Windows.Media.PenLineCap.Round,
-            VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Left
-        };
+        var mark = HudGlyph.Create(hud, Look, icon, scale);
+        mark.VerticalAlignment = VerticalAlignment.Center; mark.HorizontalAlignment = HorizontalAlignment.Left;
+        double glyph = Math.Max(icon, double.IsNaN(mark.Width) ? icon : mark.Width);
         bool textless = hud.Text.Length == 0;
         // What stands at the right: the figure, then the dot.
         var right = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center };
-        if (hud.Figure is { } figure) right.Children.Add(UI.Fixed(figure, font, line, Look.Secondary));
+        if (hud.Figure is { } figure) right.Children.Add(UI.Fixed(figure, font, line, hud.FigureColor ?? Look.Secondary));
         if (hud.On is { } on)
         {
             double size = Math.Max(5, Math.Round(7 * scale));
@@ -83,7 +79,7 @@ public partial class MainWindow
         }
         right.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
         // Both sides are as wide as the wider one, so the text stands in the middle of the row.
-        double side = textless ? icon + gap : Math.Max(icon, Math.Ceiling(right.DesiredSize.Width)) + gap;
+        double side = textless ? glyph + gap : Math.Max(glyph, Math.Ceiling(right.DesiredSize.Width)) + gap;
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(side) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(textless ? 0 : side) });
@@ -121,13 +117,9 @@ public partial class MainWindow
         double gap = Math.Round(8 * scale), icon = Math.Round(14 * scale), after = Math.Round(44 * scale);
         var parts = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, ToolTip = hud.Label ?? hud.Text };
         System.Windows.Automation.AutomationProperties.SetName(parts, hud.Label ?? hud.Text);
-        parts.Children.Add(new Path
-        {
-            Data = HudWindow.IconGeometry(hud.Icon), Stroke = UI.Brush(hud.Lit ? Look.Hex("accent") : Look.Primary), StrokeThickness = Math.Max(1, 1.4 * scale),
-            Stretch = System.Windows.Media.Stretch.Uniform, Width = icon, Height = icon, StrokeLineJoin = System.Windows.Media.PenLineJoin.Round,
-            StrokeStartLineCap = System.Windows.Media.PenLineCap.Round, StrokeEndLineCap = System.Windows.Media.PenLineCap.Round,
-            VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, hud.Text.Length > 0 ? gap : 0, 0)
-        });
+        var glyph = HudGlyph.Create(hud, Look, icon, scale);
+        glyph.VerticalAlignment = VerticalAlignment.Center; glyph.Margin = new Thickness(0, 0, hud.Text.Length > 0 ? gap : 0, 0);
+        parts.Children.Add(glyph);
         var text = UI.Fixed(hud.Text, font, line, Look.Primary, FontWeights.SemiBold);
         text.MaxWidth = Math.Round(260 * scale); text.TextTrimming = TextTrimming.CharacterEllipsis; text.ToolTip = hud.Text;
         if (hud.Reserve is { } longest)
@@ -148,7 +140,7 @@ public partial class MainWindow
         }
         if (hud.Figure is { } figure)
         {
-            var value = UI.Fixed(figure, font, line, Look.Secondary);
+            var value = UI.Fixed(figure, font, line, hud.FigureColor ?? Look.Secondary);
             value.Margin = new Thickness(hud.Text.Length > 0 ? after : gap, 0, 0, 0);
             parts.Children.Add(value);
         }

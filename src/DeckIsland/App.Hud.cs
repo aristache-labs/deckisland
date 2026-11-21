@@ -141,14 +141,14 @@ public partial class App
             bool nowPlugged = status.AcLine == 1;
             int percent = status.Percent;
             if (plugged is { } before && before != nowPlugged && Settings.HudBattery)
-                ShowHud(new("battery", nowPlugged ? HudIcon.Charging : HudIcon.Battery, nowPlugged ? "Charging" : "Unplugged", percent / 100.0, Figure: $"{percent}%", Lit: nowPlugged));
+                ShowHud(new("battery", nowPlugged ? HudIcon.Charging : HudIcon.Battery, nowPlugged ? "Charging" : "On battery", Figure: $"{percent}%", Lit: nowPlugged, IconLevel: percent / 100.0, FigureColor: percent <= 20 && !nowPlugged ? null : "#30D158"));
             plugged = nowPlugged;
             if (nowPlugged) { lowestAlert = 101; return; }
             foreach (int threshold in new[] { 20, 10, 5 })
                 if (percent <= threshold && lowestAlert > threshold)
                 {
                     lowestAlert = threshold;
-                    if (Settings.HudBattery) ShowHud(new("battery", HudIcon.Battery, "Low battery", percent / 100.0, Figure: $"{percent}%", Hold: TimeSpan.FromSeconds(4)));
+                    if (Settings.HudBattery) ShowHud(new("battery", HudIcon.Battery, "Low battery", Figure: $"{percent}%", Hold: TimeSpan.FromSeconds(4), IconLevel: percent / 100.0));
                     break;
                 }
         };
@@ -198,40 +198,80 @@ public partial class App
     {
         string folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
         if (!Directory.Exists(folder)) return;
+        // A browser writes "Unconfirmed 874876.crdownload" until it knows the file's name, may rename that partial file again, and at the
+        // end renames it to the name it keeps: the same file all along. A partial file that is deleted instead was canceled.
         var partial = new Dictionary<string, (long Size, DateTime At, double Speed)>(StringComparer.OrdinalIgnoreCase);
-        var done = new Queue<string>();
+        // A partial file just renamed to a name that is not partial: the name settles once nothing renames it for a moment.
+        var finishing = new Dictionary<string, (string Name, DateTime Since)>(StringComparer.OrdinalIgnoreCase);
+        // A partial file just deleted: a finished file of about its size appearing within a moment was its end; otherwise it was canceled.
+        var vanished = new List<(string Name, long Size, DateTime Since)>();
+        var done = new Queue<(string Name, bool Canceled)>();
         var watcher = new FileSystemWatcher(folder)
         {
             NotifyFilter = NotifyFilters.FileName | NotifyFilters.Size | NotifyFilters.LastWrite, EnableRaisingEvents = true
         };
         static bool IsPartial(string path) => PartialExtensions.Contains(Path.GetExtension(path), StringComparer.OrdinalIgnoreCase);
+        var settle = TimeSpan.FromMilliseconds(1200);
         watcher.Renamed += (_, e) => Dispatcher.BeginInvoke(() =>
         {
-            if (partial.Remove(e.OldFullPath) && !IsPartial(e.FullPath)) done.Enqueue(Path.GetFileName(e.FullPath));
+            if (finishing.Remove(e.OldFullPath))
+            {
+                if (!IsPartial(e.FullPath)) finishing[e.FullPath] = (Path.GetFileName(e.FullPath), DateTime.UtcNow);
+                return;
+            }
+            if (!partial.Remove(e.OldFullPath, out var entry)) return;
+            if (IsPartial(e.FullPath)) partial[e.FullPath] = entry;
+            else finishing[e.FullPath] = (Path.GetFileName(e.FullPath), DateTime.UtcNow);
         });
-        watcher.Created += (_, e) => Dispatcher.BeginInvoke(() => { if (IsPartial(e.FullPath)) partial[e.FullPath] = (0, DateTime.UtcNow, 0); });
-        watcher.Deleted += (_, e) => Dispatcher.BeginInvoke(() => partial.Remove(e.FullPath));
+        watcher.Created += (_, e) => Dispatcher.BeginInvoke(() =>
+        {
+            if (IsPartial(e.FullPath)) { partial[e.FullPath] = (0, DateTime.UtcNow, 0); return; }
+            long size;
+            try { size = new FileInfo(e.FullPath).Length; } catch (IOException) { return; }
+            int match = vanished.FindIndex(item => item.Size > 0 && size >= item.Size * .9);
+            if (match < 0) return;
+            finishing[e.FullPath] = (Path.GetFileName(e.FullPath), DateTime.UtcNow);
+            vanished.RemoveAt(match);
+        });
+        watcher.Deleted += (_, e) => Dispatcher.BeginInvoke(() =>
+        {
+            finishing.Remove(e.FullPath);
+            if (partial.Remove(e.FullPath, out var entry)) vanished.Add((Path.GetFileNameWithoutExtension(e.FullPath), entry.Size, DateTime.UtcNow));
+        });
         var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
         bool showing = false;
         timer.Tick += (_, _) =>
         {
             if (!Settings.HudDownloads)
             {
-                partial.Clear(); done.Clear();
+                partial.Clear(); finishing.Clear(); vanished.Clear(); done.Clear();
                 if (showing) { ClearHud("download"); showing = false; }
                 return;
             }
+            var now = DateTime.UtcNow;
             foreach (var path in partial.Keys.ToList())
             {
                 long size;
                 try { size = new FileInfo(path).Length; } catch (IOException) { continue; }
                 var (before, at, _) = partial[path];
-                double seconds = Math.Max(.2, (DateTime.UtcNow - at).TotalSeconds);
-                partial[path] = (size, DateTime.UtcNow, Math.Max(0, (size - before) / seconds));
+                double seconds = Math.Max(.2, (now - at).TotalSeconds);
+                partial[path] = (size, now, Math.Max(0, (size - before) / seconds));
+            }
+            foreach (var (path, item) in finishing.Where(pair => now - pair.Value.Since >= settle).ToList())
+            {
+                finishing.Remove(path);
+                done.Enqueue((item.Name, false));
+            }
+            foreach (var item in vanished.Where(item => now - item.Since >= settle).ToList())
+            {
+                vanished.Remove(item);
+                done.Enqueue((item.Name, true));
             }
             if (done.Count > 0)
             {
-                ShowHud(new("download", HudIcon.Done, done.Dequeue(), Figure: "Downloaded", Hold: TimeSpan.FromSeconds(3), Lit: true));
+                var (name, canceled) = done.Dequeue();
+                ShowHud(new("download", canceled ? HudIcon.Cancel : HudIcon.Done, name, Figure: canceled ? "Canceled" : "Completed", Hold: TimeSpan.FromSeconds(3), Lit: !canceled,
+                    Label: $"{(canceled ? "Download canceled" : "Download completed")}: {name}"));
                 showing = false;
                 return;
             }
@@ -241,6 +281,7 @@ public partial class App
                 if (showing) { ClearHud("download"); showing = false; }
                 return;
             }
+            // The name the browser gives the partial file so far ("Unconfirmed 874876", or the file's own once it is known).
             string title = active.Count > 1 ? $"{active.Count} downloads" : Path.GetFileNameWithoutExtension(active[0].Key);
             ShowHud(new("download", HudIcon.Download, title, Figure: HudFormat.Speed(active.Sum(item => item.Value.Speed)), Hold: TimeSpan.Zero, Lit: true));
             showing = true;

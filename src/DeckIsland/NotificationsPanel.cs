@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using DeckIsland.Core;
@@ -23,6 +24,8 @@ public partial class MainWindow
     private readonly HashSet<string> _noticeOpen = [];
     // Which notice of a closed stack is on top, by stack (the arrows under the pointer step it).
     private readonly Dictionary<string, int> _noticeTop = [];
+    // A stepped stack whose new top notice slides in from the side it was stepped to: (stack, direction).
+    private (string Key, int By)? _noticeSlide;
     private (int Theme, string Language, string TimePattern, bool Clock) _noticeAppearance;
 
     private void InitializeNotifications()
@@ -158,7 +161,17 @@ public partial class MainWindow
         {
             var button = new Button { Content = glyph, Style = (Style)FindResource("PanelOutlineButton"), MinWidth = 24, Padding = new Thickness(6, 0, 6, 0), Margin = new Thickness(2, 0, 0, 0) };
             AutomationProperties.SetName(button, name);
-            button.Click += (_, _) => { _noticeTop[key] = (shown + by + count) % count; FillNoticeRows(); };
+            button.Click += (_, _) =>
+            {
+                void Change() { _noticeTop[key] = (shown + by + count) % count; _noticeSlide = (key, by); FillNoticeRows(); }
+                if (!Animates) { Change(); return; }
+                // The notice on show slides away the way the stack is stepped, then the next one slides in (below).
+                var leave = new DoubleAnimation(0, TimeSpan.FromMilliseconds(110)) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn } };
+                leave.Completed += (_, _) => Change();
+                row.RenderTransform = new TranslateTransform();
+                row.RenderTransform.BeginAnimation(TranslateTransform.XProperty, new DoubleAnimation(-by * 36, TimeSpan.FromMilliseconds(110)) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn } });
+                row.BeginAnimation(OpacityProperty, leave);
+            };
             return button;
         }
         var position = WeatherText($"{shown + 1} / {count}", 12);
@@ -172,6 +185,15 @@ public partial class MainWindow
             HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 64, 0), Opacity = 0
         };
         var host = new Grid { Children = { row, strip } };
+        if (Animates && _noticeSlide is { } slide && slide.Key == key)
+        {
+            _noticeSlide = null;
+            var travel = new TranslateTransform(slide.By * 36, 0);
+            row.RenderTransform = travel;
+            var settle = new Duration(TimeSpan.FromMilliseconds(190));
+            travel.BeginAnimation(TranslateTransform.XProperty, new DoubleAnimation(0, settle) { EasingFunction = Soft.Out });
+            row.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, settle) { EasingFunction = Soft.Out, FillBehavior = FillBehavior.Stop });
+        }
         void Update() => strip.Opacity = host.IsMouseOver || host.IsKeyboardFocusWithin ? 1 : 0;
         host.MouseEnter += (_, _) => Update();
         host.MouseLeave += (_, _) => Update();

@@ -31,6 +31,7 @@ internal sealed class HudWindow : Window
         [HudIcon.Download] = "M10,3 V12 M6,8.5 L10,12.5 L14,8.5 M3,16 H17",
         [HudIcon.NumLock] = "M7.5,3 L6,17 M14,3 L12.5,17 M3.5,7.5 H17 M3,12.5 H16.5",
         [HudIcon.ScrollLock] = "M10,3 V17 M6.5,6.5 L10,3 L13.5,6.5 M6.5,13.5 L10,17 L13.5,13.5",
+        [HudIcon.Cancel] = "M5,5 L15,15 M15,5 L5,15",
         [HudIcon.Done] = "M4,10 L8.5,14.5 L16,6",
         [HudIcon.Notice] = "M3.5,14.5 C6,12.5 5.5,11.5 5.5,8.5 A4.5,4.5 0 0 1 14.5,8.5 C14.5,11.5 14,12.5 16.5,14.5 Z M8,17 A2,2 0 0 0 12,17"
     };
@@ -39,8 +40,7 @@ internal sealed class HudWindow : Window
 
     private readonly DispatcherTimer _hide = new();
     private readonly Border _pill = new() { CornerRadius = new CornerRadius(0, 0, 18, 18), Padding = new Thickness(16, 0, 16, 0), Height = 38 };
-    private readonly Path _icon = new() { Width = 17, Height = 17, Stretch = Stretch.Uniform, StrokeThickness = 1.6, StrokeLineJoin = PenLineJoin.Round,
-        StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round, VerticalAlignment = VerticalAlignment.Center };
+    private readonly ContentControl _icon = new() { VerticalAlignment = VerticalAlignment.Center, IsTabStop = false };
     private readonly TextBlock _text = new() { FontSize = 13.5, VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis, TextAlignment = TextAlignment.Center };
     private readonly Grid _bar = new() { Height = 7, MinWidth = 120, VerticalAlignment = VerticalAlignment.Center };
     private readonly Border _fill = new() { HorizontalAlignment = HorizontalAlignment.Left, CornerRadius = new CornerRadius(3.5) };
@@ -94,11 +94,11 @@ internal sealed class HudWindow : Window
     {
         _pill.Background = UI.Brush(look.Hex("surface"));
         var ink = UI.Brush(look.Primary);
-        _icon.Stroke = message.Lit ? UI.Brush(look.Hex("accent")) : ink; _text.Foreground = ink;
-        _figure.Foreground = UI.Brush(look.Secondary);
+        _text.Foreground = ink;
+        _figure.Foreground = UI.Brush(message.FigureColor ?? look.Secondary);
         _track.Background = UI.Brush(look.Hex("track"));
         _fill.Background = UI.Brush(look.Hex("accent"));
-        _icon.Data = Geometry.Parse(Icons[message.Icon]);
+        _icon.Content = HudGlyph.Create(message, look, 17, 1);
         bool card = message.Body is { Length: > 0 };
         _row.Visibility = card ? Visibility.Collapsed : Visibility.Visible;
         _card.Visibility = card ? Visibility.Visible : Visibility.Collapsed;
