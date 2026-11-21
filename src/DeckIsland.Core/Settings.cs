@@ -57,8 +57,8 @@ public sealed record IgnoredMediaApp(string AppId = "", string Name = "", string
 public enum ProviderId { Claude, Codex, Antigravity, Cursor, GlmChina, NewApi, Sub2Api, Custom, ZCode = 10, GlmGlobal = 11, Dsh = 12, DeepSeek = 13, GrokBot = 14, Kimi = 15, KimiApi = 16, OpenCode = 17, OpenCodeGo = 18, OpenRouter = 19, Pi = 20, CodeAgent = 21, CommandCode = 22, CommandCodeApi = 23, WorkBuddy = 24, WorkBuddyAi = 25, MiMo = 26, MiMoApi = 27, MiMoTokenPlan = 28, MiMoLinked = 29, KimiPlatform = 30 }
 public enum SettingsTheme { System, Light, Dark }
 // Pages are saved as numbers, so new members go at the end; their order in the page switch is DeckSettings.PageOrder.
-public enum DeckPage { Usage, Music, Monitor, Clipboard, Devices, Weather, Focus, Reminders, Widgets, Notifications, Calls }
-public enum DefaultDeckPage { Last, Usage, Music, Monitor, Clipboard, Devices, Weather, Focus, Reminders, Widgets, Notifications, Calls }
+public enum DeckPage { Usage, Music, Monitor, Clipboard, Devices, Weather, Focus, Reminders, Widgets, Notifications, Calls, Scratchpad, Converter, Terminal }
+public enum DefaultDeckPage { Last, Usage, Music, Monitor, Clipboard, Devices, Weather, Focus, Reminders, Widgets, Notifications, Calls, Scratchpad, Converter, Terminal }
 // What the mouse wheel does over the expanded panel. Saved as numbers, so new members go at the end.
 public enum MouseWheelAction { None, Pages, Volume }
 // What a double click on an end of the collapsed notch or capsule does: turn its auto width on or off, or start moving it
@@ -759,6 +759,35 @@ public sealed class DeckSettings
     private const double DefaultCallsWidth = 450, DefaultCallsHeight = 200;
     public double CallsWidth { get; set; } = DefaultCallsWidth;
     public double CallsHeight { get; set; } = DefaultCallsHeight;
+    // The Scratchpad tab: a code pad whose language is chosen in its header; each language keeps its own draft, saved as it is typed.
+    public bool ScratchpadPage { get; set; } = true;
+    private const double DefaultScratchpadWidth = 560, DefaultScratchpadHeight = 260;
+    public double ScratchpadWidth { get; set; } = DefaultScratchpadWidth;
+    public double ScratchpadHeight { get; set; } = DefaultScratchpadHeight;
+    public ScratchLanguage ScratchpadLanguage { get; set; } = ScratchLanguage.JavaScript;
+    public Dictionary<string, string> ScratchpadDrafts { get; set; } = [];
+    // The Converter tab: units, or currencies at the central banks' reference rates, each pair converted through the base currency.
+    public bool ConverterPage { get; set; } = true;
+    private const double DefaultConverterWidth = 520, DefaultConverterHeight = 200;
+    public double ConverterWidth { get; set; } = DefaultConverterWidth;
+    public double ConverterHeight { get; set; } = DefaultConverterHeight;
+    public ConverterMode ConverterMode { get; set; } = ConverterMode.Currency;
+    public string ConverterBaseCurrency { get; set; } = "EUR";
+    public string ConverterCurrencyFrom { get; set; } = "";
+    public string ConverterCurrencyTo { get; set; } = "";
+    public UnitCategory ConverterUnitCategory { get; set; } = UnitCategory.Length;
+    public string ConverterUnitFrom { get; set; } = "";
+    public string ConverterUnitTo { get; set; } = "";
+    public string ConverterAmount { get; set; } = "100";
+    // The Terminal tab: a shell inside the notch, kept running while the notch is closed.
+    public bool TerminalPage { get; set; } = true;
+    private const double DefaultTerminalWidth = 620, DefaultTerminalHeight = 300;
+    public double TerminalWidth { get; set; } = DefaultTerminalWidth;
+    public double TerminalHeight { get; set; } = DefaultTerminalHeight;
+    public TerminalShell TerminalShell { get; set; } = TerminalShell.PowerShell7;
+    public string TerminalStartFolder { get; set; } = "";
+    public const int MinTerminalFontSize = 8, MaxTerminalFontSize = 24;
+    public int TerminalFontSize { get; set; } = 12;
     public bool CallTimer { get; set; } = true;
     public bool MicHud { get; set; } = true;
     public bool MirrorNotifications { get; set; } = true;
@@ -979,6 +1008,7 @@ public sealed class DeckSettings
         copy.WorldClocks = [.. WorldClocks ?? []];
         copy.TodoItems = [.. TodoItems ?? []];
         copy.ScreenTimeApps = new Dictionary<string, int>(ScreenTimeApps ?? [], StringComparer.OrdinalIgnoreCase);
+        copy.ScratchpadDrafts = new Dictionary<string, string>(ScratchpadDrafts ?? []);
         copy.DisplayMonitors = [.. DisplayMonitors ?? []];
         copy.ThemeChoices = (ThemeChoices ?? []).ToDictionary(pair => pair.Key, pair => pair.Value.Copy());
         copy.FullscreenRules = FullscreenRules.Select(rule => rule with { }).ToList();
@@ -1025,6 +1055,24 @@ public sealed class DeckSettings
         if (!Enum.IsDefined(MusicBackground)) MusicBackground = MusicCardBackground.AlbumColours;
         CallsWidth = double.IsFinite(CallsWidth) ? Math.Clamp(CallsWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : DefaultCallsWidth;
         CallsHeight = double.IsFinite(CallsHeight) ? Math.Clamp(CallsHeight, DeckPages.MinHeight, DeckPages.MaxHeight) : DefaultCallsHeight;
+        ScratchpadWidth = double.IsFinite(ScratchpadWidth) ? Math.Clamp(ScratchpadWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : DefaultScratchpadWidth;
+        ScratchpadHeight = double.IsFinite(ScratchpadHeight) ? Math.Clamp(ScratchpadHeight, DeckPages.MinHeight, DeckPages.MaxHeight) : DefaultScratchpadHeight;
+        if (!Enum.IsDefined(ScratchpadLanguage)) ScratchpadLanguage = ScratchLanguage.JavaScript;
+        ScratchpadDrafts = Scratchpad.Normalize(ScratchpadDrafts);
+        ConverterWidth = double.IsFinite(ConverterWidth) ? Math.Clamp(ConverterWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : DefaultConverterWidth;
+        ConverterHeight = double.IsFinite(ConverterHeight) ? Math.Clamp(ConverterHeight, DeckPages.MinHeight, DeckPages.MaxHeight) : DefaultConverterHeight;
+        if (!Enum.IsDefined(ConverterMode)) ConverterMode = ConverterMode.Currency;
+        if (!Enum.IsDefined(ConverterUnitCategory)) ConverterUnitCategory = UnitCategory.Length;
+        ConverterBaseCurrency = ExchangeRates.NormalizeCode(ConverterBaseCurrency) ?? "EUR";
+        ConverterCurrencyFrom = ExchangeRates.NormalizeCode(ConverterCurrencyFrom) ?? "";
+        ConverterCurrencyTo = ExchangeRates.NormalizeCode(ConverterCurrencyTo) ?? "";
+        ConverterUnitFrom ??= ""; ConverterUnitTo ??= "";
+        ConverterAmount = (ConverterAmount ?? "").Length <= 40 ? ConverterAmount ?? "" : "100";
+        TerminalWidth = double.IsFinite(TerminalWidth) ? Math.Clamp(TerminalWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : DefaultTerminalWidth;
+        TerminalHeight = double.IsFinite(TerminalHeight) ? Math.Clamp(TerminalHeight, DeckPages.MinHeight, DeckPages.MaxHeight) : DefaultTerminalHeight;
+        if (!Enum.IsDefined(TerminalShell)) TerminalShell = TerminalShell.PowerShell7;
+        TerminalStartFolder = (TerminalStartFolder ?? "").Trim();
+        TerminalFontSize = Math.Clamp(TerminalFontSize, MinTerminalFontSize, MaxTerminalFontSize);
         NotificationsWidth = double.IsFinite(NotificationsWidth) ? Math.Clamp(NotificationsWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : 490;
         NotificationsHeight = double.IsFinite(NotificationsHeight) ? Math.Clamp(NotificationsHeight, DeckPages.MinHeight, DeckPages.MaxHeight) : 280;
         NotificationSeconds = Math.Clamp(NotificationSeconds, 2, 15);

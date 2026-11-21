@@ -171,6 +171,12 @@ public partial class MainWindow
         if (UsageContent is null) return;
         WidgetsContent.Visibility = CurrentPage == DeckPage.Widgets ? Visibility.Visible : Visibility.Collapsed;
         if (CurrentPage == DeckPage.Widgets) { RenderWidgets(); return; }
+        ScratchpadContent.Visibility = CurrentPage == DeckPage.Scratchpad ? Visibility.Visible : Visibility.Collapsed;
+        if (CurrentPage == DeckPage.Scratchpad) { RenderScratchpad(); return; }
+        ConverterContent.Visibility = CurrentPage == DeckPage.Converter ? Visibility.Visible : Visibility.Collapsed;
+        if (CurrentPage == DeckPage.Converter) { RenderConverter(); return; }
+        TerminalContent.Visibility = CurrentPage == DeckPage.Terminal ? Visibility.Visible : Visibility.Collapsed;
+        if (CurrentPage == DeckPage.Terminal) { RenderTerminal(); return; }
         CallsContent.Visibility = CurrentPage == DeckPage.Calls ? Visibility.Visible : Visibility.Collapsed;
         if (CurrentPage == DeckPage.Calls) { NotificationsContent.Visibility = RemindersContent.Visibility = FocusContent.Visibility = Visibility.Collapsed; RenderCalls(); return; }
         NotificationsContent.Visibility = CurrentPage == DeckPage.Notifications ? Visibility.Visible : Visibility.Collapsed;

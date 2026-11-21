@@ -104,6 +104,7 @@ internal sealed class Renderer(App app, string output, string language, string[]
         Program.SetProperty(app, "Settings", _settings);
         Program.SetProperty(app, "Store", new SettingsStore(folder));
         Program.SetProperty(app, "Prices", new Pricing(folder, offline));
+        Program.SetProperty(app, "Rates", new ExchangeRates(folder, offline));
         Program.SetProperty(app, "Secrets", new ProviderSecrets(folder));
         Program.SetProperty(app, "Usage", new UsageService(new NoDesktop(), DataLocations.Resolve(folder, folder, folder, folder, folder, folder), offline));
         // The panel subscribes to the lyrics as it is made; this one finds none offline and reads no Apple Music cache.
@@ -159,6 +160,8 @@ internal sealed class Renderer(App app, string output, string language, string[]
             if (Wants("devices")) await DevicesScene();
             if (Wants("shelf")) await ShelfScene();
             if (Wants("hero")) await Hero();
+            // The Scratchpad, Converter and Terminal tabs and their settings; for checking, not for the README.
+            if (scenes.Contains("tools")) await ToolTabs();
             // The "配额与统计" page: one row per application with its sources, name and colours.
             // Not used by the README at present; rendered only when asked for by name.
             if (scenes.Contains("settings")) await SettingsPage("settings", 3);
@@ -595,6 +598,37 @@ internal sealed class Renderer(App app, string output, string language, string[]
     }
 
     // ---------- Scenes ----------
+
+    private async Task ToolTabs()
+    {
+        const double scale = 2;
+        _settings.Animations = false;
+        _deck.SetExpanded(true, true);
+        Scratchpad.SetDraft(_settings, ScratchLanguage.TypeScript,
+            "// Sum the even squares\nconst total: number = [1, 2, 3, 4]\n  .filter(n => n % 2 === 0)\n  .reduce((sum, n) => sum + n * n, 0);\nconsole.log(`total: ${total}`);");
+        _settings.ScratchpadLanguage = ScratchLanguage.TypeScript;
+        SelectPage(DeckPage.Scratchpad);
+        await Save("tools-scratchpad", scale);
+        _settings.ScratchpadLanguage = ScratchLanguage.Python;
+        Program.SetField(_deck, "_scratchAppearance", default((int, string)));
+        SelectPage(DeckPage.Usage); SelectPage(DeckPage.Scratchpad);
+        await Save("tools-scratchpad-empty", scale);
+        _settings.ConverterMode = ConverterMode.Units; _settings.ConverterUnitCategory = UnitCategory.Temperature; _settings.ConverterAmount = "21.5";
+        SelectPage(DeckPage.Converter);
+        await Save("tools-converter-units", scale);
+        _settings.ConverterMode = ConverterMode.Currency; _settings.ConverterCurrencyFrom = "GBP"; _settings.ConverterCurrencyTo = "EUR"; _settings.ConverterAmount = "100";
+        SelectPage(DeckPage.Usage); SelectPage(DeckPage.Converter);
+        await Save("tools-converter-currency-offline", scale);
+        SelectPage(DeckPage.Terminal);
+        await Save("tools-terminal-frame", scale);
+        Program.Call(_deck, "CloseTerminal", []);
+        SelectPage(DeckPage.Usage);
+        _deck.SetExpanded(false, true);
+        _settings.Animations = true;
+        await SettingsPage("tools-settings-scratchpad", 25, height: 500);
+        await SettingsPage("tools-settings-converter", 26, height: 600);
+        await SettingsPage("tools-settings-terminal", 27, height: 700);
+    }
 
     private async Task Stills()
     {

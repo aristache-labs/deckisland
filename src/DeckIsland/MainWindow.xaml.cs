@@ -165,6 +165,9 @@ public partial class MainWindow : Window
         InitializeReminders();
         InitializeNotifications();
         InitializeCalls();
+        InitializeScratchpad();
+        InitializeConverter();
+        InitializeTerminal();
         InitializeMusicCard();
         InitializeResize();
         InitializeScale();
@@ -714,6 +717,9 @@ public partial class MainWindow : Window
         System.Windows.Automation.AutomationProperties.SetName(WidgetsPageButton, WidgetLayout.Title);
         System.Windows.Automation.AutomationProperties.SetName(NotificationsPageButton, Loc.T("通知", "Notifications"));
         System.Windows.Automation.AutomationProperties.SetName(CallsPageButton, Loc.T("通话", "Calls"));
+        System.Windows.Automation.AutomationProperties.SetName(ScratchpadPageButton, Loc.T("代码草稿", "Scratchpad"));
+        System.Windows.Automation.AutomationProperties.SetName(ConverterPageButton, Loc.T("换算", "Converter"));
+        System.Windows.Automation.AutomationProperties.SetName(TerminalPageButton, Loc.T("终端", "Terminal"));
         System.Windows.Automation.AutomationProperties.SetName(RemindersPageButton, Loc.T("提醒", "Reminders"));
         System.Windows.Automation.AutomationProperties.SetName(FocusPageButton, Loc.T("专注计时器", "Focus timer"));
         System.Windows.Automation.AutomationProperties.SetName(WeatherPageButton, Loc.T("天气", "Weather"));
@@ -875,6 +881,7 @@ public partial class MainWindow : Window
         if (expanded != _host.Open) _host.Front(expanded);
         _expanded = expanded;
         PlaceSensorIndicator();
+        PlaceTerminal();
         // The smooth memory mode holds off full collections while a panel is open (App.UpdateCollectionLatency).
         if (expanded && !wasExpanded) _app.UpdateCollectionLatency();
         _escapeDismissal?.SetEnabled(HoldsEscape);

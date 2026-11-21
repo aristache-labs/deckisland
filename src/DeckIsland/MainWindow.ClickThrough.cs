@@ -19,7 +19,8 @@ public partial class MainWindow
     // Whether a panel opened by a shortcut takes the keyboard (PanelKeyboard) and Esc.
     private bool PanelTakesKeyboard => !ClickThrough || Settings.ClickThroughKeyboard;
     // Esc is held while the panel is open and takes the keyboard, and in move mode.
-    private bool HoldsEscape => _expanded && !_preview && PanelTakesKeyboard || _moveArmed;
+    // Not on the Terminal tab: Esc there belongs to the shell (vim, less).
+    private bool HoldsEscape => _expanded && !_preview && PanelTakesKeyboard && CurrentPage != DeckPage.Terminal || _moveArmed;
 
     // From TrackPointer: true while the pointer is to be ignored. Whatever hovering had started is dropped, and the checks slow
     // down, as nothing they find is used.

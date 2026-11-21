@@ -27,6 +27,8 @@ public partial class App : Application
     public ProviderSecrets Secrets { get; private set; } = null!;
     public MiMoAccount MiMo { get; private set; } = null!;
     public Pricing Prices { get; private set; } = null!;
+    // The Converter tab's currency rates (ConverterPanel.cs), fetched when the tab is shown.
+    public ExchangeRates Rates { get; private set; } = null!;
     public AppUpdates Updates { get; internal set; } = null!;
     // The main panel. It owns the tray icon, reads the usage data and takes the settings preview; every other chosen
     // monitor gets a panel that shows the same data.
@@ -124,6 +126,7 @@ public partial class App : Application
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Security.SecurityException) { }
         Prices = new Pricing(folder);
+        Rates = new ExchangeRates(folder);
         Updates = new AppUpdates(DeckIsland.Updates.GitHubUpdates.Create(folder), folder);
         Secrets = new ProviderSecrets(folder);
         MiMo = new MiMoAccount(folder);
@@ -652,7 +655,7 @@ public partial class App : Application
         Exiting = true; Lifetime.Cancel(); _save.Stop(); _trim?.Stop(); _release?.Stop(); FinishWriting(); StopBackgroundUpdates(); DisplayPower.Uninstall(); Microsoft.Win32.SystemEvents.UserPreferenceChanged -= SystemThemeChanged; _tray?.Dispose(); DisposeHotkeys(); WindowDrags?.Dispose(); _listener?.Unregister(null); _settingsEvent?.Dispose();
         ClipboardSync?.Dispose();
         if (Shelf is not null) { Shelf.Exit(); Shelf.Dispose(); }
-        Media?.Dispose(); _restingMedia?.Dispose(); Monitor?.Dispose(); SensorGuard.Finish(); Devices?.Dispose(); DeviceReadStore.Finish(); Lyrics?.Dispose(); Prices?.Dispose(); _mutex?.Dispose(); base.OnExit(e);
+        Media?.Dispose(); _restingMedia?.Dispose(); Monitor?.Dispose(); SensorGuard.Finish(); Devices?.Dispose(); DeviceReadStore.Finish(); Lyrics?.Dispose(); Prices?.Dispose(); Rates?.Dispose(); _mutex?.Dispose(); base.OnExit(e);
     }
     [DllImport("shell32", CharSet = CharSet.Unicode)] private static extern int SetCurrentProcessExplicitAppUserModelID(string id);
 }

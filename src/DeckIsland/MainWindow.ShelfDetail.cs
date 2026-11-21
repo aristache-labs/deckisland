@@ -163,7 +163,7 @@ public partial class MainWindow
     }
     // The panel opens without taking the keyboard, so a box that lost it (the panel closed and opened again, or another window was
     // used) takes it back when it is clicked.
-    private void TakeKeyboardOnClick(TextBox box) => box.PreviewMouseLeftButtonDown += (_, _) => { if (!IsActive || !box.IsKeyboardFocusWithin) BeginTyping(box); };
+    private void TakeKeyboardOnClick(Control box) => box.PreviewMouseLeftButtonDown += (_, _) => { if (!IsActive || !box.IsKeyboardFocusWithin) BeginTyping(box); };
     private void EndTyping()
     {
         // A panel holding the keyboard for a hotkey keeps it until it closes (PanelKeyboard): the focus goes back to the search

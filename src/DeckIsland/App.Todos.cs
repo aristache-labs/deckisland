@@ -21,4 +21,24 @@ public partial class App
         Settings.NoteText = text.Length <= DeckSettings.MaxNoteLength ? text : text[..DeckSettings.MaxNoteLength];
         QueueSave();
     }
+
+    // The Scratchpad's drafts and language are kept as they change, like the note.
+    internal void SetScratchDraft(ScratchLanguage language, string text)
+    {
+        Scratchpad.SetDraft(Settings, language, text);
+        QueueSave();
+    }
+
+    // A change to settings every profile shares, made from a panel (the Converter's last choices): kept, and saved shortly after.
+    internal void ChangeShared(Action<DeckSettings> change)
+    {
+        change(Settings);
+        QueueSave();
+    }
+
+    internal void SetScratchLanguage(ScratchLanguage language)
+    {
+        Settings.ScratchpadLanguage = language;
+        QueueSave();
+    }
 }

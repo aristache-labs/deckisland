@@ -80,7 +80,7 @@ public partial class MainWindow
     {
         RefreshStatus();
         UsageContent.Visibility = MusicContent.Visibility = MonitorContent.Visibility = ShelfContent.Visibility =
-            DevicesContent.Visibility = WeatherContent.Visibility = FocusContent.Visibility = RemindersContent.Visibility = NotificationsContent.Visibility = Visibility.Collapsed;
+            DevicesContent.Visibility = WeatherContent.Visibility = FocusContent.Visibility = RemindersContent.Visibility = NotificationsContent.Visibility = ScratchpadContent.Visibility = ConverterContent.Visibility = TerminalContent.Visibility = Visibility.Collapsed;
         ModelToolbar.Visibility = ApplicationPages.Visibility = Visibility.Collapsed;
         double height = ContentCanvas.Height;
         if (!double.IsFinite(height)) return;

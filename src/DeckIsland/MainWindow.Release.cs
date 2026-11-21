@@ -41,6 +41,15 @@ public partial class MainWindow
                 case DeckPage.Notifications:
                     NotificationsContent.Children.Clear();
                     break;
+                case DeckPage.Scratchpad:
+                    ScratchpadContent.Children.Clear(); _scratchEditor = null; _scratchAppearance = default;
+                    break;
+                case DeckPage.Converter:
+                    ConverterContent.Children.Clear(); _converterAppearance = default;
+                    break;
+                case DeckPage.Terminal:
+                    CloseTerminal();
+                    break;
                 case DeckPage.Calls:
                     CallsContent.Children.Clear();
                     _callMic = null;

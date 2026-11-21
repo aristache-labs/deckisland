@@ -94,6 +94,10 @@
               <Grid Grid.Row="1" x:Name="RemindersContent" Visibility="Collapsed"/>
               <Grid Grid.Row="1" x:Name="NotificationsContent" Visibility="Collapsed"/>
               <Grid Grid.Row="1" x:Name="CallsContent" Visibility="Collapsed"/>
+              <Grid Grid.Row="1" x:Name="ScratchpadContent" Visibility="Collapsed"/>
+              <Grid Grid.Row="1" x:Name="ConverterContent" Visibility="Collapsed"/>
+              <!-- The terminal (TerminalPanel.cs) is kept while hidden, so its session runs on with the notch closed. -->
+              <Grid Grid.Row="1" x:Name="TerminalContent" Visibility="Collapsed"/>
               <!-- What a rebuilt usage or media page replaced, while it leaves (PageHandover). It spans the header row too and is
                    placed where the old content was: the next page's header row may be taller or shorter. -->
               <Grid Grid.Row="0" Grid.RowSpan="2" x:Name="LeavingContent"/>
@@ -153,6 +157,21 @@
                   <Path Width="15" Height="15" Stretch="Uniform" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
                         StrokeThickness="1.55" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
                         Data="M10,2.5 A2.5,2.5 0 0 1 12.5,5 V10 A2.5,2.5 0 0 1 7.5,10 V5 A2.5,2.5 0 0 1 10,2.5 Z M5,9.5 A5,5 0 0 0 15,9.5 M10,14.5 V17.5"/>
+                </Button>
+                <Button x:Name="ScratchpadPageButton" Style="{StaticResource PanelIconButton}" Width="28" Height="24" Click="ScratchpadPage_Click">
+                  <Path Width="16" Height="16" Stretch="Uniform" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                        StrokeThickness="1.55" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                        Data="M 8,7 L 3,12 L 8,17 M 16,7 L 21,12 L 16,17 M 14,4 L 10,20"/>
+                </Button>
+                <Button x:Name="ConverterPageButton" Style="{StaticResource PanelIconButton}" Width="28" Height="24" Click="ConverterPage_Click">
+                  <Path Width="15" Height="15" Stretch="Uniform" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                        StrokeThickness="1.55" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                        Data="M 4,8 H 19 M 15,4 L 19,8 L 15,12 M 20,16 H 5 M 9,12 L 5,16 L 9,20"/>
+                </Button>
+                <Button x:Name="TerminalPageButton" Style="{StaticResource PanelIconButton}" Width="28" Height="24" Click="TerminalPage_Click">
+                  <Path Width="15" Height="15" Stretch="Uniform" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                        StrokeThickness="1.55" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                        Data="M 4,4 H 20 A 2,2 0 0 1 22,6 V 18 A 2,2 0 0 1 20,20 H 4 A 2,2 0 0 1 2,18 V 6 A 2,2 0 0 1 4,4 Z M 6,9 L 9,12 L 6,15 M 11,15 H 16"/>
                 </Button>
                 <!-- The wireless devices' batteries (DevicesPanel.cs). -->
                 <Button x:Name="DevicesPageButton" Style="{StaticResource PanelIconButton}" Width="28" Height="24" Margin="1,0,0,0" Click="DevicesPage_Click">

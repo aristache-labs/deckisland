@@ -25,6 +25,9 @@ public partial class MainWindow
     private readonly Button MonitorPageButton = new() { Content = "Monitor", Width = 60, Height = 24 };
     private readonly Button ShelfPageButton = new() { Content = "Clipboard", Width = 60, Height = 24 };
     private readonly Button CallsPageButton = new() { Content = "Calls", Width = 60, Height = 24 };
+    private readonly Button ScratchpadPageButton = new() { Content = "Scratchpad", Width = 60, Height = 24 };
+    private readonly Button ConverterPageButton = new() { Content = "Converter", Width = 60, Height = 24 };
+    private readonly Button TerminalPageButton = new() { Content = "Terminal", Width = 60, Height = 24 };
     private readonly Button NotificationsPageButton = new() { Content = "Notifications", Width = 60, Height = 24 };
     private readonly Button WidgetsPageButton = new() { Content = "Widgets", Width = 60, Height = 24 };
     private readonly Button RemindersPageButton = new() { Content = "Reminders", Width = 60, Height = 24 };
