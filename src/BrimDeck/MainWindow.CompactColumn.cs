@@ -53,7 +53,8 @@ public partial class MainWindow
         var transfer = TransferBadge(scale, Show(CompactPart.Transfer));
         var devices = Show(CompactPart.Devices) ? CompactDevices(scale) : null;
         var weather = Show(CompactPart.Weather) ? CompactWeather(scale) : null;
-        var focus = Show(CompactPart.Focus) ? CompactFocus(scale) : null;
+        // The date (Minimal only) takes the focus slot: a running session leaves Minimal showing only the session.
+        var focus = Show(CompactPart.Focus) ? CompactFocus(scale) : CompactDate(scale);
         var layout = CompactMusicLayout.Calculate(10000, scale, media, apps.Count, text.Length > 0, FixedFace(CompactMusicLayout.Gap(scale), clock?.ReservedWidth ?? 0, transfer?.Width ?? 0, devices?.PreferredWidth ?? 0), 0, equalizer, Settings.EqualizerBars, ring: QuotaRing.Diameter(Settings.QuotaRingStyle));
         // One strip per reading, each alone on its line and centred in it. The drives show no glyph here: each drive has a line with its
         // letter and its figures, stacked or side by side as chosen in the settings, so any number of drives stand one below the other.
@@ -128,7 +129,7 @@ public partial class MainWindow
                 case CompactPart.Transfer when transfer is not null:
                     Add(transfer, transfer.Height); break;
                 // The devices a line each; should a device's line be wider than the column, they scroll as the readings do.
-                case CompactPart.Focus when focus is not null && focus.Width <= column:
+                case CompactPart.Focus or CompactPart.Date when focus is not null && focus.Width <= column:
                     Add(focus, focus.Height); break;
                 case CompactPart.Weather when weather is not null && weather.Width <= column:
                     weatherLine = lines.Count;

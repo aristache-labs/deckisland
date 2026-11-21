@@ -19,7 +19,18 @@ public partial class MainWindow
     private void WidgetsPage_Click(object sender, RoutedEventArgs e) => SelectPage(DeckPage.Widgets);
 
     internal bool WidgetVisible(WidgetKind kind) => _expanded && !_preview && CurrentPage == DeckPage.Widgets &&
-        IsVisible && !IsSuppressed && !DisplayPower.Off && ReminderAlertId is null && Settings.WidgetSlots.Contains(kind);
+        IsVisible && !IsSuppressed && !DisplayPower.Off && ReminderAlertId is null && Settings.WidgetSlots.Contains(kind) && WidgetEnabled(kind);
+
+    // A widget follows its Expanded view switch: turning the page off removes the widget too.
+    private bool WidgetEnabled(WidgetKind kind) => kind switch
+    {
+        WidgetKind.Weather => DeckPages.Shown(Settings, DeckPage.Weather),
+        WidgetKind.Monitor => DeckPages.Shown(Settings, DeckPage.Monitor),
+        WidgetKind.Focus => DeckPages.Shown(Settings, DeckPage.Focus),
+        WidgetKind.Devices => DeckPages.Shown(Settings, DeckPage.Devices),
+        WidgetKind.Quotas => DeckPages.Shown(Settings, DeckPage.Usage),
+        _ => true
+    };
 
     private void UpdateWidgetTimer()
     {
@@ -48,7 +59,7 @@ public partial class MainWindow
             const double Bell = 44, Outer = 5, Inner = 4;
             for (int i = 0; i < slots.Length; i++)
             {
-                var card = WidgetCard(slots[i]);
+                var card = WidgetCard(WidgetEnabled(slots[i]) ? slots[i] : WidgetKind.Empty);
                 // A tight gap; the round centre button overlaps only the inner corners.
                 if (Settings.RemindersPage)
                     card.Margin = new Thickness(i % 2 == 0 ? Outer : Inner, i < 2 ? Outer : Inner, i % 2 == 0 ? Inner : Outer, i < 2 ? Inner : Outer);
@@ -57,18 +68,32 @@ public partial class MainWindow
             WidgetsContent.Children.Add(grid);
             if (Settings.RemindersPage)
             {
-                var face = new Grid
-                {
-                    Children =
-                    {
-                        new System.Windows.Shapes.Ellipse { Stroke = UI.Brush(Look.Hex("popupBorder")) },
-                        WidgetGlyph("M3,11 C4.5,9.5 4.5,8.5 4.5,6.5 A3.5,3.5 0 0 1 11.5,6.5 C11.5,8.5 11.5,9.5 13,11 Z M6.5,13.5 Q8,15.5 9.5,13.5",
-                            UI.Brush(Look.Primary), filled: false)
-                    }
-                };
+                var glyph = WidgetGlyph("M3,11 C4.5,9.5 4.5,8.5 4.5,6.5 A3.5,3.5 0 0 1 11.5,6.5 C11.5,8.5 11.5,9.5 13,11 Z M6.5,13.5 Q8,15.5 9.5,13.5",
+                    UI.Brush(Look.Primary), filled: false);
+                var countdown = WeatherText("", 13);
+                countdown.FontWeight = FontWeights.SemiBold;
+                countdown.HorizontalAlignment = HorizontalAlignment.Center;
+                countdown.VerticalAlignment = VerticalAlignment.Center;
+                Typography.SetNumeralAlignment(countdown, FontNumeralAlignment.Tabular);
+                var face = new Grid { Children = { new System.Windows.Shapes.Ellipse { Stroke = UI.Brush(Look.Hex("popupBorder")), }, glyph, countdown } };
                 string label = Loc.T("提醒", "Reminders");
                 var bell = WidgetSurface(face, label, () => SelectPage(DeckPage.Reminders));
                 bell.ToolTip = label;
+                // The bell shows the time left to the soonest reminder instead of the glyph, when one is waiting.
+                _widgetUpdates.Add(() =>
+                {
+                    var now = DateTimeOffset.Now;
+                    var next = Settings.Reminders.Where(reminder => reminder.Due > now).MinBy(reminder => reminder.Due);
+                    glyph.Visibility = next is null ? Visibility.Visible : Visibility.Collapsed;
+                    countdown.Visibility = next is null ? Visibility.Collapsed : Visibility.Visible;
+                    if (next is null) { countdown.Text = ""; AutomationProperties.SetName(bell, label); bell.ToolTip = label; return; }
+                    var left = next.Due - now;
+                    countdown.Text = left.TotalMinutes < 60 ? $"{Math.Max(1, (int)Math.Ceiling(left.TotalMinutes))}m"
+                        : left.TotalHours < 24 ? $"{(int)Math.Ceiling(left.TotalHours)}h" : $"{(int)Math.Ceiling(left.TotalDays)}d";
+                    string full = $"{label} · {next.Title} · {countdown.Text}";
+                    AutomationProperties.SetName(bell, full);
+                    bell.ToolTip = full;
+                });
                 bell.Height = bell.Width = Bell;
                 bell.Background = UI.Brush(Look.Hex("popup"));
                 bell.HorizontalAlignment = HorizontalAlignment.Center;

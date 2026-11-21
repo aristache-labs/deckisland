@@ -78,7 +78,7 @@ public sealed partial class SettingsWindow
             CompactPart.Clock => Loc.T("时钟", "Clock"), CompactPart.Rings => Loc.T("配额环", "Quota rings"),
             CompactPart.Music => Loc.T("正在播放", "Music now playing"), CompactPart.Transfer => Loc.T("文件中转", "File transfer"),
             CompactPart.Equalizer => Loc.T("均衡器", "Equalizer"), CompactPart.Monitor => WidgetLayout.Name(WidgetKind.Monitor),
-            CompactPart.Devices => WidgetLayout.Name(WidgetKind.Devices), CompactPart.Focus => WidgetLayout.Name(WidgetKind.Focus),
+            CompactPart.Date => Loc.T("日期", "Date"), CompactPart.Devices => WidgetLayout.Name(WidgetKind.Devices), CompactPart.Focus => WidgetLayout.Name(WidgetKind.Focus),
             _ => WidgetLayout.Name(WidgetKind.Weather)
         };
         string firstLabel = Loc.T("第一项", "First item"), secondLabel = Loc.T("第二项", "Second item");

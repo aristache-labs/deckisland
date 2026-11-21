@@ -78,7 +78,8 @@ public enum EqualizerMode { Flow = 0, Spectrum = 1 }
 public enum QuotaRingStyle { Nested = 0, Single = 1 }
 // The parts of the collapsed notch and capsule that are put in order, left to right. The cover stays at the left; Music places
 // only the title or lyric. Saved as numbers, so new members go at the end.
-public enum CompactPart { Rings, Music, Monitor, Equalizer, Clock, Transfer, Devices, Weather, Focus }
+// 9 was the retired Reminders part, still found in saved files, so Date is 10.
+public enum CompactPart { Rings, Music, Monitor, Equalizer, Clock, Transfer, Devices, Weather, Focus, Date = 10 }
 public static class CompactParts
 {
     // The order of new settings and of restoring the defaults: the equalizer and the clock come last.

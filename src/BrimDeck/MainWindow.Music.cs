@@ -1203,7 +1203,8 @@ public partial class MainWindow
         // The devices' batteries keep one width too (as many devices as show, each with the room of its widest figure), counted with them.
         var devices = Show(CompactPart.Devices) ? CompactDevices(scale) : null;
         var weather = Show(CompactPart.Weather) ? CompactWeather(scale) : null;
-        var focus = Show(CompactPart.Focus) ? CompactFocus(scale) : null;
+        // The date (Minimal only) takes the focus slot: a running session leaves Minimal showing only the session.
+        var focus = Show(CompactPart.Focus) ? CompactFocus(scale) : CompactDate(scale);
         int spacing = Settings.CompactPartSpacing(EffectiveStyle);
         double unit = CompactMusicLayout.PartGap(scale, spacing);
         double devicesWidth = devices is null ? 0 : DevicePixels.Up(devices.PreferredWidth, dpi);
@@ -1305,7 +1306,7 @@ public partial class MainWindow
             else if (part == CompactPart.Equalizer && hasEqualizer) shown.Add((part, new(layout.EqualizerSize)));
             else if (part == CompactPart.Clock && hasClock) shown.Add((part, new(clock!.ReservedWidth)));
             else if (part == CompactPart.Transfer && hasTransfer) shown.Add((part, new(transferWidth)));
-            else if (part == CompactPart.Focus && hasFocus) shown.Add((part, new(focus!.Width)));
+            else if (part is CompactPart.Focus or CompactPart.Date && hasFocus) shown.Add((part, new(focus!.Width)));
             else if (part == CompactPart.Weather && hasWeather) shown.Add((part, new(weather!.Width)));
             else if (part == CompactPart.Devices && hasDevices) shown.Add((part, new(devicesWidth)));
         }
@@ -1330,6 +1331,7 @@ public partial class MainWindow
                 case CompactPart.Transfer:
                     element = CompactRegion(transfer!, room, transferWidth, transfer!.Height, row, RegionAnchor.Left, dpi); break;
                 case CompactPart.Focus:
+                case CompactPart.Date:
                     if (room < focus!.Width || left + focus.Width > grid.Width + .01) continue;
                     element = CompactRegion(focus, room, focus.Width, focus.Height, row, RegionAnchor.Left, dpi); break;
                 case CompactPart.Weather:
