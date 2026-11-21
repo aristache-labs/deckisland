@@ -42,13 +42,14 @@ public sealed partial class SettingsWindow
 
         string[] names = [Loc.T("无", "None"), .. WorldClocks.Cities.Select(item => item.City)];
         var cities = new UniformGrid { Columns = WorldClocks.Maximum, Margin = new Thickness(0, 0, -10, 0) };
+        string[] captions = [Loc.T("城市 1", "City 1"), Loc.T("城市 2", "City 2"), Loc.T("城市 3", "City 3")];
         for (int i = 0; i < WorldClocks.Maximum; i++)
         {
             int index = i;
             string current = index < S.WorldClocks.Count ? S.WorldClocks[index] : "";
             var city = WidgetChoice(Loc.T($"第 {i + 1} 个城市", $"City {i + 1}"), names, Math.Max(0, Array.IndexOf(names, current)));
             city.Style = (Style)FindResource("FormSelect");
-            city.MinWidth = 0; city.Margin = new Thickness(0, 0, 10, 0);
+            city.MinWidth = 0;
             city.SelectionChanged += (_, _) =>
             {
                 if (city.SelectedIndex < 0) return;
@@ -61,11 +62,14 @@ public sealed partial class SettingsWindow
                     s.WorldClocks = list;
                 });
             };
-            cities.Children.Add(city);
+            var caption = TextLine(captions[i], 12, TextSecondary);
+            caption.Margin = new Thickness(0, 0, 0, 6);
+            cities.Children.Add(new StackPanel { Margin = new Thickness(0, 0, 10, 0), Children = { caption, city } });
         }
 
         return OptionsCard(WidgetKind.Clock, Loc.T("你的时间，外加最多三个城市。", "Your time, plus up to three cities."),
-            Field(Loc.T("时间格式", "Time format"), timeFormat, Loc.T("岛上所有时钟都用这个格式，包括提醒和活动时间。", "Every clock on the island uses it, reminders and event times too.")),
+            Field(Loc.T("时间格式", "Time format"), timeFormat, Loc.T("这是整个 DeckIsland 的设置，不只是这个小组件：收起时的时钟、提醒、活动时间和所有其他页面都会使用它。“跟随系统”沿用 Windows 的设置。",
+                "This applies to all of DeckIsland, not only this widget: the collapsed clock, reminders, event times and every other page use it. System follows Windows."), Loc.T("全局", "All of DeckIsland")),
             Field(Loc.T("世界时钟", "World clock"), cities, Loc.T("按顺序列在你的时间下方；选“无”可跳过。", "Listed under your own time in this order. Choose None to leave one out.")));
     }
 
@@ -141,10 +145,16 @@ public sealed partial class SettingsWindow
     }
 
     // A label over its control, with a line of help under it.
-    private StackPanel Field(string label, FrameworkElement control, string help)
+    // A badge after the label marks a setting that reaches beyond this widget.
+    private StackPanel Field(string label, FrameworkElement control, string help, string? badge = null)
     {
-        var heading = TextLine(label, 13, TextPrimary, FontWeights.SemiBold);
-        heading.Margin = new Thickness(0, 0, 0, 8);
+        var name = TextLine(label, 13, TextPrimary, FontWeights.SemiBold);
+        name.VerticalAlignment = VerticalAlignment.Center;
+        var heading = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 8), Children = { name } };
+        if (badge is not null)
+            heading.Children.Add(new Border { Margin = new Thickness(8, 0, 0, 0), Padding = new Thickness(8, 2, 8, 2), CornerRadius = new CornerRadius(10),
+                VerticalAlignment = VerticalAlignment.Center, Background = (Brush)FindResource("SettingsAccentTint"),
+                Child = TextLine(badge, 11, _palette.Accent, FontWeights.SemiBold) });
         var hint = TextLine(help, 12, TextTertiary);
         hint.TextWrapping = TextWrapping.Wrap;
         hint.Margin = new Thickness(0, 8, 0, 0);

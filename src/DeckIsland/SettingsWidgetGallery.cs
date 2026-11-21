@@ -33,6 +33,8 @@ public sealed partial class SettingsWindow
                 int position = Array.IndexOf(slots, kind);
                 card.IsChecked = position >= 0;
                 badge.Child = Badge(badge, position);
+                // A full island greys out the widgets that are not on it; they come back as soon as one is taken off.
+                if (card.Content is UIElement content) content.Opacity = position < 0 && used >= slots.Length ? .35 : 1;
             }
         }
         foreach (var kind in Enum.GetValues<WidgetKind>().Where(kind => kind != WidgetKind.Empty))
@@ -45,13 +47,36 @@ public sealed partial class SettingsWindow
             {
                 bool changed = ToggleWidget(kind);
                 Refresh();
-                if (!changed) count.Text = Loc.T("岛上已满，请先移除一个小组件再添加。", "The island is full. Remove a widget before adding another.");
+                if (!changed) FullNotice(badge);
             };
             cards.Add((kind, card, badge));
             grid.Children.Add(card);
         }
         Target.Children.Add(grid);
         Refresh();
+    }
+
+    private ToolTip? _fullNotice;
+    private System.Windows.Threading.DispatcherTimer? _fullNoticeTimer;
+
+    // Said beside the plus that was pressed, for a few seconds: the island holds four widgets at most.
+    private void FullNotice(FrameworkElement badge)
+    {
+        if (_fullNotice is not null) _fullNotice.IsOpen = false;
+        int most = S.WidgetSlots.Length;
+        _fullNotice = new ToolTip
+        {
+            Content = Loc.T($"已选择 {most} 个小组件，最多只能放 {most} 个。请先移除一个再添加。",
+                $"{most} widgets are already selected, and {most} is the most the island holds. Remove one first."),
+            PlacementTarget = badge, Placement = System.Windows.Controls.Primitives.PlacementMode.Top, VerticalOffset = -6, StaysOpen = true
+        };
+        AutomationProperties.SetLiveSetting(_fullNotice, AutomationLiveSetting.Assertive);
+        _fullNotice.IsOpen = true;
+        _fullNoticeTimer?.Stop();
+        _fullNoticeTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
+        var shown = _fullNotice;
+        _fullNoticeTimer.Tick += (_, _) => { _fullNoticeTimer?.Stop(); shown.IsOpen = false; };
+        _fullNoticeTimer.Start();
     }
 
     // Adding fills the first free position; removing closes the gap so the numbers stay 1, 2, 3, 4.
