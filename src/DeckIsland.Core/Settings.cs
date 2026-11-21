@@ -651,6 +651,9 @@ public sealed class DeckSettings
     public bool WeTypeClipboardSync { get; set; }
     public bool DoubaoClipboardSync { get; set; }
     public bool LanClipboardSync { get; set; }
+    // The phone page: a web page on the local network (ClipboardSyncService.Phone.cs), reached by a link with this secret.
+    public bool PhoneClipboardSync { get; set; }
+    public string PhoneSyncToken { get; set; } = "";
     // Applications whose copies are not recorded: the executable's path, or a process name (ClipboardExclusions).
     public List<string> ClipboardExcluded { get; set; } = [];
     // Off, the clipboard history goes when DeckIsland exits; on, it stays, and each copy goes once it is older than ClipboardKeepFor.

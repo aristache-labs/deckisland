@@ -218,6 +218,7 @@ internal sealed partial class ClipboardSyncService : IDisposable
     {
         if (_disposed) return;
         ApplyLan();
+        ApplyPhone();
         foreach (bool doubao in new[] { false, true })
         {
             bool enabled = doubao ? _app.Settings.DoubaoClipboardSync : _app.Settings.WeTypeClipboardSync;
@@ -228,7 +229,7 @@ internal sealed partial class ClipboardSyncService : IDisposable
             }
             else if ((!enabled || !Connected(doubao)) && _workers.ContainsKey(doubao)) Stop(doubao);
         }
-        if ((_workers.Count > 0 || _lanStop is not null) && _watch is null)
+        if ((_workers.Count > 0 || _lanStop is not null || _phoneStop is not null) && _watch is null)
         {
             try { _watch = new ClipboardWatch(Copied, name => ClipboardExclusions.Excludes(_app.Settings.ClipboardExcluded, name)); }
             catch (System.ComponentModel.Win32Exception)
@@ -240,7 +241,7 @@ internal sealed partial class ClipboardSyncService : IDisposable
     }
     private void ReleaseIdleWatcher()
     {
-        if (_workers.Count != 0 || _lanStop is not null) return;
+        if (_workers.Count != 0 || _lanStop is not null || _phoneStop is not null) return;
         _watch?.Dispose();
         _watch = null;
     }
@@ -287,6 +288,7 @@ internal sealed partial class ClipboardSyncService : IDisposable
         if (Encoding.UTF8.GetByteCount(copy.Text) > SyncTransport.MaxTextBytes) return;
         Queue(copy, textHash);
         _lanOutgoing?.Writer.TryWrite(copy);
+        _phoneLatest = copy.Text;
     }
     private void AcceptText(string text, string source, string html = "")
     {

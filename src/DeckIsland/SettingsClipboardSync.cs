@@ -32,7 +32,10 @@ public sealed partial class SettingsWindow
         }
         _syncCards.Clear();
         Target.Children.Add(SyncDeviceName());
-        AddSyncCard(SyncKind.Lan); AddSyncCard(SyncKind.WeType); AddSyncCard(SyncKind.Doubao);
+        AddSyncCard(SyncKind.Lan); AddPhoneCard();
+        // WeType and Doubao IME are Chinese services: they show with the Chinese interface, or while one is still connected.
+        foreach (var kind in new[] { SyncKind.WeType, SyncKind.Doubao })
+            if (!Loc.IsEnglish || SyncConnected(kind)) AddSyncCard(kind);
         var note = TextLine(Loc.T("只同步开启之后新复制的内容。", "Only what is copied after syncing is turned on is synced.") + " ", 12, TextSecondary);
         note.Inlines.Add(InlineLink(Loc.T("使用说明 ↗", "How it works ↗"),
             Updates.GitHubUpdates.RepositoryUrl + Loc.T("/blob/main/docs/zh-CN/clipboard-sync.md", "/blob/main/docs/en-US/clipboard-sync.md")));

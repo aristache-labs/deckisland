@@ -1,10 +1,11 @@
 # Clipboard sync (in development)
 
-Under Settings → Shelf → Clipboard sync, this PC can sync what you copy with other devices in three ways. They can be used together.
+Under Settings → Shelf → Clipboard sync, this PC can sync what you copy with other devices in several ways. They can be used together. WeType and Doubao IME are Chinese services and are listed only with the Chinese interface (or while one is still connected).
 
 | Way | Syncs with | Content |
 | --- | --- | --- |
 | Local network | Another PC with DeckIsland | Text, images |
+| Phone (browser) | Any phone, no app: an iPhone, Android, an iOS Shortcut | Text, images |
 | WeType | WeType (WeChat's input method) on a phone or PC | Text, images |
 | Doubao IME | Phones and PCs signed in to the same Doubao account | Text, images (sending images has a size limit, see below) |
 
@@ -20,6 +21,25 @@ Content travels encrypted between the two PCs, without the internet or an accoun
 Unpairing on one PC also unpairs the other, when it is connected.
 
 A PC that leaves the network and comes back, a laptop for instance, reconnects by itself; a changed network address needs no new pairing. The WeType and Doubao connections also reconnect once the network is back.
+
+## Phone (browser)
+
+For a phone with no DeckIsland app. iOS does not let an app read the clipboard in the background, so this is not automatic: you open the page, or run a Shortcut, when you want to send or read something.
+
+1. Turn on Phone page under Phone (browser). A QR code and a link appear.
+2. Scan the QR code with the phone, which must be on the same network. A page opens: type or paste text and choose Send, or choose Picture to send a photo; the text last copied on the PC is shown below with a Copy button.
+
+What the phone sends goes to the PC's clipboard and into the history. Pictures are scaled to 2048 pixels on a side and sent as PNG.
+
+**iOS Shortcut.** In the Shortcuts app use “Get Contents of URL” with the link, with the path changed:
+
+- Read the PC's text: GET `/clip` (keep the `?k=…` part), then “Copy to Clipboard”.
+- Send text to the PC: POST `/clip`, request body File, the Clipboard as the file. A JSON body `{"text": "…"}` or a form field `text` also works.
+- Send a picture: POST `/image`, request body File, a photo as the file.
+
+Add the Shortcut to the Home Screen, or to Back Tap in Accessibility settings, to send in one tap.
+
+Security: the link carries a secret, and only devices on a private network (10.x, 172.16–31.x, 192.168.x) are served. The page is plain HTTP, because an iPhone does not trust a certificate made by the PC, so what you send can be read by others on that network: use it on a network you trust. “New link” ends the old link and QR code. Windows may ask once to allow DeckIsland through the firewall for private networks; allow it there only.
 
 ## WeType
 

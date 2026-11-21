@@ -22,6 +22,8 @@ public partial class MainWindow
     private TextBlock? _noticeCount;
     private Button? _noticeClear;
     private readonly HashSet<string> _noticeOpen = [];
+    // The notices whose whole message is shown (the others show it on one line, cut with …).
+    private readonly HashSet<string> _noticeExpanded = [];
     // Which notice of a closed stack is on top, by stack (the arrows under the pointer step it).
     private readonly Dictionary<string, int> _noticeTop = [];
     // A stepped stack whose new top notice slides in from the side it was stepped to: (stack, direction).
@@ -178,13 +180,13 @@ public partial class MainWindow
         position.Foreground = UI.Brush(Look.Secondary);
         position.VerticalAlignment = VerticalAlignment.Center;
         position.Margin = new Thickness(4, 0, 4, 0);
-        var strip = new Border
+        // The row's hover strip already holds the expand arrow; the stepper follows it, a little apart.
+        if (row.Tag is StackPanel controls)
         {
-            Child = new StackPanel { Orientation = Orientation.Horizontal, Children = { Step("‹", -1, Loc.T("上一条", "Previous notice")), position, Step("›", 1, Loc.T("下一条", "Next notice")) } },
-            Background = UI.Brush(Look.Hex("fillSelected")), CornerRadius = new CornerRadius(Corner(8)), Padding = new Thickness(3),
-            HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 64, 0), Opacity = 0
-        };
-        var host = new Grid { Children = { row, strip } };
+            var steps = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(6, 0, 0, 0),
+                Children = { Step("‹", -1, Loc.T("上一条", "Previous notice")), position, Step("›", 1, Loc.T("下一条", "Next notice")) } };
+            controls.Children.Add(steps);
+        }
         if (Animates && _noticeSlide is { } slide && slide.Key == key)
         {
             _noticeSlide = null;
@@ -194,11 +196,7 @@ public partial class MainWindow
             travel.BeginAnimation(TranslateTransform.XProperty, new DoubleAnimation(0, settle) { EasingFunction = Soft.Out });
             row.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, settle) { EasingFunction = Soft.Out, FillBehavior = FillBehavior.Stop });
         }
-        void Update() => strip.Opacity = host.IsMouseOver || host.IsKeyboardFocusWithin ? 1 : 0;
-        host.MouseEnter += (_, _) => Update();
-        host.MouseLeave += (_, _) => Update();
-        host.IsKeyboardFocusWithinChanged += (_, _) => Update();
-        return host;
+        return row;
     }
 
     // One notice as a pressable row: the picture, the title over the message, its age (and how many more are stacked under it).
@@ -221,6 +219,8 @@ public partial class MainWindow
         DockPanel.SetDock(side, System.Windows.Controls.Dock.Right);
         row.Children.Add(side);
         row.Children.Add(NoticeMark(item));
+        string noticeKey = $"{NoticeGroup(item)}|{item.Title}|{item.At.Ticks}";
+        bool expanded = _noticeExpanded.Contains(noticeKey);
         var title = WeatherText(item.Title, 13);
         title.FontWeight = FontWeights.SemiBold;
         title.TextTrimming = TextTrimming.CharacterEllipsis;
@@ -230,7 +230,8 @@ public partial class MainWindow
         {
             var body = WeatherText(detail, 11.5);
             body.Foreground = UI.Brush(Look.Secondary);
-            body.TextTrimming = TextTrimming.CharacterEllipsis;
+            body.TextWrapping = expanded ? TextWrapping.Wrap : TextWrapping.NoWrap;
+            body.TextTrimming = expanded ? TextTrimming.None : TextTrimming.CharacterEllipsis;
             text.Children.Add(body);
         }
         row.Children.Add(text);
@@ -238,8 +239,30 @@ public partial class MainWindow
         var frame = new Border { Child = row, Padding = new Thickness(8, 6, 6, 6), CornerRadius = new CornerRadius(Corner(10)), Background = UI.Brush(Look.Hex("fill")) };
         var button = WidgetSurface(frame, label, press);
         button.ToolTip = more > 0 ? Loc.T("展开此应用的通知", "Open the stack") : item.AppId is { Length: > 0 } ? Loc.T("打开应用", "Open the app") : label;
-        if (margin) button.Margin = new Thickness(0, 0, 0, 4);
-        return button;
+
+        // The expand arrow (and, on a stack, its stepper) shows over the right side of the row while the pointer or the keyboard is on it.
+        var controls = new StackPanel { Orientation = Orientation.Horizontal };
+        var host = new Grid { Children = { button }, Tag = controls };
+        if (detail.Length > 0)
+        {
+            var arrow = new Button { Content = expanded ? "˄" : "˅", Style = (Style)FindResource("PanelOutlineButton"), MinWidth = 24, Padding = new Thickness(6, 0, 6, 0) };
+            AutomationProperties.SetName(arrow, expanded ? Loc.T("收起通知", "Collapse the notice") : Loc.T("展开通知", "Expand the notice"));
+            arrow.Click += (_, _) => { if (!_noticeExpanded.Remove(noticeKey)) _noticeExpanded.Add(noticeKey); FillNoticeRows(); };
+            controls.Children.Add(arrow);
+        }
+        var strip = new Border
+        {
+            Child = controls, Background = UI.Brush(Look.Hex("fillSelected")), CornerRadius = new CornerRadius(Corner(8)), Padding = new Thickness(3),
+            HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = expanded ? VerticalAlignment.Top : VerticalAlignment.Center,
+            Margin = new Thickness(0, expanded ? 8 : 0, 64, 0), Opacity = 0
+        };
+        host.Children.Add(strip);
+        void Update() => strip.Opacity = host.IsMouseOver || host.IsKeyboardFocusWithin ? 1 : 0;
+        host.MouseEnter += (_, _) => Update();
+        host.MouseLeave += (_, _) => Update();
+        host.IsKeyboardFocusWithinChanged += (_, _) => Update();
+        if (margin) host.Margin = new Thickness(0, 0, 0, 4);
+        return host;
     }
 
     // Opens the app that sent a notice: Windows starts it, or brings it forward, from its id in the Apps folder.
