@@ -171,8 +171,8 @@ public partial class MainWindow
     }
 
     // A notification is a card: the app's picture, the title and the message under it. It is taller than the row, so the island grows
-    // downward for it; on a side edge it stays a one-line row.
-    private bool HudIsCard => _hudMessage is { Body.Length: > 0 } && !CompactColumnMode && EffectiveStyle != CompactStyle.Line;
+    // downward for it; on a side edge it stays a card too, as thin along the edge as the card is high.
+    private bool HudIsCard => _hudMessage is { Body.Length: > 0 } && EffectiveStyle != CompactStyle.Line;
 
     private CollapsedShape HudTall(CollapsedShape shape)
     {
@@ -254,7 +254,7 @@ public partial class MainWindow
     {
         if (_hudMessage is not { Text.Length: > 0 } || !ColumnFor(shape.Style)) return shape;
         // The content box is the row's own (26 DIP at the notch's scale, which the height setting gives), with small ends.
-        double line = Math.Max(1, CompactMusicLayout.Whole(26 * shape.Scale));
+        double line = Math.Max(1, CompactMusicLayout.Whole((HudIsCard ? 46 : 26) * shape.Scale));
         // The ends flare like the notch's shoulders do at the top: the end at the screen edge melts into it with concave curves, which
         // take the inset, while the far end keeps the corner radius the Corners setting gives.
         bool capsule = shape.Style == CompactStyle.Capsule;
@@ -270,16 +270,16 @@ public partial class MainWindow
     // length to the row's height, then both go back.
     private void RenderHudColumn(HudMessage hud, double scale, double dpi, double column, double room)
     {
-        if (hud.Body is { Length: > 0 } message) hud = hud with { Text = hud.Text + " · " + message, Body = null };
         if (hud.Text.Length == 0) { RenderHudVertical(hud, scale, dpi, column, room); return; }
         double pad = Math.Round(28 * scale);
         // Across: as wide as the readout, up to the width set for the notch (Size and position).
         double saved = Settings.NotchWidth * _scale;
-        var (parts, natural) = BuildHudRowNatural(hud, scale, dpi, Math.Min(Math.Round(360 * scale), Math.Max(Math.Round(60 * scale), saved - pad)));
+        double across = Math.Min(Math.Round(360 * scale), Math.Max(Math.Round(60 * scale), saved - pad));
+        var (parts, natural) = hud.Body is { Length: > 0 } ? BuildHudCard(hud, scale, across) : BuildHudRowNatural(hud, scale, dpi, across);
         double row = Math.Max(1, CompactMusicLayout.Whole(26 * scale));
         double wantedColumn = CompactColumn.Width(scale, [natural + pad], []);
         // Along the edge: the row's own height, as at the top.
-        double line = Math.Max(1, CompactMusicLayout.Whole(26 * scale));
+        double line = Math.Max(1, CompactMusicLayout.Whole((hud.Body is { Length: > 0 } ? 46 : 26) * scale));
         double wanted = DevicePixels.Up(line, dpi);
         if (double.IsNaN(_compactWanted) || Math.Abs(wanted - _compactWanted) > .5 || Math.Abs(line - _compactRequired) > .5 || double.IsNaN(_compactColumn) || Math.Abs(wantedColumn - _compactColumn) > .5)
         {

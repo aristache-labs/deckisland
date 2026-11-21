@@ -49,6 +49,11 @@ internal sealed class HudWindow : Window
     private readonly TextBlock _figure = new() { FontSize = 12.5, VerticalAlignment = VerticalAlignment.Center };
     private string _key = "";
     private readonly DockPanel _row;
+    // A notification: the app's picture, the title and the message under it, in place of the row.
+    private readonly Image _picture = new() { Width = 28, Height = 28, Stretch = Stretch.Uniform, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 12, 0) };
+    private readonly TextBlock _title = new() { FontSize = 13.5, FontWeight = FontWeights.SemiBold, TextTrimming = TextTrimming.CharacterEllipsis };
+    private readonly TextBlock _body = new() { FontSize = 12, TextTrimming = TextTrimming.CharacterEllipsis };
+    private readonly DockPanel _card = new() { LastChildFill = true, Visibility = Visibility.Collapsed };
 
     internal HudWindow()
     {
@@ -66,7 +71,12 @@ internal sealed class HudWindow : Window
         _bar.Margin = new Thickness(20, 0, 0, 0);
         _bar.Children.Add(_track); _bar.Children.Add(_fill);
         row.Children.Add(_figure); row.Children.Add(_dot); row.Children.Add(_bar); row.Children.Add(_text);
-        _pill.Child = row;
+        DockPanel.SetDock(_picture, Dock.Left);
+        _card.Children.Add(_picture);
+        _card.Children.Add(new StackPanel { VerticalAlignment = VerticalAlignment.Center, Children = { _title, _body } });
+        var both = new Grid();
+        both.Children.Add(row); both.Children.Add(_card);
+        _pill.Child = both;
         Content = _pill;
         // The fill follows the track's width, whatever it is laid out at.
         _bar.SizeChanged += (_, _) => SetFill(_level);
@@ -89,6 +99,32 @@ internal sealed class HudWindow : Window
         _track.Background = UI.Brush(look.Hex("track"));
         _fill.Background = UI.Brush(look.Hex("accent"));
         _icon.Data = Geometry.Parse(Icons[message.Icon]);
+        bool card = message.Body is { Length: > 0 };
+        _row.Visibility = card ? Visibility.Collapsed : Visibility.Visible;
+        _card.Visibility = card ? Visibility.Visible : Visibility.Collapsed;
+        Width = card ? 380 : 300; Height = _pill.Height = card ? 62 : 38;
+        _pill.CornerRadius = new CornerRadius(0, 0, card ? 20 : 18, card ? 20 : 18);
+        if (card)
+        {
+            _title.Text = message.Text; _title.Foreground = ink;
+            _body.Text = message.Body; _body.Foreground = UI.Brush(look.Secondary);
+            _picture.Source = null;
+            if (message.Picture is { Length: > 0 } bytes)
+            {
+                try
+                {
+                    var image = new System.Windows.Media.Imaging.BitmapImage();
+                    image.BeginInit();
+                    image.StreamSource = new System.IO.MemoryStream(bytes);
+                    image.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
+                    image.EndInit();
+                    image.Freeze();
+                    _picture.Source = image;
+                }
+                catch (Exception error) when (error is NotSupportedException or System.IO.IOException or InvalidOperationException) { }
+            }
+            _picture.Visibility = _picture.Source is null ? Visibility.Collapsed : Visibility.Visible;
+        }
         _text.Text = message.Text;
         _bar.Visibility = message.Level is null ? Visibility.Collapsed : Visibility.Visible;
         // Without text the bar is the readout and takes the whole row; with text it sits at the right.
