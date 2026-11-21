@@ -10,7 +10,7 @@ namespace BrimDeck;
 
 public partial class MainWindow
 {
-    private sealed record QuotaPeriodReading(string Label, string Value, string Color);
+    private sealed record QuotaPeriodReading(string Label, string Value, string Color, double Fraction);
     private sealed record QuotaWidgetReading(string Name, string? Icon, QuotaPeriodReading Daily,
         QuotaPeriodReading Weekly, string Detail, bool Stale);
 
@@ -20,14 +20,14 @@ public partial class MainWindow
     {
         frame.CornerRadius = new CornerRadius(16);
         string title = WidgetLayout.Name(WidgetKind.Quotas);
-        var tiles = new UniformGrid { Columns = 3, VerticalAlignment = VerticalAlignment.Center };
+        var tiles = new UniformGrid { Columns = 1, VerticalAlignment = VerticalAlignment.Top };
         var viewport = new ScrollViewer
         {
             Content = tiles, VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
             HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, Focusable = true,
             FocusVisualStyle = (Style)FindResource("PanelKeyboardFocus")
         };
-        viewport.SizeChanged += (_, _) => tiles.Columns = Math.Clamp((int)((viewport.ActualWidth - 10) / 88), 1, AppPresets.MaximumShownApps);
+        viewport.SizeChanged += (_, _) => tiles.Columns = Math.Clamp((int)((viewport.ActualWidth - 10) / 150), 1, Math.Max(1, tiles.Children.Count));
         AutomationProperties.SetName(viewport, title);
         var empty = WeatherText(Loc.T("没有正在运行的代理", "No agents running"), 12);
         empty.TextAlignment = TextAlignment.Center;
@@ -46,6 +46,7 @@ public partial class MainWindow
             double offset = viewport.VerticalOffset;
             tiles.Children.Clear();
             foreach (var reading in readings) tiles.Children.Add(QuotaWidgetTile(reading, detailed));
+            tiles.Columns = Math.Clamp((int)((viewport.ActualWidth - 10) / 150), 1, Math.Max(1, readings.Length));
             viewport.ScrollToVerticalOffset(offset);
         });
         return frame;
@@ -55,11 +56,16 @@ public partial class MainWindow
     {
         var snapshot = DashboardUsage.Quota(entry, Snapshots);
         var dailyUsed = UsedFor(TimeSpan.FromDays(1));
-        var daily = dailyUsed is null && entry.QuotaSource is ProviderId.Codex or ProviderId.Claude &&
-            UsedFor(TimeSpan.FromHours(5)) is { } shortUsed
+        // Cursor bills by period, so its rows show the same metrics as Quotas and usage instead of Daily and Weekly.
+        var cursor = entry.QuotaSource == ProviderId.Cursor
+            ? snapshot.Metrics.Where(metric => QuotaRing.Used(metric, entry) is not null).Take(2).ToArray() : [];
+        var daily = cursor.Length > 0 ? Period(QuotaRing.Used(cursor[0], entry), MetricLabel(cursor[0]))
+            : dailyUsed is null && entry.QuotaSource is ProviderId.Codex or ProviderId.Claude &&
+              UsedFor(TimeSpan.FromHours(5)) is { } shortUsed
             ? Period(shortUsed, Loc.T("5 小时", "5-hour"))
             : Period(dailyUsed, Loc.T("每日", "Daily"));
-        var weekly = Period(UsedFor(TimeSpan.FromDays(7)), Loc.T("每周", "Weekly"));
+        var weekly = cursor.Length > 1 ? Period(QuotaRing.Used(cursor[1], entry), MetricLabel(cursor[1]))
+            : Period(UsedFor(TimeSpan.FromDays(7)), Loc.T("每周", "Weekly"));
         string detail = snapshot.Metrics.Count == 0 ? snapshot.StatusLabel
             : string.Join("\n\n", snapshot.Metrics.Select(item => item.Description));
         bool stale = snapshot.LastSeenAt is not null || snapshot.IsStale;
@@ -72,15 +78,15 @@ public partial class MainWindow
 
         QuotaPeriodReading Period(double? used, string label)
         {
-            if (used is not { } percent) return new(label, "—", Look.Secondary);
+            if (used is not { } percent) return new(label, "—", Look.Secondary, 0);
             double shown = remaining ? 100 - percent : percent;
-            return new(label, $"{shown:0.#}%", Look.Readable(Look.QuotaColor(entry, percent), 4.5));
+            return new(label, $"{shown:0.#}%", Look.Readable(Look.QuotaColor(entry, percent), 4.5), Math.Clamp(shown / 100, 0, 1));
         }
     }
 
     private FrameworkElement QuotaWidgetTile(QuotaWidgetReading reading, bool detailed)
     {
-        var identity = new Grid { Height = 28 };
+        FrameworkElement badge;
         if (reading.Icon is { } icon && !Look.HighContrast)
         {
             if (!QuotaIcons.TryGetValue(icon, out var bitmap))
@@ -89,41 +95,55 @@ public partial class MainWindow
                 bitmap.Freeze();
                 QuotaIcons[icon] = bitmap;
             }
-            identity.Children.Add(new Image { Source = bitmap, Height = 28, Width = 28, Stretch = System.Windows.Media.Stretch.Uniform });
+            badge = new Image { Source = bitmap, Height = 20, Width = 20, Stretch = System.Windows.Media.Stretch.Uniform };
         }
         else
-        {
-            string initials = CompactMusicLayout.RingLetterFor(true, reading.Name);
-            identity.Children.Add(new Border
+            badge = new Border
             {
-                Width = 28, Height = 28, CornerRadius = new CornerRadius(5), Background = UI.Brush(Look.Hex("fillSelected")),
-                Child = UI.Centered(initials, 14, Look.Primary, FontWeights.SemiBold)
-            });
-        }
+                Width = 20, Height = 20, CornerRadius = new CornerRadius(5), Background = UI.Brush(Look.Hex("fillSelected")),
+                Child = UI.Centered(CompactMusicLayout.RingLetterFor(true, reading.Name), 11, Look.Primary, FontWeights.SemiBold)
+            };
+        badge.Margin = new Thickness(0, 0, 7, 0);
+        var name = WeatherText(reading.Name + (reading.Stale ? " *" : ""), 12);
+        name.FontWeight = FontWeights.SemiBold;
+        name.TextTrimming = TextTrimming.CharacterEllipsis;
+        name.TextWrapping = TextWrapping.NoWrap;
+        name.VerticalAlignment = VerticalAlignment.Center;
+        var header = new DockPanel { Margin = new Thickness(0, 0, 0, 5), Children = { badge, name } };
+        DockPanel.SetDock(badge, System.Windows.Controls.Dock.Left);
 
-        var daily = Label(reading.Daily);
-        var weekly = Label(reading.Weekly);
-        var stack = new StackPanel { Margin = new Thickness(2, 3, 2, 3), Children = { identity, daily, weekly } };
+        var card = new StackPanel { Children = { header, PeriodRow(reading.Daily, 0), PeriodRow(reading.Weekly, 1) } };
         string mode = Settings.QuotaRingRemaining ? Loc.T("剩余", "Left") : Loc.T("已用", "Used");
-        string summary = $"{reading.Name} · {mode} · {daily.Text} · {weekly.Text}";
+        string summary = $"{reading.Name} · {mode} · {reading.Daily.Label} {reading.Daily.Value} · {reading.Weekly.Label} {reading.Weekly.Value}";
         if (reading.Stale) summary += $" · {Loc.T("数据未更新", "Data is stale")}";
         string tooltip = $"{summary}\n{reading.Detail}";
-        stack.ToolTip = tooltip;
-        AutomationProperties.SetName(stack, summary);
-        if (!detailed) return stack;
-        var link = WidgetSurface(stack, summary, () => SelectPage(DeckPage.Usage));
+        var frame = new Border
+        {
+            Margin = new Thickness(3), Padding = new Thickness(9, 7, 9, 7), CornerRadius = new CornerRadius(11),
+            Background = UI.Brush(Look.Hex("fillSelected")), Child = card, ToolTip = tooltip
+        };
+        AutomationProperties.SetName(frame, summary);
+        if (!detailed) return frame;
+        var link = WidgetSurface(frame, summary, () => SelectPage(DeckPage.Usage));
         link.ToolTip = tooltip;
         return link;
 
-        TextBlock Label(QuotaPeriodReading period)
+        FrameworkElement PeriodRow(QuotaPeriodReading period, int index)
         {
-            var label = WeatherText("", 13);
-            label.Inlines.Add(new Run(period.Label + " ") { FontSize = 10, Foreground = UI.Brush(Look.Secondary) });
-            label.Inlines.Add(new Run(period.Value) { FontWeight = FontWeights.SemiBold, Foreground = UI.Brush(period.Color) });
-            label.TextAlignment = TextAlignment.Center;
+            var value = WeatherText(period.Value, 13);
+            value.FontWeight = FontWeights.SemiBold;
+            value.Foreground = UI.Brush(period.Color);
+            value.Margin = new Thickness(6, 0, 0, 0);
+            Typography.SetNumeralAlignment(value, FontNumeralAlignment.Tabular);
+            DockPanel.SetDock(value, System.Windows.Controls.Dock.Right);
+            var label = WeatherText(period.Label, 10.5);
+            label.Foreground = UI.Brush(Look.Secondary);
+            label.TextTrimming = TextTrimming.CharacterEllipsis;
             label.TextWrapping = TextWrapping.NoWrap;
-            Typography.SetNumeralAlignment(label, FontNumeralAlignment.Tabular);
-            return label;
+            label.VerticalAlignment = VerticalAlignment.Bottom;
+            var bar = new QuotaBar($"widget:{reading.Name}:{index}", period.Fraction, period.Color, Animates)
+                { Height = 3, Margin = new Thickness(0, 2, 0, index == 0 ? 6 : 0) };
+            return new StackPanel { Children = { new DockPanel { Children = { value, label } }, bar } };
         }
     }
 
