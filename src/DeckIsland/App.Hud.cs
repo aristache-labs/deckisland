@@ -22,6 +22,7 @@ public partial class App
     private void ShowHud(HudMessage message)
     {
         message = message with { Hold = message.Hold ?? HudHold };
+        if (message.Key != "call" && message.Hold is { } hold && hold > TimeSpan.Zero) _hudTransientUntil = DateTime.UtcNow + hold;
         bool inline = false;
         foreach (var deck in Decks.ToList()) inline |= deck.ShowHudInline(message);
         if (inline) { _hud?.Clear(message.Key); return; }
@@ -43,6 +44,7 @@ public partial class App
         StartBattery();
         StartBluetooth();
         StartDownloads();
+        StartCalls();
         StartSensors();
         StartNotifications();
     }
@@ -282,6 +284,7 @@ public partial class App
                 return;
             }
             // The name the browser gives the partial file so far ("Unconfirmed 874876", or the file's own once it is known).
+            if (_callShown) { showing = false; return; }
             string title = active.Count > 1 ? $"{active.Count} downloads" : Path.GetFileNameWithoutExtension(active[0].Key);
             ShowHud(new("download", HudIcon.Download, title, Figure: HudFormat.Speed(active.Sum(item => item.Value.Speed)), Hold: TimeSpan.Zero, Lit: true));
             showing = true;

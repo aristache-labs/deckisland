@@ -30,7 +30,7 @@ internal static class HudGlyph
         }
         return new Path
         {
-            Data = HudWindow.IconGeometry(hud.Icon), Stroke = UI.Brush(hud.Lit ? look.Hex("accent") : look.Primary), StrokeThickness = Math.Max(1, 1.4 * scale),
+            Data = HudWindow.IconGeometry(hud.Icon), Stroke = UI.Brush(hud.Icon == HudIcon.MicOff ? look.Hex("danger") : hud.Lit ? (hud.Icon == HudIcon.Mic ? Charging : look.Hex("accent")) : look.Primary), StrokeThickness = Math.Max(1, 1.4 * scale),
             Stretch = Stretch.Uniform, Width = size, Height = size, StrokeLineJoin = PenLineJoin.Round,
             StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round
         };

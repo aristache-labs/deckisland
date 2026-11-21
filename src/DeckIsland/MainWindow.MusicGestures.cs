@@ -52,7 +52,7 @@ public partial class MainWindow
     private bool OnControl(DependencyObject? node)
     {
         for (; node is not null && !ReferenceEquals(node, MusicContent); node = node is Visual ? VisualTreeHelper.GetParent(node) : LogicalTreeHelper.GetParent(node))
-            if (node is ButtonBase or RangeBase or Thumb or TextBoxBase or Hyperlink) return true;
+            if (node is ButtonBase or RangeBase or Thumb or TextBoxBase or Hyperlink or MusicVolumeBar) return true;
         return false;
     }
 
@@ -110,7 +110,7 @@ public partial class MainWindow
     private bool MusicWheelSwipe(int delta)
     {
         if (!GesturesAllowed || Settings.MusicSwipeLeft == MusicGestureAction.None && Settings.MusicSwipeRight == MusicGestureAction.None
-            || !ScreenBounds(Island).Contains(WindowsHost.Cursor())) return false;
+            || _musicVolume is { IsMouseOver: true } || !ScreenBounds(Island).Contains(WindowsHost.Cursor())) return false;
         int step = _swipe.Feed(delta, DateTimeOffset.UtcNow);
         if (step != 0) RunGesture(MusicGestures.Swipe(Settings, MusicGestures.Fingers(step, TouchpadReversed())));
         return true;

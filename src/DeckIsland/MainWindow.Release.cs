@@ -41,6 +41,10 @@ public partial class MainWindow
                 case DeckPage.Notifications:
                     NotificationsContent.Children.Clear();
                     break;
+                case DeckPage.Calls:
+                    CallsContent.Children.Clear();
+                    _callMic = null;
+                    break;
                 case DeckPage.Focus:
                     FocusContent.Children.Clear();
                     break;

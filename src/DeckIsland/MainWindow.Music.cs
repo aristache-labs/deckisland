@@ -71,6 +71,9 @@ public partial class MainWindow
     // (motion-review F10, GlyphGrowth).
     private (MediaCommand Id, long At)? _musicPointerClick;
     private MusicEqualizer? _musicEqualizer, _compactEqualizer;
+    private MusicProgress? _musicProgress;
+    private MusicVolumeBar? _musicVolume;
+    private long _volumeRead;
     private readonly double[] _flowLevels = new double[CompactMusicLayout.MaximumBars];
     private MusicMarquee? _compactMarquee;
     // The collapsed title that has scrolled its laps (MusicMarquee.Laps): a row built again for it keeps it resting, until the
@@ -149,7 +152,7 @@ public partial class MainWindow
     }
     // The page chosen on another display's panel (App.PageChosen).
     internal void FollowPage(DeckPage page) { if (CurrentPage != page) SelectPage(page, remember: false); }
-    private FrameworkElement PageContent(DeckPage page) => page switch { DeckPage.Music => MusicContent, DeckPage.Monitor => MonitorContent, DeckPage.Clipboard => ShelfContent, DeckPage.Devices => DevicesContent, DeckPage.Weather => WeatherContent, DeckPage.Focus => FocusContent, DeckPage.Widgets => WidgetsContent, DeckPage.Reminders => RemindersContent, DeckPage.Notifications => NotificationsContent, _ => UsageContent };
+    private FrameworkElement PageContent(DeckPage page) => page switch { DeckPage.Music => MusicContent, DeckPage.Monitor => MonitorContent, DeckPage.Clipboard => ShelfContent, DeckPage.Devices => DevicesContent, DeckPage.Weather => WeatherContent, DeckPage.Focus => FocusContent, DeckPage.Widgets => WidgetsContent, DeckPage.Reminders => RemindersContent, DeckPage.Notifications => NotificationsContent, DeckPage.Calls => CallsContent, _ => UsageContent };
     private void ShowPage(DeckPage page, bool animatePage)
     {
         // The music page keeps what it built while another page shows (RenderMusic's key), so switching back does not build it again.
@@ -212,7 +215,7 @@ public partial class MainWindow
         Toolbar.Height = header.Height;
         PageSwitch.Margin = new Thickness(header.Side, 0, header.Side, 0);
         FitPageButtons(header);
-        foreach (var button in new[] { AIUsageButton, MonitorPageButton, MusicPageButton, ShelfPageButton, DevicesPageButton, WeatherPageButton, FocusPageButton, WidgetsPageButton, RemindersPageButton, NotificationsPageButton })
+        foreach (var button in new[] { AIUsageButton, MonitorPageButton, MusicPageButton, ShelfPageButton, DevicesPageButton, WeatherPageButton, FocusPageButton, WidgetsPageButton, RemindersPageButton, NotificationsPageButton, CallsPageButton })
         {
             // A local corner for these two buttons only; PanelIconButton keeps its 5 DIP corner elsewhere.
             button.ApplyTemplate();
@@ -226,14 +229,14 @@ public partial class MainWindow
     private void RenderPageSwitch()
     {
         SetValue(SuppressMusicToolTipsProperty, IsMusicPage);
-        foreach (var control in new FrameworkElement[] { AIUsageButton, MonitorPageButton, MusicPageButton, ShelfPageButton, DevicesPageButton, WeatherPageButton, FocusPageButton, WidgetsPageButton, RemindersPageButton, NotificationsPageButton, MediaSourceButton })
+        foreach (var control in new FrameworkElement[] { AIUsageButton, MonitorPageButton, MusicPageButton, ShelfPageButton, DevicesPageButton, WeatherPageButton, FocusPageButton, WidgetsPageButton, RemindersPageButton, NotificationsPageButton, CallsPageButton, MediaSourceButton })
             ToolTipService.SetIsEnabled(control, !IsMusicPage);
         PageSwitch.Visibility = _details && IsUsagePage || IsShelfPage && ShelfHidesSwitch ? Visibility.Collapsed : Visibility.Visible;
         PageSwitch.HorizontalAlignment = IsMusicPage || IsUsagePage && ApplicationPages.Visibility == Visibility.Visible || IsShelfPage
             ? HorizontalAlignment.Left : HorizontalAlignment.Center;
         OrderPageButtons();
         if (!IsShelfPage) { ShelfToolbar.Visibility = Visibility.Collapsed; ShelfSearchButton.Visibility = Visibility.Collapsed; }
-        foreach (var (button, page) in new[] { (AIUsageButton, DeckPage.Usage), (MusicPageButton, DeckPage.Music), (MonitorPageButton, DeckPage.Monitor), (ShelfPageButton, DeckPage.Clipboard), (DevicesPageButton, DeckPage.Devices), (WeatherPageButton, DeckPage.Weather), (FocusPageButton, DeckPage.Focus), (WidgetsPageButton, DeckPage.Widgets), (RemindersPageButton, DeckPage.Reminders), (NotificationsPageButton, DeckPage.Notifications) })
+        foreach (var (button, page) in new[] { (AIUsageButton, DeckPage.Usage), (MusicPageButton, DeckPage.Music), (MonitorPageButton, DeckPage.Monitor), (ShelfPageButton, DeckPage.Clipboard), (DevicesPageButton, DeckPage.Devices), (WeatherPageButton, DeckPage.Weather), (FocusPageButton, DeckPage.Focus), (WidgetsPageButton, DeckPage.Widgets), (RemindersPageButton, DeckPage.Reminders), (NotificationsPageButton, DeckPage.Notifications), (CallsPageButton, DeckPage.Calls) })
         {
             bool current = CurrentPage == page || page == DeckPage.Widgets && CurrentPage == DeckPage.Reminders;
             button.Visibility = DeckPages.Shown(Settings, page) && (page != DeckPage.Reminders || !Settings.WidgetsPage) ? Visibility.Visible : Visibility.Collapsed;
@@ -487,7 +490,7 @@ public partial class MainWindow
         bool bare = !Settings.MusicPageCover && !Settings.LyricsEnabled;
         bool splitLyrics = Settings.MusicLyricsLayout == MusicLyricsLayout.Columns && !bare;
         bool lyricColumn = splitLyrics && (hasLyrics || message.Length > 0);
-        string key = $"{track?.Id}|{track?.SongKey}|{logMode}|{appleEntry}|{kugouEntry}|{_media?.RestartingNetease}|{_media?.RestartingKugou}|{track?.State}|{track?.CanToggle}|{track?.CanPrevious}|{track?.CanNext}|{track?.CanSeek}|{track?.CanRepeat}|{track?.CanShuffle}|{track?.Shuffle}|{track?.Repeat}|{track?.CanLike}|{track?.Liked}|{track?.HasTimeline}|{timeline}|{playerLyrics}|{hasPlayerLyric}|{w}|{h}|{_lyrics.GetHashCode()}|{_mediaCover?.GetHashCode()}|{_media?.Error}|{_media?.KugouError}|{Settings.LyricsEnabled}|{Settings.MusicPageCover}|{Settings.MusicLyricsLayout}|{Settings.MusicLyricsAlign}|{Settings.EqualizerColor}|{Settings.EqualizerCustomColor}|{Settings.MusicLyricColor}|{Settings.MusicLyricCustomColor}|{Settings.MusicEqualizerBars}|{Settings.UiFont}|{Loc.Language}|{animate}";
+        string key = $"{Settings.MusicProgressLook}|{Settings.MusicPlayerVolume}|{Settings.MusicBackground}|{EqualizerColor}|{track?.Id}|{track?.SongKey}|{logMode}|{appleEntry}|{kugouEntry}|{_media?.RestartingNetease}|{_media?.RestartingKugou}|{track?.State}|{track?.CanToggle}|{track?.CanPrevious}|{track?.CanNext}|{track?.CanSeek}|{track?.CanRepeat}|{track?.CanShuffle}|{track?.Shuffle}|{track?.Repeat}|{track?.CanLike}|{track?.Liked}|{track?.HasTimeline}|{timeline}|{playerLyrics}|{hasPlayerLyric}|{w}|{h}|{_lyrics.GetHashCode()}|{_mediaCover?.GetHashCode()}|{_media?.Error}|{_media?.KugouError}|{Settings.LyricsEnabled}|{Settings.MusicPageCover}|{Settings.MusicLyricsLayout}|{Settings.MusicLyricsAlign}|{Settings.EqualizerColor}|{Settings.EqualizerCustomColor}|{Settings.MusicLyricColor}|{Settings.MusicLyricCustomColor}|{Settings.MusicEqualizerBars}|{Settings.UiFont}|{Loc.Language}|{animate}";
         if (_musicRenderKey == key) { UpdateMusicPosition(); return; }
         _musicRenderKey = key;
         string song = track is null ? "" : $"{track.Id}|{track.SongKey}|{track.Title}|{track.Artist}";
@@ -516,6 +519,7 @@ public partial class MainWindow
         _handover.Hold(MusicContent, keep: _musicControls);
         _musicSeek = null; _musicElapsed = null; _musicDuration = null; _musicEqualizer = null; _musicTitle = null; _lyricCurrent = null; _lyricPrevious = null; _lyricNext = null; _lyricsAbove = []; _lyricsBelow = []; _musicMessage = null; _musicInfo = null;
         MusicContent.Margin = new Thickness(c.Side, 0, c.Side, c.Bottom);
+        MusicSourceHost.Margin = new Thickness(0, 0, c.Side, c.Bottom);
         if (track is null)
         {
             MusicContent.Children.Clear(); _musicControls = null; _musicFullControl = null; _musicSmtcHint = null; _musicControlButtons.Clear();
@@ -526,7 +530,7 @@ public partial class MainWindow
             {
                 var hint = UI.Line(error, 11.5, Look.Tertiary); hint.TextWrapping = TextWrapping.Wrap; hint.TextAlignment = TextAlignment.Center; empty.Children.Add(hint);
             }
-            MusicContent.Children.Add(empty); _handover.Release(empty, motion); return;
+            MusicContent.Children.Add(empty); _handover.Release(empty, motion); UpdateMusicBackdrop(); return;
         }
         var body = new Grid();
         bool synchronized = playerLyrics || _lyrics.CanSynchronize(track);
@@ -628,8 +632,23 @@ public partial class MainWindow
             _musicElapsed = UI.Fixed("", c.Time, c.TimeLine, Look.Secondary); times.Children.Add(_musicElapsed);
             _musicDuration = UI.Fixed("", c.Time, c.TimeLine, Look.Secondary); _musicDuration.HorizontalAlignment = HorizontalAlignment.Right; times.Children.Add(_musicDuration);
             foreach (var time in new[] { _musicElapsed, _musicDuration }) Typography.SetNumeralAlignment(time, FontNumeralAlignment.Tabular);
+            // The player's own volume, in the middle of the times: the level of the app that plays (not Windows' master volume).
+            _musicVolume = null;
+            if (Settings.MusicPlayerVolume && track.Source.Length > 0)
+            {
+                var bar = new MusicVolumeBar(((SolidColorBrush)_musicAccent).Color, ((SolidColorBrush)UI.Brush(Look.Hex("track"))).Color, ((SolidColorBrush)UI.Brush(Look.Primary)).Color)
+                    { HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+                string source = track.Source;
+                float? level = PlayerVolume.Read(source);
+                bar.Available = level is not null; bar.Level = level ?? 0;
+                bar.Changed += value => PlayerVolume.Set(source, (float)value);
+                _musicVolume = bar; _volumeRead = Environment.TickCount64;
+                times.Children.Add(bar); times.IsHitTestVisible = true;
+            }
             body.Children.Add(times);
-            _musicSeek = new MusicSeekSlider { Style = (Style)FindResource("MusicSeek"), RestHeight = c.Bar, HoverHeight = c.BarHover, BarHeight = c.Bar,
+            // Every style but Simple draws the bar itself (MusicProgress), behind the slider, whose own bar is then not drawn.
+            bool styled = Settings.MusicProgressLook != MusicProgressStyle.Simple;
+            _musicSeek = new MusicSeekSlider { Style = (Style)FindResource("MusicSeek"), RestHeight = styled ? 0 : c.Bar, HoverHeight = styled ? 0 : c.BarHover, BarHeight = styled ? 0 : c.Bar,
                 Accent = ((SolidColorBrush)_musicAccent).Color, DurationSeconds = track.Duration.TotalSeconds, Height = c.SeekRow, AnimationsEnabled = animate, IsEnabled = track.CanSeek && track.HasTimeline,
                 VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, layout.ProgressY, 0, 0) };
             AutomationProperties.SetName(_musicSeek, Loc.T("播放进度", "Playback position"));
@@ -651,6 +670,14 @@ public partial class MainWindow
             _musicSeek.LostMouseCapture += async (_, _) => { if (_seeking && _musicSeek?.IsMouseCaptureWithin == false) await CommitSeek(); };
             _musicSeek.ValueChanged += (_, _) => { if (!_updatingSeek && _seeking) UpdateSeekLabels(_musicSeek.Value); };
             _musicSeek.PreviewKeyUp += async (_, e) => { if (e.Key is Key.Left or Key.Right or Key.Home or Key.End or Key.PageDown or Key.PageUp) { _seekTrack = _mediaTrack; _seeking = true; await CommitSeek(); } };
+            if (styled)
+            {
+                _musicProgress = new MusicProgress(_musicSeek, Settings.MusicProgressLook, ((SolidColorBrush)_musicAccent).Color, ((SolidColorBrush)UI.Brush(Look.Hex("track"))).Color,
+                    track.State == MediaState.Playing && animate, track.SongKey)
+                { Height = c.SeekRow, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, layout.ProgressY, 0, 0) };
+                body.Children.Add(_musicProgress);
+            }
+            else _musicProgress = null;
             body.Children.Add(_musicSeek);
         }
         if (_musicControls is null)
@@ -808,9 +835,10 @@ public partial class MainWindow
             Canvas.SetLeft(enable, layout.BodyWidth - entryWidth); Canvas.SetTop(enable, (c.Play - 26) / 2);
         }
         if (_musicFullControl is not null) _musicFullControl.Visibility = entryLabel is not null ? Visibility.Visible : Visibility.Collapsed;
-        MusicContent.Children.Insert(0, body); _handover.Release(body, motion); UpdateMusicPosition();
+        MusicContent.Children.Insert(0, body); _handover.Release(body, motion); UpdateMusicPosition(); UpdateMusicBackdrop();
     }
-    private double MusicEqualizerWidth(MusicMetrics c) => MusicTitleFit.EqualizerWidth(c.Equalizer, Settings.MusicEqualizerBars);
+    // The equalizer that stood at the top right of the card gave way to the progress bar styles (MusicProgress).
+    private double MusicEqualizerWidth(MusicMetrics c) => 0;
     // The open page's title: one MusicMarquee, the collapsed row's, so a title that does not fit its room scrolls the same way. Its
     // name for screen readers is the whole title; a tooltip shows it whole while it overhangs.
     private MusicMarquee PageTitle(MediaTrack track, MusicMetrics c, bool center, bool merge)
@@ -1073,6 +1101,14 @@ public partial class MainWindow
     {
         if (_mediaTrack is not { } track || track.State == MediaState.Stopped) { MusicIndicator.Visibility = Visibility.Collapsed; return; }
         var position = _seekPreview.Position(track, DateTimeOffset.UtcNow);
+        // The player's volume can change in Windows' mixer too: read it again now and then while the card is up to date.
+        if (_musicVolume is { } volume && _expanded && Environment.TickCount64 - _volumeRead > 1500 && volume.Visibility == Visibility.Visible)
+        {
+            _volumeRead = Environment.TickCount64;
+            float? level = PlayerVolume.Read(track.Source);
+            volume.Available = level is not null;
+            if (level is { } read) volume.Level = read;
+        }
         // The expanded page's controls stay in the tree while collapsed; they are brought up to date when the panel opens.
         bool page = _expanded && IsMusicPage;
         if (page && !_seeking && _musicSeek is not null) { _updatingSeek = true; _musicSeek.Value = track.Duration > TimeSpan.Zero ? position.TotalSeconds / track.Duration.TotalSeconds : 0; _updatingSeek = false; UpdateSeekLabels(_musicSeek.Value); }
@@ -1491,7 +1527,7 @@ public partial class MainWindow
     private bool MusicPresentationVisible => IsVisible && !IsSuppressed && !DisplayPower.Off && _mediaTrack is { State: not MediaState.Stopped }
         && (_expanded ? IsMusicPage : (Settings.ShowsMusic(EffectiveStyle) || _compactEqualizer is not null) && _alert is null);
     // The bars seen with a song: the music page's, or the collapsed row's.
-    private bool PlayerLevelsVisible => MusicPresentationVisible && (_expanded || _compactEqualizer is not null);
+    private bool PlayerLevelsVisible => MusicPresentationVisible && !_expanded && _compactEqualizer is not null;
     // The collapsed bars shown at all times read the whole system's sound while no song plays.
     private bool SystemLevelsVisible => IsVisible && !IsSuppressed && !DisplayPower.Off && !_expanded && _alert is null
         && Settings.EqualizerAlways && _compactEqualizer is not null && !MusicAudioActive;
@@ -1515,10 +1551,9 @@ public partial class MainWindow
         float peak = levels ? _media?.Peak() ?? 0 : 0;
         // Captured audio drives the bars, as many values as the equalizer on show has bars (at whatever length it is set to), flowing
         // along them or one frequency band for each bar, as the equalizer setting chooses; the session peak is the fallback.
-        var shown = _expanded ? IsMusicPage ? _musicEqualizer : null : _alert is null ? _compactEqualizer : null;
+        var shown = _expanded ? null : _alert is null ? _compactEqualizer : null;
         var bandLevels = shown is null ? default : _flowLevels.AsSpan(0, Math.Clamp(shown.Bars, 1, _flowLevels.Length));
         bool flowing = levels && shown is not null && _media?.FlowLevels(bandLevels, Settings.EqualizerMode) == true;
-        if (_expanded && IsMusicPage) { if (flowing) _musicEqualizer?.Show(bandLevels, playing); else _musicEqualizer?.Tick(peak, playing, seconds); }
         if (!_expanded && _alert is null) { if (flowing) _compactEqualizer?.Show(bandLevels, compactPlaying); else _compactEqualizer?.Tick(peak, compactPlaying, seconds); }
         if (_trackNoticeUntil != default && now >= _trackNoticeUntil) { _trackNoticeUntil = default; RenderCompact(); }
         if ((now - _positionTick).TotalMilliseconds >= 250) { _positionTick = now; UpdateMusicPosition(); }

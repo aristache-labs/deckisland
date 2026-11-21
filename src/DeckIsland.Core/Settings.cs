@@ -57,8 +57,8 @@ public sealed record IgnoredMediaApp(string AppId = "", string Name = "", string
 public enum ProviderId { Claude, Codex, Antigravity, Cursor, GlmChina, NewApi, Sub2Api, Custom, ZCode = 10, GlmGlobal = 11, Dsh = 12, DeepSeek = 13, GrokBot = 14, Kimi = 15, KimiApi = 16, OpenCode = 17, OpenCodeGo = 18, OpenRouter = 19, Pi = 20, CodeAgent = 21, CommandCode = 22, CommandCodeApi = 23, WorkBuddy = 24, WorkBuddyAi = 25, MiMo = 26, MiMoApi = 27, MiMoTokenPlan = 28, MiMoLinked = 29, KimiPlatform = 30 }
 public enum SettingsTheme { System, Light, Dark }
 // Pages are saved as numbers, so new members go at the end; their order in the page switch is DeckSettings.PageOrder.
-public enum DeckPage { Usage, Music, Monitor, Clipboard, Devices, Weather, Focus, Reminders, Widgets, Notifications }
-public enum DefaultDeckPage { Last, Usage, Music, Monitor, Clipboard, Devices, Weather, Focus, Reminders, Widgets, Notifications }
+public enum DeckPage { Usage, Music, Monitor, Clipboard, Devices, Weather, Focus, Reminders, Widgets, Notifications, Calls }
+public enum DefaultDeckPage { Last, Usage, Music, Monitor, Clipboard, Devices, Weather, Focus, Reminders, Widgets, Notifications, Calls }
 // What the mouse wheel does over the expanded panel. Saved as numbers, so new members go at the end.
 public enum MouseWheelAction { None, Pages, Volume }
 // What a double click on an end of the collapsed notch or capsule does: turn its auto width on or off, or start moving it
@@ -72,6 +72,9 @@ public enum PausedMusicHide { None, Text, Cover, Both }
 // drum beat or a voice is seen crossing them. Spectrum: the sound split by pitch, each bar one band, low on the left and high
 // on the right. Saved as numbers, so new members go at the end; a file without it, or with a number not listed, is Flow.
 public enum EqualizerMode { Flow = 0, Spectrum = 1 }
+// The music card's progress bar (DeckSettings.MusicProgressLook) and what is behind the card (DeckSettings.MusicBackground).
+public enum MusicProgressStyle { Wave, Pixels, Comet, SongShape, Simple, Hearts }
+public enum MusicCardBackground { AlbumColours, Plain }
 // How the collapsed quota rings are drawn (QuotaRing). Nested: up to three rings about one centre, 20 DIP across, each quota in
 // a ring of its own. Single: one 12 DIP ring per application with its highest share, as before there were nested rings. Saved
 // as numbers, so new members go at the end; a file without it, or with a number not listed, is Single.
@@ -552,6 +555,11 @@ public sealed class DeckSettings
     public MusicGestureAction MusicSwipeRight { get => _musicSwipeRight; set => _musicSwipeRight = Gesture(value); }
     private static MusicGestureAction Gesture(MusicGestureAction value) => Enum.IsDefined(value) ? value : MusicGestureAction.None;
     // How many bars the music page's equalizer has, beside the title; its bars keep their spacing, so more bars make it longer.
+    // The expanded music card: how its progress bar looks, what is behind it (the cover's colours in soft streaks, or the island's surface),
+    // and whether it carries the player's own volume slider.
+    public MusicProgressStyle MusicProgressLook { get; set; } = MusicProgressStyle.Wave;
+    public MusicCardBackground MusicBackground { get; set; } = MusicCardBackground.AlbumColours;
+    public bool MusicPlayerVolume { get; set; } = true;
     public int MusicEqualizerBars { get => _musicEqualizerBars; set => _musicEqualizerBars = CompactMusicLayout.SafeBars(value); }
     // How the collapsed equalizer and the music page's equalizer show the sound; one choice for both, while each has its own length.
     public EqualizerMode EqualizerMode { get => _equalizerMode; set => _equalizerMode = Enum.IsDefined(value) ? value : EqualizerMode.Flow; }
@@ -732,6 +740,12 @@ public sealed class DeckSettings
     public double NotificationsWidth { get; set; } = 490;
     public double NotificationsHeight { get; set; } = 280;
     public bool NotificationClockTimes { get; set; }
+    // The Calls tab, the call timer (how long the microphone has been open) and the readout when the microphone is muted or unmuted.
+    public bool CallsPage { get; set; } = true;
+    public double CallsWidth { get; set; } = 490;
+    public double CallsHeight { get; set; } = 280;
+    public bool CallTimer { get; set; } = true;
+    public bool MicHud { get; set; } = true;
     public bool MirrorNotifications { get; set; } = true;
     public int NotificationSeconds { get; set; } = 5;
     public bool KeepNoticesLonger { get; set; }
@@ -989,6 +1003,10 @@ public sealed class DeckSettings
         WidgetsWidth = double.IsFinite(WidgetsWidth) ? Math.Clamp(WidgetsWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : 540;
         WidgetsHeight = double.IsFinite(WidgetsHeight) ? Math.Clamp(WidgetsHeight, 220, DeckPages.MaxHeight) : 292;
         CornerPercent = Math.Clamp(CornerPercent, 0, 100);
+        if (!Enum.IsDefined(MusicProgressLook)) MusicProgressLook = MusicProgressStyle.Wave;
+        if (!Enum.IsDefined(MusicBackground)) MusicBackground = MusicCardBackground.AlbumColours;
+        CallsWidth = double.IsFinite(CallsWidth) ? Math.Clamp(CallsWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : 490;
+        CallsHeight = double.IsFinite(CallsHeight) ? Math.Clamp(CallsHeight, DeckPages.MinHeight, DeckPages.MaxHeight) : 280;
         NotificationsWidth = double.IsFinite(NotificationsWidth) ? Math.Clamp(NotificationsWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : 490;
         NotificationsHeight = double.IsFinite(NotificationsHeight) ? Math.Clamp(NotificationsHeight, DeckPages.MinHeight, DeckPages.MaxHeight) : 280;
         NotificationSeconds = Math.Clamp(NotificationSeconds, 2, 15);

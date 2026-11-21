@@ -229,20 +229,25 @@ public sealed partial class SettingsWindow
         // The equalizer's way and color serve the collapsed and the expanded equalizer alike; each keeps its own length, and the
         // collapsed one's switch stays with the collapsed content (PartRow).
         SectionTitle(Loc.T("通用", "General"));
-        var pageBars = SliderRow(Loc.T("展开时律动条长度", "Expanded equalizer length"), S.MusicEqualizerBars, CompactMusicLayout.MinimumBars, CompactMusicLayout.MaximumBars, 1, Loc.T("根", "bars"),
-            v => Change(s => s.MusicEqualizerBars = (int)v));
-        pageBars.IsEnabled = S.MusicPage;
-        Group(MusicChoice(Loc.T("律动方式", "Equalizer mode"), S.EqualizerMode, [(EqualizerMode.Flow, Loc.T("流动", "Flow")), (EqualizerMode.Spectrum, Loc.T("频谱", "Spectrum"))],
-                v => Change(s => s.EqualizerMode = v), help: Loc.T("流动：声音的起伏从左流到右。频谱：每根条显示一段音高，左低右高。",
-                    "Flow: the rise and fall of the sound runs from left to right. Spectrum: each bar shows a range of pitch, low on the left.")),
-            Row(Loc.T("律动条颜色", "Equalizer color"), ColorSwatches("EqualizerColor", Loc.T("律动条颜色 ", "Equalizer color "), S.EqualizerColor, S.EqualizerCustomColor,
+        // The accent colours the collapsed equalizer, the card's progress bar and its level bars; the progress bar's look is the card's own.
+        Group(Row(Loc.T("强调色", "Accent"), ColorSwatches("EqualizerColor", Loc.T("强调色 ", "Accent "), S.EqualizerColor, S.EqualizerCustomColor,
                 UI.Brush(PanelTheme.Hex("equalizer")), (chosen, custom) => Change(s => { s.EqualizerColor = chosen; s.EqualizerCustomColor = custom; }))),
             SliderRow(Loc.T("收起时律动条长度", "Collapsed equalizer length"), S.EqualizerBars, CompactMusicLayout.MinimumBars, CompactMusicLayout.MaximumBars, 1, Loc.T("根", "bars"),
                 v => Change(s => s.EqualizerBars = (int)v)),
-            pageBars,
             MusicChoice(Loc.T("收起时律动条显示时机", "Collapsed equalizer shown"), S.EqualizerAlways, [(false, Loc.T("播放音乐时", "While music plays")), (true, Loc.T("始终显示", "Always"))],
                 v => Change(s => s.EqualizerAlways = v), help: Loc.T("在收起形态中打开律动条后生效。始终显示时，没有音乐播放也会显示，读取系统的全部声音。",
                     "Applies once the equalizer is switched on in the collapsed content. When always shown, it also shows while no music plays, reading all system sound.")));
+        SectionTitle(Loc.T("音乐卡片", "Music card"));
+        Group(MusicChoice(Loc.T("背景", "Background"), S.MusicBackground, [(MusicCardBackground.AlbumColours, Loc.T("专辑配色", "Album colours")), (MusicCardBackground.Plain, Loc.T("纯色", "Plain"))],
+                v => Change(s => s.MusicBackground = v), help: Loc.T("音乐卡片的背景：封面的颜色化作柔和的光带，或灵动岛的纯色表面。卡片角落的调色板按钮也可以切换。",
+                    "Behind the music card: the cover's colours in soft streaks, or the island's plain surface. The palette button in the card's corner switches it too.")),
+            MusicChoice(Loc.T("进度条", "Progress bar"), S.MusicProgressLook, [(MusicProgressStyle.Wave, Loc.T("波浪", "Wave")), (MusicProgressStyle.Pixels, Loc.T("像素", "Pixels")),
+                (MusicProgressStyle.Comet, Loc.T("彗星", "Comet")), (MusicProgressStyle.SongShape, Loc.T("歌曲形状", "Song shape")), (MusicProgressStyle.Simple, Loc.T("简洁", "Simple")),
+                (MusicProgressStyle.Hearts, Loc.T("爱心", "Hearts"))], v => Change(s => s.MusicProgressLook = v), width: 452,
+                help: Loc.T("卡片显示歌曲已播放的进度。波浪：播放时起伏，暂停时变平；像素：发光的光点后闪烁的像素；彗星：脉动并散出火花；歌曲形状：把歌曲画成条形；简洁：一条细线；爱心：逐个填满。",
+                    "How the card shows how far the song has played. Wave ripples while it plays and lies flat when paused; Pixels shimmer behind a glowing head; Comet pulses and sheds sparks; Song shape draws the song as bars; Simple is a plain line; Hearts fill one by one.")),
+            Toggle(Loc.T("播放器音量", "Player volume"), S.MusicPlayerVolume, v => Change(s => s.MusicPlayerVolume = v),
+                help: Loc.T("卡片上的音量滑块调节正在播放的应用自己的音量，不是 Windows 的主音量。", "A volume slider on the card for the playing app's own volume, not Windows' master volume.")));
         SectionTitle(Loc.T("收起时", "When collapsed"));
         // The instrumental choice belongs to the lyric, so it shows only while the middle text is the lyric.
         var text = new List<FrameworkElement> { MusicChoice(Loc.T("中间文字", "Middle text"), S.MusicText, new[] { (CompactMusicText.None, Loc.T("无", "None")), (CompactMusicText.Title, Loc.T("歌名", "Title")), (CompactMusicText.Lyrics, Loc.T("歌词", "Lyrics")) },

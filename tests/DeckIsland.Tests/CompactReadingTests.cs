@@ -311,6 +311,8 @@ internal static class CompactReadingTests
         check("Notifications and HUDs: old files get every readout on and a 5 second notice; the time is kept in range",
             Read("{}") is { HudVolume: true, HudLocks: true, SensorIndicator: true, MirrorNotifications: true, NotificationSeconds: 5 }
             && Read("""{"NotificationSeconds":99}""").NotificationSeconds == 15);
+        check("Calls: a call's length reads as 0:06, 12:34 and 1:02:03", HudFormat.Duration(TimeSpan.FromSeconds(6)) == "0:06"
+            && HudFormat.Duration(TimeSpan.FromSeconds(754)) == "12:34" && HudFormat.Duration(TimeSpan.FromSeconds(3723)) == "1:02:03" && HudFormat.Duration(TimeSpan.FromSeconds(-5)) == "0:00");
         CompactPart[] standard = [CompactPart.Rings, CompactPart.Music, CompactPart.Monitor, CompactPart.Transfer, CompactPart.Devices, CompactPart.Equalizer, CompactPart.Clock, CompactPart.Weather, CompactPart.Focus];
         check("Compact order: the default order appends Weather after the clock", new DeckSettings().NotchOrder.SequenceEqual(standard)
             && CompactParts.Default.SequenceEqual(standard));
