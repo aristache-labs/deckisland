@@ -53,13 +53,74 @@ public partial class MainWindow
         if (CompactColumnMode) Dispatcher.BeginInvoke(DispatcherPriority.Background, FitCompactToContent);
     }
 
-    // The readout as one horizontal row: icon (in the accent when something was switched on), text, then a level bar, a figure or a dot.
-    // A text longer than maxWidth is cut with an ellipsis. Returns the row and its natural width in DIPs.
-    private (StackPanel Parts, double Natural) BuildHudRow(HudMessage hud, double scale, double dpi, double maxWidth)
+    // The readout as one horizontal row of one width, with or without text: the icon (in the accent when something was switched on) at
+    // the left, the text in the middle, and the dot or figure at the right. Without text the level bar takes the middle. A text that does
+    // not fit is cut with an ellipsis. Returns the row and its width in DIPs.
+    private (FrameworkElement Parts, double Natural) BuildHudRow(HudMessage hud, double scale, double dpi, double maxWidth)
     {
         double font = Math.Max(1, CompactMusicLayout.Half(11.5 * scale)), line = Math.Max(1, CompactMusicLayout.Whole(16 * scale));
         double gap = Math.Round(8 * scale), icon = Math.Round(14 * scale);
-        var parts = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+        double total = Math.Min(Math.Round(240 * scale), maxWidth);
+        var grid = new Grid { Width = total, VerticalAlignment = VerticalAlignment.Center, ToolTip = hud.Label ?? hud.Text };
+        System.Windows.Automation.AutomationProperties.SetName(grid, hud.Label ?? hud.Text);
+        var mark = new Path
+        {
+            Data = HudWindow.IconGeometry(hud.Icon), Stroke = UI.Brush(hud.Lit ? Look.Hex("accent") : Look.Primary), StrokeThickness = Math.Max(1, 1.4 * scale),
+            Stretch = System.Windows.Media.Stretch.Uniform, Width = icon, Height = icon, StrokeLineJoin = System.Windows.Media.PenLineJoin.Round,
+            StrokeStartLineCap = System.Windows.Media.PenLineCap.Round, StrokeEndLineCap = System.Windows.Media.PenLineCap.Round,
+            VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Left
+        };
+        bool textless = hud.Text.Length == 0;
+        // What stands at the right: the figure, then the dot.
+        var right = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center };
+        if (hud.Figure is { } figure) right.Children.Add(UI.Fixed(figure, font, line, Look.Secondary));
+        if (hud.On is { } on)
+        {
+            double size = Math.Max(5, Math.Round(7 * scale));
+            right.Children.Add(new Ellipse { Width = size, Height = size, Margin = new Thickness(right.Children.Count > 0 ? gap : 0, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center,
+                Fill = on ? UI.Brush(Look.Hex("accent")) : System.Windows.Media.Brushes.Transparent, StrokeThickness = 1.3,
+                Stroke = on ? UI.Brush(Look.Hex("accent")) : UI.Brush(Look.Secondary) });
+        }
+        right.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        // Both sides are as wide as the wider one, so the text stands in the middle of the row.
+        double side = textless ? icon + gap : Math.Max(icon, Math.Ceiling(right.DesiredSize.Width)) + gap;
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(side) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(textless ? 0 : side) });
+        grid.Children.Add(mark);
+        if (!textless)
+        {
+            var text = UI.Fixed(hud.Text, font, line, Look.Primary, FontWeights.SemiBold);
+            text.TextTrimming = TextTrimming.CharacterEllipsis; text.ToolTip = hud.Text; text.TextAlignment = TextAlignment.Center;
+            text.ClearValue(FrameworkElement.WidthProperty); text.HorizontalAlignment = HorizontalAlignment.Stretch;
+            Grid.SetColumn(text, 1); grid.Children.Add(text);
+            Grid.SetColumn(right, 2); grid.Children.Add(right);
+        }
+        else if (hud.Level is { } level)
+        {
+            double height = Math.Max(2, Math.Round(4 * scale));
+            var bar = new Grid { Height = height, VerticalAlignment = VerticalAlignment.Center };
+            bar.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(Math.Max(.0001, Math.Clamp(level, 0, 1)), GridUnitType.Star) });
+            bar.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(Math.Max(.0001, 1 - Math.Clamp(level, 0, 1)), GridUnitType.Star) });
+            Grid.SetColumnSpan(bar, 2);
+            bar.Children.Add(new Border { CornerRadius = new CornerRadius(height / 2), Background = UI.Brush(Look.Hex("track")), SnapsToDevicePixels = true });
+            var fill = new Border { CornerRadius = new CornerRadius(height / 2), Background = UI.Brush(Look.Hex("accent")) };
+            Grid.SetColumn(fill, 0); bar.Children.Add(fill);
+            // The track runs under the fill across both columns.
+            Grid.SetColumnSpan(bar.Children[0], 2);
+            Grid.SetColumn(bar, 1); grid.Children.Add(bar);
+        }
+        return (grid, total);
+    }
+
+    // The row as it stands on a side edge: icon, text, then the dot, figure or bar after it, each as wide as it needs, so the notch or the
+    // capsule takes the readout's own width there. A text longer than maxWidth is cut with an ellipsis.
+    private (FrameworkElement Parts, double Natural) BuildHudRowNatural(HudMessage hud, double scale, double dpi, double maxWidth)
+    {
+        double font = Math.Max(1, CompactMusicLayout.Half(11.5 * scale)), line = Math.Max(1, CompactMusicLayout.Whole(16 * scale));
+        double gap = Math.Round(8 * scale), icon = Math.Round(14 * scale), after = Math.Round(44 * scale);
+        var parts = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, ToolTip = hud.Label ?? hud.Text };
+        System.Windows.Automation.AutomationProperties.SetName(parts, hud.Label ?? hud.Text);
         parts.Children.Add(new Path
         {
             Data = HudWindow.IconGeometry(hud.Icon), Stroke = UI.Brush(hud.Lit ? Look.Hex("accent") : Look.Primary), StrokeThickness = Math.Max(1, 1.4 * scale),
@@ -76,11 +137,8 @@ public partial class MainWindow
             text.MinWidth = Math.Ceiling(spare.DesiredSize.Width);
         }
         if (hud.Text.Length > 0) parts.Children.Add(text);
-        parts.ToolTip = hud.Label ?? hud.Text;
-        System.Windows.Automation.AutomationProperties.SetName(parts, hud.Label ?? hud.Text);
         if (hud.Level is { } level)
         {
-            // Without text the bar is the readout: long enough to read the level, as on a phone.
             double width = Math.Round((hud.Text.Length > 0 ? 56 : 180) * scale), height = Math.Max(2, Math.Round(4 * scale));
             var bar = new Grid { Width = width, Height = height, Margin = new Thickness(hud.Text.Length > 0 ? Math.Round(18 * scale) : gap, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
             bar.Children.Add(new Border { CornerRadius = new CornerRadius(height / 2), Background = UI.Brush(Look.Hex("track")) });
@@ -91,14 +149,13 @@ public partial class MainWindow
         if (hud.Figure is { } figure)
         {
             var value = UI.Fixed(figure, font, line, Look.Secondary);
-            // Room after the text, so the figure does not crowd it.
-            value.Margin = new Thickness(hud.Text.Length > 0 ? Math.Round(22 * scale) : gap, 0, 0, 0);
+            value.Margin = new Thickness(hud.Text.Length > 0 ? after : gap, 0, 0, 0);
             parts.Children.Add(value);
         }
         if (hud.On is { } on)
         {
             double size = Math.Max(5, Math.Round(7 * scale));
-            parts.Children.Add(new Ellipse { Width = size, Height = size, Margin = new Thickness(hud.Text.Length > 0 ? Math.Round(22 * scale) : gap, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center,
+            parts.Children.Add(new Ellipse { Width = size, Height = size, Margin = new Thickness(hud.Text.Length > 0 ? after : gap, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center,
                 Fill = on ? UI.Brush(Look.Hex("accent")) : System.Windows.Media.Brushes.Transparent, StrokeThickness = 1.3,
                 Stroke = on ? UI.Brush(Look.Hex("accent")) : UI.Brush(Look.Secondary) });
         }
@@ -116,9 +173,13 @@ public partial class MainWindow
     private void RenderCompactHud(HudMessage hud, double scale, double contentWidth)
     {
         double dpi = System.Windows.Media.VisualTreeHelper.GetDpi(this).DpiScaleX, pad = Math.Round(28 * scale);
+        // A capsule's ends take less of the width than a notch's (16 against 30 DIP at the base height), so it asks for the difference
+        // to be as wide as the notch.
+        if (EffectiveStyle == CompactStyle.Capsule) pad += 2 * Math.Round((CollapsedLimits.NotchInset - CollapsedLimits.CapsuleInset) * scale);
         // The readout never grows past the width set for this style (Collapsed view's width, at the panel's scale), so a longer text
         // is cut. Its height, scale and horizontal offset are the surface's own.
-        double saved = (EffectiveStyle == CompactStyle.Capsule ? Settings.CapsuleWidth : Settings.NotchWidth) * _scale;
+        // A capsule is capped at the notch's width when that is the larger, so its notification is as long as the notch's.
+        double saved = (EffectiveStyle == CompactStyle.Capsule ? Math.Max(Settings.CapsuleWidth, Settings.NotchWidth) : Settings.NotchWidth) * _scale;
         double cap = Math.Max(0, saved - 2 * Collapsed.Inset);
         var (parts, natural) = BuildHudRow(hud, scale, dpi, cap > pad ? cap - pad : double.PositiveInfinity);
         double asked = Math.Min(natural + pad, cap > 0 ? cap : natural + pad);
@@ -163,7 +224,7 @@ public partial class MainWindow
         double pad = Math.Round(28 * scale);
         // Across: as wide as the readout, up to the width set for the notch (Size and position).
         double saved = Settings.NotchWidth * _scale;
-        var (parts, natural) = BuildHudRow(hud, scale, dpi, Math.Min(Math.Round(360 * scale), Math.Max(Math.Round(60 * scale), saved - pad)));
+        var (parts, natural) = BuildHudRowNatural(hud, scale, dpi, Math.Min(Math.Round(360 * scale), Math.Max(Math.Round(60 * scale), saved - pad)));
         double row = Math.Max(1, CompactMusicLayout.Whole(26 * scale));
         double wantedColumn = CompactColumn.Width(scale, [natural + pad], []);
         // Along the edge: the row's own height, as at the top.

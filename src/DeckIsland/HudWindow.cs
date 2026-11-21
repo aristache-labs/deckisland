@@ -41,7 +41,7 @@ internal sealed class HudWindow : Window
     private readonly Border _pill = new() { CornerRadius = new CornerRadius(0, 0, 18, 18), Padding = new Thickness(16, 0, 16, 0), Height = 38 };
     private readonly Path _icon = new() { Width = 17, Height = 17, Stretch = Stretch.Uniform, StrokeThickness = 1.6, StrokeLineJoin = PenLineJoin.Round,
         StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round, VerticalAlignment = VerticalAlignment.Center };
-    private readonly TextBlock _text = new() { FontSize = 13.5, VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis };
+    private readonly TextBlock _text = new() { FontSize = 13.5, VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis, TextAlignment = TextAlignment.Center };
     private readonly Grid _bar = new() { Height = 7, MinWidth = 120, VerticalAlignment = VerticalAlignment.Center };
     private readonly Border _fill = new() { HorizontalAlignment = HorizontalAlignment.Left, CornerRadius = new CornerRadius(3.5) };
     private readonly Border _track = new() { CornerRadius = new CornerRadius(3.5) };
@@ -59,7 +59,7 @@ internal sealed class HudWindow : Window
         _icon.Margin = new Thickness(0, 0, 11, 0);
         DockPanel.SetDock(_icon, Dock.Left);
         row.Children.Add(_icon);
-        _figure.Margin = _dot.Margin = new Thickness(26, 0, 0, 0);
+        _figure.Margin = _dot.Margin = new Thickness(52, 0, 0, 0);
         DockPanel.SetDock(_figure, Dock.Right);
         DockPanel.SetDock(_dot, Dock.Right);
         DockPanel.SetDock(_bar, Dock.Right);
