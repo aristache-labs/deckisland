@@ -1,0 +1,26 @@
+[
+  {
+    "file": "clock-0.png",
+    "style": "Minimal",
+    "alone": false,
+    "title": "Simple"
+  },
+  {
+    "file": "clock-1.png",
+    "style": "Segment",
+    "alone": false,
+    "title": "Seven segment"
+  },
+  {
+    "file": "clock-2.png",
+    "style": "Serif",
+    "alone": false,
+    "title": "Serif"
+  },
+  {
+    "file": "clock-3.png",
+    "style": "Neon",
+    "alone": true,
+    "title": "Shown alone"
+  }
+]

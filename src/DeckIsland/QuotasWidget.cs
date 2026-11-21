@@ -124,7 +124,10 @@ public partial class MainWindow
         };
         AutomationProperties.SetName(frame, summary);
         if (!detailed) return frame;
-        var link = WidgetSurface(frame, summary, () => SelectPage(DeckPage.Usage));
+        // The tile is the button, so the hover lies on the tile itself (its fill, corner and margin move to the button).
+        frame.Child = null;
+        var link = WidgetSurface(card, summary, () => SelectPage(DeckPage.Usage), frame.CornerRadius);
+        link.Background = frame.Background; link.Margin = frame.Margin; link.Padding = frame.Padding;
         link.ToolTip = tooltip;
         return link;
 

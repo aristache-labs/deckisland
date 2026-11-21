@@ -34,7 +34,7 @@ public partial class MainWindow
     private FrameworkElement ScreenTimeContent(IReadOnlyList<KeyValuePair<string, int>> today)
     {
         int total = ScreenTime.Total(today);
-        var number = WeatherText(ScreenTime.Duration(total), 34);
+        var number = WeatherText(ScreenTime.Duration(total), 28);
         number.FontWeight = FontWeights.SemiBold;
         Typography.SetNumeralAlignment(number, FontNumeralAlignment.Tabular);
         var monitor = new Path
@@ -46,7 +46,7 @@ public partial class MainWindow
         var top = new Grid { Children = { number, monitor } };
 
         // The bar: the longest app, the second, and everything else, each as wide as its share; the track shows through when nothing is counted.
-        var bar = new Grid { Height = ScreenTimeBar, Margin = new Thickness(0, 4, 0, 8), ClipToBounds = true };
+        var bar = new Grid { Height = ScreenTimeBar, Margin = new Thickness(0, 2, 0, 6), ClipToBounds = true };
         bar.Children.Add(new Border { CornerRadius = new CornerRadius(ScreenTimeBar / 2), Background = UI.Brush(Look.Hex("track")) });
         if (total > 0)
         {
@@ -64,18 +64,28 @@ public partial class MainWindow
             bar.Children.Add(segments);
         }
 
-        var footer = new DockPanel();
+        // One line per piece of the bar, in its colour: the longest app, the second, and the rest together.
+        var footer = new StackPanel();
         if (total > 0)
         {
-            var (app, appSeconds) = (today[0].Key, today[0].Value);
-            var time = WeatherText(ScreenTime.Duration(appSeconds), 13);
-            time.Foreground = UI.Brush(Look.Secondary); time.FontWeight = FontWeights.SemiBold;
-            DockPanel.SetDock(time, System.Windows.Controls.Dock.Right);
-            var dot = new Ellipse { Width = 7, Height = 7, Fill = UI.Brush(Look.Primary), Margin = new Thickness(0, 0, 7, 0), VerticalAlignment = VerticalAlignment.Center };
-            var name = WeatherText(app, 13);
-            name.TextTrimming = TextTrimming.CharacterEllipsis; name.VerticalAlignment = VerticalAlignment.Center; name.Margin = new Thickness(0, 0, 8, 0);
-            footer.Children.Add(time);
-            footer.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, Children = { dot, name } });
+            var colors = new[] { Look.Primary, Look.Secondary, Look.Tertiary };
+            var lines = new List<(string Name, int Seconds)> { (today[0].Key, today[0].Value) };
+            if (today.Count > 1) lines.Add((today[1].Key, today[1].Value));
+            int rest = total - lines.Sum(line => line.Seconds);
+            if (rest > 0) lines.Add((Loc.T("其他", "Other"), rest));
+            for (int i = 0; i < lines.Count; i++)
+            {
+                var time = WeatherText(ScreenTime.Duration(lines[i].Seconds), 12);
+                time.Foreground = UI.Brush(Look.Secondary); time.FontWeight = FontWeights.SemiBold;
+                var dot = new Ellipse { Width = 7, Height = 7, Fill = UI.Brush(colors[i]), Margin = new Thickness(0, 0, 7, 0), VerticalAlignment = VerticalAlignment.Center };
+                var name = WeatherText(lines[i].Name, 12);
+                name.TextTrimming = TextTrimming.CharacterEllipsis; name.VerticalAlignment = VerticalAlignment.Center; name.Margin = new Thickness(0, 0, 8, 0);
+                var row = new DockPanel { Margin = new Thickness(0, 1, 0, 1) };
+                DockPanel.SetDock(time, System.Windows.Controls.Dock.Right);
+                row.Children.Add(time);
+                row.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, Children = { dot, name } });
+                footer.Children.Add(row);
+            }
         }
         else
         {

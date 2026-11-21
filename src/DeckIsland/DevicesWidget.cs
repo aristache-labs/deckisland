@@ -64,8 +64,9 @@ public partial class MainWindow
         FrameworkElement content = new Grid { Children = { viewport, empty } };
         if (detailed)
         {
-            var link = WidgetSurface(content, Loc.T("打开设备", "Open Display and devices"), () => SelectPage(DeckPage.Devices));
-            link.Padding = new Thickness(0);
+            var link = WidgetSurface(content, Loc.T("打开设备", "Open Display and devices"), () => SelectPage(DeckPage.Devices), frame.CornerRadius);
+            // The whole card is the button, so its hover covers the card: the card's padding moves inside the button.
+            link.Padding = frame.Padding; frame.Padding = new Thickness(0);
             content = link;
         }
         frame.Child = content;

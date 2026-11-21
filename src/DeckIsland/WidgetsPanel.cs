@@ -190,10 +190,12 @@ public partial class MainWindow
         return frame;
     }
 
-    private Button WidgetSurface(object content, string label, Action action)
+    // card: the button is a whole widget card, so its hover covers the card in the card's own corner.
+    private Button WidgetSurface(object content, string label, Action action, CornerRadius? card = null)
     {
         var button = WidgetAction(label, action);
-        button.Style = (Style)FindResource("WidgetSurfaceButton");
+        button.Style = (Style)FindResource(card is null ? "WidgetSurfaceButton" : "WidgetCardSurfaceButton");
+        if (card is { } corner) button.Tag = corner;
         button.Content = content;
         return button;
     }
@@ -238,7 +240,7 @@ public partial class MainWindow
         {
             if (detailed && _app.CurrentWeather is not null) SelectPage(DeckPage.Weather);
             else _app.OpenSettingsPage(SettingsWindow.WeatherSettingsPage);
-        });
+        }, frame.CornerRadius);
         frame.Padding = new Thickness(0);
         trigger.Padding = new Thickness(WidgetSide, 8, WidgetSide, 10);
         frame.Child = trigger;

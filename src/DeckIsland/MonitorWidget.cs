@@ -42,7 +42,9 @@ public partial class MainWindow
         Grid.SetColumnSpan(traffic, 4);
         metrics.Children.Add(traffic);
 
-        Button? link = detailed ? WidgetSurface(metrics, "", () => SelectPage(DeckPage.Monitor)) : null;
+        Button? link = detailed ? WidgetSurface(metrics, "", () => SelectPage(DeckPage.Monitor), frame.CornerRadius) : null;
+        // As a link the whole card is the button, so its hover covers the card: the card's padding moves inside the button.
+        if (link is not null) { link.Padding = frame.Padding; frame.Padding = new Thickness(0); }
         frame.Child = link is null ? metrics : link;
         var memoryHistory = new Queue<double>(SystemSampler.HistoryLength);
         MonitorSnapshot? sampled = null;

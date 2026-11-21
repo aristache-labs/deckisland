@@ -175,4 +175,19 @@
       </ControlTemplate.Triggers>
     </ControlTemplate></Setter.Value></Setter>
   </Style>
+  <!-- A whole widget card as one button: the hover and press lie over the full card, in the card's own corner (Tag). -->
+  <Style x:Key="WidgetCardSurfaceButton" TargetType="Button" BasedOn="{StaticResource WidgetSurfaceButton}">
+    <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Button">
+      <Grid>
+        <Border Background="{TemplateBinding Background}" CornerRadius="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}"/>
+        <Border x:Name="HoverLayer" Background="{DynamicResource PanelHover}" CornerRadius="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}" Opacity="0"/>
+        <Border x:Name="PressLayer" Background="{DynamicResource PanelPressed}" CornerRadius="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}" Opacity="0"/>
+        <ContentPresenter Margin="{TemplateBinding Padding}" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+      </Grid>
+      <ControlTemplate.Triggers>
+        <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value=".45"/></Trigger>
+      </ControlTemplate.Triggers>
+    </ControlTemplate></Setter.Value></Setter>
+  </Style>
 </ResourceDictionary>

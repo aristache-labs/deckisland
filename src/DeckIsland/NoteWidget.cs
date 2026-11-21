@@ -58,7 +58,7 @@ public partial class MainWindow
             row.Children.Add(pencil); row.Children.Add(note);
             content = row;
         }
-        var button = WidgetSurface(content, Loc.T("便签 · 点击编辑", "Note · click to edit") + (string.IsNullOrWhiteSpace(text) ? "" : " · " + text.Trim()), OpenNote);
+        var button = WidgetSurface(content, Loc.T("便签 · 点击编辑", "Note · click to edit") + (string.IsNullOrWhiteSpace(text) ? "" : " · " + text.Trim()), OpenNote, new CornerRadius(Corner(16)));
         button.Padding = new Thickness(WidgetSide, 8, WidgetSide, 8);
         return button;
     }

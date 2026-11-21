@@ -19,6 +19,8 @@ public partial class MainWindow
         string title = Settings.CountdownTitle;
         if (target is null)
         {
+            // Empty, the whole card is the button (hover covers it); with a date it is text with the card's padding.
+            frame.Padding = new Thickness(0);
             frame.Child = CountdownEmpty();
             return frame;
         }
@@ -49,7 +51,8 @@ public partial class MainWindow
         note.Margin = new Thickness(0, 8, 0, 0);
         note.HorizontalAlignment = HorizontalAlignment.Center;
         var body = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Children = { mark, note } };
-        var button = WidgetSurface(body, $"{WidgetLayout.Name(WidgetKind.Countdown)} · {note.Text}", () => _app.OpenSettingsPage(SettingsWindow.WidgetsSettingsPage));
+        var button = WidgetSurface(body, $"{WidgetLayout.Name(WidgetKind.Countdown)} · {note.Text}", () => _app.OpenSettingsPage(SettingsWindow.WidgetsSettingsPage), new CornerRadius(Corner(16)));
+        button.Padding = new Thickness(WidgetSide, 8, WidgetSide, 8);
         button.HorizontalContentAlignment = HorizontalAlignment.Center;
         return button;
     }
