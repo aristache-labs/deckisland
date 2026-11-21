@@ -181,6 +181,35 @@ internal sealed class Renderer(App app, string output, string language, string[]
             // The widget gallery with its live previews and the Clock and Countdown options; for checking, not for the README.
             // The To do widget, its card in the gallery and its window, with a few invented items; for checking.
             // Sun and moon and Progress in their gallery cards, and the eight phases of the drawn moon; for checking.
+            // The weather card at rest and with its hover layer fully on, for checking the hover.
+            if (scenes.Contains("hover-weather"))
+            {
+                _settings.ColourfulWeatherCard = true; _settings.WeatherEnabled = true;
+                Program.SetProperty(app, "CurrentWeather", new WeatherReading(new WeatherPoint("Gruiu", 44.63, 26.19), 14, 3, false, []));
+                _deck.ApplySettings();
+                var row = new System.Windows.Controls.StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal, Margin = new Thickness(16) };
+                foreach (bool hover in new[] { false, true })
+                {
+                    var (card, _) = ((FrameworkElement, string))typeof(MainWindow).GetMethod("WidgetPreview", Program.Any)!.Invoke(_deck, [WidgetKind.Weather])!;
+                    card.IsHitTestVisible = true;
+                    var holder = new System.Windows.Controls.Border { Child = card, Background = new SolidColorBrush(Color.FromRgb(0x14, 0x14, 0x16)) };
+                    row.Children.Add(holder);
+                    holder.Measure(new Size(400, 200)); holder.Arrange(new Rect(0, 0, 400, 200)); holder.UpdateLayout();
+                    await Settle();
+                    if (hover)
+                    {
+                        var button = Descendants<System.Windows.Controls.Button>(card).First();
+                        button.ApplyTemplate();
+                        ((UIElement)button.Template.FindName("HoverLayer", button)).Opacity = 1;
+                    }
+                }
+                var root = new System.Windows.Controls.Border { Child = row, Background = new SolidColorBrush(Color.FromRgb(0x14, 0x14, 0x16)) };
+                root.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity)); root.Arrange(new Rect(root.DesiredSize)); root.UpdateLayout();
+                await Settle();
+                var bitmap = new RenderTargetBitmap((int)root.DesiredSize.Width * 2, (int)root.DesiredSize.Height * 2, 192, 192, PixelFormats.Pbgra32);
+                bitmap.Render(root); bitmap.Freeze();
+                Write(bitmap, Path.Combine(output, "hover-weather.png"));
+            }
             if (scenes.Contains("sun-moon"))
             {
                 _settings.WidgetSlots = [WidgetKind.SunMoon, WidgetKind.Progress, WidgetKind.Clock, WidgetKind.Empty];

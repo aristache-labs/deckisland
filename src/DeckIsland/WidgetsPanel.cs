@@ -195,7 +195,12 @@ public partial class MainWindow
     {
         var button = WidgetAction(label, action);
         button.Style = (Style)FindResource(card is null ? "WidgetSurfaceButton" : "WidgetCardSurfaceButton");
-        if (card is { } corner) button.Tag = corner;
+        if (card is { } corner)
+        {
+            button.Tag = corner;
+            // A card's hover only lightens (or, on a light panel, darkens) the colour it already has, never the theme's own hover fill.
+            button.Resources["PanelHover"] = new SolidColorBrush(Look.Current.IsDark ? Color.FromArgb(0x1C, 255, 255, 255) : Color.FromArgb(0x14, 0, 0, 0));
+        }
         button.Content = content;
         return button;
     }
