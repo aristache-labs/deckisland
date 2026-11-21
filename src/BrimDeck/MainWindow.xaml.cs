@@ -161,6 +161,7 @@ public partial class MainWindow : Window
         InitializeDevices();
         InitializeWeather();
         InitializeFocus();
+        InitializeReminders();
         InitializeResize();
         InitializeScale();
         InitializeShadow();
@@ -175,7 +176,7 @@ public partial class MainWindow : Window
         _host.ContextChanged += context =>
         {
             _context = context;
-            if (_expanded && !_preview && _detailPopup is null && _popupReturnArea is null && MediaSourceButton.ContextMenu?.IsOpen != true && !ShelfHolds)
+            if (_expanded && !_preview && ReminderAlertId is null && _detailPopup is null && _popupReturnArea is null && MediaSourceButton.ContextMenu?.IsOpen != true && !ShelfHolds)
             {
                 _expanded = false;
                 PanelClosed();
@@ -692,6 +693,7 @@ public partial class MainWindow : Window
         System.Windows.Automation.AutomationProperties.SetName(AIUsageButton, Loc.T("AI 用量", "AI usage"));
         System.Windows.Automation.AutomationProperties.SetName(MonitorPageButton, Loc.T("系统监控", "System monitor"));
         UpdateShelfPageButton();
+        System.Windows.Automation.AutomationProperties.SetName(RemindersPageButton, Loc.T("提醒", "Reminders"));
         System.Windows.Automation.AutomationProperties.SetName(FocusPageButton, Loc.T("专注计时器", "Focus timer"));
         System.Windows.Automation.AutomationProperties.SetName(WeatherPageButton, Loc.T("天气", "Weather"));
         System.Windows.Automation.AutomationProperties.SetName(DevicesPageButton, Loc.T("设备电量", "Device batteries"));
@@ -821,6 +823,7 @@ public partial class MainWindow : Window
     // details, a panel the expand hotkey showed while the panels are hidden hides again, and the collapsed title scrolls its laps anew.
     private void PanelClosed()
     {
+        ClearReminderAlert();
         _app.UpdateCollectionLatency();
         WatchOutsidePress(false);
         ResetShelf();
@@ -835,11 +838,13 @@ public partial class MainWindow : Window
     public void SetExpanded(bool expanded, bool instant = false, bool keyboard = false)
     {
         if (expanded && IsSuppressed || _poweringOff) return;
+        if (ReminderAlertId is not null && (IsSuppressed || !Settings.RemindersPage)) ClearReminderAlert();
+        bool reminderAlert = expanded && ReminderAlertId is not null;
         if (expanded && !_expanded) EndBoot();
         // Only the panel under the pointer is open; the others close at once and give up the Escape key.
         if (expanded && !_preview)
             foreach (var other in _app.Decks.Where(deck => deck != this && deck._expanded && !deck._preview).ToList()) other.SetExpanded(false);
-        if (expanded && !_expanded && !_preview) ApplyDefaultMusicPage();
+        if (expanded && !_expanded && !_preview && !reminderAlert) ApplyDefaultMusicPage();
         // A hand-over cut short by closing the panel leaves nothing behind for the next opening.
         if (expanded && !_expanded) _handover.Drop();
         bool wasExpanded = _expanded;
@@ -856,7 +861,7 @@ public partial class MainWindow : Window
         var shape = Collapsed;
         var style = shape.Style;
         bool line = style == CompactStyle.Line, indicator = !expanded && line;
-        double wantedHeight = DeckPages.Size(Settings, CurrentPage).Height;
+        double wantedHeight = reminderAlert ? 84 : DeckPages.Size(Settings, CurrentPage).Height;
         var panel = PanelFor(wantedHeight);
         double panelTop = panel.Top, headerExtra = panel.HeaderExtra;
         double pageHeight = PageHeight(wantedHeight, panel);
@@ -866,9 +871,10 @@ public partial class MainWindow : Window
         bool across = _frame.Across;
         // A floating panel, and one on another edge than the top, is taller than its page by headerExtra, the space above its header;
         // on a side edge that runs along the edge.
-        double pageWidth = across ? pageHeight * _scale + headerExtra : _pageWidth * _scale, widestPage = across ? pageWidth : _widestPage * _scale;
+        double contentWidth = reminderAlert ? Math.Min(480, (across ? FrameHeight : FrameWidth) / _scale) : _pageWidth;
+        double pageWidth = across ? pageHeight * _scale + headerExtra : contentWidth * _scale, widestPage = across ? pageWidth : _widestPage * _scale;
         double width = expanded ? pageWidth : shape.Surface.Width;
-        double height = expanded ? (across ? _pageWidth * _scale : pageHeight * _scale + headerExtra) : shape.Surface.Height;
+        double height = expanded ? (across ? contentWidth * _scale : pageHeight * _scale + headerExtra) : shape.Surface.Height;
         // Every compact style opens into the same panel, hanging from the screen edge or, below a lowered capsule, rounded all round.
         double panelRadius = PanelRadius;
         var radius = expanded ? panelTop > 0 ? new CornerRadius(panelRadius) : new CornerRadius(0, 0, panelRadius, panelRadius)
@@ -890,8 +896,10 @@ public partial class MainWindow : Window
         if (!expanded && KeepBootDot(shape)) return;
         Island.BorderThickness = new Thickness(0);
         // On a side edge the page keeps its width as well (MainWindow.Edge.cs).
-        if (across) ExpandedContent.Width = _pageWidth;
+        if (across) ExpandedContent.Width = contentWidth;
         ExpandedContent.Height = pageHeight;
+        ReminderAlertContent.Visibility = reminderAlert ? Visibility.Visible : Visibility.Collapsed;
+        if (expanded) ContentCanvas.Visibility = Toolbar.Visibility = reminderAlert ? Visibility.Hidden : Visibility.Visible;
         // The page and its header start headerExtra below the panel's top edge. The header row keeps its own height, so its
         // controls keep their size tier. Collapsing keeps the offset the content had, so it fades out without moving.
         if (expanded) ExpandedContent.Margin = new Thickness(0, headerExtra, 0, 0);
@@ -1175,6 +1183,7 @@ public partial class MainWindow : Window
         else
         {
             _hover.Stop();
+            if (ReminderAlertId is not null) return;
             if (_expanded && !_preview) WatchOutsidePress(true);
             if (!_expanded || _preview || _pageSwitchHold.IsEnabled || _detailPopup is not null || MediaSourceButton.ContextMenu?.IsOpen == true || ShelfHolds) return;
             // A press outside closes the panel at once (MainWindow.OutsidePress.cs).
@@ -1185,7 +1194,7 @@ public partial class MainWindow : Window
     }
     internal void CheckPointerExit(Point screenPoint)
     {
-        if (IsHotkeyPinned || Resizing) { _leave.Stop(); return; }
+        if (IsHotkeyPinned || Resizing || ReminderAlertId is not null) { _leave.Stop(); return; }
         if (_pointerInside || _preview || _pageSwitchHold.IsEnabled || _detailPopup is not null || MediaSourceButton.ContextMenu?.IsOpen == true || ShelfHolds) { _leave.Stop(); return; }
         // Closing a calendar with either button must leave a path back to the results.
         // Keep checking until the cursor leaves that area; entering the island restores normal hover behavior.

@@ -15,7 +15,7 @@ public partial class MainWindow
 
     internal bool ClickThrough => Settings.ClickThrough && !_preview;
     // The open panel neither takes clicks nor closes when the pointer leaves.
-    private bool PanelIgnoresPointer => ClickThrough && _expanded && !Settings.ClickThroughPanel;
+    private bool PanelIgnoresPointer => ClickThrough && _expanded && !Settings.ClickThroughPanel && ReminderAlertId is null;
     // Whether a panel opened by a shortcut takes the keyboard (PanelKeyboard) and Esc.
     private bool PanelTakesKeyboard => !ClickThrough || Settings.ClickThroughKeyboard;
     // Esc is held while the panel is open and takes the keyboard, and in move mode.
@@ -39,7 +39,7 @@ public partial class MainWindow
     {
         if (!PanelTakesKeyboard) ReleaseKeyboard(giveBack: true);
         _escapeDismissal?.SetEnabled(HoldsEscape);
-        bool passing = ClickThrough && !(_expanded && Settings.ClickThroughPanel);
+        bool passing = ClickThrough && (!_expanded || PanelIgnoresPointer);
         if (passing == _passingClicks) return;
         var handle = new WindowInteropHelper(this).Handle;
         if (handle == IntPtr.Zero) return;

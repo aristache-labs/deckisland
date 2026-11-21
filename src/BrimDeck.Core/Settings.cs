@@ -57,8 +57,8 @@ public sealed record IgnoredMediaApp(string AppId = "", string Name = "", string
 public enum ProviderId { Claude, Codex, Antigravity, Cursor, GlmChina, NewApi, Sub2Api, Custom, ZCode = 10, GlmGlobal = 11, Dsh = 12, DeepSeek = 13, GrokBot = 14, Kimi = 15, KimiApi = 16, OpenCode = 17, OpenCodeGo = 18, OpenRouter = 19, Pi = 20, CodeAgent = 21, CommandCode = 22, CommandCodeApi = 23, WorkBuddy = 24, WorkBuddyAi = 25, MiMo = 26, MiMoApi = 27, MiMoTokenPlan = 28, MiMoLinked = 29, KimiPlatform = 30 }
 public enum SettingsTheme { System, Light, Dark }
 // Pages are saved as numbers, so new members go at the end; their order in the page switch is DeckSettings.PageOrder.
-public enum DeckPage { Usage, Music, Monitor, Clipboard, Devices, Weather, Focus }
-public enum DefaultDeckPage { Last, Usage, Music, Monitor, Clipboard, Devices, Weather, Focus }
+public enum DeckPage { Usage, Music, Monitor, Clipboard, Devices, Weather, Focus, Reminders }
+public enum DefaultDeckPage { Last, Usage, Music, Monitor, Clipboard, Devices, Weather, Focus, Reminders }
 // What the mouse wheel does over the expanded panel. Saved as numbers, so new members go at the end.
 public enum MouseWheelAction { None, Pages, Volume }
 // What a double click on an end of the collapsed notch or capsule does: turn its auto width on or off, or start moving it
@@ -697,6 +697,11 @@ public sealed class DeckSettings
     public bool WeatherFahrenheit { get; set; }
     public bool ColourfulWeatherCard { get; set; }
     public WeatherCity? WeatherCity { get; set; }
+    public bool RemindersPage { get; set; }
+    public ReminderSound ReminderSound { get; set; } = ReminderSound.Once;
+    public List<Reminder> Reminders { get; set; } = [];
+    public double RemindersWidth { get; set; } = 490;
+    public double RemindersHeight { get; set; } = 280;
     public bool FocusPage { get; set; }
     public bool FocusHideOtherWidgets { get; set; } = true;
     public FocusSound FocusEndSound { get; set; } = FocusSound.Asterisk;
@@ -895,6 +900,7 @@ public sealed class DeckSettings
         copy._expanded = _expanded?.Select(reading => reading?.Copy()!).ToList();
         copy.MonitorCustomColors = (MonitorCustomColors ?? new()).Copy();
         copy._notchOrder = [.. _notchOrder]; copy._capsuleOrder = [.. _capsuleOrder]; copy._pageOrder = [.. _pageOrder];
+        copy.Reminders = [.. Reminders ?? []];
         copy.ClockGradient = [.. ClockGradient ?? [.. ClockColors.Sunset]];
         copy.DisplayMonitors = [.. DisplayMonitors ?? []];
         copy.ThemeChoices = (ThemeChoices ?? []).ToDictionary(pair => pair.Key, pair => pair.Value.Copy());
@@ -935,6 +941,10 @@ public sealed class DeckSettings
         MusicHeight = double.IsFinite(MusicHeight) ? Math.Clamp(MusicHeight, DeckPages.MinHeight, DeckPages.MaxHeight) : 200;
         MonitorWidth = double.IsFinite(MonitorWidth) ? Math.Clamp(MonitorWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : MonitorSizes.Default.Width;
         if (WeatherCity is { Valid: false }) WeatherCity = null;
+        Reminders = Reminder.Normalize(Reminders);
+        if (!Enum.IsDefined(ReminderSound)) ReminderSound = ReminderSound.Once;
+        RemindersWidth = double.IsFinite(RemindersWidth) ? Math.Clamp(RemindersWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : 490;
+        RemindersHeight = double.IsFinite(RemindersHeight) ? Math.Clamp(RemindersHeight, DeckPages.MinHeight, DeckPages.MaxHeight) : 280;
         FocusMinutes = FocusTimer.ClampMinutes(FocusMinutes);
         BreakMinutes = FocusTimer.ClampMinutes(BreakMinutes);
         if (!Enum.IsDefined(FocusEndSound)) FocusEndSound = FocusSound.Asterisk;

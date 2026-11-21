@@ -35,6 +35,9 @@ public partial class MainWindow
                     _monitorView?.CloseCard();
                     _monitorView = null; _monitorKey = ""; _monitorPlan = null;
                     break;
+                case DeckPage.Reminders:
+                    RemindersContent.Children.Clear();
+                    break;
                 case DeckPage.Focus:
                     FocusContent.Children.Clear();
                     break;

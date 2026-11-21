@@ -64,7 +64,8 @@ public partial class MainWindow
 
     private void FocusPanelStart()
     {
-        Keyboard.Focus(PageButton(CurrentPage));
+        if (_reminderAlertSnooze is { } snooze) Keyboard.Focus(snooze);
+        else Keyboard.Focus(PageButton(CurrentPage));
     }
 
     // The panel closed or was hidden: it cannot be active again until the next hotkey, and the window that had the keyboard gets

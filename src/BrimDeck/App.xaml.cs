@@ -137,6 +137,7 @@ public partial class App : Application
         // From here each step is on its own (Step): the app keeps running after an error at the start, and one step failing
         // used to skip every later one, which left a panel with no tray icon, no saving and no answer to a second start.
         Step(Deck.Show);
+        Step(InitializeReminders);
         Step(InitializeHotkeys);
         Step(() => _dataKey = DataKey());
         Step(ApplyProfileRules);
@@ -638,6 +639,8 @@ public partial class App : Application
     }
     protected override void OnExit(ExitEventArgs e)
     {
+        _reminderTimer.Stop();
+        StopReminderAlarm();
         _focusTick.Stop();
         _weatherTimer.Stop();
         CancelWeather();

@@ -289,8 +289,8 @@ internal static class CompactReadingTests
         CompactPart[] standard = [CompactPart.Rings, CompactPart.Music, CompactPart.Monitor, CompactPart.Transfer, CompactPart.Devices, CompactPart.Equalizer, CompactPart.Clock, CompactPart.Weather, CompactPart.Focus];
         check("Compact order: the default order appends Weather after the clock", new DeckSettings().NotchOrder.SequenceEqual(standard)
             && CompactParts.Default.SequenceEqual(standard));
-        var odd = Read("""{"AppVersion":"0.1.0","NotchOrder":[2,9,2,0]}""");
-        check("Compact order: unknown and repeated parts are dropped and missing ones added", odd.NotchOrder.SequenceEqual([CompactPart.Monitor, CompactPart.Rings, CompactPart.Music, CompactPart.Equalizer, CompactPart.Clock, CompactPart.Transfer, CompactPart.Devices, CompactPart.Weather, CompactPart.Focus])
+        var odd = Read("""{"AppVersion":"0.1.0","NotchOrder":[2,999,9,2,0]}""");
+        check("Compact order: retired reminders, unknown and repeated parts are dropped and missing ones added", odd.NotchOrder.SequenceEqual([CompactPart.Monitor, CompactPart.Rings, CompactPart.Music, CompactPart.Equalizer, CompactPart.Clock, CompactPart.Transfer, CompactPart.Devices, CompactPart.Weather, CompactPart.Focus])
             && odd.CapsuleOrder.SequenceEqual(standard));
         var older = Read("""{"AppVersion":"1.2.2","NotchOrder":[1,2,0]}""");
         check("Compact order: an order saved before the equalizer and the clock had a place puts the equalizer before the clock",

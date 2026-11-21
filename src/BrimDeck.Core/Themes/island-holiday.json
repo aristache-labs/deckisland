@@ -95,6 +95,8 @@
       "hairline": "#1FB1E0E6",
       "track": "#31B1E0E6",
       "ringTrack": "#31B1E0E6",
+      "focusProgress": "#51D894",
+      "breakProgress": "#74B9FF",
       "fill": "#14B1E0E6",
       "fillSelected": "#2EB1E0E6",
       "hover": "#1FB1E0E6",
