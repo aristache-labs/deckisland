@@ -61,7 +61,7 @@ public partial class App
             {
                 bool on = (GetKeyState(code) & 1) != 0;
                 if (state.TryGetValue(key, out bool previous) && previous != on && Settings.HudLocks)
-                    ShowHud(new($"lock:{key}", HudIcon.Lock, $"{HudFormat.LockName(key)} {(on ? "on" : "off")}", On: on, Lit: on));
+                    ShowHud(new($"lock:{key}", key switch { "num" => HudIcon.NumLock, "scroll" => HudIcon.ScrollLock, _ => HudIcon.Lock }, $"{HudFormat.LockName(key)} {(on ? "on" : "off")}", On: on, Lit: on, Reserve: $"{HudFormat.LockName(key)} off"));
                 state[key] = on;
             }
         };
@@ -95,7 +95,8 @@ public partial class App
                 if (DateTime.UtcNow - attached < TimeSpan.FromSeconds(1) || !Settings.HudVolume) return;
                 if (Math.Abs(data.MasterVolume - last) < .0005f && data.Muted == muted) return;
                 last = data.MasterVolume; muted = data.Muted;
-                ShowHud(new("volume", muted ? HudIcon.Muted : HudIcon.Volume, muted ? "Muted" : "Volume", muted ? 0 : last, Lit: !muted));
+                ShowHud(new("volume", muted ? HudIcon.Muted : HudIcon.Volume, "", muted ? 0 : last, Lit: !muted,
+                    Label: muted ? "Muted" : $"Volume {Math.Round(last * 100)}%"));
             });
             Attach();
             var watch = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
@@ -115,7 +116,7 @@ public partial class App
             watcher.EventArrived += (_, args) =>
             {
                 if (args.NewEvent["Brightness"] is not byte level) return;
-                Dispatcher.BeginInvoke(() => { if (Settings.HudBrightness) ShowHud(new("brightness", HudIcon.Brightness, "Brightness", level / 100.0, Lit: true)); });
+                Dispatcher.BeginInvoke(() => { if (Settings.HudBrightness) ShowHud(new("brightness", HudIcon.Brightness, "", level / 100.0, Lit: true, Label: $"Brightness {level}%")); });
             };
             watcher.Start();
             _hudSources.Add(new Disposer(watcher.Stop));

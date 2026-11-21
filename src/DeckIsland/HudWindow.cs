@@ -29,6 +29,8 @@ internal sealed class HudWindow : Window
         [HudIcon.Bluetooth] = "M5,6 L14,14 L9.5,18 V2 L14,6 L5,14",
         [HudIcon.Lock] = "M10,2 L17,10 H13 V16 H7 V10 H3 Z",
         [HudIcon.Download] = "M10,3 V12 M6,8.5 L10,12.5 L14,8.5 M3,16 H17",
+        [HudIcon.NumLock] = "M7.5,3 L6,17 M14,3 L12.5,17 M3.5,7.5 H17 M3,12.5 H16.5",
+        [HudIcon.ScrollLock] = "M10,3 V17 M6.5,6.5 L10,3 L13.5,6.5 M6.5,13.5 L10,17 L13.5,13.5",
         [HudIcon.Done] = "M4,10 L8.5,14.5 L16,6",
         [HudIcon.Notice] = "M3.5,14.5 C6,12.5 5.5,11.5 5.5,8.5 A4.5,4.5 0 0 1 14.5,8.5 C14.5,11.5 14,12.5 16.5,14.5 Z M8,17 A2,2 0 0 0 12,17"
     };
@@ -98,7 +100,7 @@ internal sealed class HudWindow : Window
         }
         _level = Math.Clamp(message.Level ?? 0, 0, 1);
         SetFill(_level);
-        AutomationProperties.SetName(this, message.Text + (message.Figure is null ? "" : " " + message.Figure));
+        AutomationProperties.SetName(this, (message.Text.Length > 0 ? message.Text : message.Label ?? "") + (message.Figure is null ? "" : " " + message.Figure));
         Left = SystemParameters.PrimaryScreenWidth / 2 - Width / 2;
         Top = 0;
         if (!IsVisible) Show();
