@@ -84,7 +84,7 @@ public static class CollapsedGeometry
     // lineOverTaskbar: the line hangs from the screen's edge over a taskbar there (DeckSettings.Dock); its offset and distance from
     // the edge are then measured on the monitor's frame rather than within the work area.
     public static CollapsedShape Resolve(DeckSettings settings, CompactStyle style, DipRect monitor, DipRect work, double pixelsPerDip = 1, double? contentWanted = null, double contentRequired = 0,
-        double panelScale = 1, double? column = null, bool lineOverTaskbar = false)
+        double panelScale = 1, double? column = null, bool lineOverTaskbar = false, double corners = 1)
     {
         double s = ValidScale(panelScale);
         bool auto = settings.Minimal(style) || contentWanted is not null;
@@ -122,8 +122,11 @@ public static class CollapsedGeometry
             {
                 double height = Math.Min(Value(settings.NotchHeight, CollapsedLimits.NotchHeightMin, CollapsedLimits.NotchHeightMax, CollapsedLimits.NotchHeightDefault) * s, screen.Height);
                 double saved = Value(settings.NotchWidth, CollapsedLimits.NotchWidthMin, CollapsedLimits.NotchWidthMax, CollapsedLimits.NotchWidthDefault) * s;
-                double fit = Math.Max(CollapsedLimits.NotchWidthMin * s, SurfaceWidth(CompactStyle.Notch, height, wanted, s));
-                double width = Math.Min(Math.Max(auto ? fit : saved, SurfaceWidth(CompactStyle.Notch, height, required, s)), screen.Width);
+                double fit = Math.Max(CollapsedLimits.NotchWidthMin * s, SurfaceWidth(CompactStyle.Notch, height, wanted, s, corners));
+                // Rounder corners take more of each end (the shoulders and the bottom radius), so the width grows by what they take,
+                // fitted to the content or not.
+                double extra = 2 * Math.Max(0, NotchCurves(height, s, corners) - (CollapsedLimits.NotchShoulder + CollapsedLimits.NotchCorner) * s);
+                double width = Math.Min(Math.Max(auto ? fit : saved + extra, SurfaceWidth(CompactStyle.Notch, height, required, s, corners)), screen.Width);
                 double scale = height / CollapsedLimits.BaseHeight, inset = CollapsedLimits.NotchInset * scale;
                 double depth = column is { } across ? Math.Min(screen.Height, Math.Max(height, Finite(across) + 2 * CollapsedLimits.ColumnPad * scale)) : height;
                 var surface = new DipRect(Place(screen.Width, width, settings.NotchOffsetX), 0, width, depth);
@@ -150,14 +153,23 @@ public static class CollapsedGeometry
     // and for the line. The content keeps clear of the capsule's inset, and of the notch's inset and, on a low notch where they are
     // wider, its shoulders and corners. scale: the scale DeckIsland is drawn at (PanelScales), which the shoulders and corners take
     // (Resolve), so the content area measured from the shape (MainWindow.CompactContentWidth) holds the content at every scale.
-    public static double SurfaceWidth(CompactStyle style, double height, double content, double scale = 1)
+    // The shoulder and the corner of a notch of this height, as the Corners setting makes them (no larger than half the height,
+    // and never smaller than the unrounded ones).
+    public static double NotchCurves(double height, double scale, double corners)
+    {
+        double s = ValidScale(scale), limit = Finite(height) / 2, factor = Math.Max(0, Finite(corners));
+        double Eff(double radius) => Math.Min(radius * factor, Math.Max(radius, limit));
+        return Eff(CollapsedLimits.NotchShoulder * s) + Eff(CollapsedLimits.NotchCorner * s);
+    }
+
+    public static double SurfaceWidth(CompactStyle style, double height, double content, double scale = 1, double corners = 1)
     {
         double c = Finite(content), h = Finite(height);
         if (c <= 0) return 0;
         return style switch
         {
             CompactStyle.Capsule => Math.Min(CollapsedLimits.CapsuleWidthMax, c + 2 * CollapsedLimits.CapsuleInset * h / CollapsedLimits.BaseHeight),
-            CompactStyle.Notch => Math.Min(CollapsedLimits.NotchWidthMax, c + 2 * Math.Max(CollapsedLimits.NotchInset * h / CollapsedLimits.BaseHeight, (CollapsedLimits.NotchShoulder + CollapsedLimits.NotchCorner) * ValidScale(scale))),
+            CompactStyle.Notch => Math.Min(CollapsedLimits.NotchWidthMax, c + 2 * Math.Max(CollapsedLimits.NotchInset * h / CollapsedLimits.BaseHeight, NotchCurves(h, scale, corners))),
             _ => 0
         };
     }

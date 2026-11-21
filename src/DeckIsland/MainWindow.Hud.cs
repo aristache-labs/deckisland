@@ -141,7 +141,7 @@ public partial class MainWindow
         double line = Math.Max(1, CompactMusicLayout.Whole(26 * shape.Scale));
         // The ends flare like the notch's shoulders do at the top: the end at the screen edge melts into it with concave curves, which
         // take the inset, while the far end keeps the corner radius the Corners setting gives.
-        double inset = Math.Max(2, Math.Round(9 * shape.Scale));
+        double inset = Math.Max(2, Math.Round(11 * shape.Scale));
         double length = line + 2 * inset;
         double x = Math.Max(0, shape.Surface.X + (shape.Surface.Width - length) / 2);
         return shape with { Surface = shape.Surface with { X = x, Width = length }, Inset = inset, ContentWidth = Math.Max(0, length - 2 * inset),

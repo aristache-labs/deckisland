@@ -552,7 +552,7 @@ public partial class MainWindow : Window
             return onScreen with { Surface = _frame.FromScreen(onScreen.Surface) };
         }
         return HudThin(CollapsedGeometry.Resolve(Settings, style, MonitorBoundsDip, WorkDip, _pixelsPerDip, wanted, _compactRequired, _scale,
-            ColumnFor(style) ? double.IsNaN(_compactColumn) ? 0 : _compactColumn : null, style == CompactStyle.Line && Dock(style).OverTaskbar));
+            ColumnFor(style) ? double.IsNaN(_compactColumn) ? 0 : _compactColumn : null, style == CompactStyle.Line && Dock(style).OverTaskbar, CornerFactor));
     }
     // The width the collapsed column asks for (CompactColumn.Width); NaN until it is first built.
     private double _compactColumn = double.NaN;

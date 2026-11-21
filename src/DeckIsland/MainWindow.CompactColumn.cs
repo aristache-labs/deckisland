@@ -156,8 +156,13 @@ public partial class MainWindow
         double wantedLength = stack.Length;
         if (weatherLine >= 0 && stack.Length > room)
         {
-            lines.RemoveAt(weatherLine);
-            stack = CompactColumn.Stack([.. lines.Select(line => line.Height)], gap);
+            // The weather gives way only when that is what makes the rest fit; otherwise everything stays and scrolls through.
+            var without = lines.Where((_, index) => index != weatherLine).Select(line => line.Height).ToArray();
+            if (CompactColumn.Stack(without, gap).Length <= room)
+            {
+                lines.RemoveAt(weatherLine);
+                stack = CompactColumn.Stack([.. lines.Select(line => line.Height)], gap);
+            }
         }
         double wantedColumn = CompactColumn.Width(scale, [layout.CoverSize * (cover ? 1 : 0), equalizer ? layout.EqualizerSize : 0, clock?.ReservedWidth ?? 0, transfer?.Width ?? 0, devices?.PreferredWidth ?? 0, weather?.Width ?? 0, focus?.Width ?? 0, apps.Count > 0 ? layout.RingSize : 0],
             strips.Select(strip => strip.PreferredWidth));
