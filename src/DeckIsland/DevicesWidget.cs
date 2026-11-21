@@ -32,7 +32,7 @@ public partial class MainWindow
 
     private Border DevicesWidget(Border frame, bool detailed)
     {
-        frame.CornerRadius = new CornerRadius(16);
+        frame.CornerRadius = new CornerRadius(Corner(16));
         frame.Padding = new Thickness(10, 8, 10, 8);
         string title = WidgetLayout.Name(WidgetKind.Devices);
 
@@ -107,7 +107,7 @@ public partial class MainWindow
         string charging = device.Charging ? $" · {Loc.T("充电中", "Charging")}" : "";
         var tile = new Border
         {
-            Margin = new Thickness(3), Padding = new Thickness(9, 7, 9, 7), CornerRadius = new CornerRadius(11),
+            Margin = new Thickness(3), Padding = new Thickness(9, 7, 9, 7), CornerRadius = new CornerRadius(Corner(11)),
             Background = UI.Brush(Look.Hex("fillSelected")), Child = new StackPanel { Children = { row, bar } },
             ToolTip = $"{device.Name} · {percent}%{charging}"
         };

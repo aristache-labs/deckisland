@@ -13,7 +13,7 @@ public partial class MainWindow
 {
     private Border MonitorWidget(Border frame, bool detailed)
     {
-        frame.CornerRadius = new CornerRadius(16);
+        frame.CornerRadius = new CornerRadius(Corner(16));
         var colors = MonitorThemeColors.For(Settings, Look);
         var metrics = new Grid { VerticalAlignment = VerticalAlignment.Center };
         metrics.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });

@@ -13,7 +13,7 @@ public partial class MainWindow
     // Today's date large, with the week it falls in below; rebuilt only when the day changes.
     private Border TodayWidget(Border frame)
     {
-        frame.CornerRadius = new CornerRadius(16);
+        frame.CornerRadius = new CornerRadius(Corner(16));
         frame.Padding = new Thickness(14, 8, 14, 8);
         DateOnly shown = default;
         _widgetUpdates.Add(() =>
@@ -63,7 +63,7 @@ public partial class MainWindow
             foreach (var text in new[] { letter, number }) text.HorizontalAlignment = HorizontalAlignment.Center;
             var cell = new Border
             {
-                CornerRadius = new CornerRadius(9), Padding = new Thickness(0, 4, 0, 5), Width = 28, HorizontalAlignment = HorizontalAlignment.Center,
+                CornerRadius = new CornerRadius(Corner(9)), Padding = new Thickness(0, 4, 0, 5), Width = 28, HorizontalAlignment = HorizontalAlignment.Center,
                 Background = current ? UI.Brush(Look.Hex("rangeFill")) : null,
                 Child = new StackPanel { Children = { letter, number } }
             };

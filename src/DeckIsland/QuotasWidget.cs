@@ -18,7 +18,7 @@ public partial class MainWindow
 
     private Border QuotasWidget(Border frame, bool detailed)
     {
-        frame.CornerRadius = new CornerRadius(16);
+        frame.CornerRadius = new CornerRadius(Corner(16));
         string title = WidgetLayout.Name(WidgetKind.Quotas);
         var tiles = new UniformGrid { Columns = 1, VerticalAlignment = VerticalAlignment.Top };
         var viewport = new ScrollViewer
@@ -119,7 +119,7 @@ public partial class MainWindow
         string tooltip = $"{summary}\n{reading.Detail}";
         var frame = new Border
         {
-            Margin = new Thickness(3), Padding = new Thickness(9, 7, 9, 7), CornerRadius = new CornerRadius(11),
+            Margin = new Thickness(3), Padding = new Thickness(9, 7, 9, 7), CornerRadius = new CornerRadius(Corner(11)),
             Background = UI.Brush(Look.Hex("fillSelected")), Child = card, ToolTip = tooltip
         };
         AutomationProperties.SetName(frame, summary);

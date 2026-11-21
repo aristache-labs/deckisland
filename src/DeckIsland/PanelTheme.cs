@@ -22,6 +22,14 @@ internal static class PanelTheme
     internal static void Register(PanelLook look) { Looks.RemoveAll(entry => !entry.TryGetTarget(out _)); Looks.Add(new(look)); }
     // The current profile's look; its brushes are the application's.
     public static PanelLook Main { get; } = new(null);
+    // The Corners setting as a multiplier (DeckSettings.CornerPercent / 50): the panel's corner resources are made again when it changes.
+    public static double CornerScale { get; private set; } = 1;
+    public static void UseCornerScale(double scale)
+    {
+        if (Math.Abs(scale - CornerScale) < .001) return;
+        CornerScale = scale;
+        foreach (var entry in Looks.ToList()) if (entry.TryGetTarget(out var look)) look.RefreshCorners();
+    }
     // The themes found in the folder at the last reload.
     public static IReadOnlyList<PanelThemeInfo> UserThemes { get; private set; } = [];
     internal static bool Loaded { get; private set; }
@@ -358,7 +366,12 @@ internal sealed class PanelLook
 
     // A corner of the panel's own drawing as the theme draws it: square in a pixel theme, where the island's steps are the only
     // curve, and as given otherwise.
-    public double Corner(double radius) => Current.Effects.Pixel > 0 ? 0 : radius;
+    public double Corner(double radius) => Current.Effects.Pixel > 0 ? 0 : radius * PanelTheme.CornerScale;
+    internal void RefreshCorners()
+    {
+        _published = null;
+        if (IsMain) PublishTo(Application.Current?.Resources); else if (_target is not null) PublishTo(_target);
+    }
 
     // A pixel theme's bevel: the rim's last gradient color shades the edges that face down and right (IslandBorder.Pixel).
     public Brush? BevelBrush(PanelPalette? palette = null)

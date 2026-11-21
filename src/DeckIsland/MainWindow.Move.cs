@@ -39,7 +39,7 @@ public partial class MainWindow
     private (ScreenEdge Edge, bool OverTaskbar) Dock(CompactStyle style)
     {
         if (_dockOverride is { } dragged && _moveOverlay is not null && style == _moveStyle) return dragged;
-        return style == CompactStyle.Capsule && CapsuleBottomDock() is { } bottom ? bottom : Settings.Dock(style);
+        return style == CompactStyle.Capsule && Settings.CapsuleEdge == ScreenEdge.Top && CapsuleBottomDock() is { } bottom ? bottom : Settings.Dock(style);
     }
     private void ReportMoveShape()
     {

@@ -31,7 +31,7 @@ public partial class MainWindow
     }
 
     // The collapsed content stands as a column: the notch on a side edge (CompactColumn).
-    private bool ColumnFor(CompactStyle style) => _frame.Across && style == CompactStyle.Notch;
+    private bool ColumnFor(CompactStyle style) => _frame.Across && style is CompactStyle.Notch or CompactStyle.Capsule;
     private bool CompactColumnMode => ColumnFor(Collapsed.Style);
 
     // Sets the transforms for the frame's edge. Returns whether the edge changed since the last time; the first time does not count.

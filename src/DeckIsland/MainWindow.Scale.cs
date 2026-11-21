@@ -33,7 +33,7 @@ public partial class MainWindow
 
     internal double Scale => _scale;
     // The open panel's corner radius as drawn.
-    private double PanelRadius => PanelHeader.PanelRadius * _scale;
+    private double PanelRadius => Corner(PanelHeader.PanelRadius) * _scale;
 
     private sealed class Unscaled : IValueConverter
     {

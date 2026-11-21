@@ -383,6 +383,9 @@ public sealed class DeckSettings
     // The edge and the anchor of the line, as the notch's; the line keeps to the taskbar's side by default. A window rule that turns
     // the notch or the capsule into the line shows it where the line's own settings put it.
     public ScreenEdge LineEdge { get; set; } = ScreenEdge.Top;
+    // The capsule's edge. Top keeps its older behavior (a capsule dragged down to the bottom docks there); another edge hangs it from there,
+    // its offset and distance measured from that edge as the notch's are.
+    public ScreenEdge CapsuleEdge { get; set; } = ScreenEdge.Top;
     public EdgeAnchor? LineAnchor { get; set; }
     // Where a style works from: the edge and whether it hangs from the screen's edge over a taskbar there (EdgeFrame.For). The
     // capsule floats below the top of the screen.
@@ -390,11 +393,11 @@ public sealed class DeckSettings
     {
         CompactStyle.Notch => (NotchEdge, Anchor(style, NotchEdge, NotchAnchor) == EdgeAnchor.Screen),
         CompactStyle.Line => (LineEdge, Anchor(style, LineEdge, LineAnchor) == EdgeAnchor.Screen),
-        _ => (ScreenEdge.Top, true)
+        _ => (CapsuleEdge, true)
     };
     public static EdgeAnchor Anchor(CompactStyle style, ScreenEdge edge, EdgeAnchor? chosen)
         => chosen ?? (style == CompactStyle.Notch && edge == ScreenEdge.Top ? EdgeAnchor.Screen : EdgeAnchor.Taskbar);
-    public ScreenEdge CompactEdge(CompactStyle style) => style == CompactStyle.Line ? LineEdge : style == CompactStyle.Notch ? NotchEdge : ScreenEdge.Top;
+    public ScreenEdge CompactEdge(CompactStyle style) => style == CompactStyle.Line ? LineEdge : style == CompactStyle.Notch ? NotchEdge : CapsuleEdge;
     public double CapsuleWidth { get; set; } = CollapsedLimits.CapsuleWidthDefault;
     public int CapsulePartSpacing { get; set; } = CompactMusicLayout.DefaultPartSpacing;
     public double CapsuleHeight { get; set; } = CollapsedLimits.CapsuleHeightDefault;
@@ -721,6 +724,9 @@ public sealed class DeckSettings
     public bool Minimal(CompactStyle style) => style == CompactStyle.Notch ? NotchMinimal : style == CompactStyle.Capsule && CapsuleMinimal;
     public bool RemindersPage { get; set; }
     // Notifications and HUDs: short readouts the island shows under the collapsed row, and the notices it mirrors.
+    // How round the island, the open panel and the cards are, in percent: 0 is square, 50 the shapes as drawn before the setting
+    // existed, 100 as round as the shape allows.
+    public int CornerPercent { get; set; } = 50;
     public bool MirrorNotifications { get; set; } = true;
     public int NotificationSeconds { get; set; } = 5;
     public bool KeepNoticesLonger { get; set; }
@@ -977,6 +983,7 @@ public sealed class DeckSettings
         if (WeatherCity is { Valid: false }) WeatherCity = null;
         WidgetsWidth = double.IsFinite(WidgetsWidth) ? Math.Clamp(WidgetsWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : 540;
         WidgetsHeight = double.IsFinite(WidgetsHeight) ? Math.Clamp(WidgetsHeight, 220, DeckPages.MaxHeight) : 292;
+        CornerPercent = Math.Clamp(CornerPercent, 0, 100);
         NotificationSeconds = Math.Clamp(NotificationSeconds, 2, 15);
         SensorIgnoredApps = [.. (SensorIgnoredApps ?? []).Where(name => !string.IsNullOrWhiteSpace(name)).Select(name => name.Trim()).Distinct(StringComparer.OrdinalIgnoreCase)];
         Reminders = Reminder.Normalize(Reminders);
@@ -1082,6 +1089,7 @@ public sealed class DeckSettings
         NotchOffsetX = Offset(NotchOffsetX);
         if (!Enum.IsDefined(NotchEdge)) NotchEdge = ScreenEdge.Top;
         if (!Enum.IsDefined(LineEdge)) LineEdge = ScreenEdge.Top;
+        if (!Enum.IsDefined(CapsuleEdge)) CapsuleEdge = ScreenEdge.Top;
         if (NotchAnchor is { } notchAnchor && !Enum.IsDefined(notchAnchor)) NotchAnchor = null;
         if (LineAnchor is { } lineAnchor && !Enum.IsDefined(lineAnchor)) LineAnchor = null;
         if (!Enum.IsDefined(GripDoubleClick)) GripDoubleClick = GripDoubleClick.Move;

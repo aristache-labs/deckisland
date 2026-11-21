@@ -201,6 +201,7 @@ public partial class App
     // Each panel takes its settings again; one whose collapsed style changed morphs into it (MainWindow.MorphShape).
     private void ApplyToDecks(IReadOnlyDictionary<MainWindow, CompactStyle> styles)
     {
+        PanelTheme.UseCornerScale(Settings.CornerPercent / 50d);
         foreach (var deck in Decks.ToList())
         {
             deck.UseLook();

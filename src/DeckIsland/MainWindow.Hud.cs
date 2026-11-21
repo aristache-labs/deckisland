@@ -139,11 +139,13 @@ public partial class MainWindow
         if (_hudMessage is not { Text.Length: > 0 } || shape.Style != CompactStyle.Notch || !ColumnFor(CompactStyle.Notch)) return shape;
         // The content box is the row's own (26 DIP at the notch's scale, which the height setting gives), with small ends.
         double line = Math.Max(1, CompactMusicLayout.Whole(26 * shape.Scale));
-        double inset = Math.Max(2, Math.Round(5 * shape.Scale));
+        // The ends flare like the notch's shoulders do at the top: the end at the screen edge melts into it with concave curves, which
+        // take the inset, while the far end keeps the corner radius the Corners setting gives.
+        double inset = Math.Max(2, Math.Round(9 * shape.Scale));
         double length = line + 2 * inset;
         double x = Math.Max(0, shape.Surface.X + (shape.Surface.Width - length) / 2);
         return shape with { Surface = shape.Surface with { X = x, Width = length }, Inset = inset, ContentWidth = Math.Max(0, length - 2 * inset),
-            BottomRadius = Math.Min(shape.BottomRadius, inset), Shoulder = Math.Min(shape.Shoulder, inset) };
+            BottomRadius = Math.Min(shape.BottomRadius, length / 2), Shoulder = Math.Min(shape.Shoulder, inset) };
     }
 
     // A notch on a side edge: the readout stays one horizontal row, as at the top; the notch's depth grows to its width and its

@@ -126,7 +126,7 @@ public partial class MainWindow
 
     private FrameworkElement WidgetCard(WidgetKind kind)
     {
-        var frame = new Border { Margin = new Thickness(5), Padding = new Thickness(11, 7, 11, 7), CornerRadius = new CornerRadius(12),
+        var frame = new Border { Margin = new Thickness(5), Padding = new Thickness(11, 7, 11, 7), CornerRadius = new CornerRadius(Corner(12)),
             Background = UI.Brush(Look.Hex("fill")), BorderBrush = UI.Brush(Look.Hex("rim")), BorderThickness = new Thickness(1), ClipToBounds = true };
         if (kind == WidgetKind.Empty) return frame;
         var body = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
@@ -191,7 +191,7 @@ public partial class MainWindow
 
     private Border WeatherWidget(Border frame, bool detailed)
     {
-        frame.CornerRadius = new CornerRadius(16);
+        frame.CornerRadius = new CornerRadius(Corner(16));
         var baseFill = frame.Background;
         var ink = UI.Brush(Look.Primary);
         var temperature = WeatherText("", 32);
@@ -267,7 +267,7 @@ public partial class MainWindow
 
     private Border FocusWidget(Border frame, bool detailed)
     {
-        frame.CornerRadius = new CornerRadius(16);
+        frame.CornerRadius = new CornerRadius(Corner(16));
         frame.Padding = new Thickness(12, 6, 10, 6);
         var face = new Grid { Width = 62, Height = 62, Margin = new Thickness(0, 0, 8, 0), VerticalAlignment = VerticalAlignment.Center };
         var dial = new FocusDial { IsHitTestVisible = false };

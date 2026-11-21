@@ -532,11 +532,21 @@ public partial class MainWindow : Window
         WorkDip = _frame.FromScreen(screenWork);
         Collapsed = ShapeFor(EffectiveStyle);
     }
-    private CollapsedShape ShapeFor(CompactStyle style)
+    // The radii as the Corners setting makes them: no larger than half the surface's depth, whatever the setting.
+    private double CornerFactor => Settings.CornerPercent / 50d;
+    private double Corner(double radius) => Math.Max(0, radius * CornerFactor);
+    private CollapsedShape Rounded(CollapsedShape shape)
+    {
+        double limit = Math.Max(0, Math.Min(shape.Surface.Width, shape.Surface.Height) / 2), factor = CornerFactor;
+        double Fit(double radius) => Math.Min(radius * factor, Math.Max(radius, limit));
+        return shape.Style == CompactStyle.Line ? shape : shape with { BottomRadius = Fit(shape.BottomRadius), TopRadius = Fit(shape.TopRadius), Shoulder = Fit(shape.Shoulder) };
+    }
+    private CollapsedShape ShapeFor(CompactStyle style) => Rounded(ShapeUnrounded(style));
+    private CollapsedShape ShapeUnrounded(CompactStyle style)
     {
         double? wanted = (Settings.Minimal(style) || Settings.CompactAutoWidth(style) || _hudMessage is not null) && !double.IsNaN(_compactWanted) ? _compactWanted : null;
         // The capsule keeps its place on the screen; docked with the bottom (MainWindow.Edge.cs) it is only seen from there.
-        if (style == CompactStyle.Capsule && _frame.Edge != ScreenEdge.Top)
+        if (style == CompactStyle.Capsule && Settings.CapsuleEdge == ScreenEdge.Top && _frame.Edge != ScreenEdge.Top)
         {
             var onScreen = CollapsedGeometry.Resolve(Settings, style, _screenMonitor, _screenWork, _pixelsPerDip, wanted, _compactRequired, _scale);
             return onScreen with { Surface = _frame.FromScreen(onScreen.Surface) };
@@ -583,7 +593,7 @@ public partial class MainWindow : Window
     public (double OffsetMin, double OffsetMax, double TopMin, double TopMax, double WidthMin, double WidthMax) CurrentCollapsedRanges(CompactStyle style, double width, double height)
     {
         // The capsule's settings are places on the screen, whichever edge it is docked with.
-        var (monitor, work) = style == CompactStyle.Capsule ? (_screenMonitor, _screenWork) : (MonitorBoundsDip, WorkDip);
+        var (monitor, work) = style == CompactStyle.Capsule && Settings.CapsuleEdge == ScreenEdge.Top ? (_screenMonitor, _screenWork) : (MonitorBoundsDip, WorkDip);
         var (widthMin, widthMax) = CollapsedGeometry.WidthRange(style, monitor, work, _scale);
         // At the height the surface takes, which a short screen or work area can lower below the saved one (as Resolve does).
         double surfaceHeight = CollapsedGeometry.SurfaceHeight(style, height, monitor, work, _scale);

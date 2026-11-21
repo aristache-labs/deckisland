@@ -23,8 +23,10 @@ public partial class MainWindow
     // The row's width. The notch's shoulders and bottom corners keep their sizes at every height while its inset shrinks with
     // the height, so the row also keeps clear of both curves: at least the shoulder plus the corner radius from each end,
     // which is within the default 30 DIP inset at the default height.
-    private static double CompactContentWidth(CollapsedShape shape)
+    private double CompactContentWidth(CollapsedShape shape)
     {
+        // A readout with text on a side edge has its own thin shape (HudThin), whose content is already what fits.
+        if (_hudMessage is { Text.Length: > 0 } && ColumnFor(shape.Style)) return Math.Max(0, shape.ContentWidth);
         double width = double.IsFinite(shape.ContentWidth) ? Math.Max(0, shape.ContentWidth) : 0;
         if (shape.Style != CompactStyle.Notch) return width;
         double curves = (double.IsFinite(shape.Shoulder) ? Math.Max(0, shape.Shoulder) : 0) + (double.IsFinite(shape.BottomRadius) ? Math.Max(0, shape.BottomRadius) : 0);

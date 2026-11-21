@@ -27,7 +27,7 @@ public sealed partial class SettingsWindow
     }
 
     // The notch or the line on a side edge runs down the screen: its width is a length there and its offset vertical.
-    private bool Across(CompactStyle style) => style != CompactStyle.Capsule && S.CompactEdge(style) is ScreenEdge.Left or ScreenEdge.Right;
+    private bool Across(CompactStyle style) => S.CompactEdge(style) is ScreenEdge.Left or ScreenEdge.Right;
 
     // The edge the notch or the line hangs from. A new edge builds the page again, for the names of the rows and the anchor row.
     private FrameworkElement EdgeRow(CompactStyle style) => MusicChoice(Loc.T("贴靠位置", "Edge"), S.CompactEdge(style),
@@ -35,7 +35,7 @@ public sealed partial class SettingsWindow
         value =>
         {
             if (S.CompactEdge(style) == value) return;
-            Change(s => { if (style == CompactStyle.Line) s.LineEdge = value; else s.NotchEdge = value; });
+            Change(s => { if (style == CompactStyle.Line) s.LineEdge = value; else if (style == CompactStyle.Capsule) s.CapsuleEdge = value; else s.NotchEdge = value; });
             ShowPage(1);
         });
 
@@ -84,12 +84,14 @@ public sealed partial class SettingsWindow
             }
             case CompactStyle.Capsule:
             {
+                bool across = Across(style);
+                var edge = EdgeRow(style);
                 var auto = AutoWidthRow(style);
-                var width = SizeRow(Loc.T("宽度", "Width"), S.CapsuleWidth, CollapsedLimits.CapsuleWidthMin, CollapsedLimits.CapsuleWidthMax, 1, v => ChangeCollapsed(s => { s.CapsuleWidth = v; s.CapsuleAutoWidth = false; }));
+                var width = SizeRow(across ? Loc.T("长度", "Length") : Loc.T("宽度", "Width"), S.CapsuleWidth, CollapsedLimits.CapsuleWidthMin, CollapsedLimits.CapsuleWidthMax, 1, v => ChangeCollapsed(s => { s.CapsuleWidth = v; s.CapsuleAutoWidth = false; }));
                 var height = SizeRow(Loc.T("高度", "Height"), S.CapsuleHeight, CollapsedLimits.CapsuleHeightMin, CollapsedLimits.CapsuleHeightMax, 1, v => ChangeCollapsed(s => s.CapsuleHeight = v));
-                var top = SizeRow(Loc.T("垂直偏移", "Vertical offset"), S.CapsuleTop, CollapsedLimits.CapsuleTopMin, Math.Max(CollapsedLimits.CapsuleTopMin, S.CapsuleTop), 1, v => ChangeCollapsed(s => s.CapsuleTop = v),
+                var top = SizeRow(across || S.CapsuleEdge == ScreenEdge.Bottom ? Loc.T("离边距离", "Distance from edge") : Loc.T("垂直偏移", "Vertical offset"), S.CapsuleTop, CollapsedLimits.CapsuleTopMin, Math.Max(CollapsedLimits.CapsuleTopMin, S.CapsuleTop), 1, v => ChangeCollapsed(s => s.CapsuleTop = v),
                     help: Loc.T("胶囊距屏幕顶部的距离。不超过 10 DIP 时，展开后的面板将会吸附在屏幕顶端。", "Distance between the capsule and the top of the screen. At 10 DIP or less, the expanded panel snaps to the top of the screen."));
-                var offset = SizeRow(Loc.T("水平偏移", "Horizontal offset"), S.CapsuleOffsetX, 0, 0, 1, v => ChangeCollapsed(s => s.CapsuleOffsetX = v), centered: true);
+                var offset = SizeRow(across ? Loc.T("垂直偏移", "Vertical offset") : Loc.T("水平偏移", "Horizontal offset"), S.CapsuleOffsetX, 0, 0, 1, v => ChangeCollapsed(s => s.CapsuleOffsetX = v), centered: true, vertical: across);
                 _refreshCollapsedRanges = () =>
                 {
                     double shown = ShownWidth(style);
@@ -100,7 +102,7 @@ public sealed partial class SettingsWindow
                     SetCollapsedRange(top, CollapsedLimits.CapsuleTopMin, Whole(limits.TopMax), S.CapsuleTop);
                     SetCollapsedRange(offset, -Whole(limits.OffsetMax), Whole(limits.OffsetMax), S.CapsuleOffsetX);
                 };
-                Group(auto, PartSpacingRow(style), width.Row, height.Row, top.Row, offset.Row);
+                Group(Rows(edge, auto, across ? null : PartSpacingRow(style), width.Row, height.Row, top.Row, offset.Row));
                 _builtDock = null;
                 break;
             }

@@ -96,14 +96,17 @@ public static class CollapsedGeometry
             case CompactStyle.Capsule:
             {
                 double height = Math.Min(Value(settings.CapsuleHeight, CollapsedLimits.CapsuleHeightMin, CollapsedLimits.CapsuleHeightMax, CollapsedLimits.CapsuleHeightDefault) * s, area.Height);
+                double content = height;
                 double saved = Value(settings.CapsuleWidth, CollapsedLimits.CapsuleWidthMin, CollapsedLimits.CapsuleWidthMax, CollapsedLimits.CapsuleWidthDefault) * s;
                 double fit = Math.Max(CollapsedLimits.CapsuleWidthMin * s, SurfaceWidth(style, height, wanted, s));
                 double width = Math.Min(Math.Max(auto ? fit : saved, SurfaceWidth(style, height, required, s)), area.Width);
                 var (topMin, topMax) = TopRange(height, screen.Height - area.Y, double.PositiveInfinity);
                 double top = Math.Clamp(Value(settings.CapsuleTop, CollapsedLimits.CapsuleTopMin, CollapsedLimits.CapsuleTopMax, CollapsedLimits.CapsuleTopDefault), topMin, topMax);
                 double scale = height / CollapsedLimits.BaseHeight, inset = CollapsedLimits.CapsuleInset * scale;
-                var surface = new DipRect(area.X + Place(area.Width, width, settings.CapsuleOffsetX), area.Y + top, width, height);
-                return new(style, surface, scale, inset, Math.Max(0, width - 2 * inset), height / 2, height / 2, 0);
+                // On a side edge the capsule stands as a column: deeper than its height, as the notch's is.
+                double depth = column is { } across ? Math.Min(area.Height, Math.Max(height, Finite(across) + 2 * CollapsedLimits.ColumnPad * scale)) : height;
+                var surface = new DipRect(area.X + Place(area.Width, width, settings.CapsuleOffsetX), area.Y + top, width, depth);
+                return new(style, surface, scale, inset, Math.Max(0, width - 2 * inset), content / 2, content / 2, 0);
             }
             case CompactStyle.Line:
             {
