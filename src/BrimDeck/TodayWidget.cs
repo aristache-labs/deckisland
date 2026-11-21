@@ -48,7 +48,7 @@ public partial class MainWindow
         weekLabel.VerticalAlignment = VerticalAlignment.Top;
         var top = new Grid { Children = { new StackPanel { Orientation = Orientation.Horizontal, Children = { day, names } }, weekLabel } };
 
-        var days = new UniformGrid { Columns = 7, Margin = new Thickness(0, 4, 0, 0) };
+        var days = new UniformGrid { Columns = 7, Margin = new Thickness(0, 6, 0, 0) };
         int offset = ((int)today.DayOfWeek - (int)culture.DateTimeFormat.FirstDayOfWeek + 7) % 7;
         for (int i = 0; i < 7; i++)
         {
@@ -63,8 +63,8 @@ public partial class MainWindow
             foreach (var text in new[] { letter, number }) text.HorizontalAlignment = HorizontalAlignment.Center;
             var cell = new Border
             {
-                CornerRadius = new CornerRadius(9), Padding = new Thickness(0, 2, 0, 2), Margin = new Thickness(1, 0, 1, 0),
-                Background = current ? UI.Brush(MonitorDraw.Faint(Look.Hex("accent"), .3)) : null,
+                CornerRadius = new CornerRadius(9), Padding = new Thickness(0, 4, 0, 5), Width = 28, HorizontalAlignment = HorizontalAlignment.Center,
+                Background = current ? UI.Brush(Look.Hex("rangeFill")) : null,
                 Child = new StackPanel { Children = { letter, number } }
             };
             AutomationProperties.SetName(cell, date.ToString("dddd d MMMM", culture) + (current ? $" · {Loc.T("今天", "Today")}" : ""));
