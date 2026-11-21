@@ -159,10 +159,10 @@ public sealed partial class SettingsWindow
         input.KeyDown+=(_,e)=>{if(e.Key==Key.Enter){Commit();e.Handled=true;}if(e.Key==Key.Escape){input.Text=slider.Value.ToString("0",CultureInfo.InvariantCulture);e.Handled=true;}};
         return(slider,chip);
     }
-    private FrameworkElement Dimension(string title, double value, double min, double max, Action<double> changed)
+    private FrameworkElement Dimension(string title, double value, double min, double max, Action<double> changed, string unit = "DIP", double tick = 10)
     {
         var panel=new StackPanel();
-        var controls=NumericControls(title,value,min,max,10,"DIP",changed);
+        var controls=NumericControls(title,value,min,max,tick,unit,changed);
         KeepPreview(controls.Slider); KeepPreview(controls.Number);
         var head=new DockPanel();DockPanel.SetDock(controls.Number,Dock.Right);head.Children.Add(controls.Number);
         var label=TextLine(title,13,TextPrimary);label.VerticalAlignment=VerticalAlignment.Center;head.Children.Add(label);panel.Children.Add(head);

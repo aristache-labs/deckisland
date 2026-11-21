@@ -1,3 +1,4 @@
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows.Threading;
 using DeckIsland.Core;
@@ -16,6 +17,7 @@ public partial class App
     internal NoticeLog Notices { get; } = new();
     internal NotificationAccess NotificationAccess { get; private set; } = NotificationAccess.Starting;
     private readonly HashSet<uint> _toastsSeen = [];
+    private readonly Dictionary<string, byte[]?> _toastLogos = [];
 
     private static bool HasPackageIdentity()
     {
@@ -57,6 +59,28 @@ public partial class App
         }
     }
 
+    // The app's picture, kept once per app.
+    private async Task<byte[]?> LogoOf(UserNotification toast)
+    {
+        string id = toast.AppInfo?.AppUserModelId ?? "";
+        if (_toastLogos.TryGetValue(id, out var kept)) return kept;
+        byte[]? picture = null;
+        try
+        {
+            if (toast.AppInfo?.DisplayInfo?.GetLogo(new Windows.Foundation.Size(64, 64)) is { } logo)
+            {
+                using var stream = (await logo.OpenReadAsync()).AsStreamForRead();
+                using var copy = new MemoryStream();
+                await stream.CopyToAsync(copy);
+                picture = copy.ToArray();
+            }
+        }
+        catch (Exception error) when (error is COMException or IOException or InvalidOperationException or UnauthorizedAccessException) { }
+        // A program without a package has no logo in its toast; Windows still shows its icon for the app id.
+        picture ??= DeckIsland.Native.ShellIcons.ForApp(id, 64);
+        return _toastLogos[id] = picture;
+    }
+
     private async Task ReadToasts(UserNotificationListener listener)
     {
         foreach (var toast in await listener.GetNotificationsAsync(NotificationKinds.Toast))
@@ -68,7 +92,8 @@ public partial class App
             string title = texts[0], body = string.Join(" ", texts.Skip(1));
             Notices.Add(new NoticeItem(app, title, body, DateTimeOffset.Now));
             double seconds = Settings.NotificationSeconds * (Settings.KeepNoticesLonger ? 2 : 1);
-            ShowHud(new($"notice:{toast.Id}", HudIcon.Notice, body.Length > 0 ? $"{title} · {body}" : title, Figure: app, Hold: TimeSpan.FromSeconds(seconds), Lit: true));
+            ShowHud(new($"notice:{toast.Id}", HudIcon.Notice, title, Hold: TimeSpan.FromSeconds(seconds), Lit: true, Label: $"{app}: {title} {body}".Trim(),
+                Body: body.Length > 0 ? body : app, Picture: await LogoOf(toast)));
         }
     }
 }

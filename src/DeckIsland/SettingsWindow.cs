@@ -484,7 +484,7 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
             timeFormats.Children.Add(choice);
         }
         Group(Row(Loc.T("主题", "Theme"),SegmentBorder(themes)),Row(Loc.T("语言", "Language"),language),
-            Row(Loc.T("时间格式", "Time format"), SegmentBorder(timeFormats)),Row(Loc.T("缩放", "Scale"),scale),Dimension(Loc.T("圆角（%）", "Corners (%)"), S.CornerPercent, 0, 100, v => Change(s => s.CornerPercent = (int)v)),transparency,
+            Row(Loc.T("时间格式", "Time format"), SegmentBorder(timeFormats)),Row(Loc.T("缩放", "Scale"),scale),Dimension(Loc.T("圆角（%）", "Corners (%)"), S.CornerPercent, 0, 100, v => Change(s => s.CornerPercent = (int)v), "%", 5),transparency,
             fontRow,followRow,Row(Loc.T("字体预览", "Font preview"),fontSample));
         Interaction(); WindowRules();
     }

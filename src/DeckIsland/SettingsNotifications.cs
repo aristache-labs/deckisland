@@ -26,7 +26,7 @@ public sealed partial class SettingsWindow
         Group(
             Toggle(Loc.T("镜像通知", "Mirror notifications"), S.MirrorNotifications, value => Change(s => s.MirrorNotifications = value),
                 help: Loc.T("新通知会显示在灵动岛中。点击即可打开对应应用。", "New notifications appear in the island. Click one to open the app.")),
-            Dimension(Loc.T("通知时长（秒）", "Notification time (seconds)"), S.NotificationSeconds, 2, 15, value => Change(s => s.NotificationSeconds = (int)value)),
+            Dimension(Loc.T("通知时长（秒）", "Notification time (seconds)"), S.NotificationSeconds, 2, 15, value => Change(s => s.NotificationSeconds = (int)value), "s", 1),
             Toggle(Loc.T("提示停留更久", "Keep notices longer"), S.KeepNoticesLonger, value => Change(s => s.KeepNoticesLonger = value),
                 help: Loc.T("提示、提醒等消息在灵动岛上停留两倍时间。", "Notices, reminders and other messages stay on the island twice as long, so there is time to read them.")),
             Row(Loc.T("仅在灵动岛显示", "Only in the island"),

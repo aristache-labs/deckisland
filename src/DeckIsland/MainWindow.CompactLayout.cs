@@ -49,7 +49,7 @@ public partial class MainWindow
         {
             Compact.Width = SnapDown(CompactContentWidth(shape), dpi);
             // The content box: the 24 DIP row with a DIP above and below, as at the default height.
-            Compact.Height = Math.Max(1, CompactMusicLayout.Whole(26 * scale));
+            Compact.Height = Math.Max(1, CompactMusicLayout.Whole((HudIsCard ? 46 : 26) * scale));
         }
         if (shape.Style == CompactStyle.Line)
         {

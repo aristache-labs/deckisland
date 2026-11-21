@@ -543,7 +543,7 @@ public partial class MainWindow : Window
         double Fit(double radius) => Math.Min(radius * factor, Math.Max(radius, limit));
         return shape.Style == CompactStyle.Line ? shape : shape with { BottomRadius = Fit(shape.BottomRadius), TopRadius = Fit(shape.TopRadius), Shoulder = Fit(shape.Shoulder) };
     }
-    private CollapsedShape ShapeFor(CompactStyle style) => Rounded(ShapeUnrounded(style));
+    private CollapsedShape ShapeFor(CompactStyle style) => HudTall(Rounded(ShapeUnrounded(style)));
     private CollapsedShape ShapeUnrounded(CompactStyle style)
     {
         double? wanted = (Settings.Minimal(style) || Settings.CompactAutoWidth(style) || _hudMessage is not null) && !double.IsNaN(_compactWanted) ? _compactWanted : null;

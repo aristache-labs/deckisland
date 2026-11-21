@@ -170,6 +170,58 @@ public partial class MainWindow
         return (parts, natural);
     }
 
+    // A notification is a card: the app's picture, the title and the message under it. It is taller than the row, so the island grows
+    // downward for it; on a side edge it stays a one-line row.
+    private bool HudIsCard => _hudMessage is { Body.Length: > 0 } && !CompactColumnMode && EffectiveStyle != CompactStyle.Line;
+
+    private CollapsedShape HudTall(CollapsedShape shape)
+    {
+        if (!HudIsCard || ColumnFor(shape.Style) || shape.Style is not (CompactStyle.Notch or CompactStyle.Capsule)) return shape;
+        double height = Math.Round(CollapsedLimits.BaseHeight * shape.Scale * 1.75);
+        double radius = Math.Min(Math.Round(20 * shape.Scale), height / 2);
+        return shape with { Surface = shape.Surface with { Height = height }, BottomRadius = shape.Style == CompactStyle.Capsule ? height / 2 : Math.Max(shape.BottomRadius, radius),
+            TopRadius = shape.Style == CompactStyle.Capsule ? height / 2 : shape.TopRadius };
+    }
+
+    private (FrameworkElement Parts, double Natural) BuildHudCard(HudMessage hud, double scale, double maxWidth)
+    {
+        double font = Math.Max(1, CompactMusicLayout.Half(12.5 * scale)), small = Math.Max(1, CompactMusicLayout.Half(11 * scale));
+        double picture = Math.Round(34 * scale), gap = Math.Round(12 * scale), total = Math.Min(Math.Round(360 * scale), maxWidth);
+        var grid = new Grid { Width = total, VerticalAlignment = VerticalAlignment.Center, ToolTip = hud.Label ?? hud.Text };
+        System.Windows.Automation.AutomationProperties.SetName(grid, hud.Label ?? hud.Text);
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        FrameworkElement Fallback() => new Border { Width = picture, Height = picture, CornerRadius = new CornerRadius(Corner(8)), Background = UI.Brush(Look.Hex("fillSelected")),
+            Child = new Path { Data = HudWindow.IconGeometry(hud.Icon), Stroke = UI.Brush(Look.Hex("accent")), StrokeThickness = Math.Max(1, 1.4 * scale), Stretch = System.Windows.Media.Stretch.Uniform,
+                Width = Math.Round(16 * scale), Height = Math.Round(16 * scale), HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center } };
+        FrameworkElement mark;
+        if (hud.Picture is { Length: > 0 } bytes && !Look.HighContrast)
+        {
+            try
+            {
+                var image = new System.Windows.Media.Imaging.BitmapImage();
+                image.BeginInit();
+                image.StreamSource = new System.IO.MemoryStream(bytes);
+                image.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
+                image.EndInit();
+                image.Freeze();
+                mark = new Border { Width = picture, Height = picture, CornerRadius = new CornerRadius(Corner(8)), Background = UI.Brush(Look.Hex("fillSelected")), Padding = new Thickness(Math.Round(4 * scale)),
+                    Child = new Image { Source = image, Stretch = System.Windows.Media.Stretch.Uniform } };
+            }
+            catch (Exception error) when (error is NotSupportedException or System.IO.IOException or InvalidOperationException) { mark = Fallback(); }
+        }
+        else mark = Fallback();
+        mark.VerticalAlignment = VerticalAlignment.Center; mark.Margin = new Thickness(0, 0, gap, 0);
+        grid.Children.Add(mark);
+        var title = UI.Fixed(hud.Text, font, Math.Max(1, CompactMusicLayout.Whole(17 * scale)), Look.Primary, FontWeights.SemiBold);
+        var body = UI.Fixed(hud.Body ?? "", small, Math.Max(1, CompactMusicLayout.Whole(15 * scale)), Look.Secondary);
+        foreach (var line in new[] { title, body }) { line.ClearValue(FrameworkElement.WidthProperty); line.TextTrimming = TextTrimming.CharacterEllipsis; line.HorizontalAlignment = HorizontalAlignment.Stretch; }
+        var text = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Children = { title, body } };
+        Grid.SetColumn(text, 1);
+        grid.Children.Add(text);
+        return (grid, total);
+    }
+
     private void RenderCompactHud(HudMessage hud, double scale, double contentWidth)
     {
         double dpi = System.Windows.Media.VisualTreeHelper.GetDpi(this).DpiScaleX, pad = Math.Round(28 * scale);
@@ -179,7 +231,7 @@ public partial class MainWindow
         // Every readout has one width, the notch's and the capsule's alike (the capsule's shorter ends are made up in pad), within the
         // screen. Its height, scale and horizontal offset are the surface's own.
         double room = Math.Max(0, MonitorBoundsDip.Width - 2 * Math.Round(24 * scale) - pad);
-        var (parts, natural) = BuildHudRow(hud, scale, dpi, room);
+        var (parts, natural) = hud.Body is { Length: > 0 } ? BuildHudCard(hud, scale, room) : BuildHudRow(hud, scale, dpi, room);
         double asked = natural + pad;
         // The surface takes the readout's width, even narrower than the row it replaces.
         if (double.IsNaN(_compactWanted) || Math.Abs(asked - _compactWanted) > .5 || Math.Abs(natural - _compactRequired) > .5)
@@ -187,7 +239,7 @@ public partial class MainWindow
             _compactWanted = asked; _compactRequired = natural;
             Dispatcher.BeginInvoke(DispatcherPriority.Background, FitCompactToContent);
         }
-        double row = Math.Max(1, CompactMusicLayout.Whole(26 * scale));
+        double row = Math.Max(1, CompactMusicLayout.Whole((hud.Body is { Length: > 0 } ? 46 : 26) * scale));
         var grid = new Grid { Width = SnapDown(contentWidth, dpi), Height = row };
         parts.HorizontalAlignment = HorizontalAlignment.Center;
         grid.Children.Add(parts);
@@ -218,6 +270,7 @@ public partial class MainWindow
     // length to the row's height, then both go back.
     private void RenderHudColumn(HudMessage hud, double scale, double dpi, double column, double room)
     {
+        if (hud.Body is { Length: > 0 } message) hud = hud with { Text = hud.Text + " · " + message, Body = null };
         if (hud.Text.Length == 0) { RenderHudVertical(hud, scale, dpi, column, room); return; }
         double pad = Math.Round(28 * scale);
         // Across: as wide as the readout, up to the width set for the notch (Size and position).
