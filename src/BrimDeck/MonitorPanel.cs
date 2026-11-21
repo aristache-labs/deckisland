@@ -58,7 +58,9 @@ public partial class MainWindow
         bool power = page && _monitorView?.ShowsPower == true;
         _powerPage = power;
         bool widget = WidgetVisible(WidgetKind.Monitor) && IsVisible && !IsSuppressed && !DisplayPower.Off;
-        _app.PresentMonitor(this, page || widget, strip, power, heldStrip, widget ? ExpandedDemand.Cpu | ExpandedDemand.Gpu | ExpandedDemand.Memory : PageDemand());
+        var widgetDemand = ExpandedDemand.Cpu | ExpandedDemand.Gpu | ExpandedDemand.Memory | ExpandedDemand.Network;
+        if (Settings.MonitorTemperatures) widgetDemand |= ExpandedDemand.Temperatures;
+        _app.PresentMonitor(this, page || widget, strip, power, heldStrip, widget ? widgetDemand : PageDemand());
         // Neither took readings while hidden: they show the current ones, or dashes once the sampler has paused, never the
         // figures they showed last time.
         if (page && !_monitorShowing) _monitorView?.Update(_app.Monitor?.Latest ?? WaitingSnapshot, motion: false);

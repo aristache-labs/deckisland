@@ -38,6 +38,7 @@ public partial class MainWindow
         WidgetsContent.Margin = new Thickness(_header.Side, 0, _header.Side, MonitorBottom(height));
         var slots = Settings.WidgetSlots;
         string key = $"{string.Join(',', slots)}:{Look.Generation}:{Loc.Language}:{Settings.RemindersPage}:{Settings.FocusPage}:{Settings.WeatherEnabled}:{Settings.UsagePage}:{Settings.MonitorPage}:{Settings.DevicesPage}:{Settings.WeatherPage}:{_pageWidth:0}";
+        if (slots.Contains(WidgetKind.Monitor)) key += $":{MonitorThemeColors.For(Settings, Look)}";
         if (_widgetKey != key || WidgetsContent.Children.Count == 0)
         {
             _widgetKey = key;
@@ -110,6 +111,8 @@ public partial class MainWindow
         bool detailed = DeckPages.Shown(Settings, page);
         bool setup = kind == WidgetKind.Weather && !Settings.WeatherEnabled || kind == WidgetKind.Focus && !Settings.FocusPage ||
             kind == WidgetKind.Quotas && Settings.ConfiguredApps.Count == 0;
+        if (kind == WidgetKind.Monitor) return MonitorWidget(frame, detailed);
+        if (!setup && kind == WidgetKind.Quotas) return QuotasWidget(frame, detailed);
         if (!setup && kind == WidgetKind.Weather) return WeatherWidget(frame, detailed);
         if (!setup && kind == WidgetKind.Focus) return FocusWidget(frame, detailed);
         if (detailed || setup)
@@ -127,39 +130,13 @@ public partial class MainWindow
         detail.Foreground = UI.Brush(Look.Secondary);
         body.Children.Add(value);
         body.Children.Add(detail);
-        if (kind == WidgetKind.Monitor)
-        {
-            _widgetUpdates.Add(() =>
-            {
-                var latest = _app.Monitor?.Latest;
-                var memory = latest?.Memory.OrDefault;
-                string percent(double? share) => share is { } reading ? $"{reading:P0}" : "–";
-                value.Text = $"CPU  {percent(latest?.Cpu.OrDefault?.Usage)}    GPU  {percent(latest?.Gpu.OrDefault?.Usage)}";
-                detail.Text = $"RAM  {percent(memory is { Total: > 0 } ? (double)memory.Used / memory.Total : null)}";
-            });
-        }
-        else if (kind == WidgetKind.Devices)
+        if (kind == WidgetKind.Devices)
         {
             _widgetUpdates.Add(() =>
             {
                 var devices = ShownDevices.Where(device => device.Percent is not null).Take(2).ToArray();
                 value.Text = devices.Length == 0 ? Loc.T("没有电量读数", "No battery readings") : $"{devices[0].Name} · {devices[0].Percent}%";
                 detail.Text = devices.Length < 2 ? "" : $"{devices[1].Name} · {devices[1].Percent}%";
-            });
-        }
-        else
-        {
-            body.Children.Remove(value); body.Children.Remove(detail);
-            var host = new Border { HorizontalAlignment = HorizontalAlignment.Left };
-            body.Children.Add(host);
-            string last = "";
-            _widgetUpdates.Add(() =>
-            {
-                var rings = QuotaRings(Settings.ConfiguredApps).Take(4).ToArray();
-                string next = string.Join('|', rings.Select(ring => $"{ring.Color}:{ring.Tip}:{ring.Letter}:{ring.Stale}:{string.Join(',', ring.Shares)}"));
-                if (last == next) return;
-                last = next;
-                host.Child = new QuotaCarousel(rings, 26, 2.5, 1, 7, rings.Length, 2, animate: false);
             });
         }
         return frame;
