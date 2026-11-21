@@ -2,9 +2,9 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // The diagrams on the cards that choose how each column of the clipboard and file transfer page shows its entries ("页面布局":
 // ClipView, FileView). As the arrangement's diagrams (ShelfArrangementPreview) they are not pictures of the panel: bars stand for

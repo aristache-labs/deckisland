@@ -1,7 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Threading;
-using BrimDeck;
+using DeckIsland;
 
 // The 2026-10-28 hang: a retry that posted itself to the dispatcher while its button sat under a collapsed parent spun the UI thread.
 internal static class LayoutRetryTests

@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Limits and defaults of the three collapsed styles, in DIPs. The defaults reproduce the fixed sizes used before these
 // values became settings: notch 238 x 32 at the screen edge, capsule 196 x 32 five DIPs below it, line 56 x 4 four DIPs below it.
@@ -74,7 +74,7 @@ public static class CollapsedGeometry
     // contentRequired: the width of what the content must show (CompactMusicLayout.RequiredWidth: the clock and, while media plays,
     // its cover, equalizer and title; else one quota ring or the first system reading). The surface is always at least wide enough for it, with auto width or a saved width, within
     // the same limits.
-    // panelScale: the scale BrimDeck is drawn at (PanelScales). The saved heights, widths, the line's length and thickness and the notch's
+    // panelScale: the scale DeckIsland is drawn at (PanelScales). The saved heights, widths, the line's length and thickness and the notch's
     // corners are multiplied by it, so the content, which follows the height (Scale), grows with them; the offsets and the distances
     // from the top stay as saved, as places on the screen.
     // column: for a notch on a side edge, the width its column of content needs (CompactColumn.Width); null for the top and bottom
@@ -145,7 +145,7 @@ public static class CollapsedGeometry
 
     // The surface width whose content area holds content DIPs at this height, up to the style's largest width; 0 for no content
     // and for the line. The content keeps clear of the capsule's inset, and of the notch's inset and, on a low notch where they are
-    // wider, its shoulders and corners. scale: the scale BrimDeck is drawn at (PanelScales), which the shoulders and corners take
+    // wider, its shoulders and corners. scale: the scale DeckIsland is drawn at (PanelScales), which the shoulders and corners take
     // (Resolve), so the content area measured from the shape (MainWindow.CompactContentWidth) holds the content at every scale.
     public static double SurfaceWidth(CompactStyle style, double height, double content, double scale = 1)
     {

@@ -1,7 +1,7 @@
-using BrimDeck.Core;
+using DeckIsland.Core;
 using static BrandFamilyTests;
 
-// The mouse brand families (src/BrimDeck.Core/Brands): which collections each takes and which it leaves to the readers that
+// The mouse brand families (src/DeckIsland.Core/Brands): which collections each takes and which it leaves to the readers that
 // have them, the requests byte for byte, the sources' sample answers, and the request read back (or another frame) refused.
 static class BrandsMouseTests
 {

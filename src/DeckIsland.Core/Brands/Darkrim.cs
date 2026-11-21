@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // The DARKRIM SHADOW (寸渊影弑) headset's dongle, 3654:6901 (a Jieli design; the id's owner is not known, so only this product).
 // The only collection that answers is interface 3's (usage page 0xFF02 usage 2, 65-byte reports numbered 0): the official

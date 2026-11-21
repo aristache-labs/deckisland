@@ -2,7 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // The last Claude quota read online, kept on disk. Only the account API reports the per-model quotas (Fable and the like) and
 // the reset times; the Claude desktop app's local records carry the 5-hour and weekly shares alone. A start while the API is
@@ -11,7 +11,7 @@ namespace BrimDeck.Core;
 // It holds the quotas, the plan and when they were read, never a token. A reading older than MaxAge is not used, and a quota
 // whose window has reset since is left out: its share no longer says anything.
 // It also says which account it was read for, as a hash of the account id (AccountHash), never the id itself. It is used only
-// for the same account: after a switch of account while BrimDeck was closed, the other account's quotas and plan would
+// for the same account: after a switch of account while DeckIsland was closed, the other account's quotas and plan would
 // otherwise stand in for the new one's. A file that names no account (one written before the hash was kept) or a sign-in
 // whose account cannot be told is not used either.
 // One account can read several organizations (a personal subscription and a Team, say), each with quotas of its own. The file
@@ -33,8 +33,8 @@ public static class ClaudeQuotaCache
     private static readonly JsonSerializerOptions Options = new() { Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() } };
 
     // A one-way hash of the account id, enough to tell two accounts apart without naming either. "" when the id is unknown.
-    public static string AccountHash(string account) => Hash("BrimDeck Claude account ", account);
-    public static string OrganizationHash(string organization) => Hash("BrimDeck Claude organization ", organization);
+    public static string AccountHash(string account) => Hash("DeckIsland Claude account ", account);
+    public static string OrganizationHash(string organization) => Hash("DeckIsland Claude organization ", organization);
     private static string Hash(string purpose, string id) => string.IsNullOrWhiteSpace(id) ? ""
         : Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(purpose + id.Trim().ToLowerInvariant())))[..32];
 

@@ -1,8 +1,8 @@
 using System.Windows.Threading;
-using BrimDeck.Core;
-using BrimDeck.Native;
+using DeckIsland.Core;
+using DeckIsland.Native;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 public partial class MainWindow
 {

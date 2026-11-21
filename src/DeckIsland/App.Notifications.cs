@@ -1,16 +1,16 @@
 using System.Runtime.InteropServices;
 using System.Windows.Threading;
-using BrimDeck.Core;
+using DeckIsland.Core;
 using Windows.ApplicationModel;
 using Windows.UI.Notifications;
 using Windows.UI.Notifications.Management;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 public enum NotificationAccess { Starting, Ready, NeedsPackage, Denied, Unavailable }
 
 // Windows toast notifications shown in the island. Windows lets only an app with a package identity read them, so a plain
-// BrimDeck.exe reports NeedsPackage until scripts/notifications/register.ps1 has registered its sparse package.
+// DeckIsland.exe reports NeedsPackage until scripts/notifications/register.ps1 has registered its sparse package.
 public partial class App
 {
     internal NoticeLog Notices { get; } = new();

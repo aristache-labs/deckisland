@@ -3,7 +3,7 @@ using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 public enum CompactStyle { Notch, Capsule, Line }
 // The screen edge the notch hangs from (DeckSettings.NotchEdge); see EdgeFrame.
@@ -48,7 +48,7 @@ public sealed record IgnoredMediaApp(string AppId = "", string Name = "", string
 // CommandCodeApi reads the same quota with a Command Code API key entered by hand.
 // WorkBuddy reads the credits of a WorkBuddy China edition account signed in on its website from settings, and the local session
 // records of the WorkBuddy desktop app; WorkBuddyAi does the same for the international edition (WorkBuddy AI).
-// MiMo reads the Xiaomi MiMo Desktop membership quota with a Xiaomi account signed in to in BrimDeck, and the local records that
+// MiMo reads the Xiaomi MiMo Desktop membership quota with a Xiaomi account signed in to in DeckIsland, and the local records that
 // MiMo Code (CLI) and MiMo Desktop share. MiMoApi reads the Xiaomi MiMo Open Platform account of a pay-as-you-go key entered by
 // hand: its balances and the month's charges. MiMoTokenPlan reads the quota of a Token Plan key entered by hand. MiMoLinked reads
 // both with the keys Xiaomi MiMo Desktop and MiMo Code linked (MiMoUsage.ReadLinkedKeys); its statistics are MiMo's.
@@ -339,10 +339,10 @@ public sealed class DeckSettings
     private PausedMusicHide _musicPausedHide;
     private MusicGestureAction _musicDragLeft = MusicGestureAction.PreviousTrack, _musicDragRight = MusicGestureAction.NextTrack, _musicDragUp, _musicDragDown,
         _musicSwipeLeft = MusicGestureAction.PreviousTrack, _musicSwipeRight = MusicGestureAction.NextTrack;
-    // Version of the BrimDeck that last saved settings.json; see SettingsMigrations. Empty in files saved before 0.1.0.
+    // Version of the DeckIsland that last saved settings.json; see SettingsMigrations. Empty in files saved before 0.1.0.
     public string AppVersion { get; set; } = "";
     public bool LaunchAtStartup { get; set; }
-    // Off, the notification area has no BrimDeck icon. Starting BrimDeck again then shows the panels and the settings
+    // Off, the notification area has no DeckIsland icon. Starting DeckIsland again then shows the panels and the settings
     // (App.ShowFromRelaunch), and the settings window has its own exit button.
     public bool ShowTrayIcon { get; set; } = true;
     public SettingsTheme Theme { get; set; } = SettingsTheme.System;
@@ -565,7 +565,7 @@ public sealed class DeckSettings
     // KuGou's full control, which the user confirmed when switching it on: its libcef.dll is kept changed, also after a KuGou
     // update replaces it (a running KuGou then restarts once). Switching it off restores the file.
     public bool KugouFullControl { get; set; }
-    // Enables Apple Music's full control when BrimDeck starts, without the entry and its explanation.
+    // Enables Apple Music's full control when DeckIsland starts, without the entry and its explanation.
     public bool AppleMusicFullControl { get; set; }
     // Applications whose playback is not shown: their songs stay off the panel and out of the source menu.
     public List<IgnoredMediaApp> IgnoredMediaApps { get; set; } = [];
@@ -585,8 +585,8 @@ public sealed class DeckSettings
     public double Height { get; set; } = 200;
     // The quick size last chosen in settings; cleared when the width or height is edited by hand.
     public PanelSize? QuickSize { get; set; }
-    // BrimDeck drawn larger, in percent (PanelScales): the collapsed surface and the expanded panel, its pages, header and menus
-    // grow together, as Windows' display scaling would for BrimDeck alone. Sizes stay saved before the scale.
+    // DeckIsland drawn larger, in percent (PanelScales): the collapsed surface and the expanded panel, its pages, header and menus
+    // grow together, as Windows' display scaling would for DeckIsland alone. Sizes stay saved before the scale.
     public int PanelScale { get; set; } = PanelScales.Default;
     // How much of what lies behind shows through the panel's surface, collapsed and expanded, in percent: 0 is opaque. Only the
     // surface and its theme layers are see-through; text, icons and the rim are drawn as before.
@@ -642,7 +642,7 @@ public sealed class DeckSettings
     public bool LanClipboardSync { get; set; }
     // Applications whose copies are not recorded: the executable's path, or a process name (ClipboardExclusions).
     public List<string> ClipboardExcluded { get; set; } = [];
-    // Off, the clipboard history goes when BrimDeck exits; on, it stays, and each copy goes once it is older than ClipboardKeepFor.
+    // Off, the clipboard history goes when DeckIsland exits; on, it stays, and each copy goes once it is older than ClipboardKeepFor.
     // What is kept (ShelfData.Kept: phrases, 常用, the categories set to keep) stays either way.
     public bool ClipboardKeepHistory { get; set; }
     public HistoryLength ClipboardKeepFor { get; set; } = HistoryLength.Month;
@@ -772,7 +772,7 @@ public sealed class DeckSettings
     public bool CapsuleDevices { get; set; }
     // The expanded page shows a line under memory and network with the frame rate of the program in front, its name and its display's
     // refresh rate (FrameRates). Off by default; read only while the page is open, and only where the user may read Windows' frame
-    // events (the Performance Log Users group, or BrimDeck elevated).
+    // events (the Performance Log Users group, or DeckIsland elevated).
     public bool MonitorFrames { get; set; }
     // The table of what the expanded page shows and in which order (ExpandedMonitor). A file saved before it has none: the table is then
     // the four switches above in the default order, so the page looks as it did, and follows those switches until a table is set.
@@ -827,7 +827,7 @@ public sealed class DeckSettings
     // Also reads the Claude Code and Codex CLI session records inside WSL distributions. Off by default: it starts stopped distributions.
     public bool IncludeWsl { get; set; }
     // The named profiles (DeckProfile, Profiles). The current one's settings are the ordinary members of this class; ReturnProfile is
-    // the profile a rule replaced while it holds (ProfileRule), to come back to when it stops holding or BrimDeck starts again.
+    // the profile a rule replaced while it holds (ProfileRule), to come back to when it stops holding or DeckIsland starts again.
     public List<DeckProfile> Profiles { get; set; } = [];
     public Guid CurrentProfile { get; set; }
     public Guid? ReturnProfile { get; set; }
@@ -1135,7 +1135,7 @@ public sealed class DeckSettings
 
 // appVersion is the running application's version; it defaults to the entry assembly's version.
 // settings.json holds the settings of the newest version that saved it, plus "Snapshots": the settings each earlier
-// version last saved, keyed by version. Upgrading keeps the older version's settings there; a downgraded BrimDeck reads
+// version last saved, keyed by version. Upgrading keeps the older version's settings there; a downgraded DeckIsland reads
 // and saves only its own snapshot, so the newer version's settings stay as they were.
 public sealed class SettingsStore(string directory, string? appVersion = null)
 {
@@ -1183,10 +1183,10 @@ public sealed class SettingsStore(string directory, string? appVersion = null)
                 var own = snapshots.Where(pair => pair.Value is JsonObject && ApplicationVersion.Parse(pair.Key) <= running)
                     .OrderByDescending(pair => ApplicationVersion.Parse(pair.Key)).Select(pair => (JsonObject)pair.Value!.DeepClone()).FirstOrDefault();
                 _loadWarning = own is null
-                    ? () => Loc.T($"设置文件由 BrimDeck {saved.ToString(3)} 保存。当前版本 {_appVersion} 读取其中能识别的设置，之后的修改只保存给 {_appVersion}，不影响 {saved.ToString(3)} 的设置。",
-                        $"The settings file was saved by BrimDeck {saved.ToString(3)}. Version {_appVersion} reads the settings it recognizes; later changes are saved for {_appVersion} only and leave the settings of {saved.ToString(3)} unchanged.")
-                    : () => Loc.T($"设置文件由 BrimDeck {saved.ToString(3)} 保存。当前版本 {_appVersion} 使用自己上次保存的设置，修改不影响 {saved.ToString(3)} 的设置。",
-                        $"The settings file was saved by BrimDeck {saved.ToString(3)}. Version {_appVersion} uses the settings it saved last; changes leave the settings of {saved.ToString(3)} unchanged.");
+                    ? () => Loc.T($"设置文件由 DeckIsland {saved.ToString(3)} 保存。当前版本 {_appVersion} 读取其中能识别的设置，之后的修改只保存给 {_appVersion}，不影响 {saved.ToString(3)} 的设置。",
+                        $"The settings file was saved by DeckIsland {saved.ToString(3)}. Version {_appVersion} reads the settings it recognizes; later changes are saved for {_appVersion} only and leave the settings of {saved.ToString(3)} unchanged.")
+                    : () => Loc.T($"设置文件由 DeckIsland {saved.ToString(3)} 保存。当前版本 {_appVersion} 使用自己上次保存的设置，修改不影响 {saved.ToString(3)} 的设置。",
+                        $"The settings file was saved by DeckIsland {saved.ToString(3)}. Version {_appVersion} uses the settings it saved last; changes leave the settings of {saved.ToString(3)} unchanged.");
                 return SettingsMigrations.Read(own ?? root, running, out _);
             }
             _snapshots = snapshots;

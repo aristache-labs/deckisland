@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // The Alienware Pro Wireless keyboard on its 2.4 GHz receiver, 413C:211D ("Alienware Pro KB Gaming Receiver"). 0x413C is
 // Dell's vendor id, which Dell's other devices carry too, so only this pair is taken, and only its vendor collection (usage

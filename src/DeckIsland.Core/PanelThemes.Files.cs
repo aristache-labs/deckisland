@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Theme files in the user's folder, and the checks that decide whether a file can be used.
 public static partial class PanelThemes
@@ -82,7 +82,7 @@ public static partial class PanelThemes
             return Loc.T($"主题 ID“{file.Id}”只能使用小写字母 a–z、数字和 - _ .（名称可以用中文，写在 name 中）",
                 $"The theme id \"{file.Id}\" may only use the letters a–z, digits, - _ and . (a Chinese name goes in \"name\")");
         if (id.Length == 0) return Loc.T("缺少主题 ID", "The theme has no id");
-        if (file.FormatVersion > 1) return Loc.T("需要更新版本的 BrimDeck", "This theme needs a newer BrimDeck");
+        if (file.FormatVersion > 1) return Loc.T("需要更新版本的 DeckIsland", "This theme needs a newer DeckIsland");
         var baseId = NormalizeId(file.Base);
         if (baseId.Length > 0 && !IsBuiltIn(baseId)) return Loc.T($"基础主题“{file.Base}”不存在", $"The base theme \"{file.Base}\" does not exist");
         if (LayerProblem(file) is { } problem) return problem;

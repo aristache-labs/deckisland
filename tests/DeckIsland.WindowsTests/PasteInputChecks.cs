@@ -1,5 +1,5 @@
 using System.Diagnostics;
-using BrimDeck.Native;
+using DeckIsland.Native;
 
 // Telling a window that takes no paste from an ordinary program: one whose program has more rights. The checks read the rights
 // of this process and of a system process; nothing is sent to any window.

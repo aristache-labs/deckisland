@@ -1,6 +1,6 @@
 using Microsoft.Win32;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Claude Code and the Codex CLI inside WSL keep their session records in the distribution's own file system, which
 // Windows reaches at \\wsl.localhost\<distribution>. Reading those paths starts a stopped distribution, so they are only

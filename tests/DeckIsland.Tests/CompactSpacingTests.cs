@@ -1,4 +1,4 @@
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // The collapsed row's spacing (CompactSpacing): one gap between the parts, spare width to the title, then those gaps, then both
 // ends; the carousels' windows of whole items and how the rings and the readings share their room; and the narrowest surface,

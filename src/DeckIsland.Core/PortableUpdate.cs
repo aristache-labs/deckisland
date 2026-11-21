@@ -1,11 +1,11 @@
 using System.ComponentModel;
 using System.Diagnostics;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Replaces the files of a portable copy with those of a newer portable package.
 //
-// A portable copy is a folder with BrimDeck.portable, which lists the files the package shipped (relative paths, one per
+// A portable copy is a folder with DeckIsland.portable, which lists the files the package shipped (relative paths, one per
 // line). The installer never ships that file, so an installed copy, a build output or a copied folder is never treated
 // as portable. Only listed files are replaced or removed; anything else in the folder stays.
 //
@@ -16,13 +16,13 @@ namespace BrimDeck.Core;
 // be replaced, the old files are restored, FailureFile records why, and the old version starts again.
 public static class PortableUpdate
 {
-    public const string ListFile = "BrimDeck.portable";
+    public const string ListFile = "DeckIsland.portable";
     public const string FailureFile = "restart-failure.txt";
     public const string Declined = "declined";
     public const string Failed = "failed";
     public const string HelperArgument = "--portable-update";
     public const string ElevatedArgument = "--portable-replace";
-    private const string BackupPrefix = ".brimdeck-update-";
+    private const string BackupPrefix = ".deckisland-update-";
     private const int Cancelled = 1223;
     private static readonly TimeSpan ExitTimeout = TimeSpan.FromMinutes(2);
 

@@ -1,10 +1,10 @@
 using System.Diagnostics;
 using System.IO;
 using System.Text;
-using BrimDeck.Core;
+using DeckIsland.Core;
 using Microsoft.Win32;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 // Guards the readings that ask a device's driver directly (SensorStops). Ask marks a reading as being asked: in memory always, and
 // on disk for the first readings of a device in a run (every drive temperature), written through to the disk before the driver is

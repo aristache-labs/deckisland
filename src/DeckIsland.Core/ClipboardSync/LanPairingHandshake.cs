@@ -5,7 +5,7 @@ using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Agreement.JPake;
 using Org.BouncyCastle.Math;
 
-namespace BrimDeck.Core.ClipboardSync;
+namespace DeckIsland.Core.ClipboardSync;
 
 public sealed record LanPairingConfirmation(string DeviceName, string Verification);
 
@@ -40,7 +40,7 @@ internal static class LanPairingHandshake
         // Both proof identities bind the fresh exchange to the selected discovery session and
         // the TLS endpoint. A relay terminating TLS under another certificate cannot reuse them.
         byte[] context = SHA256.HashData([
-            .. "BrimDeck LAN pairing v2/text+png"u8, .. discoveryId.ToByteArray(), .. certificatePin,
+            .. "DeckIsland LAN pairing v2/text+png"u8, .. discoveryId.ToByteArray(), .. certificatePin,
             .. (host ? nonce : remoteNonce), .. (host ? remoteNonce : nonce)
         ]);
         string binding = Convert.ToHexString(context);
@@ -73,11 +73,11 @@ internal static class LanPairingHandshake
 
         // The verification string is derived from the high-entropy PAKE result, not the code.
         byte[] material = key.ToByteArrayUnsigned();
-        byte[] verification = HKDF.DeriveKey(HashAlgorithmName.SHA256, material, 4, context, "BrimDeck LAN compare v2"u8.ToArray());
+        byte[] verification = HKDF.DeriveKey(HashAlgorithmName.SHA256, material, 4, context, "DeckIsland LAN compare v2"u8.ToArray());
         string compare = Convert.ToHexString(verification);
         try
         {
-            byte[] confirmationKey = HKDF.DeriveKey(HashAlgorithmName.SHA256, material, 32, context, "BrimDeck LAN binding v2"u8.ToArray());
+            byte[] confirmationKey = HKDF.DeriveKey(HashAlgorithmName.SHA256, material, 32, context, "DeckIsland LAN binding v2"u8.ToArray());
             try
             {
                 byte[] ownTag = HMACSHA256.HashData(confirmationKey, SyncTransport.Utf8.GetBytes(identity));
@@ -99,7 +99,7 @@ internal static class LanPairingHandshake
             if (!approved) throw new LanPairingDeclinedException();
             byte[] decision = await ReceiveAsync(stream, 7, 1, exchange).ConfigureAwait(false);
             if (decision.Length != 1 || decision[0] != 1) throw new LanPairingDeclinedException();
-            return HKDF.DeriveKey(HashAlgorithmName.SHA256, material, 32, context, "BrimDeck LAN credential v2"u8.ToArray());
+            return HKDF.DeriveKey(HashAlgorithmName.SHA256, material, 32, context, "DeckIsland LAN credential v2"u8.ToArray());
         }
         finally { CryptographicOperations.ZeroMemory(material); }
     }

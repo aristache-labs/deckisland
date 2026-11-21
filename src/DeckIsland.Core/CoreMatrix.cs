@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // How the processor's cores are drawn: as columns, as a dot matrix (one square per logical processor), or by Auto, columns while
 // they stay readable and the matrix once the count would make them thinner than that (a machine with 192 threads).

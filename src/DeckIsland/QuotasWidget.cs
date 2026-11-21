@@ -4,9 +4,9 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Documents;
 using System.Windows.Media.Imaging;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 public partial class MainWindow
 {
@@ -91,7 +91,7 @@ public partial class MainWindow
         {
             if (!QuotaIcons.TryGetValue(icon, out var bitmap))
             {
-                bitmap = new BitmapImage(new Uri($"pack://application:,,,/BrimDeck;component/Assets/QuotaAgents/{icon}.png"));
+                bitmap = new BitmapImage(new Uri($"pack://application:,,,/DeckIsland;component/Assets/QuotaAgents/{icon}.png"));
                 bitmap.Freeze();
                 QuotaIcons[icon] = bitmap;
             }

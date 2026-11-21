@@ -5,8 +5,8 @@ using System.Net.WebSockets;
 using System.Reflection;
 using System.Text;
 using System.Text.Json;
-using BrimDeck.Core;
-using BrimDeck.Native;
+using DeckIsland.Core;
+using DeckIsland.Native;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -24,7 +24,7 @@ NeteaseBridgeTests.Run(Check);
 KugouConnectionTests.Run(Check);
 using var self = Process.GetCurrentProcess();
 var owner = new NeteaseProcess(self.Id, self.StartTime.ToUniversalTime().Ticks, self.MainModule!.FileName, null, 0);
-var root = Path.Combine(Path.GetTempPath(), "BrimDeck-MediaTests-" + Guid.NewGuid().ToString("N"));
+var root = Path.Combine(Path.GetTempPath(), "DeckIsland-MediaTests-" + Guid.NewGuid().ToString("N"));
 Directory.CreateDirectory(root);
 try
 {

@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Sony PULSE Explore earbuds. Nothing is written: feature report B0 (64 bytes) is fetched and read. Two ways in, on Sony's
 // shared vendor id 0x054C, so only these products and collections, as FerrisPulse measured them on Windows:

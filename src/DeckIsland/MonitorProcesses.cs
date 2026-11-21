@@ -8,10 +8,10 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
-using BrimDeck.Core;
-using BrimDeck.Native;
+using DeckIsland.Core;
+using DeckIsland.Native;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // The busiest apps, drawn as one element: a header with the sort switch, then rows in one or two columns. After ftop, a row
 // that changes place by a step or two slides there; one that goes further, or comes new, fades in where it lands; a new sort

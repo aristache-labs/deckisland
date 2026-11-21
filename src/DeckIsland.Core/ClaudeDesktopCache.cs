@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Which local sign-in a Claude token comes from, and where a Claude plan was read. A reading kept on disk stores these rather
 // than their texts, so after a change of language it still names its sources in the language shown now (ClaudeSources).

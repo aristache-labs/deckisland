@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // KuGou's libcef.dll ignores --remote-debugging-port. Nine changes in it open the DevTools port on 127.0.0.1:12233 each time
 // KuGou starts: the port is written where CEF keeps its "not set" value, and the checks that would skip starting the DevTools

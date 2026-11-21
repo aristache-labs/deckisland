@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.Net;
 using System.Text.Json;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // What a launch waits for: the usage of a quick source reaches the panel while a slow one is still being read, a stalled source keeps
 // the statistics it had, the price catalog never holds the usage back and a fresh price cache sends nothing at launch.
@@ -147,7 +147,7 @@ static class UsageStartupTests
             }
             finally { Trace.Listeners.Remove(listener); }
             lock (lines)
-                check("A source slower than the limit is logged with its name and milliseconds", lines.Count(l => l.StartsWith("BrimDeck usage: CodeAgent took ", StringComparison.Ordinal) && l.EndsWith(" ms", StringComparison.Ordinal)) == 1 &&
+                check("A source slower than the limit is logged with its name and milliseconds", lines.Count(l => l.StartsWith("DeckIsland usage: CodeAgent took ", StringComparison.Ordinal) && l.EndsWith(" ms", StringComparison.Ordinal)) == 1 &&
                     !lines.Any(l => l.Contains("Pi took", StringComparison.Ordinal)) && !lines.Any(l => l.Contains("secret", StringComparison.Ordinal)));
         }
 

@@ -5,9 +5,9 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 public sealed partial class SettingsWindow
 {
@@ -160,7 +160,7 @@ public sealed partial class SettingsWindow
         {
             if (Keyboard.FocusedElement is not UIElement focused) focused = handle;
             (UIElementAutomationPeer.FromElement(focused) ?? UIElementAutomationPeer.CreatePeerForElement(focused))?.RaiseNotificationEvent(
-                AutomationNotificationKind.ActionCompleted, AutomationNotificationProcessing.ImportantMostRecent, text, "BrimDeck.Reorder");
+                AutomationNotificationKind.ActionCompleted, AutomationNotificationProcessing.ImportantMostRecent, text, "DeckIsland.Reorder");
         }
         bool listening = false;
         handle.Loaded += (_, _) =>

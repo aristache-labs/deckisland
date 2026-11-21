@@ -3,7 +3,7 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 // Shell targets remember which button began an OLE drag. Convert only this gesture
 // to a left drag before entering OLE; consume its physical right release and release
@@ -24,7 +24,7 @@ internal sealed class RightFileDrag : IDisposable
         // Low-level hooks run on the installing thread. Never install this hook
         // on the WPF/OLE thread: SendInput and shell calls on that thread can wait
         // for input whose hook is waiting for the same thread to pump messages.
-        var thread = new Thread(InputLoop) { IsBackground = true, Name = "BrimDeck right drag input" };
+        var thread = new Thread(InputLoop) { IsBackground = true, Name = "DeckIsland right drag input" };
         thread.SetApartmentState(ApartmentState.STA);
         thread.Start();
         _ready.Wait();

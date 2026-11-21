@@ -1,10 +1,10 @@
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
-using BrimDeck.Core;
-using BrimDeck.Native;
+using DeckIsland.Core;
+using DeckIsland.Native;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // Moving the collapsed notch, line or capsule by dragging it, when a double click on one of its ends is set to do that
 // (DeckSettings.GripDoubleClick). The double click starts move mode: the surface's outline lights in the accent color and a move

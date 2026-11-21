@@ -8,11 +8,11 @@ using Org.BouncyCastle.Math;
 using Org.BouncyCastle.Security;
 using Org.BouncyCastle.Utilities;
 
-namespace BrimDeck.Core.ClipboardSync;
+namespace DeckIsland.Core.ClipboardSync;
 
 public sealed class WeTypeIdentity
 {
-    public string DeviceName { get; set; } = "BrimDeck " + Environment.MachineName;
+    public string DeviceName { get; set; } = "DeckIsland " + Environment.MachineName;
     // This device's name as the paired devices show it; another device may have renamed it.
     public string DisplayName { get; set; } = "";
     public List<string> PeerNames { get; set; } = [];
@@ -24,7 +24,7 @@ public sealed class WeTypeIdentity
     public bool Paired { get; set; }
     public static string CreateDeviceCode()
     {
-        string prefix = "AND" + "BrimDeck;Windows;standalone"[..17] + Guid.NewGuid().ToString("N")[..12];
+        string prefix = "AND" + "DeckIsland;Windows;standalone"[..17] + Guid.NewGuid().ToString("N")[..12];
         return prefix + Convert.ToHexString(MD5.HashData(Encoding.ASCII.GetBytes(prefix + "aI0wC6qT1nB3nN5r")));
     }
 }
@@ -53,7 +53,7 @@ public sealed class WeTypeSyncClient(WeTypeIdentity identity, Action save) : ICl
     private ulong _group;
     private HashSet<ulong> _members = [];
     private static readonly ECDomainParameters Domain = new(SecNamedCurves.GetByName("secp128r1"));
-    private string DeviceInfo => "BrimDeck;Windows;standalone;BrimDeck;sdk 34;PHONE";
+    private string DeviceInfo => "DeckIsland;Windows;standalone;DeckIsland;sdk 34;PHONE";
     private long Stamp => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + _offset;
 
     public static byte[] Crypt(byte[] key, byte[] bytes, bool encrypt)

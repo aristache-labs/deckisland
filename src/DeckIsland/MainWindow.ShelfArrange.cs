@@ -9,11 +9,11 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Shapes;
 using System.Windows.Threading;
-using BrimDeck.Core;
-using BrimDeck.Native;
+using DeckIsland.Core;
+using DeckIsland.Native;
 using Path = System.Windows.Shapes.Path;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // How the clipboard and file transfer page shows its two columns (DeckSettings.ShelfArrangement). Side by side, the divider between
 // them can be dragged to give either column more of the width; the file transfer's share is saved (DeckSettings.ShelfFileShare),

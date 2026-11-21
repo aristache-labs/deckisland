@@ -6,10 +6,10 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using System.Windows.Threading;
-using BrimDeck.Core;
+using DeckIsland.Core;
 using Microsoft.Win32;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // A dot at the island's edge while the microphone, camera or screen capture is live. Windows keeps who uses what in its privacy
 // store (CapabilityAccessManager): an entry whose LastUsedTimeStop is 0 is in use now. Only the program names are read.

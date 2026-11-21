@@ -1,8 +1,8 @@
 using System.Windows;
 using System.Windows.Media;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // The system readings in the collapsed notch or capsule, after ftop's strip and corner sizes: the core columns small, CPU,
 // memory and GPU each as a dial with its letter inside, with its figure after it or alone (narrower), download and upload, and,

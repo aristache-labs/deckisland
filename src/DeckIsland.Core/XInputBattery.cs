@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // What GamingBatteries takes from XInput for the controllers on the Xbox 360 wireless receiver (045E:0719), which
 // Windows.Gaming.Input gives no battery report for. XInputGetCapabilitiesEx (xinput1_4, ordinal 108) says product 0 with the

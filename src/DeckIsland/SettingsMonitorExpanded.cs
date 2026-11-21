@@ -6,9 +6,9 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Shapes;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // The expanded monitor page's choices ("展开时"): switches for what the page shows, the quick sets, and under them a sketch of the
 // page with a block for each part it keeps together (ExpandedMonitor.Blocks: CPU and GPU, memory with the network, the frame rate,

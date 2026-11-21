@@ -1,5 +1,5 @@
 using System.Text.Json;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // The three memory modes (MemoryPlan) and the switch they replaced (SettingsMigrations.MemoryModeFromSwitch).
 internal static class MemoryModeTests

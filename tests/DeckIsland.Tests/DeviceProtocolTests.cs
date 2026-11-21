@@ -1,4 +1,4 @@
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // The vendor protocols against the bytes they are documented with: requests byte for byte (with their checksums), and replies
 // read as the devices send them, other reports passed over.

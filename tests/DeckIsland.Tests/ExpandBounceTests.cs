@@ -1,4 +1,4 @@
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // The give at the end of the panel's opening. Every theme opens on the one spring (Curves.Bounce, as Soft.Bounce) whatever
 // its look, so the bounds below are the softening for every theme at once. The curve is a unit curve:

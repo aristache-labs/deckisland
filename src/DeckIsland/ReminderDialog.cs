@@ -6,9 +6,9 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 internal sealed class ReminderDialog : ControlDialog
 {
@@ -143,7 +143,7 @@ internal sealed class ReminderDialog : ControlDialog
 
         DateTimeOffset? GetDue(DateTimeOffset now)
         {
-            DateTimeOffset At(DateTime local) => BrimDeck.Core.Reminder.AtLocal(local, TimeZoneInfo.Local);
+            DateTimeOffset At(DateTime local) => DeckIsland.Core.Reminder.AtLocal(local, TimeZoneInfo.Local);
             var evening = At(now.Date.AddHours(19));
             DateTimeOffset? due = when switch
             {
@@ -201,7 +201,7 @@ internal sealed class ReminderDialog : ControlDialog
         save.Click += (_, _) =>
         {
             if (GetDue(DateTimeOffset.Now) is not { } due) { UpdatePreview(); return; }
-            Reminder = BrimDeck.Core.Reminder.Create(title.Text, due, rule);
+            Reminder = DeckIsland.Core.Reminder.Create(title.Text, due, rule);
             if (Reminder is null)
             {
                 error.Text = Loc.T("请输入提醒内容。", "Enter a title for the reminder.");

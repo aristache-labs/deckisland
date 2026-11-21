@@ -1,6 +1,6 @@
 using System.Globalization;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // The whole machine's power draw for the monitor page and the collapsed row. The probes (SystemSampler) hand over what the machine
 // reports in PowerInputs; PowerResolver chooses what to show, in this order, and says where each figure comes from:

@@ -6,14 +6,14 @@ using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
-// The Xiaomi account BrimDeck signs in to for the Xiaomi MiMo Desktop membership quota (MiMoUsage). The membership has no API key:
+// The Xiaomi account DeckIsland signs in to for the Xiaomi MiMo Desktop membership quota (MiMoUsage). The membership has no API key:
 // only the MiMo server's own cookies, set once a browser has signed in to the Xiaomi account, read it. So the sign-in runs on
 // Xiaomi's own page, with every way it offers (password, text message, WeChat, Alipay and the others), in the default browser
-// started with a profile of its own in a new folder and its DevTools port open on this PC only: BrimDeck reads the cookies through
+// started with a profile of its own in a new folder and its DevTools port open on this PC only: DeckIsland reads the cookies through
 // that port (Storage.getCookies), then ends that browser and deletes the folder. The browser the user normally runs, and its
 // profile, are never touched. Only Chromium browsers open that port; another default browser is replaced by Edge, then Chrome.
 // The session (MiMoUsage.MiMoSession) is kept in mimo-session.dat, encrypted with DPAPI for the current user.

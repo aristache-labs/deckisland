@@ -1,14 +1,14 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 // Writing a player's libcef.dll (LibcefPatch) in place, around two obstacles: the player holds the file while it runs, and the
 // file may sit in a folder that needs administrator rights. A held file cannot be written but can be renamed, so a changed copy
 // takes its place and the next start loads it; the renamed file is deleted once the player no longer holds it. A write without
-// rights is retried elevated, which re-launches BrimDeck with the caller's switch and shows a UAC prompt. Shared by every
+// rights is retried elevated, which re-launches DeckIsland with the caller's switch and shows a UAC prompt. Shared by every
 // player's install (KugouInstall, NeteaseInstall).
 internal static class LibcefFile
 {
@@ -59,7 +59,7 @@ internal static class LibcefFile
     // The player holds the file: a changed copy is made and put in its place, and the held file is renamed until it can go.
     private static void Replace(string library, LibcefPatch profile, bool patch, bool elevated)
     {
-        string copy = library + ".brimdeck-new", held = library + ".brimdeck-old-" + Environment.TickCount64.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        string copy = library + ".deckisland-new", held = library + ".deckisland-old-" + Environment.TickCount64.ToString(System.Globalization.CultureInfo.InvariantCulture);
         File.Copy(library, copy, overwrite: true);
         try
         {
@@ -76,7 +76,7 @@ internal static class LibcefFile
     {
         try
         {
-            foreach (var held in Directory.EnumerateFiles(Path.GetDirectoryName(library)!, Path.GetFileName(library) + ".brimdeck-old-*"))
+            foreach (var held in Directory.EnumerateFiles(Path.GetDirectoryName(library)!, Path.GetFileName(library) + ".deckisland-old-*"))
                 try { File.Delete(held); } catch (IOException) { } catch (UnauthorizedAccessException) { }
         }
         catch (IOException) { }

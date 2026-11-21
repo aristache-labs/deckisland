@@ -2,10 +2,10 @@ using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Windows.Interop;
 using System.Windows.Threading;
-using BrimDeck.Core;
+using DeckIsland.Core;
 using Microsoft.Win32;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 // Whether this session's display is off (DisplayWatch). Windows sends the state as WM_POWERBROADCAST to a window that asked for
 // it, here a hidden window of its own, and sends the current state at once when asked. GUID_SESSION_DISPLAY_STATUS is the
@@ -29,7 +29,7 @@ internal static class DisplayPower
         SystemEvents.SessionSwitch += SessionSwitch;
         try
         {
-            _window = new HwndSource(new HwndSourceParameters("BrimDeck display") { WindowStyle = unchecked((int)0x80000000), ExtendedWindowStyle = 0x80 | 0x08000000, Width = 0, Height = 0 });
+            _window = new HwndSource(new HwndSourceParameters("DeckIsland display") { WindowStyle = unchecked((int)0x80000000), ExtendedWindowStyle = 0x80 | 0x08000000, Width = 0, Height = 0 });
             _window.AddHook(PowerMessage);
             Register();
         }

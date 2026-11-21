@@ -1,8 +1,8 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 // Each adapter's usage asked of its own driver (GpuDriverReadings says why), the way PresentMon and LibreHardwareMonitor read it:
 // NVIDIA through NVAPI (nvapi64.dll), AMD through ADL (atiadlxx.dll), Intel through its control library (ControlLib.dll), each

@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // The dot's pose at one moment. Lift: how far above its resting floor, in DIPs (up the screen). ScaleX and ScaleY: squash and
 // stretch about the middle of that floor. Opacity: 0 to 1.

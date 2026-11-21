@@ -1,4 +1,4 @@
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // What the collapsed row costs while nothing changes: the scrolling title and the carousels wait out their rests on a timer and
 // run a clock only while they move, with the values of the storyboards they replace; the readings are sampled only while they

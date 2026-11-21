@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // The interface language. Each text is written as a pair where it is used: Loc.T("中文", "English").
 // Some Chinese labels also serve as identifiers: quota names that are compared, split at "·" and kept with retained

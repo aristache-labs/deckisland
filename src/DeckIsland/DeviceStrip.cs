@@ -1,8 +1,8 @@
 using System.Windows;
 using System.Windows.Media;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // The devices' batteries in the collapsed notch or capsule (CompactPart.Devices), a part of the row of its own: each device a ring
 // whose arc is its charge with the device's icon in it, then its figure when the settings show figures (DeckSettings.DeviceFigures).

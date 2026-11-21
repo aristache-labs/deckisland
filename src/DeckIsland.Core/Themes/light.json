@@ -6,7 +6,7 @@
   "nameEn": "Light",
   "description": "近白表面配深色文字，适合浅色桌面。",
   "descriptionEn": "A near-white surface with dark text, for light desktops.",
-  "author": "BrimDeck",
+  "author": "DeckIsland",
   "license": "Apache-2.0",
   "base": "dark",
   "colors": {

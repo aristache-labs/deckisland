@@ -1,4 +1,4 @@
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // The resize shortcut (HotkeyKind.Resize, KeyboardResize): its saved text and the four combinations it stands for, how it
 // yields to the other shortcuts, and the steps it takes within a page's limits without touching the other pages' sizes.

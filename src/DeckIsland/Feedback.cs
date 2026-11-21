@@ -1,9 +1,9 @@
 using System.Windows;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // Hover and press feedback that fades in and out as the system monitor's does (Soft.Hover on Soft.Follow) instead of
 // switching in one frame. A button style sets

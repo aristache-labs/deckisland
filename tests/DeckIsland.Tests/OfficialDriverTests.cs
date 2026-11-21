@@ -1,4 +1,4 @@
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // The reads taken from the brands' official web drivers (2026-11-15): each new read's request byte for byte, its answer and
 // the reports it must not take, and the collections it goes to and none other.

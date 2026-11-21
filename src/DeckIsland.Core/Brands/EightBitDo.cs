@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // 8BitDo controllers in their own (D-input) mode on a cable or dongle, vendor 0x2DC8 (8BitDo's own), only the products SDL's
 // 8BitDo driver reads the level of (HIDAPI_Driver8BitDo_IsSupportedDevice): SF30 Pro 6000/6100, SN30 Pro 6001/6101, Pro 2

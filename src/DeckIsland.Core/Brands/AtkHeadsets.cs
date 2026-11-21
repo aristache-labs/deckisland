@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // ATK's N9 V2 Ultimate headset on its dongle (373B:1262, "ATK N9V2 ULTIMATE dongle"). 0x373B is shared with ATK's mice and
 // keyboards (their BitMouse collection is usage page 0xFF05, which Dongles takes), so only this product, and only its 0xFF90

@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Reads from ATK HUB (bpcdn.atkgear.com/hub-v3) and VGN HUB (hub.vgnlab.com), the brands' own web drivers, for the devices
 // their other readers here do not cover. None is measured by us; each goes only to the collection the driver opens and only

@@ -3,7 +3,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Security.Cryptography;
 
-namespace BrimDeck.Core.ClipboardSync;
+namespace DeckIsland.Core.ClipboardSync;
 
 public sealed record LanPairingDevice(Guid Session, string Name, IPAddress Address, IPAddress LocalAddress, int Port)
 {

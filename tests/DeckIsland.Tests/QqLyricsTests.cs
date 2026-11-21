@@ -1,7 +1,7 @@
 using System.Net;
 using System.Text;
 using System.Text.Json;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 internal static class QqLyricsTests
 {
@@ -137,7 +137,7 @@ internal static class QqLyricsTests
             cancellationToken.ThrowIfCancellationRequested();
             var uri = request.RequestUri!; Urls.Add(uri);
             if (uri.Host is not ("u.y.qq.com" or "c.y.qq.com")) throw new InvalidOperationException("QQ requested another provider: " + uri.Host);
-            HeadersCorrect &= request.Headers.Referrer?.AbsoluteUri == "https://y.qq.com/" && request.Headers.UserAgent.ToString().Contains("BrimDeck") && request.Headers.Authorization is null && !request.Headers.Contains("Cookie");
+            HeadersCorrect &= request.Headers.Referrer?.AbsoluteUri == "https://y.qq.com/" && request.Headers.UserAgent.ToString().Contains("DeckIsland") && request.Headers.Authorization is null && !request.Headers.Contains("Cookie");
             if (uri.Host == "u.y.qq.com")
             {
                 using var json = JsonDocument.Parse(Uri.UnescapeDataString(uri.Query[6..]));

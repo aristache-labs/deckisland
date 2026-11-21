@@ -1,14 +1,14 @@
 using System.Security.Cryptography;
-using BrimDeck.Core;
-using BrimDeck.Updates;
+using DeckIsland.Core;
+using DeckIsland.Updates;
 
 // Started by scripts/Test-AppUpdate.ps1 from an installed test copy, or by scripts/Test-PortableUpdate.ps1 from a portable
-// one, with its own identity and data folder, so the test never touches the user's BrimDeck installation or settings.
-// Like BrimDeck.exe, the new portable version also runs as the helper that replaces the old version's files.
+// one, with its own identity and data folder, so the test never touches the user's DeckIsland installation or settings.
+// Like DeckIsland.exe, the new portable version also runs as the helper that replaces the old version's files.
 if (PortableUpdate.TryRun(args, out var helperExit)) { Environment.ExitCode = helperExit; return; }
-var testRoot = Environment.GetEnvironmentVariable("BRIMDECK_UPDATE_TEST_ROOT");
-var appId = Environment.GetEnvironmentVariable("BRIMDECK_UPDATE_TEST_APPID");
-var mutexPrefix = Environment.GetEnvironmentVariable("BRIMDECK_UPDATE_TEST_MUTEX");
+var testRoot = Environment.GetEnvironmentVariable("DECKISLAND_UPDATE_TEST_ROOT");
+var appId = Environment.GetEnvironmentVariable("DECKISLAND_UPDATE_TEST_APPID");
+var mutexPrefix = Environment.GetEnvironmentVariable("DECKISLAND_UPDATE_TEST_MUTEX");
 if (string.IsNullOrWhiteSpace(testRoot) || !File.Exists(Path.Combine(testRoot, ".update-test-root")) || appId is null || mutexPrefix is null) return;
 // Held like the app's single-instance mutex; the installer waits until this process exits.
 using var instance = new Mutex(true, @"Local\" + mutexPrefix + Environment.UserName);

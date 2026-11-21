@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 public enum ReminderRepeat { Once, Daily, Weekdays, Weekly }
 public enum ReminderSound { Off, Once, UntilAnswered }

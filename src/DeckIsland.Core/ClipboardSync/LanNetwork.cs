@@ -3,7 +3,7 @@ using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 
-namespace BrimDeck.Core.ClipboardSync;
+namespace DeckIsland.Core.ClipboardSync;
 
 public sealed record LanInterface(string Name, IPAddress Address, int PrefixLength)
 {

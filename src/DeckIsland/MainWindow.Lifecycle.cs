@@ -3,17 +3,17 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // Booting and powering off. Every form (notch, capsule, line) starts and ends as the same round dot, DotMotion.Size across,
 // resting on a floor at the bottom of its place; DotMotion gives how it moves. Booting, the dot fades in, jumps twice (up, then
 // down onto that floor) and swells into the collapsed shape once the second landing has sprung back. Powering off, the surface
 // draws back into the dot, which jumps twice and at the second landing merges into the water: a neck joins it to the plane,
 // the free drop is taken in leaving a mound, and the mound settles flat.
-// A panel boots only when it first appears (BrimDeck starts, a monitor is connected); showing it again after a hide (the tray,
-// a full-screen rule) is immediate. It powers off only when BrimDeck exits; hiding is immediate. Without animations it appears
+// A panel boots only when it first appears (DeckIsland starts, a monitor is connected); showing it again after a hide (the tray,
+// a full-screen rule) is immediate. It powers off only when DeckIsland exits; hiding is immediate. Without animations it appears
 // and goes at once.
 public partial class MainWindow
 {
@@ -30,7 +30,7 @@ public partial class MainWindow
     // duration set for the panel: these change the panel's shape as opening and closing do. The dot's own motion keeps its
     // pace (DotMotion).
     private const double BootSwell = 1.0, PowerOffShrink = PanelMotion.CloseFactor;
-    // How long BrimDeck's exit waits at most for the panels to power off (App.ExitApplication).
+    // How long DeckIsland's exit waits at most for the panels to power off (App.ExitApplication).
     internal static int PowerOffLength(int duration) => (int)(duration * PowerOffShrink + DotMotion.PowerOffLength);
 
     // The dot: at the middle of the surface, resting on a floor at the bottom of that place, and low enough that its jumps stay
@@ -79,7 +79,7 @@ public partial class MainWindow
 
     private bool CanAnimateLifecycle => IsVisible && Animates && Settings.AnimationDuration > 0 && !_preview;
 
-    // Starts the boot. The panel stays out of sight until the dispatcher is idle: on BrimDeck's start the first frames come
+    // Starts the boot. The panel stays out of sight until the dispatcher is idle: on DeckIsland's start the first frames come
     // late while the panel is built and the data read, which ate the dot and the first half of the swell. A panel that is busy
     // longer than BootWait boots anyway. The panel is out of sight from the start (the constructor), so the window is never
     // seen before it has its place on the monitor.

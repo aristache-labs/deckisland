@@ -1,5 +1,5 @@
 using System.Text.Json;
-using BrimDeck.Core;
+using DeckIsland.Core;
 using static EqualizerAudio;
 
 // The equalizer's two ways of showing the sound (EqualizerMode): one choice serves the collapsed and the expanded equalizer, and

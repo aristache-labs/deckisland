@@ -6,7 +6,7 @@ using System.Windows.Media;
 using System.Windows.Media.Effects;
 using System.Windows.Threading;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // The island's shadow is drawn from a cached picture (ShadowHost's BitmapCache). WPF does not keep an effect's output: whenever
 // anything drawn over the shadow changes (the scrolling title, the equalizer, a carousel, the readings), it draws the shadow's

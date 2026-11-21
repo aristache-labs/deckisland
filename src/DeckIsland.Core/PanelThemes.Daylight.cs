@@ -1,6 +1,6 @@
 using System.Globalization;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Which look of a theme shows (PanelThemeFile.Night, PanelThemeFile.Dusk).
 public enum DaylightLook { Day, Dusk, Night }

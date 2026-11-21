@@ -17,20 +17,20 @@ try {
     New-Item -ItemType Directory -Force -Path $publishPath, $outputPath | Out-Null
     # Each version gets a clean output folder, so files of an earlier release never end up in this one.
     Get-ChildItem -LiteralPath $outputPath -File | Remove-Item
-    # The sensor service is not in the installer: BrimDeck downloads it from this release when the user turns enhanced sensors on,
-    # and accepts it only if it matches the SHA-256 written into BrimDeck here (Native.SensorSetup).
+    # The sensor service is not in the installer: DeckIsland downloads it from this release when the user turns enhanced sensors on,
+    # and accepts it only if it matches the SHA-256 written into DeckIsland here (Native.SensorSetup).
     $sensorsPath = "$publishPath-sensors"
-    dotnet publish src/BrimDeck.Sensors/BrimDeck.Sensors.csproj -c Release -r win-x64 --self-contained true -p:Version=$Version -p:PublishSingleFile=true -p:PublishTrimmed=true -p:EnableCompressionInSingleFile=true -o $sensorsPath
+    dotnet publish src/DeckIsland.Sensors/DeckIsland.Sensors.csproj -c Release -r win-x64 --self-contained true -p:Version=$Version -p:PublishSingleFile=true -p:PublishTrimmed=true -p:EnableCompressionInSingleFile=true -o $sensorsPath
     if ($LASTEXITCODE -ne 0) { throw 'Sensor service publish failed.' }
-    $sensors = Copy-Item -LiteralPath (Join-Path $sensorsPath 'BrimDeck.Sensors.exe') -Destination $outputPath -PassThru
+    $sensors = Copy-Item -LiteralPath (Join-Path $sensorsPath 'DeckIsland.Sensors.exe') -Destination $outputPath -PassThru
     $sensorsSha256 = (Get-FileHash -LiteralPath $sensors.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
-    dotnet publish src/BrimDeck/BrimDeck.csproj -c Release -r win-x64 --self-contained true -p:Version=$Version -p:PublishSingleFile=false -p:SensorsSha256=$sensorsSha256 -o $publishPath
+    dotnet publish src/DeckIsland/DeckIsland.csproj -c Release -r win-x64 --self-contained true -p:Version=$Version -p:PublishSingleFile=false -p:SensorsSha256=$sensorsSha256 -o $publishPath
     if ($LASTEXITCODE -ne 0) { throw 'Application publish failed.' }
     $iscc = & (Join-Path $PSScriptRoot 'Get-InnoSetup.ps1')
-    & $iscc -qp "-dAppVersion=$Version" "-dSourceDir=$publishPath" "-o$outputPath" installer/BrimDeck.iss
+    & $iscc -qp "-dAppVersion=$Version" "-dSourceDir=$publishPath" "-o$outputPath" installer/DeckIsland.iss
     if ($LASTEXITCODE -ne 0) { throw 'Installer compilation failed.' }
-    $installer = Get-Item -LiteralPath (Join-Path $outputPath "BrimDeck-$Version-Setup.exe")
-    $portable = New-PortablePackage -SourceDir $publishPath -Destination (Join-Path $outputPath "BrimDeck-$Version-Portable-x64.zip")
+    $installer = Get-Item -LiteralPath (Join-Path $outputPath "DeckIsland-$Version-Setup.exe")
+    $portable = New-PortablePackage -SourceDir $publishPath -Destination (Join-Path $outputPath "DeckIsland-$Version-Portable-x64.zip")
     # The app reads update.json from the latest release and verifies the package against it before using it. file, size and
     # sha256 describe the installer, as every installed version expects; portable describes the zip for portable copies.
     $manifest = [ordered]@{

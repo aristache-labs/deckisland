@@ -1,4 +1,4 @@
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // The first load of the collapsed row's later parts: the drives, and the temperatures shown with CPU, GPU and the drives. Before
 // their first figures the row leaves them out and does not change; when the figures arrive the row is built once more and they

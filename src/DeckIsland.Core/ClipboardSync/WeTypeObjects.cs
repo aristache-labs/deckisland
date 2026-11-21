@@ -2,7 +2,7 @@ using System.Security.Cryptography;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 
-namespace BrimDeck.Core.ClipboardSync;
+namespace DeckIsland.Core.ClipboardSync;
 
 // Pictures and long text travel as objects on Tencent Cloud COS; the clipboard message carries only a reference to them.
 // The picture's reference is JSON with the object's address, the MD5 of the picture and the key it is encrypted with

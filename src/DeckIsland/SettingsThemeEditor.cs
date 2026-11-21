@@ -8,9 +8,9 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Shapes;
 using System.Windows.Threading;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // Editing the current theme on the theme page. The background, foreground and accent come first, and choosing one of them makes
 // the colors that follow from it (PanelThemes.Derive); "Advanced" lists every color, app color and effect of the file. A change

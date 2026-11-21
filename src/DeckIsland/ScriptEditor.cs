@@ -7,7 +7,7 @@ using ICSharpCode.AvalonEdit;
 using ICSharpCode.AvalonEdit.Highlighting;
 using ICSharpCode.AvalonEdit.Highlighting.Xshd;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // The custom quota script box: a code editor with JavaScript colouring drawn from the settings palette.
 internal static class ScriptEditor
@@ -50,7 +50,7 @@ internal static class ScriptEditor
         string Quoted(string mark, bool multiline) =>
             $"""<Span color="String" multiline="{(multiline ? "true" : "false")}"><Begin>{mark}</Begin><End>{mark}</End><RuleSet><Span begin="\\" end="." /></RuleSet></Span>""";
         var xshd = $"""
-            <SyntaxDefinition name="BrimDeckJavaScript" xmlns="http://icsharpcode.net/sharpdevelop/syntaxdefinition/2008">
+            <SyntaxDefinition name="DeckIslandJavaScript" xmlns="http://icsharpcode.net/sharpdevelop/syntaxdefinition/2008">
               <Color name="Comment" foreground="{comment}" />
               <Color name="String" foreground="{text}" />
               <Color name="Keyword" foreground="{keyword}" />

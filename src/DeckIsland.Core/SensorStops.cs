@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // The readings that ask a device's driver directly, which may never answer. On one laptop, Intel Rapid Storage Technology never
 // answered a drive's temperature query and the whole machine froze. Each such reading is guarded (Native.SensorGuard). Before it is

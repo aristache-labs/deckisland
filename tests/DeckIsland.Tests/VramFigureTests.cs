@@ -1,5 +1,5 @@
 using System.Text.Json;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // The graphics memory as a third figure of the collapsed row's GPU (CompactFigures.Vram): which readings offer it, how a saved choice
 // is kept (older tables stay as they were), the share it shows, when it joins the row (StripAdmission), and what a screen reader says.

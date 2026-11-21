@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 public sealed record ReleaseEntry(string Version, ReleaseNotes Notes);
 
@@ -8,7 +8,7 @@ public sealed record ReleaseEntry(string Version, ReleaseNotes Notes);
 // offline and matches the installed version. Notes edited on GitHub after a release reach the app with the next version.
 public static partial class ReleaseHistory
 {
-    private const string Prefix = "BrimDeck.Core.Releases.";
+    private const string Prefix = "DeckIsland.Core.Releases.";
     private static readonly Lazy<IReadOnlyList<ReleaseEntry>> BundledEntries = new(LoadBundled);
     public static IReadOnlyList<ReleaseEntry> Bundled => BundledEntries.Value;
 

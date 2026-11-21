@@ -3,10 +3,10 @@ using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
-using BrimDeck.Core;
-using BrimDeck.Native;
+using DeckIsland.Core;
+using DeckIsland.Native;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 public partial class MainWindow
 {

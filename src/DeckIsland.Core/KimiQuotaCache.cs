@@ -3,7 +3,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // The last Kimi Code quota read online: its windows, the extra-usage metrics, the membership level and when it was read.
 public sealed record KimiQuotaReading(DateTimeOffset Time, string Plan, List<UsageMetric> Metrics);
@@ -27,7 +27,7 @@ public static class KimiQuotaCache
     // A one-way hash of the service address and the account id, enough to tell two accounts apart without naming either.
     // "" when the account is unknown.
     public static string AccountHash(string baseUrl, string account) => string.IsNullOrWhiteSpace(account) ? ""
-        : Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes("BrimDeck Kimi account " + baseUrl.Trim().ToLowerInvariant() + "\n" + account.Trim())))[..32];
+        : Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes("DeckIsland Kimi account " + baseUrl.Trim().ToLowerInvariant() + "\n" + account.Trim())))[..32];
 
     public static string Serialize(KimiQuotaReading reading, string accountHash) => JsonSerializer.Serialize(new Stored(accountHash, reading.Time, reading.Plan,
         reading.Metrics.Select(m => (StoredMetric?)new StoredMetric(m.Kind, m.Label, m.Id, m.Window, m.Percent, m.Amount, m.Total, m.Currency, m.ResetAt)).ToList()), Options);

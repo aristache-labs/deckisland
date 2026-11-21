@@ -1,13 +1,13 @@
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Media;
-using BrimDeck.Core;
+using DeckIsland.Core;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Interop;
 using System.Windows.Threading;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 public sealed class TrayIcon : IDisposable
 {
@@ -29,7 +29,7 @@ public sealed class TrayIcon : IDisposable
         var hwnd = new WindowInteropHelper(owner).Handle;
         _source = HwndSource.FromHwnd(hwnd); _source.AddHook(Hook);
         _data = new NOTIFYICONDATA { Size = Marshal.SizeOf<NOTIFYICONDATA>(), Window = hwnd, Id = 1, Flags = 1 | 2 | 4, CallbackMessage = Callback,
-            Icon = LoadTrayIcon(out _ownsIcon), Tip = "BrimDeck", Info = "", InfoTitle = "" };
+            Icon = LoadTrayIcon(out _ownsIcon), Tip = "DeckIsland", Info = "", InfoTitle = "" };
         _retry.Tick += (_, _) => Add();
         Add();
     }

@@ -1,9 +1,9 @@
 using System.Net;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // A 429. RetryAfter is what the server's Retry-After header said, as sent: a number of seconds or a date, either may be absent.
-// RetryAt is when requests may go out again, set once a backoff has decided it. Sent is false for the answer BrimDeck gave itself
+// RetryAt is when requests may go out again, set once a backoff has decided it. Sent is false for the answer DeckIsland gave itself
 // while a backoff was running, without asking the server.
 public sealed class RateLimitedException(TimeSpan? delta, DateTimeOffset? date) : HttpRequestException("The request was rate limited.", null, HttpStatusCode.TooManyRequests)
 {
@@ -21,7 +21,7 @@ public sealed class RateLimitedException(TimeSpan? delta, DateTimeOffset? date) 
 // and is kept as sent, however long, raised only to MinDelay; a repeated one that is shorter than the growth does not hold the
 // pause down. One longer than MaxPlausibleRetryAfter (a week, the longest window a quota has) is taken for a mistake, such as a
 // date far in the future or a count of milliseconds read as seconds, and is treated as missing: a wrong value cannot stop the
-// quota for good. A little time (up to JitterShare of it) is added, never taken, so several copies of BrimDeck behind one
+// quota for good. A little time (up to JitterShare of it) is added, never taken, so several copies of DeckIsland behind one
 // address do not retry on the same minute.
 // The time of the end is kept, not a countdown, so the pause follows the clock it was set with. If the clock is set back, the
 // wait left cannot be longer than the pause was decided to be: it is cut to that length from the new time (RetryAt), instead of

@@ -1,7 +1,7 @@
 using System.Windows.Controls;
 using System.Windows.Media;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // The wheel on a list of the clipboard and file transfer page. A step of the wheel adds `step` (a row or two, a tile, a block) to
 // where the list is going, and the list is drawn there as by a spring that never swings (critically damped): it gathers speed,

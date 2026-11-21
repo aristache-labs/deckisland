@@ -1,4 +1,4 @@
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // What the devices layer must not do to hardware or to the vendors' own software, through the real protocol and matching code:
 // the HID++ software id, which devices a request goes to, and which vendor programs make a brand stand aside.
@@ -19,7 +19,7 @@ static class DeviceSafetyTests
         // Exactly Scan's decision for a device of this vendor, given the executable names that are running.
         bool Aside(int vendor, params string[] processes) => VendorSoftware.BrandOf(vendor) is { } brand && VendorSoftware.Running(processes).Contains(brand);
 
-        string[] desktop = ["explorer.exe", "chrome.exe", "BrimDeck.exe", "steam.exe", "Discord.exe", "svchost.exe"];
+        string[] desktop = ["explorer.exe", "chrome.exe", "DeckIsland.exe", "steam.exe", "Discord.exe", "svchost.exe"];
         check("Vendor software: nothing of the three brands among ordinary processes, so every brand is read",
             !Aside(Dongles.EndgameVendor, desktop) && !Aside(Dongles.VaxeeVendor, desktop) && !Aside(Dongles.InphicVendor, desktop) && !Aside(Dongles.InphicWireless, desktop));
         check("Vendor software: Razer is read with Synapse 3 and 4 and their background parts running",

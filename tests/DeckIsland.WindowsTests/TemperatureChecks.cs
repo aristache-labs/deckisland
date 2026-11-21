@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.Security.Principal;
-using BrimDeck.Core;
-using BrimDeck.Native;
+using DeckIsland.Core;
+using DeckIsland.Native;
 
 // Reads this machine's temperature sensors the way the system monitor does, without a driver or administrator rights. A machine
 // may lack any of them (no ACPI thermal zone, an adapter without a sensor, no solid-state drive), so the checks hold either way:

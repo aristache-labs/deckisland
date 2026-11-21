@@ -1,9 +1,9 @@
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // The grips for resizing by dragging (MainWindow.Resize.cs), drawn over the whole window. It takes the pointer only on the grips
 // (ResizeGrips): the open panel's sides and bottom, or the end of the collapsed surface the pointer is at, so everywhere else

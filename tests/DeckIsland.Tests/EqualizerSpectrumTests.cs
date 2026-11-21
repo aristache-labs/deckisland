@@ -1,4 +1,4 @@
-using BrimDeck.Core;
+using DeckIsland.Core;
 using static EqualizerAudio;
 
 // The level bars as a spectrum: every bar is a band of pitch, for every length the settings allow (3 to 20 bars).

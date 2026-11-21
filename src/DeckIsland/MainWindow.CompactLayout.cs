@@ -2,9 +2,9 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // The collapsed row's sizes for any width and height the user sets. The collapsed shape (CollapsedGeometry) gives the row's
 // width in DIPs and a height scale; nothing is scaled by a transform. Sizes and font sizes are computed directly and

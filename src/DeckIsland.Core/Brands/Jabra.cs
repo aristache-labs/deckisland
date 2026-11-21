@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Jabra (GN), vendor 0x0B0E: GN's own id, so every collection of the brand that has the shape is asked. The GN Protocol on
 // the vendor collection (usage page 0xFF00, usage 1 on the Link 380 and the Evolve2 65 Flex, 5 on the Link 390), report 05

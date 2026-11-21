@@ -1,12 +1,12 @@
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics.X86;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck.Sensors;
+namespace DeckIsland.Sensors;
 
 // The processor's temperatures and energy counters through PawnIO's official modules: IntelMSR for Intel, AMDFamily17 for AMD's
 // Zen families (17h to 1Ah). Only registers are read, never written. A core's own registers are read on that core: the thread is
-// moved onto one of its logical processors first. The modules lie beside this program (modules\*.bin), put there by BrimDeck's
+// moved onto one of its logical processors first. The modules lie beside this program (modules\*.bin), put there by DeckIsland's
 // setup from PawnIO's signed release.
 internal sealed class CpuReader : IDisposable
 {

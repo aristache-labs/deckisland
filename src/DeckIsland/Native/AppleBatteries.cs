@@ -1,10 +1,10 @@
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Windows.Threading;
-using BrimDeck.Core;
+using DeckIsland.Core;
 using Windows.Devices.Bluetooth;
 using Windows.Devices.Bluetooth.Advertisement;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 // AirPods and Beats: each bud's and the case's charge, from Apple's proximity pairing advertisement (AppleAdvert), which they
 // send while out of the case or with its lid open. A passive scan (no requests sent) runs only while the page or the collapsed

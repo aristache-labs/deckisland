@@ -11,7 +11,7 @@
   "nameEn": "Island Holiday",
   "description": "白天是暖沙与泻湖的浅色，夜晚是月光海面的深色，按本地时间自动渐变切换；夜里岛下泛起柔和的海光。",
   "descriptionEn": "Warm sand and lagoon by day, a moonlit sea by night, fading over by the local clock; at night a soft sea glow lies under the island.",
-  "author": "BrimDeck",
+  "author": "DeckIsland",
   "license": "Apache-2.0",
   "base": "light",
   "daylight": { "day": "06:30", "night": "18:30" },

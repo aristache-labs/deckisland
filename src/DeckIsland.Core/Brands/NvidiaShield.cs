@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // The NVIDIA SHIELD controller (2017, 0955:7214) on its cable. Vendor 0x0955 is NVIDIA's, and only this product's read was
 // checked on hardware (the 2015 controller, 0955:7210, which SDL sends the same commands to, is not asked), and only on the

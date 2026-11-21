@@ -9,10 +9,10 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Shapes;
 using System.Windows.Threading;
-using BrimDeck.Core;
-using BrimDeck.Native;
+using DeckIsland.Core;
+using DeckIsland.Native;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 public partial class MainWindow : Window
 {
@@ -437,7 +437,7 @@ public partial class MainWindow : Window
         UpdateClock();
         if (!pageOnly || newEdge) RenderCompact();
         // Hiding and showing again (the tray, a full-screen rule) are immediate. The boot plays only when the panel first
-        // appears (Loaded); the power-off only when BrimDeck exits (App.ExitApplication).
+        // appears (Loaded); the power-off only when DeckIsland exits (App.ExitApplication).
         // The window's own opacity is no longer animated; a build that faded it may have left it lowered.
         if (Opacity < 1) { BeginAnimation(OpacityProperty, null); Opacity = 1; }
         if (IsSuppressed)

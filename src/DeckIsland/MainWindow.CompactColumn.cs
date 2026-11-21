@@ -2,10 +2,10 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Threading;
-using BrimDeck.Core;
-using MediaState = BrimDeck.Core.MediaState;
+using DeckIsland.Core;
+using MediaState = DeckIsland.Core.MediaState;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // The collapsed content of a notch on a side edge (MainWindow.Edge.cs): the parts the row shows side by side (RenderCompactMusic)
 // stand one below the other, each on a line of its own across the column, in the same order, with the row's gap between them

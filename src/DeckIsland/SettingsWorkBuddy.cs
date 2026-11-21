@@ -5,9 +5,9 @@ using System.Security.Cryptography;
 using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 public sealed partial class SettingsWindow
 {
@@ -22,8 +22,8 @@ public sealed partial class SettingsWindow
         var id = entry.QuotaSource;
         string name = ProviderCatalog.Name(id), host = new Uri(WorkBuddyUsage.For(id).Origin).Host;
         string title = Loc.T(name + " 账号", name + " account");
-        string help = Loc.T($"在默认浏览器中打开 {name} 官网，登录并授权后，BrimDeck 获得自己的登录凭据，用它读取积分余额。凭据加密保存在本机，只发往 {host}。不读取 {name} 桌面版的登录。",
-            $"Opens the {name} website in the default browser. After you sign in and allow access, BrimDeck gets a sign-in of its own and reads the credits with it. The sign-in is stored encrypted on this PC and sent only to {host}. The {name} desktop app's sign-in is not read.");
+        string help = Loc.T($"在默认浏览器中打开 {name} 官网，登录并授权后，DeckIsland 获得自己的登录凭据，用它读取积分余额。凭据加密保存在本机，只发往 {host}。不读取 {name} 桌面版的登录。",
+            $"Opens the {name} website in the default browser. After you sign in and allow access, DeckIsland gets a sign-in of its own and reads the credits with it. The sign-in is stored encrypted on this PC and sent only to {host}. The {name} desktop app's sign-in is not read.");
         var line = new Grid();
         line.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto, SharedSizeGroup = "SourceLabel" });
         line.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });

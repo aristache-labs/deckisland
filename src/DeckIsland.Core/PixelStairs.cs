@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Pixel art's outline (a theme's "pixel" effect, IslandBorder.Pixel): a smooth outline with its curves turned into steps of whole
 // device pixels. Plain numbers, so the tests can check the steps without WPF; IslandBorder flattens the WPF outline into edges.

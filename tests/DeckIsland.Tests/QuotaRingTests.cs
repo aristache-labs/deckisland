@@ -1,4 +1,4 @@
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // One collapsed ring per application (QuotaRing.For). Nested by default: the first three quotas in their default order, one per
 // ring (shortest window first within each group, quotas without a window last). Nested and chosen: the application's quotas

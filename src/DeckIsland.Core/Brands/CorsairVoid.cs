@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Corsair's older Void headsets (the Void Elite Wireless, 1B1C:0A55): output report C9 64 on the receiver's vendor collection
 // (usage page 0xFFC5, usage 1), answered by input report 64 00 <level> B1 <status>: bit 7 of the level is the microphone

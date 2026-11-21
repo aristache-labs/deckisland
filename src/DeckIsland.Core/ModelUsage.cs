@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Calendar dates are local to the user. The last date includes the whole day;
 // comparing local dates also handles changes in UTC offset across the range.

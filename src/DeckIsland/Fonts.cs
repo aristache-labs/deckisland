@@ -2,15 +2,15 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Media;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // A window that a change of the user's font leaves alone because it rebuilds itself (the settings window, which keeps the app's
 // own fonts unless the user asks it to follow the chosen one).
 internal interface IKeepsAppFonts { }
 
-// The one entry for fonts: every family BrimDeck draws text in comes from here (UI.TextFont, UI.PanelFont and UI.DisplayFont are
+// The one entry for fonts: every family DeckIsland draws text in comes from here (UI.TextFont, UI.PanelFont and UI.DisplayFont are
 // these, kept for the call sites that already use them), and nothing else names a font.
 //
 // Text roles (UiFontRole) take the user's font (DeckSettings.UiFont) in front of their usual chain, and are republished as
@@ -155,7 +155,7 @@ internal static class Fonts
     }
 
     // A face shipped inside the app (Assets/Fonts): the clock styles' own letterforms, which the user's font does not replace.
-    internal static FontFamily Bundled(string name) => new(new Uri("pack://application:,,,/BrimDeck;component/"), "./Assets/Fonts/#" + name);
+    internal static FontFamily Bundled(string name) => new(new Uri("pack://application:,,,/DeckIsland;component/"), "./Assets/Fonts/#" + name);
 
     // The script editor's face. Consolas has no Chinese glyphs. Chinese and full-width punctuation come from Microsoft YaHei UI, whose
     // glyphs are 1 em wide, scaled so each takes exactly two Consolas columns (2 × 0.5498 em); trailing comments then line up.
@@ -164,7 +164,7 @@ internal static class Fonts
     {
         var consolas = new FontFamily("Consolas");
         var family = new FontFamily { Baseline = consolas.Baseline, LineSpacing = consolas.LineSpacing };
-        family.FamilyNames[System.Windows.Markup.XmlLanguage.GetLanguage("en-us")] = "BrimDeck Code";
+        family.FamilyNames[System.Windows.Markup.XmlLanguage.GetLanguage("en-us")] = "DeckIsland Code";
         family.FamilyMaps.Add(new FontFamilyMap { Unicode = "2E80-9FFF,F900-FAFF,FE30-FE4F,FF00-FF60,FFE0-FFE6", Target = "Microsoft YaHei UI", Scale = 2 * 0.5498046875 });
         family.FamilyMaps.Add(new FontFamilyMap { Unicode = "0000-10FFFF", Target = "Consolas" });
         return family;

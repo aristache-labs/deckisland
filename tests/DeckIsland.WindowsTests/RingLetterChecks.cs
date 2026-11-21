@@ -4,7 +4,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
-using BrimDeck;
+using DeckIsland;
 
 // The letter inside a collapsed quota ring, rendered offscreen at 100 to 200 %: where its ink lands against the ring's centre, drawn
 // as it is now (RingLetter) and as it was (a TextBlock centred in the ring). Nothing is shown. Rings are sized in device pixels

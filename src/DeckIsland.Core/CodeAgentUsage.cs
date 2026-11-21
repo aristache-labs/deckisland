@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // The CodeAgent CLI sign-in: the x-auth-token CodeAgent sends to its services, and when it expires. Held in memory only.
 public sealed record CodeAgentCredential(string Token, DateTimeOffset? ExpiresAt)
@@ -15,7 +15,7 @@ public sealed record CodeAgentCredential(string Token, DateTimeOffset? ExpiresAt
 // blob for the current user, without extra entropy; only xAuthToken and xAuthExpires are read. xAuthToken lasts three days.
 // Run while it is still valid, `codeagentcli auth status` only reports it; run once xAuthExpires has passed, it signs in again
 // with the rest of the record within a few seconds, without a model request, and writes a new xAuthToken and xAuthExpires to
-// the file. BrimDeck renews the sign-in that way (IDesktopSources.RenewCodeAgentAsync) when it has expired or the service
+// the file. DeckIsland renews the sign-in that way (IDesktopSources.RenewCodeAgentAsync) when it has expired or the service
 // refuses it; only a renewal that fails leaves signing in again to the user.
 //
 // The quota is the account's credit allowance, the same for every model: GET /api/v1/quota/usage with the X-Auth-Token header

@@ -1,9 +1,9 @@
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 // The internal drives for the system monitor (Storage): every fixed volume with a letter, its size and free space from the file
 // system, the physical drive it lies on from the volume's disk extents, and what Windows says of that drive (model, bus,

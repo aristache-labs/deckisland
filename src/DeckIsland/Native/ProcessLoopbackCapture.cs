@@ -1,11 +1,11 @@
 using System.Runtime.InteropServices;
-using BrimDeck.Core;
+using DeckIsland.Core;
 using NAudio.CoreAudioApi;
 using NAudio.CoreAudioApi.Interfaces;
 using NAudio.Wasapi.CoreAudioApi.Interfaces;
 using NAudio.Wave;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 // Captures what one player process renders (Windows 10 build 20348 and later), or with exclude
 // what every other process renders, and feeds it to the level-bar analysis. Samples stay in memory and are discarded after analysis.
@@ -77,7 +77,7 @@ internal sealed class ProcessLoopbackCapture : IDisposable
             {
                 IntPtr data = _capture.GetBuffer(out frames, out var flags);
                 // No packet after all (AUDCLNT_S_BUFFER_EMPTY): the frame count is 0 and no data pointer is given, and a packet
-                // of that size needs no release. Copying from it threw on the meter's thread, which ended BrimDeck.
+                // of that size needs no release. Copying from it threw on the meter's thread, which ended DeckIsland.
                 if (frames <= 0) break;
                 int count = frames * Format.Channels;
                 if (_buffer.Length < count) { _buffer = new float[count]; _pcm = new short[count]; }

@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 public static class ScreenPolicy
 {
@@ -9,7 +9,7 @@ public static class ScreenPolicy
 
     // taken: the context the panel last read for itself between two polls (as it starts, or as it applies its settings), when it
     // did. A poll that finds another context reports a change even if the last poll found the same: the panel is laid out for
-    // a context that no poll saw (the lock screen still up as BrimDeck starts and gone before the first poll), and with nothing
+    // a context that no poll saw (the lock screen still up as DeckIsland starts and gone before the first poll), and with nothing
     // reported it kept that context's rule for good.
     public static ForegroundChange WhatChanged(ScreenContext context, string appName, string appPath,
         ScreenContext previousContext, string previousName, string previousPath, ScreenContext? taken = null)

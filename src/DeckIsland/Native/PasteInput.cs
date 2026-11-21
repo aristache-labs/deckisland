@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 // Pasting into the window the user is typing in: the panel takes no focus when clicked (WindowsHost.OverlayMessages), so that
 // window keeps it, and Ctrl+V sent with SendInput reaches it. When the panel did take the focus for typing (the search box, a
@@ -17,7 +17,7 @@ internal static class PasteInput
         return pid != 0 && pid != Environment.ProcessId;
     }
 
-    // Whether the window's program runs with more rights than this one: as administrator, when BrimDeck does not. Windows
+    // Whether the window's program runs with more rights than this one: as administrator, when DeckIsland does not. Windows
     // drops the keys sent to such a window, and SendInput does not say that it did, so this is asked after a paste was tried.
     public static bool HasMoreRights(IntPtr window)
     {

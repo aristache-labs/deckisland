@@ -2,8 +2,8 @@ using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using BrimDeck.Core;
-using Fonts = BrimDeck.Fonts;
+using DeckIsland.Core;
+using Fonts = DeckIsland.Fonts;
 
 // Changing the interface font while windows are open, on real windows made the ways the app makes its own: a resource reference
 // (what XAML's DynamicResource is), a family set once in code, a window default, a menu and a tip hung on an element, and a window
@@ -12,7 +12,7 @@ using Fonts = BrimDeck.Fonts;
 // the once-set families stay in the old font; take the resource publishing out and the resource-bound ones do.
 internal static class FontFollowTests
 {
-    private sealed class OwnFontsWindow : Window, BrimDeck.IKeepsAppFonts { }
+    private sealed class OwnFontsWindow : Window, DeckIsland.IKeepsAppFonts { }
 
     public static void Run(Action<string, bool> check)
     {

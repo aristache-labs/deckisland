@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // The system monitor's choices beyond its colors. All are saved as numbers, so new members go at the end.
 // MonitorMain: the gauge the page shows large; the other one shows small beside it, and a click swaps them.

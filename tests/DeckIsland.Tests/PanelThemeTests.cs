@@ -1,5 +1,5 @@
 using System.Text.RegularExpressions;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 internal static class PanelThemeTests
 {
@@ -441,10 +441,10 @@ internal static class PanelThemeTests
 
         // XAML: App.xaml carries the dark theme's colors as the first values of the brushes PanelTheme replaces.
         var source = new DirectoryInfo(AppContext.BaseDirectory);
-        while (source is not null && !File.Exists(Path.Combine(source.FullName, "BrimDeck.sln"))) source = source.Parent;
+        while (source is not null && !File.Exists(Path.Combine(source.FullName, "DeckIsland.sln"))) source = source.Parent;
         check("The source tree is found for the XAML checks", source is not null);
         if (source is null) return;
-        var app = Path.Combine(source.FullName, "src", "BrimDeck");
+        var app = Path.Combine(source.FullName, "src", "DeckIsland");
         var xaml = File.ReadAllText(Path.Combine(app, "App.xaml"));
         var brushes = Regex.Matches(xaml, @"<SolidColorBrush x:Key=""Panel(\w+)"" Color=""(#\w+)""/>");
         string Token(string name) => name switch

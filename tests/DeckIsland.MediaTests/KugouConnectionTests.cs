@@ -1,6 +1,6 @@
 using System.Text.Json;
-using BrimDeck.Core;
-using BrimDeck.Native;
+using DeckIsland.Core;
+using DeckIsland.Native;
 
 internal static class KugouConnectionTests
 {

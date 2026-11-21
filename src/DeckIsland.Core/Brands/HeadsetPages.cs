@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Usage pages as the headset families match them. Windows (HidP_GetCaps) reports some vendor pages with their two bytes
 // swapped (BETOP's 0xFF00 comes back as 0x00FF), and most sources give a page without saying whether it was read on Windows

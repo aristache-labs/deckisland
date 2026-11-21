@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Text is the custom-script format: the script supplies every displayed string itself.
 public enum MetricKind { Percent, Balance, Spend, Count, Text }

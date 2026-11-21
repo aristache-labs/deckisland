@@ -10,10 +10,10 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 using System.Windows.Shell;
-using BrimDeck.Core;
-using BrimDeck.Core.ClipboardSync;
+using DeckIsland.Core;
+using DeckIsland.Core.ClipboardSync;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // The windows that connect a clipboard sync service: each says what to do on the other device, in the words that device's
 // own application uses, and takes or shows the code.
@@ -29,7 +29,7 @@ public sealed partial class SettingsWindow
         var dialog = new Window { Owner = this, Title = title, Width = width, SizeToContent = SizeToContent.Height,
             WindowStartupLocation = WindowStartupLocation.CenterOwner, ShowInTaskbar = false, FontFamily = SettingsFont(UiFontRole.Panel),
             Background = UI.Brush(Surface), Foreground = UI.Brush(TextPrimary) };
-        dialog.Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("/BrimDeck;component/SettingsResources.xaml", UriKind.Relative) });
+        dialog.Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("/DeckIsland;component/SettingsResources.xaml", UriKind.Relative) });
         _palette.Apply(dialog.Resources); Native.SettingsChrome.Apply(dialog); dialog.ResizeMode = ResizeMode.NoResize;
         dialog.SourceInitialized += (_, _) => Native.SettingsChrome.SetTheme(dialog, _palette.Dark);
         TextOptions.SetTextFormattingMode(dialog, TextFormattingMode.Display);
@@ -148,8 +148,8 @@ public sealed partial class SettingsWindow
 
     private TextBlock WeTypeFootnote()
     {
-        var note = TextLine(Loc.T("那台设备要在“跨设备”中开启“跨设备复制粘贴”，它复制的内容才会同步过来。个人词库、常用语等其他开关与 BrimDeck 无关。",
-            "That device syncs what it copies only with 跨设备复制粘贴 turned on in its cross-device page. Its other switches, such as dictionary and phrases, do not concern BrimDeck."), 11.5, TextTertiary);
+        var note = TextLine(Loc.T("那台设备要在“跨设备”中开启“跨设备复制粘贴”，它复制的内容才会同步过来。个人词库、常用语等其他开关与 DeckIsland 无关。",
+            "That device syncs what it copies only with 跨设备复制粘贴 turned on in its cross-device page. Its other switches, such as dictionary and phrases, do not concern DeckIsland."), 11.5, TextTertiary);
         note.TextWrapping = TextWrapping.Wrap; note.Margin = new Thickness(0, 16, 0, 0);
         return note;
     }
@@ -358,7 +358,7 @@ public sealed partial class SettingsWindow
     {
         var root = new StackPanel();
         root.Children.Add(SyncSteps(
-            Loc.T("两台电脑连接同一网络，都在 BrimDeck 的“剪贴板同步”设置中点击局域网的“配对”。", "Connect both PCs to the same network and choose Pair under Local network in BrimDeck's clipboard sync settings on each."),
+            Loc.T("两台电脑连接同一网络，都在 DeckIsland 的“剪贴板同步”设置中点击局域网的“配对”。", "Connect both PCs to the same network and choose Pair under Local network in DeckIsland's clipboard sync settings on each."),
             Loc.T("在其中一台输入另一台显示的配对码。", "On either PC, enter the code the other one shows.")));
         TextBlock Caption(string text)
         {

@@ -4,9 +4,9 @@ using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Threading;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 public sealed class WindowsHost : IDisposable
 {
@@ -290,7 +290,7 @@ public sealed class WindowsHost : IDisposable
         _overDesktop = IsDesktop(foreground) && DesktopInFront();
         if (_overDesktop) return;
         SetWindowPos(window, new IntPtr(-2), 0, 0, 0, 0, 0x0001 | 0x0002 | 0x0010);
-        // Only beneath another app's ordinary window: not the desktop, the taskbar or BrimDeck's own settings.
+        // Only beneath another app's ordinary window: not the desktop, the taskbar or DeckIsland's own settings.
         if (foreground == IntPtr.Zero || !IsWindowVisible(foreground) || IsIconic(foreground) || IsShell(foreground)) return;
         if ((GetWindowLongPtr(foreground, -20).ToInt64() & 0x8) != 0) return;
         GetWindowThreadProcessId(foreground, out var pid);
@@ -382,7 +382,7 @@ public sealed class WindowsHost : IDisposable
     {
         try
         {
-            var file = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "BrimDeck", "zorder.log");
+            var file = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "DeckIsland", "zorder.log");
             var folder = Path.GetDirectoryName(file);
             if (folder is { Length: > 0 }) Directory.CreateDirectory(folder);
             if (File.Exists(file) && new FileInfo(file).Length >= OrderLogLimit)

@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // AULA (狼蛛) mice with a read of their own (the SC580 shares EWEADN's receiver and is read there, EweadnMice).
 // - SC380 Pro on its 2.4 GHz receiver 258A:0138 (Sinowealth's shared vendor id: this product only), usage page 0xFF02

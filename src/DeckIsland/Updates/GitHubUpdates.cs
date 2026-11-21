@@ -1,14 +1,14 @@
 using System.IO;
 using System.Net.Http;
-using BrimDeck.Core;
+using DeckIsland.Core;
 using Microsoft.Win32;
 
-namespace BrimDeck.Updates;
+namespace DeckIsland.Updates;
 
 internal static class GitHubUpdates
 {
-    public const string RepositoryUrl = "https://github.com/MoFeng2223/BrimDeck";
-    // Must match AppId in installer/BrimDeck.iss. Inno Setup registers the uninstall entry as "<AppId>_is1".
+    public const string RepositoryUrl = "https://github.com/aristache-labs/deckisland";
+    // Must match AppId in installer/DeckIsland.iss. Inno Setup registers the uninstall entry as "<AppId>_is1".
     public const string InstallerAppId = "{9D9AD6ED-CF62-4527-A587-6DBE94A74B9E}";
     public static string BuildVersion => ApplicationVersion.Current;
     private static readonly HttpClient Http = CreateClient();
@@ -47,7 +47,7 @@ internal static class GitHubUpdates
     private static HttpClient CreateClient()
     {
         var client = new HttpClient();
-        client.DefaultRequestHeaders.UserAgent.ParseAdd("BrimDeck/" + BuildVersion);
+        client.DefaultRequestHeaders.UserAgent.ParseAdd("DeckIsland/" + BuildVersion);
         return client;
     }
 }

@@ -6,9 +6,9 @@ using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Threading;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // The "面板主题" page: the basic themes, the built-in extensions, and the user's own themes (the files in the themes folder),
 // which can be opened or deleted here. Each card shows the collapsed capsule in its theme, as the collapsed view's style cards

@@ -3,7 +3,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 public sealed partial class LyricsService
 {

@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Conversions between RGB and HSV (hue in degrees 0-360, saturation and value 0-1) for the settings color picker.
 public static class ColorMath

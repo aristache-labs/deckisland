@@ -8,11 +8,11 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Shapes;
-using BrimDeck.Core;
-using BrimDeck.Native;
+using DeckIsland.Core;
+using DeckIsland.Native;
 using Path = System.Windows.Shapes.Path;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // The other ways the clipboard and file transfer page shows its entries, chosen for each column in the settings (ClipView,
 // FileView; the sizes are ShelfLayout's). The clipboard: three lines high, with what the entry is and when it was copied at its

@@ -3,7 +3,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 public sealed record LocalEndpoint(int Port, string Scheme, string Token);
 public interface IDesktopSources
@@ -22,7 +22,7 @@ public interface IDesktopSources
     // Runs CodeAgent CLI's `auth status` to renew an expired CodeAgent sign-in kept in home (CodeAgentUsage); true when the file
     // then holds a later expiry than before.
     Task<bool> RenewCodeAgentAsync(string home, CancellationToken cancellation) => Task.FromResult(false);
-    // The Xiaomi account signed in to in BrimDeck for Xiaomi MiMo (MiMoUsage.MiMoSession, serialized); null when none is.
+    // The Xiaomi account signed in to in DeckIsland for Xiaomi MiMo (MiMoUsage.MiMoSession, serialized); null when none is.
     string? ReadMiMoSession() => null;
     // Replaces it with a renewed one.
     void SaveMiMoSession(string session) { }
@@ -85,7 +85,7 @@ public sealed class UsageService(IDesktopSources desktop, DataLocations? locatio
     private ClaudeQuotaSnapshot? _grokBotRetained;
     // The last Claude quota read online for each organization the account reads (by organization id, "" when the sign-in does
     // not name one); until this run reads its own, the previous run's (ClaudeQuotaCache), which is read on the first refresh
-    // that needs it, off the UI thread, rather than while BrimDeck starts.
+    // that needs it, off the UI thread, rather than while DeckIsland starts.
     // Account is the hash of the account it was read for ("" when the sign-in did not name one). A reading is shown only
     // for the account signed in now: the file needs the same known account, while a reading of this run is set aside only
     // when both accounts are known and differ, as before for a sign-in whose records name no account.
@@ -243,7 +243,7 @@ public sealed class UsageService(IDesktopSources desktop, DataLocations? locatio
                 Status = timedOut ? Loc.T("读取超时，稍后重试", "Reading timed out. Retrying later.") : Loc.T("暂时无法读取数据，稍后重试", "The data cannot be read right now. Retrying later.")
             };
         }
-        if (timer.Elapsed >= SlowProviderLog) System.Diagnostics.Trace.WriteLine($"BrimDeck usage: {id} took {(long)timer.Elapsed.TotalMilliseconds} ms");
+        if (timer.Elapsed >= SlowProviderLog) System.Diagnostics.Trace.WriteLine($"DeckIsland usage: {id} took {(long)timer.Elapsed.TotalMilliseconds} ms");
         finished?.Invoke(result);
         return result;
     }
@@ -705,7 +705,7 @@ public sealed class UsageService(IDesktopSources desktop, DataLocations? locatio
         }
         snapshot.Quotas = [new Quota("5 小时额度", sample.FiveHour, null, 300), new Quota("每周额度", sample.SevenDay, null, 10080)];
         snapshot.IsStale = true;
-        // The update time is when BrimDeck read the history; the status gives the time of the newest sample in it.
+        // The update time is when DeckIsland read the history; the status gives the time of the newest sample in it.
         snapshot.LiveQuota = true; snapshot.QuotaTime = now;
         snapshot.Source = Loc.T("Claude 桌面版 · 本地用量记录", "Claude desktop app · local usage records");
         var time = sample.Time.LocalDateTime.ToString(sample.Time.LocalDateTime.Date == now.LocalDateTime.Date ? "HH:mm" : "MM-dd HH:mm");
@@ -858,7 +858,7 @@ public sealed class UsageService(IDesktopSources desktop, DataLocations? locatio
         snapshot.Plan = reading.Plan;
         if (reading.Plan.Length > 0) snapshot.PlanSource = GrokBotCachePlanSource;
         snapshot.IsStale = true;
-        // The update time is when BrimDeck read the cache; the status gives the time the desktop app took the reading.
+        // The update time is when DeckIsland read the cache; the status gives the time the desktop app took the reading.
         snapshot.LiveQuota = true; snapshot.QuotaTime = now;
         snapshot.Source = GrokBotCacheSource;
         var time = readAt.LocalDateTime.ToString(readAt.LocalDateTime.Date == now.LocalDateTime.Date ? "HH:mm" : "MM-dd HH:mm");
@@ -1167,7 +1167,7 @@ public sealed class UsageService(IDesktopSources desktop, DataLocations? locatio
         if (endpoints.Count == 0 && desktop.AntigravityUnreadable)
         {
             snapshot.StatusLabel = Loc.T("无法读取", "Cannot read");
-            snapshot.Status = Loc.T("Antigravity 以管理员身份运行，BrimDeck 无法读取。请以普通权限启动 Antigravity", "Antigravity runs as administrator, so BrimDeck cannot read it. Start Antigravity without administrator rights.");
+            snapshot.Status = Loc.T("Antigravity 以管理员身份运行，DeckIsland 无法读取。请以普通权限启动 Antigravity", "Antigravity runs as administrator, so DeckIsland cannot read it. Start Antigravity without administrator rights.");
             return;
         }
         if (endpoints.Count == 0)
@@ -1331,7 +1331,7 @@ public sealed class UsageService(IDesktopSources desktop, DataLocations? locatio
         using var request = new HttpRequestMessage(HttpMethod.Get, DshUsage.Platform + "/api/v0/users/get_user_summary");
         request.Headers.TryAddWithoutValidation("x-dsh-auth-token", account.Token);
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-        request.Headers.UserAgent.ParseAdd("BrimDeck/0.1");
+        request.Headers.UserAgent.ParseAdd("DeckIsland/0.1");
         using var response = await _http.SendAsync(request, ct);
         // As in DeepSeek Harness, HTTP 401 or code 40003 means the stored sign-in is no longer accepted.
         void Expired()
@@ -1382,7 +1382,7 @@ public sealed class UsageService(IDesktopSources desktop, DataLocations? locatio
     }
 
     // The Xiaomi MiMo Desktop membership (MiMoUsage), read with the MiMo server's cookies for the Xiaomi account signed in to in
-    // BrimDeck. Refused cookies are renewed once with the account's longer sign-in (MiMoUsage.RenewAsync) and the reading tried
+    // DeckIsland. Refused cookies are renewed once with the account's longer sign-in (MiMoUsage.RenewAsync) and the reading tried
     // again; a renewal that fails is not tried again for ten minutes, as it needs the user to sign in again.
     private DateTimeOffset? _mimoRenewFailed;
     private async Task ReadMiMoAsync(ProviderSnapshot snapshot, DateTimeOffset now, CancellationToken ct)
@@ -1446,7 +1446,7 @@ public sealed class UsageService(IDesktopSources desktop, DataLocations? locatio
         finally { response.Dispose(); }
     }
 
-    // WorkBuddy's credits (WorkBuddyUsage), read with the sign-in BrimDeck got from the edition's website (ConnectWorkBuddyAsync).
+    // WorkBuddy's credits (WorkBuddyUsage), read with the sign-in DeckIsland got from the edition's website (ConnectWorkBuddyAsync).
     // A renewed sign-in is saved at once, as the website may replace the refresh token with it.
     private async Task ReadWorkBuddyAsync(ProviderSnapshot snapshot, WorkBuddyUsage.Edition edition, DateTimeOffset now, CancellationToken ct)
     {
@@ -1612,7 +1612,7 @@ public sealed class UsageService(IDesktopSources desktop, DataLocations? locatio
             using var request = new HttpRequestMessage(HttpMethod.Get, url);
             request.Headers.TryAddWithoutValidation("X-Auth-Token", signIn.Token);
             request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-            request.Headers.UserAgent.ParseAdd("BrimDeck/0.1");
+            request.Headers.UserAgent.ParseAdd("DeckIsland/0.1");
             try { return await SendAsync(_http, request, deadline.Token); }
             catch (HttpRequestException ex) when (ex.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden) { return null; }
         }
@@ -1802,7 +1802,7 @@ public sealed class UsageService(IDesktopSources desktop, DataLocations? locatio
         var request = new HttpRequestMessage(method, uri);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-        request.Headers.UserAgent.ParseAdd("BrimDeck/0.1");
+        request.Headers.UserAgent.ParseAdd("DeckIsland/0.1");
         return request;
     }
     private static StringContent JsonBody(object body) => new(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");

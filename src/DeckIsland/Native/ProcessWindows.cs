@@ -1,7 +1,7 @@
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 // Finds and activates a window of an app in the process list: the topmost ordinary window whose process runs the executable
 // the entry folds by (ProcessSample.AppKey, its file name), so any of an app's processes may own it. A window on the current

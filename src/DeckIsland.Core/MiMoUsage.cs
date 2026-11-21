@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Xiaomi MiMo. MiMo Code (the CLI) is a fork of OpenCode, and Xiaomi MiMo Desktop runs MiMo Code as its engine, so both write one
 // SQLite database, mimocode.db in $XDG_DATA_HOME\mimocode, otherwise %USERPROFILE%\.local\share\mimocode.
@@ -31,7 +31,7 @@ public static class MiMoUsage
     public static string Database(string home, string? xdgData) =>
         Path.Combine(!string.IsNullOrWhiteSpace(xdgData) && Path.IsPathFullyQualified(xdgData) ? xdgData : Path.Combine(home, ".local", "share"), "mimocode", "mimocode.db");
 
-    // What BrimDeck keeps of a sign-in (encrypted, IDesktopSources.ReadMiMoSession): Cookie is the Cookie header for the MiMo server,
+    // What DeckIsland keeps of a sign-in (encrypted, IDesktopSources.ReadMiMoSession): Cookie is the Cookie header for the MiMo server,
     // and Account the one for account.xiaomi.com, which holds the Xiaomi account's longer sign-in (passToken, userId, cUserId) next
     // to the device it was made on (deviceId and the others); Agent is the user agent of the browser that signed in. RenewAsync sends\n    // them as they are. Never shown or logged.
     public sealed record MiMoSession(string Cookie, string Account, string Agent = "")

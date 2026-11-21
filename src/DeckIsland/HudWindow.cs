@@ -7,9 +7,9 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Shapes;
 using System.Windows.Threading;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // The readout under the collapsed island (volume, brightness, a lock key...): a pill at the top of the screen that never takes
 // focus, in the panel theme's colors. The same message key updates it in place.

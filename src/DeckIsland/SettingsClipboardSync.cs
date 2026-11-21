@@ -5,10 +5,10 @@ using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Shapes;
-using BrimDeck.Core;
-using BrimDeck.Core.ClipboardSync;
+using DeckIsland.Core;
+using DeckIsland.Core.ClipboardSync;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // The "剪贴板同步" page: this device's name, then one card for each way to sync. A card says where it stands with a coloured
 // dot and a few words, has the one button that connects or disconnects it and, once connected, the switch that syncs.
@@ -74,7 +74,7 @@ public sealed partial class SettingsWindow
         var (title, connect, disconnect, description, help) = kind switch
         {
             SyncKind.Lan => (Loc.T("局域网", "Local network"), Loc.T("配对", "Pair"), Loc.T("解除配对", "Unpair"),
-                Loc.T("同一网络中两台装有 BrimDeck 的电脑直接同步文字和图片，不经过互联网。", "Two PCs with BrimDeck on the same network sync text and images directly, without the internet."),
+                Loc.T("同一网络中两台装有 DeckIsland 的电脑直接同步文字和图片，不经过互联网。", "Two PCs with DeckIsland on the same network sync text and images directly, without the internet."),
                 Loc.T("新复制的文字和图片会发送到另一台电脑。两台电脑都要开启。", "Newly copied text and images are sent to the other PC. Turn this on on both PCs.")),
             SyncKind.WeType => (Loc.T("微信输入法", "WeType"), Loc.T("关联设备", "Link a device"), Loc.T("解除关联", "Unlink"),
                 Loc.T("与手机或其他电脑上的微信输入法同步文字和图片。", "Syncs text and images with WeType on your phone or other PCs."),

@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // The files and folders in what is dragged onto the panel. The Explorer gives a list of paths (CF_HDROP) only when everything
 // selected is a file or a folder; with "此电脑" or "回收站" among the desktop's icons it gives none (measured on Windows 11: a

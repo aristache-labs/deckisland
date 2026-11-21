@@ -1,8 +1,8 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 // The graphics engines as Task Manager reads them, for every adapter: per adapter and kind of engine, every process's share
 // summed; an adapter's usage is its busiest kind. Each adapter has its engines, its dedicated and shared memory, and its name,

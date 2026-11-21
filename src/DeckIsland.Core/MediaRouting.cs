@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 public enum MediaDispatchResult { Unavailable, Sent, Uncertain }
 
@@ -118,7 +118,7 @@ public static class MediaRouting
     }
 
     // Apple Music reports a pause right after its position is changed and plays on half a second later (measured: Paused
-    // 80 ms after the seek, Playing again 500 ms after that). Within SeekSettle of a seek BrimDeck made, a pause read while
+    // 80 ms after the seek, Playing again 500 ms after that). Within SeekSettle of a seek DeckIsland made, a pause read while
     // the same song was playing is that pause, and the playing track is kept; a real pause shows once the time is over.
     public static readonly TimeSpan SeekSettle = TimeSpan.FromSeconds(1.5);
     public static bool SettlingAfterSeek(MediaTrack known, MediaTrack read, DateTimeOffset? seekAt, DateTimeOffset now) =>

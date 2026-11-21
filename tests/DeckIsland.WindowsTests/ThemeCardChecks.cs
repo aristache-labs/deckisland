@@ -1,8 +1,8 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using BrimDeck;
-using BrimDeck.Core;
+using DeckIsland;
+using DeckIsland.Core;
 
 
 

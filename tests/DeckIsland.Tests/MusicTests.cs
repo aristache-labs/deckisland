@@ -1,5 +1,5 @@
 using System.Net;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 internal static class MusicTests
 {
@@ -258,7 +258,7 @@ internal static class MusicTests
         public int Calls; public bool Identified, Authorization;
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
-            Calls++; Identified = request.Headers.UserAgent.ToString().Contains("BrimDeck"); Authorization |= request.Headers.Authorization is not null;
+            Calls++; Identified = request.Headers.UserAgent.ToString().Contains("DeckIsland"); Authorization |= request.Headers.Authorization is not null;
             return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("{\"trackName\":\"测试曲目\",\"artistName\":\"测试歌手\",\"duration\":200,\"syncedLyrics\":\"[00:01]歌词\"}") });
         }
     }

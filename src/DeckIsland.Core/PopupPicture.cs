@@ -1,6 +1,6 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
-// When the picture beneath an open pop-up is taken (BrimDeck.PopupMotion, motion-review F7). Until the pop-up has entered
+// When the picture beneath an open pop-up is taken (DeckIsland.PopupMotion, motion-review F7). Until the pop-up has entered
 // (faded in and dropped into place) nothing is taken: a picture taken then lay opaque under the real list while it still
 // faded in and showed through it, a few DIPs off. The first picture is taken once it has entered; after that, each change
 // that can alter the list is taken at once and once more when a hover's fade has settled. A change while it entered is kept

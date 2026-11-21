@@ -4,9 +4,9 @@ using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // Size and position of the collapsed notch, capsule and indicator. The group sits under the chosen style's content
 // options and slides with them when another style card is chosen. The panel at the top of the screen is the preview:

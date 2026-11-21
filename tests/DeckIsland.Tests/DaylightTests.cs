@@ -1,4 +1,4 @@
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // Themes with a night look: the daylight mode (clock or Windows' dark and light mode), the dusk look and its hours, and how
 // both survive validation, the template and the settings.

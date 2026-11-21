@@ -2,9 +2,9 @@ using System.Globalization;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Effects;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // The time on the collapsed notch or capsule. Each digit takes the advance of the widest digit and the hour always has
 // room for two, so the face keeps one width through the day and nothing beside it moves when the minute changes.

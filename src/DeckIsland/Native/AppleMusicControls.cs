@@ -1,9 +1,9 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Windows.Automation;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 // Shuffle, repeat and seeking for Apple Music, whose media session reports all three as unavailable. They go through the
 // shuffle button, the repeat button and the progress bar of its main window, found by their automation ids, so they work

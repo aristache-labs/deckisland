@@ -3,12 +3,12 @@ using System.IO;
 using System.Net.Http;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
-using BrimDeck.Core;
+using DeckIsland.Core;
 using Windows.Media;
 using Windows.Media.Control;
 using Session = Windows.Media.Control.GlobalSystemMediaTransportControlsSession;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 // Each route has one authoritative source and, in log mode only, a control supplement.
 internal sealed class MediaSessions : IDisposable
@@ -31,7 +31,7 @@ internal sealed class MediaSessions : IDisposable
         public readonly MediaSwapGuard Guard = new();
         public MediaTrack? Shown = heir?.Shown ?? heir?.Track;
         public BitmapSource? ShownCover = heir?.ShownCover ?? heir?.Cover;
-        // When BrimDeck last moved this session's position through the window controls (MediaRouting.SettlingAfterSeek).
+        // When DeckIsland last moved this session's position through the window controls (MediaRouting.SettlingAfterSeek).
         public DateTimeOffset? SeekAt;
         // Where Apple Music's whole-second reports place the playing song's start (MediaRouting.FromWholeSeconds).
         public MediaRouting.WholeSecondStart? WholeSeconds;
@@ -216,7 +216,7 @@ internal sealed class MediaSessions : IDisposable
         _appleMusic = new AppleMusicControls(); _appleMusic.Changed += AppleMusicChanged;
     }
     // Apple Music's shuffle, repeat and seeking through the controls of its window (AppleMusicControls), enabled from the
-    // music page's "Enable full control" entry after its explanation. It lasts while BrimDeck runs and is not saved, so the
+    // music page's "Enable full control" entry after its explanation. It lasts while DeckIsland runs and is not saved, so the
     // entry and its explanation come back after a restart, unless the setting AppleMusicFullControl enables it at start.
     public bool AppleMusicFullControl { get; private set; }
     public void EnableAppleMusicFullControl()

@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Glorious wireless mice on Sinowealth's shared vendor id 0x258A, so only these receivers: the Model O Wireless's (2022) and
 // the Model D Wireless's (2023), and the Model O 2 PRO 4K/8K (2035, its cable 201B) and the Model D 2 PRO 4K/8K (2036, 201C).

@@ -1,4 +1,4 @@
-﻿namespace BrimDeck.Core;
+﻿namespace DeckIsland.Core;
 
 // How much the collapsed row follows the room while its width is being changed continuously (CompactSpacing.ShareFlowing), 0 to 1:
 // 0 is the rest, whole items in a window; 1 is the windows taking the room as it comes, an item cut at the edge. It is 1 while

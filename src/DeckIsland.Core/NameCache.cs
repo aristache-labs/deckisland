@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Keeps a cache of looked-up names (by executable) from growing without bound: past limit entries, those not in keep (the programs running
 // now) are dropped. What is running stays, so a list never loses a name it is showing; a program that comes back is looked up again.

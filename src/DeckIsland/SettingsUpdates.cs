@@ -2,9 +2,9 @@ using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Threading;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 public sealed partial class SettingsWindow
 {
@@ -55,10 +55,10 @@ public sealed partial class SettingsWindow
     internal void ShowUpdateDialog()
     {
         if (_updateDialog is not null || !_app.Updates.HasUpdate || !IsVisible) return;
-        var dialog = new Window { Title = Loc.T("BrimDeck 更新", "BrimDeck Update"), Owner = this, Width = 510, SizeToContent = SizeToContent.Height,
+        var dialog = new Window { Title = Loc.T("DeckIsland 更新", "DeckIsland Update"), Owner = this, Width = 510, SizeToContent = SizeToContent.Height,
             WindowStartupLocation = WindowStartupLocation.CenterOwner, ShowInTaskbar = false, FontFamily = SettingsFont(UiFontRole.Panel),
             Background = UI.Brush(Surface), Foreground = UI.Brush(TextPrimary) };
-        dialog.Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("/BrimDeck;component/SettingsResources.xaml", UriKind.Relative) });
+        dialog.Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("/DeckIsland;component/SettingsResources.xaml", UriKind.Relative) });
         _palette.Apply(dialog.Resources); Native.SettingsChrome.Apply(dialog); dialog.ResizeMode = ResizeMode.NoResize;
         dialog.SourceInitialized += (_, _) => Native.SettingsChrome.SetTheme(dialog, _palette.Dark);
         var panel = new StackPanel { Margin = new Thickness(26, 22, 26, 24) };
@@ -147,19 +147,19 @@ public sealed partial class SettingsWindow
                 AppUpdateStage.Checking => Loc.T("正在检查更新…", "Checking for updates…"), AppUpdateStage.Downloading => Loc.T($"正在下载 {release?.Version}", $"Downloading {release?.Version}"),
                 AppUpdateStage.Ready => Loc.T("更新已准备就绪", "The update is ready"), AppUpdateStage.Installing => Loc.T("正在安装更新…", "Installing the update…"),
                 _ when release is not null => Loc.T($"发现新版本 {release.Version}", $"Version {release.Version} is available"),
-                _ when updates.LastChecked is not null && updates.Error is null && updates.NoticeVersion is null => Loc.T("已是最新版本", "BrimDeck is up to date"), _ => Loc.T("保持 BrimDeck 为最新版本", "Keep BrimDeck up to date")
+                _ when updates.LastChecked is not null && updates.Error is null && updates.NoticeVersion is null => Loc.T("已是最新版本", "DeckIsland is up to date"), _ => Loc.T("保持 DeckIsland 为最新版本", "Keep DeckIsland up to date")
             };
             detail.Text = stage switch
             {
-                AppUpdateStage.Downloading => Loc.T($"{updates.Progress}% · 下载完成后可安装并重启。", $"{updates.Progress}% · When the download finishes, BrimDeck can install it and restart."),
+                AppUpdateStage.Downloading => Loc.T($"{updates.Progress}% · 下载完成后可安装并重启。", $"{updates.Progress}% · When the download finishes, DeckIsland can install it and restart."),
                 AppUpdateStage.Ready => Loc.T($"{updates.CurrentVersion} → {release?.Version} · 重启后生效，现有设置将保留。", $"{updates.CurrentVersion} → {release?.Version} · Takes effect after a restart. Your settings are kept."),
-                AppUpdateStage.Installing => Loc.T("正在退出 BrimDeck，完成后将重新打开。", "BrimDeck is closing and will open again when the update is done."),
+                AppUpdateStage.Installing => Loc.T("正在退出 DeckIsland，完成后将重新打开。", "DeckIsland is closing and will open again when the update is done."),
                 _ when release is not null && updates.IsSkipped(release.Version) => Loc.T("已跳过此版本，不再提示；仍可手动下载。", "This version is skipped and will not be announced again. You can still download it."),
                 _ when release is not null && !updates.CanInstall => Loc.T("当前程序不是通过安装包或免安装压缩包获得的，无法在应用内更新。请前往下载页面下载新版本。",
                     "This copy did not come from the installer or the portable package and cannot update itself. Download the new version from the download page."),
                 _ when release is not null => Loc.T($"{updates.CurrentVersion} → {release.Version} · 约 {release.Size / 1048576d:0.#} MB", $"{updates.CurrentVersion} → {release.Version} · About {release.Size / 1048576d:0.#} MB"),
                 _ when updates.LastChecked is { } time => Loc.T("上次检查 ", "Last checked ") + time.ToLocalTime().ToString("MM-dd HH:mm"),
-                _ => updates.AutoCheck ? Loc.T("BrimDeck 会在启动后和每 6 小时于后台检查一次新版本，打开设置时也会检查；也可以随时手动检查。", "BrimDeck checks for a new version in the background after startup and every 6 hours, and when settings open. You can also check at any time.")
+                _ => updates.AutoCheck ? Loc.T("DeckIsland 会在启动后和每 6 小时于后台检查一次新版本，打开设置时也会检查；也可以随时手动检查。", "DeckIsland checks for a new version in the background after startup and every 6 hours, and when settings open. You can also check at any time.")
                     : Loc.T("自动检查更新已关闭，可以随时手动检查。", "Automatic update checks are off. You can check at any time.")
             };
             // Release notes laid out as in the What's new window (FillNotes), only as text: remote release content cannot run

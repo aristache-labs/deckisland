@@ -4,9 +4,9 @@ using System.Windows.Automation.Peers;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // The system monitor page's gauges. Each draws itself and takes the size its cell gives it, so a new reading redraws it without
 // measuring anything; values ease to each reading in a little under half a second (Eased, Motion) and then rest. Hover and press

@@ -3,9 +3,9 @@ using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // The edge the panel hangs from (DeckSettings.Dock, for the style shown). Everything is laid out in the edge's frame (EdgeFrame), as if the panel
 // hung from the top: MonitorBoundsDip and WorkDip are the frame's, the collapsed shape, the hover area, the open panel and the

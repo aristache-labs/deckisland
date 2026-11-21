@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // The Flow way: the single value that flows across the level bars.
 // The value combines how loud each of five frequency bands is relative to its own

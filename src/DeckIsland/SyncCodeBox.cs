@@ -4,7 +4,7 @@ using System.Windows.Automation.Peers;
 using System.Windows.Input;
 using System.Windows.Media;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // A six-digit pairing code, one digit to a cell. As an input it takes digits typed or pasted (spaces and dashes in a pasted code
 // are dropped) and reports the code once it is complete; read-only, it shows a code to be typed on another device.

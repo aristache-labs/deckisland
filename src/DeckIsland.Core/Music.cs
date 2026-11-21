@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 public enum MediaState { Stopped, Paused, Playing, Unknown }
 public enum MediaRepeat { None, Track, List }

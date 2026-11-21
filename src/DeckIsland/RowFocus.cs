@@ -1,7 +1,7 @@
 using System.Windows;
 using System.Windows.Input;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // Moving a row from the keyboard (Alt+Up/Down) first folds away the rows' open details. A control in the part that folds, the
 // one the focus was on, stops being visible, and WPF then takes the keyboard focus away from it; the next Alt+arrow would not

@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.IO;
-using BrimDeck.Core;
-using BrimDeck.Native;
+using DeckIsland.Core;
+using DeckIsland.Native;
 
 // The guard over readings that ask a driver (SensorGuard), in a folder of its own: the mark on disk while a reading is asked, a
 // reading that never answers stopped and its thread told, a mark left behind stopping the reading at the next start, and turning
@@ -10,7 +10,7 @@ internal static class SensorGuardChecks
 {
     public static void Run(Action<string, bool> check)
     {
-        var folder = Path.Combine(Path.GetTempPath(), "BrimDeck-SensorGuard-" + Guid.NewGuid().ToString("N"));
+        var folder = Path.Combine(Path.GetTempPath(), "DeckIsland-SensorGuard-" + Guid.NewGuid().ToString("N"));
         string pending = Path.Combine(folder, SensorStops.PendingFile);
         try
         {

@@ -5,9 +5,9 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 public sealed partial class SettingsWindow
 {
@@ -343,8 +343,8 @@ public sealed partial class SettingsWindow
             Loc.T("在音乐页面右上角的来源菜单末尾固定显示“网易云音乐 · 完整控制”，以便随时启用完整控制。启用完整控制后，可以在面板中拖动网易云音乐的播放进度、切换播放模式，以及喜欢或取消喜欢当前歌曲。",
                 "Keeps \"NetEase Cloud Music · Full control\" at the end of the source menu at the top right of the music page, so full control can be enabled at any time. With full control, NetEase Cloud Music's playback position can be dragged in the panel, its playback mode switched, and the current song liked or unliked.")),
             Toggle(Loc.T("启动后自动启用完整控制", "Enable full control when it starts"), S.NeteaseAutoFullControl, NeteaseAutoFullControl, S.MusicPage,
-                Loc.T("网易云音乐以普通方式启动后，BrimDeck 会自动将它重启一次，改为完整控制，通常需要几秒钟。",
-                    "When NetEase Cloud Music is started the normal way, BrimDeck restarts it once with full control, which usually takes a few seconds.")),
+                Loc.T("网易云音乐以普通方式启动后，DeckIsland 会自动将它重启一次，改为完整控制，通常需要几秒钟。",
+                    "When NetEase Cloud Music is started the normal way, DeckIsland restarts it once with full control, which usually takes a few seconds.")),
             NeteaseSwitch());
         SectionTitle(Loc.T("酷狗音乐", "KuGou Music"));
         // Without full control KuGou is seen only through its system media session, an option in KuGou's own settings.
@@ -353,7 +353,7 @@ public sealed partial class SettingsWindow
         Group(KugouSwitch());
         SectionTitle("Apple Music");
         Group(Toggle(Loc.T("始终启用完整控制", "Always enable full control"), S.AppleMusicFullControl, v => Change(s => s.AppleMusicFullControl = v), S.MusicPage,
-            Loc.T("BrimDeck 启动后自动启用 Apple Music 的完整控制。", "Enables full control of Apple Music when BrimDeck starts.")));
+            Loc.T("DeckIsland 启动后自动启用 Apple Music 的完整控制。", "Enables full control of Apple Music when DeckIsland starts.")));
         // QQ Music is read through its own pipe; it has nothing to set.
         SectionTitle(Loc.T("QQ 音乐", "QQ Music"));
         PlayerNote(Loc.T("无需任何设置。", "Needs no setup."), last: true);

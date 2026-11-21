@@ -2,7 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 public enum NeteaseLogKind { Track, Loaded, Play, Pause, Position, Restore, Buffering, Buffered, Mode, End, Exit }
 public sealed record NeteaseLogEvent(NeteaseLogKind Kind, long Tick)

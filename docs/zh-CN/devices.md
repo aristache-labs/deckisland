@@ -2,7 +2,7 @@
 
 设备电量页显示已连接的无线鼠标、键盘、耳机、手柄、触控笔和手机的电量；刘海与胶囊也可以显示。相关设置在“设置 › 显示与设备”中。
 
-BrimDeck 只读取电量：不配对、不断开，也不改动任何设备与 Windows 设置，不需要管理员权限，也不安装驱动。只在设备电量页打开、刘海或胶囊显示设备电量，或“设置 › 显示与设备”打开时读取。
+DeckIsland 只读取电量：不配对、不断开，也不改动任何设备与 Windows 设置，不需要管理员权限，也不安装驱动。只在设备电量页打开、刘海或胶囊显示设备电量，或“设置 › 显示与设备”打开时读取。
 
 ## 支持的连接方式
 
@@ -50,7 +50,7 @@ BrimDeck 只读取电量：不配对、不断开，也不改动任何设备与 W
 | Xbox、北通（BETOP）、飞智（Flydigi）、盖世小鸡（GameSir）、8BitDo | 整个品牌 |
 | PlayStation（DualSense、DualSense Edge、DualShock 4）、Steam Controller、NVIDIA SHIELD、Xbox 360 无线接收器 | 已知型号 |
 
-- 不少型号按公开的协议资料实现，尚未在实物上验证。读不到或读数不对时，欢迎在 [Issues](https://github.com/MoFeng2223/BrimDeck/issues) 中反馈型号，以及设备管理器中接收器的硬件 ID。
+- 不少型号按公开的协议资料实现，尚未在实物上验证。读不到或读数不对时，欢迎在 [Issues](https://github.com/aristache-labs/deckisland/issues) 中反馈型号，以及设备管理器中接收器的硬件 ID。
 - 飞智手柄、Xbox 360 无线接收器与部分耳机只报告档位，电量显示为估算值。
 - 设备休眠或超出接收范围时，显示上一次的电量。
 
@@ -58,7 +58,7 @@ BrimDeck 只读取电量：不配对、不断开，也不改动任何设备与 W
 
 - 只发送读取电量的请求，不发送任何修改设置的命令。
 - 同一品牌有几种读取方式时，只在设备第一次出现时依次尝试，最多三轮；找到能用的方式后记录在本机，之后只用这一种，升级后继续有效。这种方式长期没有回应时，会再尝试一次其他方式。
-- 读取时设备出现异常（设备随即断开，或 BrimDeck 在等待回应时退出），该读取方式不再发送；两种方式出现异常，该设备停止读取。
+- 读取时设备出现异常（设备随即断开，或 DeckIsland 在等待回应时退出），该读取方式不再发送；两种方式出现异常，该设备停止读取。
 - 识别到但读不到电量的设备显示“未报告电量”。在设备列表中关闭“读取”后，不再向该设备发送任何请求。
 
 ## 显示与设置
@@ -69,7 +69,7 @@ BrimDeck 只读取电量：不配对、不断开，也不改动任何设备与 W
 
 ## 致谢
 
-部分协议移植自或参考了以下开源项目，许可证全文见 [ThirdPartyNotices.txt](../../src/BrimDeck/ThirdPartyNotices.txt)：
+部分协议移植自或参考了以下开源项目，许可证全文见 [ThirdPartyNotices.txt](../../src/DeckIsland/ThirdPartyNotices.txt)：
 
 - [device-battery-viewer](https://github.com/CharlesGool/device-battery-viewer)（罗技 HID++）
 - [razer-battery-report](https://github.com/xzeldon/razer-battery-report)（雷蛇）

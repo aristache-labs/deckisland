@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 // The open panel's content only fades while the panel opens and closes. It used to scale between .96 and 1 as well, and text
 // under a scale that is not exactly 1 is drawn unhinted at fractional places on the pixel grid: for the last hundred milliseconds of
 // the opening (the scale's tail) the text shimmered, and on the frame the scale reached 1 it snapped onto the grid. Measured offscreen
-// (tests/BrimDeck.FxPreview --expand-jitter --snap): at a scale of .9992, 1249 of the page's pixels at 100 % (3195 at 150 %) differ
+// (tests/DeckIsland.FxPreview --expand-jitter --snap): at a scale of .9992, 1249 of the page's pixels at 100 % (3195 at 150 %) differ
 // from the page at rest. What is checked here is that nothing puts a transform on the page's content again; the moves themselves
 // are the FxPreview's.
 internal static class ExpandStillTests
@@ -64,10 +64,10 @@ internal static class ExpandStillTests
             && Transforms("selfclosing.xaml", """<Grid><Grid x:Name="ExpandedContent" Opacity="0"/><Border><Border.RenderTransform><ScaleTransform/></Border.RenderTransform></Border></Grid>""").Count == 0);
 
         var source = new DirectoryInfo(AppContext.BaseDirectory);
-        while (source is not null && !File.Exists(Path.Combine(source.FullName, "BrimDeck.sln"))) source = source.Parent;
+        while (source is not null && !File.Exists(Path.Combine(source.FullName, "DeckIsland.sln"))) source = source.Parent;
         check("Expand still: the source tree is found", source is not null);
         if (source is null) return;
-        var app = Path.Combine(source.FullName, "src", "BrimDeck");
+        var app = Path.Combine(source.FullName, "src", "DeckIsland");
         var files = Directory.EnumerateFiles(app, "*.*", SearchOption.AllDirectories)
             .Where(file => (file.EndsWith(".cs") || file.EndsWith(".xaml")) && !file.Contains(Path.DirectorySeparatorChar + "obj" + Path.DirectorySeparatorChar)
                 && !file.Contains(Path.DirectorySeparatorChar + "bin" + Path.DirectorySeparatorChar)).ToList();

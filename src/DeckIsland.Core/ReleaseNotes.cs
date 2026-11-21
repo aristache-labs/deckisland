@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Release notes in one or more interface languages. update.json carries either plain text, shown in every language,
 // or an object keyed by language ("zh-CN", "en-US", …) that the publish script splits out of releases/<version>.md.

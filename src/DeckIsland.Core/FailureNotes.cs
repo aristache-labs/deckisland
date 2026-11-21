@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Notes of failures that readings swallow (a provider that fails shows as dashes), kept for the log without flooding it: one note for
 // each kind of failure of a source, again only after QuietSeconds. The clock and the writer are given, so the rule can be tested.

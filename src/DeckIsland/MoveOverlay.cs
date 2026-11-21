@@ -3,10 +3,10 @@ using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
-using BrimDeck.Core;
-using BrimDeck.Native;
+using DeckIsland.Core;
+using DeckIsland.Native;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // What a move starts from (MainWindow.Move.cs), on the screen in DIPs relative to the monitor's top-left corner. Surface is the
 // collapsed surface's box. For the notch and the line: the edge they hang from and whether from the screen's edge over a taskbar
@@ -32,7 +32,7 @@ internal sealed class MoveOverlay : Window
     public MoveOverlay(Rect bounds, double scale, MoveStart start)
     {
         WindowStyle = WindowStyle.None; AllowsTransparency = true; Background = Brushes.Transparent; ResizeMode = ResizeMode.NoResize;
-        Topmost = true; ShowActivated = false; ShowInTaskbar = false; Focusable = false; IsHitTestVisible = false; Title = "BrimDeck";
+        Topmost = true; ShowActivated = false; ShowInTaskbar = false; Focusable = false; IsHitTestVisible = false; Title = "DeckIsland";
         Content = _ghost = new MoveGhost(start);
         Left = bounds.Left / scale; Top = bounds.Top / scale; Width = bounds.Width / scale; Height = bounds.Height / scale;
         // Moved onto the monitor in one step first, which gives the window that monitor's DPI (as MainWindow.Place does), and sized

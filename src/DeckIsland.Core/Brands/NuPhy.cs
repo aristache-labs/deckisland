@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // NuPhy 2.4 GHz receivers and NuPhyIO wireless keyboards (VID 0x19F5, dedicated to NuPhy; from drive.nuphy.io and
 // documented protocol facts): matches any 65-byte configuration collection on 0x0001:0x0000 with report id 0, excluding

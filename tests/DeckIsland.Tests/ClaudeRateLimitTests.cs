@@ -1,6 +1,6 @@
 using System.Net;
 using System.Text.Json;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // The pause after a 429 from the Claude quota API, and the reading kept from before it. Time is a clock the test sets, and the
 // share added to a pause is fixed or bracketed: nothing here waits or depends on the wall clock.

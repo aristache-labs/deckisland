@@ -1,9 +1,9 @@
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Windows.Threading;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // The smooth memory mode prepares the code that builds and draws the pages once the app has started and has nothing else to do
 // (MemoryPlan.WarmAtStart), as PowerWarm does for the power rows: code compiled when a page is first built otherwise runs on the UI

@@ -1,6 +1,6 @@
 using System.Runtime.CompilerServices;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // From a theme file to a palette: the base chain is merged, the effects are fitted to their ranges, and every color with a
 // contrast minimum is brought up to it.

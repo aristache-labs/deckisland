@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // What the mouse families share: matching a documented collection, and the 0x83 feature exchange two of them speak.
 public static class MouseShapes

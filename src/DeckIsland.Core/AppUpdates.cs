@@ -1,7 +1,7 @@
 using System.Net;
 using System.Text.Json;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 public enum AppUpdateStage { Idle, Checking, Available, Downloading, Ready, Installing }
 public sealed record AppRelease(string Version, ReleaseNotes Notes, long Size);

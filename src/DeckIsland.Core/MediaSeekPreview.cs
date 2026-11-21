@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Dispatch only confirms that a command was sent. Keep its visual target separate
 // from native progress until the player reports the new position.

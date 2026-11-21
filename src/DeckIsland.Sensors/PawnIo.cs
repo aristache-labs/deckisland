@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 using System.ServiceProcess;
 using Microsoft.Win32.SafeHandles;
 
-namespace BrimDeck.Sensors;
+namespace DeckIsland.Sensors;
 
 // One PawnIO module, loaded into a handle of its own (the driver keeps one module per handle). The driver's device opens only
 // for SYSTEM and administrators; it loads only modules signed by PawnIO's author, so the module files are the official ones.

@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Razer's headsets on their own receivers, vendor 0x1532. The id is shared with the mice and keyboards Razer (the 90-byte
 // reader) takes, so only these products are taken, each on its documented vendor collection:

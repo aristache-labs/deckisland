@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // The cycles of the collapsed row's scrolling regions as plain functions of the time within them (seconds from the cycle's
 // start). The window waits out their rests on a timer and runs an animation clock only while something moves: a cycle that

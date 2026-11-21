@@ -2,7 +2,7 @@ using System.Buffers.Binary;
 using System.Net;
 using System.Text;
 using System.Text.Json;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 internal static class QueMusicLyricsTests
 {

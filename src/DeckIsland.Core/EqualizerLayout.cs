@@ -1,6 +1,6 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
-// Where the level bars stand (BrimDeck.MusicEqualizer), on half device pixels: a level that moves the bar by less than that
+// Where the level bars stand (DeckIsland.MusicEqualizer), on half device pixels: a level that moves the bar by less than that
 // draws the same, so the window draws no new frame for it. Each frame the bars drew cost the layered island most of a
 // millisecond, about one percent of a core for every ten frames a second.
 public static class EqualizerLayout

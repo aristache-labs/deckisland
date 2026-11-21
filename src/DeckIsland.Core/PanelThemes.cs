@@ -3,7 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 public enum PanelThemeKind { Basic, Extension, Custom }
 
@@ -127,7 +127,7 @@ public static partial class PanelThemes
     // Built-in themes are read on demand: startup reads only the chosen theme and its base themes. The id of each is its resource
     // name, which a test keeps equal to the id inside the file.
     private const string ThemeResources = ".Themes.";
-    // Dark and light first, then the ported editor themes, then BrimDeck's own extensions with the custom demo last.
+    // Dark and light first, then the ported editor themes, then DeckIsland's own extensions with the custom demo last.
     private static readonly string[] BuiltInOrder = [Dark, Light, "one-dark-pro", "github-dark", "github-light", "dracula", "night-owl", IslandHoliday, IslandHoliday2, PixelBlocks, Demo];
     private static (string Id, string Resource)[]? _builtInIndex;
     private static (string Id, string Resource)[] BuiltInIndex => _builtInIndex ??= [.. typeof(PanelThemes).Assembly.GetManifestResourceNames()

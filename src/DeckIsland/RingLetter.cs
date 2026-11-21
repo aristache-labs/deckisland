@@ -2,9 +2,9 @@ using System.Globalization;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Shapes;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // The letter inside a collapsed quota ring, drawn as the glyph's outline and centred on that outline's own ink box. A TextBlock
 // centres its line box, which holds the font's ascent and descent, so a capital sat a device pixel or two below the ring's centre.

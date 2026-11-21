@@ -259,7 +259,7 @@ def main():
         clock_grid(render, out, "themes", margin=(24, 0, 24, 30), listing="themes.json")
     if (render / "settings.png").exists():
         window_shot(render, out, "settings")
-    icon = Image.open(Path(__file__).resolve().parents[2] / "src" / "BrimDeck" / "Assets" / "BrimDeck.ico")
+    icon = Image.open(Path(__file__).resolve().parents[2] / "src" / "DeckIsland" / "Assets" / "DeckIsland.ico")
     icon.size = max(icon.info["sizes"])
     icon.convert("RGBA").resize((128, 128), Image.LANCZOS).save(out.parents[1] / "icon.png", optimize=True)
     print("hero frames:", hero(render, out))

@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // The Spectrum way: the bars, left to right, are low to high pitch, so a kick drum lifts the left bars, a cymbal the right ones,
 // and a single tone only the bars around its pitch.

@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // FIFINE headsets on their 2.4 GHz dongles, vendor 0x3142 (FIFINE's own: every collection of the brand with the shape is
 // asked). The vendor collection (usage page 0xFF90 usage 1) takes report 0x55 both ways, 64 bytes: the state query 55 65 01

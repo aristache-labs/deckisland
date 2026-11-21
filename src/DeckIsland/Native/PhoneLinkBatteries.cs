@@ -1,9 +1,9 @@
 using System.Diagnostics;
 using System.IO;
 using System.Windows.Threading;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 // The phone's battery from Phone Link, the app behind "Link to Windows": its Start card carries the phone's name, the
 // charge and whether it is charging. Read only, from the app package's own local state; nothing is ever written there.

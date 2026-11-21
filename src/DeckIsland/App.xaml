@@ -1,5 +1,5 @@
-<Application x:Class="BrimDeck.App" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="clr-namespace:BrimDeck" xmlns:sys="clr-namespace:System;assembly=System.Runtime" ShutdownMode="OnExplicitShutdown">
+<Application x:Class="DeckIsland.App" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="clr-namespace:DeckIsland" xmlns:sys="clr-namespace:System;assembly=System.Runtime" ShutdownMode="OnExplicitShutdown">
   <Application.Resources>
     <ResourceDictionary>
     <ResourceDictionary.MergedDictionaries>
@@ -200,7 +200,7 @@
         </ControlTemplate>
       </Setter.Value></Setter>
     </Style>
-    <Style x:Key="BrimDeckToolTip" TargetType="ToolTip">
+    <Style x:Key="DeckIslandToolTip" TargetType="ToolTip">
       <Setter Property="FontFamily" Value="{DynamicResource FontPanel}"/>
       <Setter Property="FontSize" Value="11.5"/>
       <Setter Property="Foreground" Value="{DynamicResource PanelPrimary}"/>
@@ -219,7 +219,7 @@
         </ControlTemplate>
       </Setter.Value></Setter>
     </Style>
-    <Style TargetType="ToolTip" BasedOn="{StaticResource BrimDeckToolTip}"/>
+    <Style TargetType="ToolTip" BasedOn="{StaticResource DeckIslandToolTip}"/>
     <!-- Tray menu: compact, no icon column, follows the system's app theme like the shell's own tray menus.
          The dark palette is the default here; TrayIcon.CreateMenu swaps in the light palette when apps use the light theme. -->
     <SolidColorBrush x:Key="MenuSurface" Color="#2C2C2C"/>

@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // What the system monitor page's drawn parts say to a screen reader, where the words depend on whether there is a reading, kept apart
 // from the controls that draw them so the wording is checked on its own.

@@ -1,4 +1,4 @@
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // The frame rate of the program in front: in the collapsed row a reading of its own at the end of the table, outside the presets,
 // which joins the row with its first figure and stays away where frame rates cannot be read; on the page a line of its own.
@@ -64,7 +64,7 @@ static class FrameRateTests
         var settings = new DeckSettings { MonitorFrames = true };
         settings.CompactReadings.First(reading => reading.Item == Frames).Visible = true;
         settings.CompactReadings.First(reading => reading.Item == Frames).Figures = [];
-        var folder = Path.Combine(Path.GetTempPath(), "BrimDeck-Tests-frames-" + Guid.NewGuid().ToString("N"));
+        var folder = Path.Combine(Path.GetTempPath(), "DeckIsland-Tests-frames-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(folder);
         DeckSettings copy;
         try { new SettingsStore(folder).Save(settings); copy = new SettingsStore(folder).Load(); }

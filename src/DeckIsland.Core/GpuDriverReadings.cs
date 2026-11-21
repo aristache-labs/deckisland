@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // An adapter's usage as its driver counts it (Native.GpuDrivers): NVIDIA's NVAPI, AMD's ADL, Intel's control library. The driver
 // counts the time its graphics engine is busy, the figure AIDA64, HWiNFO's "GPU Core Load" and nvidia-smi show; Windows counts

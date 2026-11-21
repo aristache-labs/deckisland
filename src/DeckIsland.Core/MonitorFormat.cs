@@ -1,6 +1,6 @@
 using System.Globalization;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Number formatting for the system monitor page, after ftop's Format by Nongfsq (https://github.com/Nongfsq/ftop,
 // MIT License; see ThirdPartyNotices.txt). Numbers and units come apart because the page draws units smaller and

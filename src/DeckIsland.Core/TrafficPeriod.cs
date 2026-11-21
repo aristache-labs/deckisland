@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // The span the network's traffic is summed over (DeckSettings.MonitorTrafficPeriod): since midnight today, or the last day, 7 days or
 // 30 days back from now, the moving windows the Data usage page in Windows Settings counts its own figures over.

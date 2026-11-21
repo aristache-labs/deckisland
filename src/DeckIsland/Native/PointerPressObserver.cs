@@ -2,7 +2,7 @@ using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Threading;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 // Observe presses only while a popup is open. Always pass input through to its
 // destination, including windows owned by another process.
@@ -37,7 +37,7 @@ internal sealed class PointerPressObserver : IDisposable
             if (_hook == 0) return;
             try { Dispatcher.Run(); }
             finally { UnhookWindowsHookEx(_hook); _hook = 0; }
-        }) { IsBackground = true, Name = "BrimDeck popup input" };
+        }) { IsBackground = true, Name = "DeckIsland popup input" };
         thread.SetApartmentState(ApartmentState.STA);
         thread.Start();
         ready.Wait();

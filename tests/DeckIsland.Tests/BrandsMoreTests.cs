@@ -1,4 +1,4 @@
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // The brand families on the newer transports: Airoha RACE headsets (input report fetched after the request), the PULSE
 // Explore (feature report fetched alone), the ASTRO A50 Gen 4 and the RK R98Pro V2 (a question first), the BlackShark V3 (read
@@ -185,7 +185,7 @@ static class BrandsMoreTests
             && Untaken(Shape(0x1532, 0x057A, 0x000C, 1, 5, outputIds: [0x02]), "Razer BlackShark V3")
             && Untaken(Shape(0x1532, 0x056C, 0xFF14, 1, 5, outputIds: [0x02]), "Razer BlackShark V3")
             && Untaken(proDongle, "Razer Headset")
-            && new[] { 0x057A, 0x0579, 0x0577, 0x0576 }.All(pid => BrimDeck.Core.Razer.Find(pid) is null));
+            && new[] { 0x057A, 0x0579, 0x0577, 0x0576 }.All(pid => DeckIsland.Core.Razer.Find(pid) is null));
         var way = Way(dongle);
         check("Razer BlackShark V3: Synapse's frames as captured (wake 02 then 2A, the charging query, then the battery query, each with its XOR), one try, at most once in five minutes",
             way.Before.Count == 3 && way.Before[0].SequenceEqual(Frame("02 00 60 00 00 00 04 00 00 00 02", 0x64))

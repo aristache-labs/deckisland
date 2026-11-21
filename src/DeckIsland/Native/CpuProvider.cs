@@ -1,9 +1,9 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics.X86;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 // Per logical processor: usage, and the current frequency against the highest seen so far. Usage is the share of time
 // the processor was busy, which Task Manager shows on Windows 11 since 24H2; the processor utility it showed before

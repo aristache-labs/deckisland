@@ -2,7 +2,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text.RegularExpressions;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // A category's rule (ShelfCategory.Rule): what a new copy, or a file added to the file transfer, must be like to go into the
 // category by itself. It only adds: anything can still be put in a category by hand, and taking an entry out by hand holds
@@ -230,7 +230,7 @@ public static class ShelfRules
     };
     public static string Example(TextFormat format) => format switch
     {
-        TextFormat.Email => "name@example.com", TextFormat.Phone => "138 0013 8000", TextFormat.Path => @"D:\Projects\BrimDeck",
+        TextFormat.Email => "name@example.com", TextFormat.Phone => "138 0013 8000", TextFormat.Path => @"D:\Projects\DeckIsland",
         TextFormat.IpAddress => "192.168.1.10:8080", TextFormat.Number => "1,280.50", _ => "5e43f0f"
     };
     public static string Name(FileKind kind) => kind switch

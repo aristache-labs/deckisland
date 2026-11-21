@@ -6,12 +6,12 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Shapes;
-using BrimDeck.Core;
-using BrimDeck.Native;
+using DeckIsland.Core;
+using DeckIsland.Native;
 using Microsoft.Win32;
-using MediaState = BrimDeck.Core.MediaState;
+using MediaState = DeckIsland.Core.MediaState;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // Gestures over the expanded music page (MusicGestures, set on the settings' quick actions page). Dragging with the left button
 // draws the pointer's trail on GestureLayer, with the action the drag would run beneath it, and runs that action on release. A

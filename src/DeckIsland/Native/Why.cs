@@ -1,6 +1,6 @@
-﻿using BrimDeck.Core;
+﻿using DeckIsland.Core;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 // Why a reading is missing, worded in the interface language when the reading is taken.
 internal static class Why

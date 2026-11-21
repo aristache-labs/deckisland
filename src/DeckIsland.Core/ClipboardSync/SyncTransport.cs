@@ -1,7 +1,7 @@
 using System.Net.Http;
 using System.Text;
 
-namespace BrimDeck.Core.ClipboardSync;
+namespace DeckIsland.Core.ClipboardSync;
 
 // What another device copied: text, with its HTML fragment when the service carries formatting, or an encoded picture
 // (PNG or JPEG) with Text empty.

@@ -1,10 +1,10 @@
 using System.Windows;
 using System.Windows.Media.Animation;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
-// The island's width and left edge while it opens, closes or changes size, on whole device pixels (BrimDeck.Core.SurfaceSnap): the
+// The island's width and left edge while it opens, closes or changes size, on whole device pixels (DeckIsland.Core.SurfaceSnap): the
 // layout rounds the island's margin, its width and the open page's offset inside it each on its own, which in the tail of a move
 // stepped the page and the surface's edges a pixel to and fro. Both follow the curve they are given exactly as the plain
 // animations do; only the values they give are the snapped ones.

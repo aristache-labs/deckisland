@@ -1,4 +1,4 @@
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // The letter in the middle of a collapsed quota ring (CompactMusicLayout.RingLetter): the first letter or digit of the application's
 // name, upper case, so rings are told apart by more than their color.

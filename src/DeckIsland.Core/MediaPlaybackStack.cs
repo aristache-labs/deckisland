@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 public sealed record MediaStackDecision(string? Current, string? Started, DateTimeOffset? RecheckAt);
 

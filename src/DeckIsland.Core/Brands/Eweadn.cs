@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // EWEADN (前行者) mice, and the AULA SC580 on the same receiver.
 // - The receiver 089D:062F (the EWEADN S9, device id M156, and H2, M302; the AULA SC580, M137; the EWEADN X23, M230) and

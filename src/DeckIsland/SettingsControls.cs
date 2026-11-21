@@ -1,6 +1,6 @@
 using System.Globalization;
 using System.Windows;
-using BrimDeck.Core;
+using DeckIsland.Core;
 using System.Windows.Automation;
 using System.Windows.Automation.Peers;
 using System.Windows.Automation.Provider;
@@ -9,7 +9,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 public sealed partial class SettingsWindow
 {
@@ -178,7 +178,7 @@ public sealed partial class SettingsWindow
         var dialog = new Window { Title = title, Owner = this, Width = 400, SizeToContent = SizeToContent.Height,
             WindowStartupLocation = WindowStartupLocation.CenterOwner, ShowInTaskbar = false, FontFamily = SettingsFont(UiFontRole.Panel),
             Background = UI.Brush(Surface), Foreground = UI.Brush(TextPrimary), ResizeMode = ResizeMode.NoResize };
-        dialog.Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("/BrimDeck;component/SettingsResources.xaml", UriKind.Relative) });
+        dialog.Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("/DeckIsland;component/SettingsResources.xaml", UriKind.Relative) });
         _palette.Apply(dialog.Resources); Native.SettingsChrome.Apply(dialog);
         dialog.SourceInitialized += (_, _) => Native.SettingsChrome.SetTheme(dialog, _palette.Dark);
         TextOptions.SetTextFormattingMode(dialog, TextFormattingMode.Display);

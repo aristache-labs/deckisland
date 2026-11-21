@@ -1,6 +1,6 @@
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 // Keeps the collections of the receivers that send their battery unasked open (Pushes: Attack Shark, DELUX, Inphic ZHEN,
 // Rapoo, AULA G9, the Steam Controller puck, JBL Quantum 910, PULSE 3D, Cloud Flight 2) and reads every report they send, as
@@ -33,7 +33,7 @@ internal sealed class PushEvents(Action<string, DeviceBattery> received) : IDisp
             if (!same) { _wanted = collections; _dirty = true; }
             if (_thread is null)
             {
-                _thread = new Thread(Run) { IsBackground = true, Priority = ThreadPriority.BelowNormal, Name = "BrimDeck pushed batteries" };
+                _thread = new Thread(Run) { IsBackground = true, Priority = ThreadPriority.BelowNormal, Name = "DeckIsland pushed batteries" };
                 _thread.Start();
             }
         }

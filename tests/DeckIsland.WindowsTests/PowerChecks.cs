@@ -1,6 +1,6 @@
 using System.Diagnostics;
-using BrimDeck.Core;
-using BrimDeck.Native;
+using DeckIsland.Core;
+using DeckIsland.Native;
 
 // Reads this machine's power and battery the way the monitor page does, without a driver or administrator rights (read only). A
 // machine may lack any of it (a desktop has no battery, an AMD or virtual machine no Energy Meter, no NVIDIA adapter), so the checks
@@ -42,9 +42,9 @@ internal static class PowerChecks
     // The NVIDIA helper (nvidia-smi) runs only while an adapter works and power is wanted, and ends otherwise.
     private static void Helper(List<GpuSample> adapters, Reading<double> discharge, bool battery, Action<string, bool> check)
     {
-        // Only the helpers this process started: a BrimDeck running meanwhile has one of its own.
+        // Only the helpers this process started: a DeckIsland running meanwhile has one of its own.
         int self = Environment.ProcessId;
-        List<int> Own() => [.. BrimDeck.Native.ProcessSnapshot.Read().Where(entry => entry.Value.Parent == self
+        List<int> Own() => [.. DeckIsland.Native.ProcessSnapshot.Read().Where(entry => entry.Value.Parent == self
             && string.Equals(entry.Value.File, "nvidia-smi.exe", StringComparison.OrdinalIgnoreCase)).Select(entry => entry.Key)];
         int Running() => Own().Count;
         using var pdh = new PdhQuery();

@@ -1,8 +1,8 @@
 using System.Runtime.InteropServices;
 using System.Windows.Interop;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 // Global hotkeys registered on a message-only window that the app owns for its whole run. The panels are closed and opened
 // again when monitors change, so their windows cannot hold the registrations; this window has no monitor, no position and
@@ -18,7 +18,7 @@ internal sealed class GlobalHotkeys : IDisposable
 
     public GlobalHotkeys()
     {
-        _source = new HwndSource(new HwndSourceParameters("BrimDeck.Hotkeys") { ParentWindow = new IntPtr(-3), WindowStyle = 0, Width = 0, Height = 0 }); // HWND_MESSAGE
+        _source = new HwndSource(new HwndSourceParameters("DeckIsland.Hotkeys") { ParentWindow = new IntPtr(-3), WindowStyle = 0, Width = 0, Height = 0 }); // HWND_MESSAGE
         _source.AddHook(Hook);
     }
 

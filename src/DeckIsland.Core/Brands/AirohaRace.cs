@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Headsets whose dongles speak Airoha's RACE protocol on a vendor collection, usage page 0xFF13 usage 1, 62-byte reports.
 // The battery query is output report 06 07 80 05 5A 03 00 D6 0C 00: report id 6, 7 bytes of frame, 0x80 (the headset behind

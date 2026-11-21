@@ -2,10 +2,10 @@ using System.Diagnostics;
 using System.IO;
 using System.Management;
 using System.Text.RegularExpressions;
-using BrimDeck.Core;
+using DeckIsland.Core;
 using Microsoft.Win32;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 internal sealed record NeteaseProcess(int Id, long Started, string Path, int? DebugPort, long StartTick)
 {
@@ -34,7 +34,7 @@ internal sealed record NeteaseProcess(int Id, long Started, string Path, int? De
         var info = new ProcessStartInfo(path) { UseShellExecute = true, WorkingDirectory = System.IO.Path.GetDirectoryName(path)! };
         foreach (var argument in arguments) info.ArgumentList.Add(argument);
         var process = Process.Start(info) ?? throw new InvalidOperationException(Loc.T("无法启动网易云。", "NetEase Cloud Music could not be started."));
-        // Shell execution keeps the player's diagnostic streams detached from BrimDeck.
+        // Shell execution keeps the player's diagnostic streams detached from DeckIsland.
         return process;
     }
     public static NeteaseProcess? Discover()
@@ -100,9 +100,9 @@ internal sealed record NeteaseProcess(int Id, long Started, string Path, int? De
 internal sealed class NeteaseSource : IMediaPlayerConnection
 {
     internal const int ControlPort = 21631;
-    // A failed connection leaves BrimDeck reading only what plays, but the player keeps the port it was started with.
-    internal static string PortStillOpen => Loc.T("BrimDeck 已改为只读取播放信息。网易云如果仍在运行，它的调试端口仍然开着；以普通方式重新启动网易云即可关闭。",
-        " BrimDeck now only reads what is playing. If NetEase Cloud Music is still running, its debugging port is still open; start NetEase Cloud Music again the normal way to close it.");
+    // A failed connection leaves DeckIsland reading only what plays, but the player keeps the port it was started with.
+    internal static string PortStillOpen => Loc.T("DeckIsland 已改为只读取播放信息。网易云如果仍在运行，它的调试端口仍然开着；以普通方式重新启动网易云即可关闭。",
+        " DeckIsland now only reads what is playing. If NetEase Cloud Music is still running, its debugging port is still open; start NetEase Cloud Music again the normal way to close it.");
     private readonly CancellationTokenSource _stop = new();
     private readonly SemaphoreSlim _refresh = new(1, 1);
     private readonly SemaphoreSlim _wake = new(0, 1);

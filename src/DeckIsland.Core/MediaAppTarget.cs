@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // The application that plays the current song: the exact process when a player connection knows it, otherwise only the
 // media session's AppUserModelID. Win32 players report their executable ("cloudmusic.exe"), a short name ("Chrome",

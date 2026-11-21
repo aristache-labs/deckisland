@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Kimi Code writes each session to sessions\<work dir>\<session>\agents\<agent>\wire.jsonl, one JSON event per line;
 // a subagent writes its calls only to its own file. Every model response that came back with usage writes one record:

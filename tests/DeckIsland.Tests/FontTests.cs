@@ -1,8 +1,8 @@
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // The shared font entry (UiFonts here, Fonts in the app) and the setting behind it: with no font chosen every role is the chain the
 // app always used; a chosen font goes in front of it; the setting reads back, defaults for old files and survives hand edits. That
-// the app's windows really take the chosen font is checked on real windows in BrimDeck.WindowsTests (FontFollowTests).
+// the app's windows really take the chosen font is checked on real windows in DeckIsland.WindowsTests (FontFollowTests).
 internal static class FontTests
 {
     // The strings that were written at every use before the entry existed. A change here is a change of how the app looks with no font chosen.

@@ -1,14 +1,14 @@
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // One motion language for the whole app: the same few curves and durations for the panel, its pages, cards, hover and press
 // feedback, and dragging. Moves start promptly and land slowly (Out); what changes in place eases both ways (InOut); what
 // opens or appears leaves at full speed and lands with a slight give (Bounce), and what closes or goes away leaves at once and
-// lands softly without one (Drawer; the power-off still settles from a slow start, Settle); what follows the pointer trails it on a spring (BrimDeck.Core.Spring).
+// lands softly without one (Drawer; the power-off still settles from a slow start, Settle); what follows the pointer trails it on a spring (DeckIsland.Core.Spring).
 // The curves are frozen and shared.
 internal static class Soft
 {
@@ -16,7 +16,7 @@ internal static class Soft
     public static readonly IEasingFunction Out = Frozen(new BezierEase(.22, .8, .28, 1));
     // For what turns or swaps in place.
     public static readonly IEasingFunction InOut = Frozen(new BezierEase(.45, 0, .25, 1));
-    // The surface drawing back into the dot as BrimDeck powers off: a slow start, then it settles.
+    // The surface drawing back into the dot as DeckIsland powers off: a slow start, then it settles.
     public static readonly IEasingFunction Settle = Frozen(new BezierEase(.45, 0, .12, 1));
     // The collapsing panel (motion-review C2: chosen over Settle in an A/B comparison): a drawer's curve, which leaves at once
     // and lands softly; the surface still starts a little after the content (PanelMotion.CloseSurfaceStart).
@@ -27,7 +27,7 @@ internal static class Soft
     public static readonly IEasingFunction Bounce = Frozen(new BounceEase());
 
     // Hover and press feedback, and what leaves; small things that appear or swap. Values that follow readings take
-    // BrimDeck.Core.Eased.Seconds, and the panel itself the duration chosen in the settings. Hover is the monitor's (Eased.Hover, and
+    // DeckIsland.Core.Eased.Seconds, and the panel itself the duration chosen in the settings. Hover is the monitor's (Eased.Hover, and
     // HoverOut its quicker way out), a glide between choices the monitor's sort pill (Choose), content that moves in or out the
     // monitor's readings (Move).
     public const int Quick = 160, Short = 240, Hover = (int)(Eased.Hover * 1000), HoverOut = (int)(Eased.HoverOut * 1000 + .5), Choose = (int)(Eased.Seconds * 750), Move = (int)(Eased.Seconds * 1000);
@@ -39,7 +39,7 @@ internal static class Soft
     // small that it reads as coming from nothing.
     public const double Shrunk = .94;
 
-    // Whether anything moves: the setting in BrimDeck and Windows' own "animation effects", and never in high contrast. The one
+    // Whether anything moves: the setting in DeckIsland and Windows' own "animation effects", and never in high contrast. The one
     // rule for every animation in the app (motion-review F5, F6): nothing outside it decides for itself.
     // "Enable animations" belongs to a profile, and a panel may show another profile than the one in use (App.SettingsFor): a panel
     // asks with its own settings (For, MainWindow.Animates), what lies in a window asks by that window (At), and Enabled, the

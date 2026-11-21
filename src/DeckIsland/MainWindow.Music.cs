@@ -8,11 +8,11 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
-using BrimDeck.Core;
-using BrimDeck.Native;
-using MediaState = BrimDeck.Core.MediaState;
+using DeckIsland.Core;
+using DeckIsland.Native;
+using MediaState = DeckIsland.Core.MediaState;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 public partial class MainWindow
 {

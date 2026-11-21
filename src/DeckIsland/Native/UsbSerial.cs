@@ -2,7 +2,7 @@ using System.IO;
 using System.IO.Ports;
 using Microsoft.Win32;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 // A USB device's own serial port (a CDC interface of the same vendor and product), for the few devices whose battery is read
 // there rather than over HID (AtkHeadsets.SerialRequest). Only reads: the port is opened for one exchange and closed again,

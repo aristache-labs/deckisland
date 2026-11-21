@@ -2,7 +2,7 @@ using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 // The non-activating island cannot rely on WPF keyboard focus after a hover.
 // Reserve Escape only while it is expanded; release it as soon as it closes.

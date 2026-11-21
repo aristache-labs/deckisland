@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Vancer x Arbiter Studio Akitsu on the shared CompX vendor id 0x373E (LAMZU and Attack Shark use it too), so only its two
 // products: 0066 on its cable, 0067 its 8K receiver. Usage page 0xFFFF usage 0, the unnumbered 64-byte feature report:

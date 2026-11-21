@@ -1,6 +1,6 @@
 using System.Reflection;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // What a USB HID collection says of itself, as the brand families match on it.
 public readonly record struct HidShape(int Vendor, int Product, int UsagePage, int Usage, int Interface, int InputLength, int OutputLength,

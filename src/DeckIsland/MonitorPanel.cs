@@ -2,10 +2,10 @@ using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Media.Animation;
-using BrimDeck.Core;
-using BrimDeck.Native;
+using DeckIsland.Core;
+using DeckIsland.Native;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // The system monitor page and the readings in the collapsed row. The sampler (App.Monitor) runs while any panel shows either;
 // every panel draws the same readings. The page is built once per layout step (MonitorLayout), palette, sort, main gauge and

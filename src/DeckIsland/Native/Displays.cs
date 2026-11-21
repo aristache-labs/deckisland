@@ -1,8 +1,8 @@
 using System.Runtime.InteropServices;
 using System.Windows;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 // A connected monitor. Id is the monitor's device path, which stays the same across restarts and changes of the primary
 // monitor; the GDI device name (\\.\DISPLAY1) and the monitor handle may change whenever the display layout changes.

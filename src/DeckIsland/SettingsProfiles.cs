@@ -4,10 +4,10 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
-using BrimDeck.Core;
-using BrimDeck.Native;
+using DeckIsland.Core;
+using DeckIsland.Native;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // The displays and profiles page: the named profiles (DeckProfile), where the panels show and the profile each display shows
 // (DisplayProfiles), and the rules that switch profiles while an app runs or is in front (ProfileRule). What it changes is shared by
@@ -412,7 +412,7 @@ public sealed partial class SettingsWindow
     {
         var menu = AppMenu(anchor);
         var apps = RunningApps.WithWindows()
-            .Where(app => !string.Equals(app.Name, "BrimDeck", StringComparison.OrdinalIgnoreCase))
+            .Where(app => !string.Equals(app.Name, "DeckIsland", StringComparison.OrdinalIgnoreCase))
             .Select(app => (App: app, Name: AppName(app.Name, app.Path)))
             .OrderBy(entry => entry.Name, StringComparer.CurrentCultureIgnoreCase).ToList();
         foreach (var (app, name) in apps)

@@ -1,8 +1,8 @@
 using System.Windows;
 using System.Windows.Media;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // A quota's track on the usage page, drawn as the system monitor's bars are: the share eases to each new reading (Eased, Motion)
 // instead of jumping. The page is built again when its data changes, so the share each quota last showed is kept by its key

@@ -4,7 +4,7 @@ using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using BrimDeck.Core.ClipboardSync;
+using DeckIsland.Core.ClipboardSync;
 
 static class ClipboardSyncTests
 {

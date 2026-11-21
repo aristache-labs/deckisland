@@ -1,4 +1,4 @@
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // Two graphics cards of one model, simulated: the saved choice must stay on the same physical card across restarts (the LUIDs and
 // the order DXGI lists them in change), when the other card is removed, and when the chosen card is removed and plugged back in. A

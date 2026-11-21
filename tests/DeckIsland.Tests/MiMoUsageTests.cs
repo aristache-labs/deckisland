@@ -1,9 +1,9 @@
 using System.Net;
 using System.Text.Json;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // Xiaomi MiMo: MiMo Code (CLI) and Xiaomi MiMo Desktop share mimocode.db; the desktop membership is read from the MiMo server with
-// the cookies of a Xiaomi account signed in to in BrimDeck. The record fixtures follow what MiMo Desktop and MiMo Code wrote on
+// the cookies of a Xiaomi account signed in to in DeckIsland. The record fixtures follow what MiMo Desktop and MiMo Code wrote on
 // 2026-11-13; the subscription answers follow the format the desktop app parses (its own test data).
 static class MiMoUsageTests
 {

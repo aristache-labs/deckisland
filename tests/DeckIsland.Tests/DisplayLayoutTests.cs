@@ -1,4 +1,4 @@
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 internal static class DisplayLayoutTests
 {
@@ -34,7 +34,7 @@ internal static class DisplayLayoutTests
             settings.Display == DisplayPlacement.Chosen && settings.DisplayMonitors.Count == 2 && settings.DisplayMonitors[0].Name == "DELL G2724D");
         var copy = settings.Copy(); copy.DisplayMonitors.Clear();
         check("A settings copy has its own list of monitors", settings.DisplayMonitors.Count == 2);
-        var store = new SettingsStore(Path.Combine(Path.GetTempPath(), "BrimDeck-Display-" + Guid.NewGuid().ToString("N")), "1.0.4");
+        var store = new SettingsStore(Path.Combine(Path.GetTempPath(), "DeckIsland-Display-" + Guid.NewGuid().ToString("N")), "1.0.4");
         try
         {
             store.Save(settings);

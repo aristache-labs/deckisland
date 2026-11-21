@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // A browser can close its Windows media session and open a new one when its page changes songs. Until the
 // new session has been read it has no song, so the player would drop out of the list for a moment and the

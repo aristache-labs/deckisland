@@ -1,5 +1,5 @@
 using System.Net;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 internal static class AppUpdateTests
 {

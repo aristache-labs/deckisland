@@ -1,16 +1,16 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
-using BrimDeck.Core;
+using DeckIsland.Core;
 using Microsoft.Win32;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 // KuGou's installation and the change to its libcef.dll that opens the DevTools port (KugouPatch). Changing or restoring the
 // file alone (the settings) does not touch KuGou: a file KuGou has loaded cannot be written, but it can be renamed, so the
 // changed copy takes its place and the next start loads it; the renamed file is deleted once KuGou no longer holds it.
 // Enabling full control (the panel's entries and the automatic setting) also restarts KuGou, so the change works at once. Under Program Files the file
-// needs administrator rights; BrimDeck then starts itself elevated for the write alone, which shows a UAC prompt.
+// needs administrator rights; DeckIsland then starts itself elevated for the write alone, which shows a UAC prompt.
 internal static class KugouInstall
 {
     // Launcher: KGMusic\KuGou.exe, which starts the KuGou.exe of the version folder; Library: that folder's libcef.dll.

@@ -6,7 +6,7 @@ using System.Windows.Media;
 using System.Windows.Media.Effects;
 using System.Windows.Threading;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // A minimal window for the linked production MainWindow.Shadow.cs. No App, settings or account data is loaded.
 public partial class MainWindow : Window

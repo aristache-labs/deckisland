@@ -1,6 +1,6 @@
 using System.Globalization;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // A color that missed its minimum and the color used in its place. Reached is false when no color of that hue could meet every
 // minimum (backgrounds both light and dark); the color shown is then the one with the best worst case.

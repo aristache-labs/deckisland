@@ -4,10 +4,10 @@ using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
-using BrimDeck.Core;
-using BrimDeck.Native;
+using DeckIsland.Core;
+using DeckIsland.Native;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 public partial class App : Application
 {
@@ -90,16 +90,16 @@ public partial class App : Application
             new RoutedEventHandler((sender, _) => PanelTheme.Text((System.Windows.Controls.ContextMenu)sender, ((System.Windows.Controls.ContextMenu)sender).PlacementTarget)));
         Resources[SystemParameters.VerticalScrollBarWidthKey] = 7.0;
         var suffix = Environment.UserName;
-        var eventName = "Local\\BrimDeck.Settings." + suffix;
-        _mutex = new Mutex(true, "Local\\BrimDeck.Instance." + suffix, out var first);
+        var eventName = "Local\\DeckIsland.Settings." + suffix;
+        _mutex = new Mutex(true, "Local\\DeckIsland.Instance." + suffix, out var first);
         if (!first)
         {
             try { using var existing = EventWaitHandle.OpenExisting(eventName); existing.Set(); } catch (WaitHandleCannotBeOpenedException) { }
             Shutdown(); return;
         }
-        SetCurrentProcessExplicitAppUserModelID("BrimDeck.Desktop");
+        SetCurrentProcessExplicitAppUserModelID("DeckIsland.Desktop");
         RecordCrashes();
-        var folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "BrimDeck");
+        var folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "DeckIsland");
         Store = new SettingsStore(folder); Settings = Store.Load();
         ReturnFromRule(); Profiles.Keep(Settings);
         // Before anything is read: a reading left unanswered when the last run ended stops now (SensorGuard).
@@ -110,7 +110,7 @@ public partial class App : Application
         UseLanguage(); UseFont();
         PanelTheme.Use(Settings);
         ScheduleDaylight();
-        // "跟随系统" follows the Windows app theme while BrimDeck runs.
+        // "跟随系统" follows the Windows app theme while DeckIsland runs.
         Microsoft.Win32.SystemEvents.UserPreferenceChanged += SystemThemeChanged;
         // The language a first start takes from Windows is kept, even if the display language changes later.
         if (Store.IsFirstStart) FlushSettings();
@@ -122,7 +122,7 @@ public partial class App : Application
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Security.SecurityException) { }
         Prices = new Pricing(folder);
-        Updates = new AppUpdates(BrimDeck.Updates.GitHubUpdates.Create(folder), folder);
+        Updates = new AppUpdates(DeckIsland.Updates.GitHubUpdates.Create(folder), folder);
         Secrets = new ProviderSecrets(folder);
         MiMo = new MiMoAccount(folder);
         Lyrics = new LyricsService(appleLyricsFile: Path.Combine(folder, "apple-music-lyrics.json"));
@@ -171,7 +171,7 @@ public partial class App : Application
     private Action<object>? _recordCrash;
     private void RecordCrashes()
     {
-        var log = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "BrimDeck", "crash.log");
+        var log = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "DeckIsland", "crash.log");
         void Write(object error)
         {
             try
@@ -203,7 +203,7 @@ public partial class App : Application
     public void OpenSettings() => ShowSettings(false);
     // The clipboard page's menus open the settings at its own pages (SettingsWindow.ClipboardSettingsPage, TransferSettingsPage).
     internal void OpenSettingsPage(int page) { ShowSettings(false); _settingsWindow?.ShowPage(page); }
-    // Starting BrimDeck while it runs shows the hidden panels as well as the settings, so the panels come back even without
+    // Starting DeckIsland while it runs shows the hidden panels as well as the settings, so the panels come back even without
     // the tray icon.
     private void ShowFromRelaunch()
     {
@@ -419,7 +419,7 @@ public partial class App : Application
             Media.NeteaseAutoFullControl = false; Media.NeteaseFileControlWanted = false; Media.KugouFullControlWanted = false;
             _restingMedia = Media; Media = null; RaiseMediaChanged();
         }
-        // Switching the setting off leaves full control on until BrimDeck restarts.
+        // Switching the setting off leaves full control on until DeckIsland restarts.
         if (Settings.AppleMusicFullControl && Media is { AppleMusicFullControl: false } media) media.EnableAppleMusicFullControl();
         if (Media is not null) { Media.Ignored = Settings.IgnoredMediaApps; Media.NeteaseAutoFullControl = Settings.NeteaseAutoFullControl; Media.NeteaseFileControlWanted = Settings.NeteaseFullControl; Media.KugouFullControlWanted = Settings.KugouFullControl; }
     }
@@ -626,7 +626,7 @@ public partial class App : Application
         _settingsWindow?.Hide();
         var decks = Decks.ToList();
         int waiting = decks.Count;
-        var fallback = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(BrimDeck.MainWindow.PowerOffLength(Settings.AnimationDuration) + 500) };
+        var fallback = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(DeckIsland.MainWindow.PowerOffLength(Settings.AnimationDuration) + 500) };
         bool done = false;
         void End() { if (done) return; done = true; fallback.Stop(); FinishWriting(); Shutdown(); }
         fallback.Tick += (_, _) => End();

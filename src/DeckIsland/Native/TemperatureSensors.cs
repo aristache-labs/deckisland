@@ -1,12 +1,12 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 // The temperatures Windows reports to a normal user without a driver: nothing here needs administrator rights or loads anything
 // beyond the system's own libraries. Hardware monitors that read the processor's own sensors do it through a kernel driver
-// (WinRing0 and the like), which BrimDeck does not install. Each reader belongs to the sampling thread, as the providers do; the
+// (WinRing0 and the like), which DeckIsland does not install. Each reader belongs to the sampling thread, as the providers do; the
 // sensor states are read from the UI thread.
 
 // The processor from the ACPI thermal zones, through the performance counters the sampler already collects. The zones are the

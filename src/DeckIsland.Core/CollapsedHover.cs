@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // A rectangle in device-independent pixels, relative to the top-left corner of the monitor.
 public readonly record struct DipRect(double X, double Y, double Width, double Height)

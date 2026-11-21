@@ -15,7 +15,7 @@ In the grid, the row, the column and on two lines, picture files show a thumbnai
 
 ## Clipboard
 
-BrimDeck keeps the text and pictures you copy, newest first.
+DeckIsland keeps the text and pictures you copy, newest first.
 
 - **Display**: text shows its first line, with the number of further lines at the end; a link shows its domain and path in two colors, code in a monospaced font, a color value with a swatch, and a picture as a thumbnail with its size.
 - **Click**: pastes the entry into the window you are working in.
@@ -26,8 +26,8 @@ BrimDeck keeps the text and pictures you copy, newest first.
 ### How long entries are kept
 
 - The history is stored only on this PC, not encrypted.
-- Ordinary entries are cleared when BrimDeck exits by default.
-- With "Keep history after exit" on in Settings › Clipboard, ordinary entries stay after BrimDeck exits, and entries older than "Keep for" (1 day, 7 days or 30 days; 30 days by default) are deleted. The time counts from the last copy.
+- Ordinary entries are cleared when DeckIsland exits by default.
+- With "Keep history after exit" on in Settings › Clipboard, ordinary entries stay after DeckIsland exits, and entries older than "Keep for" (1 day, 7 days or 30 days; 30 days by default) are deleted. The time counts from the last copy.
 - What is in Favorites, or in a category set to "Kept", stays until you delete it, whatever the two settings above.
 - The entries' text is held in memory, to show and search it; the formatting copied from web pages, Word and other apps, and pictures, are kept on disk and read only to paste or show them. With common content, 9,000 entries use about 30 MB of memory.
 - One entry holds up to 1,000,000 characters; longer copies are not recorded.
@@ -65,7 +65,7 @@ The file transfer holds files you will need shortly. It keeps only where each fi
 
 ## Where the data is stored
 
-The clipboard history, the file transfer's list and the categories are stored in `%LOCALAPPDATA%\BrimDeck\shelf.dat`, and copied pictures and formatting in `%LOCALAPPDATA%\BrimDeck\shelf\`. Both are not encrypted, used only on this PC and never uploaded. See [Data and privacy](privacy.md).
+The clipboard history, the file transfer's list and the categories are stored in `%LOCALAPPDATA%\DeckIsland\shelf.dat`, and copied pictures and formatting in `%LOCALAPPDATA%\DeckIsland\shelf\`. Both are not encrypted, used only on this PC and never uploaded. See [Data and privacy](privacy.md).
 
 ### Left and right file drags
 

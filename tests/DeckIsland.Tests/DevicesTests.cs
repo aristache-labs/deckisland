@@ -1,4 +1,4 @@
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // The devices' batteries, core: what a device is by its Bluetooth category, appearance or name; its address and its vendor and
 // product from Windows' ids; one entry per device across sources; and the levels.

@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 public enum WidgetKind { Empty, Weather, Monitor, Focus, Devices, Quotas, Today }
 

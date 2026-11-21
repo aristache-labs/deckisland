@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // The machine's own battery (a laptop's or tablet's), not a wireless device's: one reading for
 // all the machine's batteries together. The probe (SystemSampler) hands over each battery's report and the system's power state in

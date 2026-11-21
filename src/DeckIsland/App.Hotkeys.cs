@@ -1,7 +1,7 @@
-using BrimDeck.Core;
-using BrimDeck.Native;
+using DeckIsland.Core;
+using DeckIsland.Native;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // The global hotkeys (HotkeyKind) and the hidden state the hide hotkey toggles. All are unset by default and are taken from the
 // settings (DeckSettings.Hotkey). The registrations live on a message-only window of the app (GlobalHotkeys), so panels closed

@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Hands a growing result to a callback at most once per interval: the first call goes straight through, a call that comes
 // too soon is held and sent when the interval ends, replaced by any newer one. Dispose drops what is still held (the caller

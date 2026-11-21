@@ -2,12 +2,12 @@ using System.IO;
 using System.Management;
 using System.Runtime.InteropServices;
 using System.Windows.Threading;
-using BrimDeck.Core;
+using DeckIsland.Core;
 using NAudio.CoreAudioApi;
 using Windows.Devices.Bluetooth;
 using Windows.Devices.Enumeration;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // The island's readouts: each source below watches one thing and shows a HudMessage, if its switch in Settings is on. A source
 // that the machine cannot give (no backlight, no battery, no Bluetooth) stays quiet.

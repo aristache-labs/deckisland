@@ -1,4 +1,4 @@
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // The system monitor's temperatures: unit conversions, sensors that report nothing or nonsense, the thermal zone chosen for the
 // processor, the adapters' LUIDs, the levels, and the temperature reading of the collapsed row.

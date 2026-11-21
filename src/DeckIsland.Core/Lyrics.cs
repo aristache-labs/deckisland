@@ -3,7 +3,7 @@ using System.Net;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 public sealed record LyricLine(double Seconds, string Text);
 // The lines shown around the one being sung: Before ends with the line just sung, After starts with the next one.
@@ -119,7 +119,7 @@ public sealed record Lyrics(IReadOnlyList<LyricLine> Lines, bool Synced, string 
 }
 
 // The line on show does not go back for a small step back of the position. A player's new report often puts the position a
-// little behind the clock BrimDeck ran on from the last one (Apple Music's whole seconds, see MediaRouting.FromWholeSeconds); just
+// little behind the clock DeckIsland ran on from the last one (Apple Music's whole seconds, see MediaRouting.FromWholeSeconds); just
 // after a new line had started, the line before it came back for a moment and the new one followed again, and a lyric area that
 // follows the line's length (DeckSettings.MusicLyricAutoWidth) shrank back and grew again with them. A step back of StepBack
 // seconds or more before the line's start is a seek, and shows the earlier line. New lyrics (another instance) start afresh.
@@ -220,7 +220,7 @@ public sealed partial class LyricsService : IDisposable
                 for (int redirects = 0; ; redirects++)
                 {
                     using var request = new HttpRequestMessage(HttpMethod.Get, address);
-                    request.Headers.UserAgent.ParseAdd("BrimDeck/0.1.0");
+                    request.Headers.UserAgent.ParseAdd("DeckIsland/0.1.0");
                     if (address.Host == "music.163.com") request.Headers.Referrer = new Uri("https://music.163.com/");
                     if (address.Host is "u.y.qq.com" or "c.y.qq.com") request.Headers.Referrer = new Uri("https://y.qq.com/");
                     using var response = await _http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, timeout.Token);

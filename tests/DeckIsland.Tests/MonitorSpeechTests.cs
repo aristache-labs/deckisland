@@ -1,4 +1,4 @@
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // What the GPU block says to a screen reader (MonitorSpeech.GpuBlock, which BlockGauge.Spoken returns): a usage while the adapter has
 // a reading, and what the tooltip says, never a usage of zero, while it has none.

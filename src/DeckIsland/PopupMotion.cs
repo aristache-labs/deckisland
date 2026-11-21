@@ -7,9 +7,9 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // Drop-downs, lists and pickers open and close as the panel's cards do (Soft.Enter, Soft.Leave). WPF closes a pop-up at
 // once, also when it closes itself on a click outside, so its closing is shown by a picture of its last frame, which leaves
@@ -18,7 +18,7 @@ namespace BrimDeck;
 // later, after a blank. It lies right beneath the real one and is kept up to date while that is open, so it already shows
 // when WPF takes the real one away: given its picture only on closing, it was drawn a frame late and the list blinked out
 // and back before it left. It is first taken once the list has entered, and then again only when the list can have changed
-// (motion-review F7, BrimDeck.Core.PopupPicture): the pointer moved onto another element, a button or key went down or up, or
+// (motion-review F7, DeckIsland.Core.PopupPicture): the pointer moved onto another element, a button or key went down or up, or
 // the list scrolled; once right after (the change's own frame) and once more when a hover's fade has settled. A change while it
 // entered is taken the same way right after the first picture. Taken 20 times a second while open, it kept the list rendering in
 // software.

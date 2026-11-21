@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Windows' high contrast: the panel shows the system's own colors whatever theme is chosen, as the notices already do. Text is the
 // window text on the window color, quiet text the gray text, and everything the theme would tint (the accent, focus, chosen

@@ -1,4 +1,4 @@
-using BrimDeck.Core;
+using DeckIsland.Core;
 using static BrandFamilyTests;
 
 // The keyboard brands declared as families: which collections they take (and the ones they must not), their requests, the
@@ -37,15 +37,15 @@ static class BrandsKeyboardTests
         check("Alienware: not Dell's other products on 413C, nor another interface or usage of the receiver",
             BrandFamilies.Find(vendor with { Product = 0x2113 }) is null && BrandFamilies.Find(vendor with { Interface = 0 }) is null
             && BrandFamilies.Find(vendor with { Usage = 2 }) is null && BrandFamilies.Find(Shape(0x413C, 0x211D, 0x0001, 6, 1)) is null);
-        var request = BrimDeck.Core.Alienware.Request();
+        var request = DeckIsland.Core.Alienware.Request();
         check("Alienware: the request is feature report 0 set to 0E A1 (65 bytes)",
             request.Length == 65 && request[0] == 0x00 && request[1] == 0x0E && request[2] == 0xA1 && request.Skip(3).All(b => b == 0));
         check("Alienware: the captured answers (37 %, 92 %, 19 % charging); state reports, the request read back and over 100 are none",
-            BrimDeck.Core.Alienware.Battery(Padded(64, "0E A1 25 00")) == new BatteryRead(37)
-            && BrimDeck.Core.Alienware.Battery(Padded(64, "0E A1 5C 00")) == new BatteryRead(92)
-            && BrimDeck.Core.Alienware.Battery(Padded(64, "0E A1 13 04")) == new BatteryRead(19, true)
-            && BrimDeck.Core.Alienware.Battery(Padded(64, "0E 05 00 AC")) is null && BrimDeck.Core.Alienware.Battery(Padded(64, "0E A1 00 00")) is null
-            && BrimDeck.Core.Alienware.Battery(Padded(64, "0E A1 65 00")) is null);
+            DeckIsland.Core.Alienware.Battery(Padded(64, "0E A1 25 00")) == new BatteryRead(37)
+            && DeckIsland.Core.Alienware.Battery(Padded(64, "0E A1 5C 00")) == new BatteryRead(92)
+            && DeckIsland.Core.Alienware.Battery(Padded(64, "0E A1 13 04")) == new BatteryRead(19, true)
+            && DeckIsland.Core.Alienware.Battery(Padded(64, "0E 05 00 AC")) is null && DeckIsland.Core.Alienware.Battery(Padded(64, "0E A1 00 00")) is null
+            && DeckIsland.Core.Alienware.Battery(Padded(64, "0E A1 65 00")) is null);
     }
 
     private static void Urx(Action<string, bool> check)
@@ -54,18 +54,18 @@ static class BrandsKeyboardTests
         check("URX: the Core75's VIA collection takes the read",
             Names(BrandFamilies.Find(via)).SequenceEqual(["urx.via"]));
         check("URX: the shared receiver id under another name (PMO, a gamepad dongle) and other collections are not asked by URX, and non-keyboard dongles stay untaken",
-            !BrimDeck.Core.Urx.Takes(via with { Name = "PMO 2.4G Receiver" })
+            !DeckIsland.Core.Urx.Takes(via with { Name = "PMO 2.4G Receiver" })
             && BrandFamilies.Find(via with { Name = "PMO 2.4G Receiver" }) is { Family.Brand: "PMO / WOBKEY" }
             && BrandFamilies.Find(via with { Name = "RDMCTMZT Wireless 2.4G Dongle" }) is null
             && BrandFamilies.Find(via with { Name = "2.4G Wireless Receiver" }) is null
             && BrandFamilies.Find(via with { Interface = 2 }) is null && BrandFamilies.Find(via with { OutputLength = 65 }) is null
             && BrandFamilies.Find(via with { Product = 0x3009 }) is null);
         check("URX: the request is VIA's custom get, channel 0, value 7",
-            BrimDeck.Core.Urx.Request() is { Length: 33 } r && r.Take(4).SequenceEqual(new byte[] { 0x00, 0x08, 0x00, 0x07 }) && r.Skip(4).All(b => b == 0));
+            DeckIsland.Core.Urx.Request() is { Length: 33 } r && r.Take(4).SequenceEqual(new byte[] { 0x00, 0x08, 0x00, 0x07 }) && r.Skip(4).All(b => b == 0));
         check("URX: the captured answer (76 %); the refusal, another value, zero and over 100 are none",
-            BrimDeck.Core.Urx.Battery(Padded(32, "08 00 07 4C")) == new BatteryRead(76)
-            && BrimDeck.Core.Urx.Battery(Padded(32, "FF 07")) is null && BrimDeck.Core.Urx.Battery(Padded(32, "08 00 06 4C")) is null
-            && BrimDeck.Core.Urx.Battery(Padded(32, "08 00 07 00")) is null && BrimDeck.Core.Urx.Battery(Padded(32, "08 00 07 65")) is null);
+            DeckIsland.Core.Urx.Battery(Padded(32, "08 00 07 4C")) == new BatteryRead(76)
+            && DeckIsland.Core.Urx.Battery(Padded(32, "FF 07")) is null && DeckIsland.Core.Urx.Battery(Padded(32, "08 00 06 4C")) is null
+            && DeckIsland.Core.Urx.Battery(Padded(32, "08 00 07 00")) is null && DeckIsland.Core.Urx.Battery(Padded(32, "08 00 07 65")) is null);
     }
 
     private static void Lofree(Action<string, bool> check)
@@ -74,7 +74,7 @@ static class BrandsKeyboardTests
         var found = BrandFamilies.Find(control);
         check("Lofree: the Flow Lite84 receiver's control collection takes the read, the online query asked first as its gate",
             found is { Family.Brand: "Lofree" } && Names(found).SequenceEqual(["lofree.flow"]) && found.Value.Ways[0].Before.Count == 0
-            && found.Value.Ways[0].Gate is { } gate && gate.SequenceEqual(BrimDeck.Core.Lofree.Request(0x03)) && found.Value.Ways[0].Gated is not null);
+            && found.Value.Ways[0].Gate is { } gate && gate.SequenceEqual(DeckIsland.Core.Lofree.Request(0x03)) && found.Value.Ways[0].Gated is not null);
         // Apple's wired Aluminium Keyboard on the same ids: its keyboard, consumer and vendor collections.
         bool apple = new[] { Shape(0x05AC, 0x024F, 0x0001, 6, 0, name: "Apple Keyboard"), Shape(0x05AC, 0x024F, 0x000C, 1, 1, name: "Apple Keyboard"),
             Shape(0x05AC, 0x024F, 0xFF00, 1, 1, input: 17, output: 17, outputIds: [0x08], name: "Apple Keyboard"),
@@ -83,10 +83,10 @@ static class BrandsKeyboardTests
         check("Lofree: not the receiver's other collections nor one whose output report cannot take the frame",
             BrandFamilies.Find(control with { UsagePage = 0xFF04 }) is null && BrandFamilies.Find(control with { OutputLength = 20 }) is null
             && BrandFamilies.Find(control with { Interface = 0 }) is null);
-        var battery = BrimDeck.Core.Lofree.Request(0x04);
+        var battery = DeckIsland.Core.Lofree.Request(0x04);
         check("Lofree: the requests carry the keyboard flag and sum to 0x55",
             battery.Length == 17 && battery[0] == 0x08 && battery[1] == 0x04 && battery[5] == 0x80 && battery[16] == 0xC9
-            && BrimDeck.Core.Lofree.Request(0x03)[16] == 0xCA && battery.Sum(b => b) % 256 == 0x55);
+            && DeckIsland.Core.Lofree.Request(0x03)[16] == 0xCA && battery.Sum(b => b) % 256 == 0x55);
         static byte[] Reply(byte command, byte level, byte charging, byte status = 0)
         {
             var frame = Padded(17, $"08 {command:X2} {status:X2} 00 00 00 {level:X2} {charging:X2} 0E CE");
@@ -96,16 +96,16 @@ static class BrandsKeyboardTests
         }
         var bad = Reply(0x04, 57, 1); bad[16] ^= 0xFF;
         check("Lofree: a battery answer (57 %, charging); the online answer, a bad checksum, a status, zero and the request read back are none",
-            BrimDeck.Core.Lofree.Battery(Reply(0x04, 57, 1)) == new BatteryRead(57, true) && BrimDeck.Core.Lofree.Battery(Reply(0x04, 80, 0)) == new BatteryRead(80)
-            && BrimDeck.Core.Lofree.Battery(Reply(0x03, 1, 0)) is null && BrimDeck.Core.Lofree.Battery(bad) is null
-            && BrimDeck.Core.Lofree.Battery(Reply(0x04, 57, 0, status: 1)) is null && BrimDeck.Core.Lofree.Battery(Reply(0x04, 0, 0)) is null
-            && BrimDeck.Core.Lofree.Battery(battery) is null);
+            DeckIsland.Core.Lofree.Battery(Reply(0x04, 57, 1)) == new BatteryRead(57, true) && DeckIsland.Core.Lofree.Battery(Reply(0x04, 80, 0)) == new BatteryRead(80)
+            && DeckIsland.Core.Lofree.Battery(Reply(0x03, 1, 0)) is null && DeckIsland.Core.Lofree.Battery(bad) is null
+            && DeckIsland.Core.Lofree.Battery(Reply(0x04, 57, 0, status: 1)) is null && DeckIsland.Core.Lofree.Battery(Reply(0x04, 0, 0)) is null
+            && DeckIsland.Core.Lofree.Battery(battery) is null);
         var badOnline = Reply(0x03, 1, 0); badOnline[16] ^= 0xFF;
         check("Lofree: the online answer lets the read go on with 1, says asleep with 0; a bad checksum, a status, the battery answer and the request read back are none",
-            BrimDeck.Core.Lofree.Online(Reply(0x03, 1, 0)) == true && BrimDeck.Core.Lofree.Online(Reply(0x03, 0, 0)) == false
-            && BrimDeck.Core.Lofree.Online(Reply(0x03, 2, 0)) is null && BrimDeck.Core.Lofree.Online(badOnline) is null
-            && BrimDeck.Core.Lofree.Online(Reply(0x03, 1, 0, status: 1)) is null && BrimDeck.Core.Lofree.Online(Reply(0x04, 1, 0)) is null
-            && BrimDeck.Core.Lofree.Online(BrimDeck.Core.Lofree.Request(0x03)) is null);
+            DeckIsland.Core.Lofree.Online(Reply(0x03, 1, 0)) == true && DeckIsland.Core.Lofree.Online(Reply(0x03, 0, 0)) == false
+            && DeckIsland.Core.Lofree.Online(Reply(0x03, 2, 0)) is null && DeckIsland.Core.Lofree.Online(badOnline) is null
+            && DeckIsland.Core.Lofree.Online(Reply(0x03, 1, 0, status: 1)) is null && DeckIsland.Core.Lofree.Online(Reply(0x04, 1, 0)) is null
+            && DeckIsland.Core.Lofree.Online(DeckIsland.Core.Lofree.Request(0x03)) is null);
     }
 
     private static void Rongyuan(Action<string, bool> check)
@@ -197,27 +197,27 @@ static class BrandsKeyboardTests
             && BrandFamilies.Find(receiver with { InputLength = 33, OutputLength = 33 }) is null
             && BrandFamilies.Find(Shape(0x36B0, 0x3071, 0x0001, 0x0006, 0, outputIds: [0x00])) is null
             && BrandFamilies.Find(receiver with { OutputIds = new HashSet<byte> { 0x01 } }) is { Ways.Count: 0 });
-        var request = BrimDeck.Core.WobRainy.Request();
+        var request = DeckIsland.Core.WobRainy.Request();
         check("WOB BE: BE BB 04 ED request and BE 65 05 online gate replies",
             request.Length == 257 && request[..5].SequenceEqual(Hex("00 BE BB 04 ED")) && request.Skip(5).All(b => b == 0)
-            && BrimDeck.Core.WobRainy.Online(Hex("BE 65 05 01 ED")) == true
-            && BrimDeck.Core.WobRainy.Online(Padded(257, "00 BE 65 05 00 ED")) == false
-            && BrimDeck.Core.WobRainy.Online(BrimDeck.Core.WobRainy.OnlineRequest()) is null
-            && BrimDeck.Core.WobRainy.Online(Hex("BE 65 05 02 ED")) is null
-            && BrimDeck.Core.WobRainy.Online(Hex("BE 65 05 01 EE")) is null);
+            && DeckIsland.Core.WobRainy.Online(Hex("BE 65 05 01 ED")) == true
+            && DeckIsland.Core.WobRainy.Online(Padded(257, "00 BE 65 05 00 ED")) == false
+            && DeckIsland.Core.WobRainy.Online(DeckIsland.Core.WobRainy.OnlineRequest()) is null
+            && DeckIsland.Core.WobRainy.Online(Hex("BE 65 05 02 ED")) is null
+            && DeckIsland.Core.WobRainy.Online(Hex("BE 65 05 01 EE")) is null);
         var zeroTailBad = Padded(257, "00 BE BB 00 50 02 ED");
         zeroTailBad[20] = 0x01;
         check("WOB BE: 6-, 10- and 14-byte BE BB replies (discharging, full, charging); zero, over 100, bad trailer, dirty len-0 tail and request echo are none",
-            BrimDeck.Core.WobRainy.Battery(Padded(256, "BE BB 06 4E 00 ED")) == new BatteryRead(78)
-            && BrimDeck.Core.WobRainy.Battery(Padded(257, "00 BE BB 00 50 02 ED")) == new BatteryRead(80, true)
-            && BrimDeck.Core.WobRainy.Battery(Padded(256, "BE BB 0A 64 01 00 00 00 00 ED")) == new BatteryRead(100)
-            && BrimDeck.Core.WobRainy.Battery(Padded(256, "BE BB 0E 2D 02 00 00 00 00 00 00 00 00 ED")) == new BatteryRead(45, true)
-            && BrimDeck.Core.WobRainy.Battery(zeroTailBad) is null
-            && BrimDeck.Core.WobRainy.Battery(Padded(256, "BE BB 06 00 00 ED")) is null
-            && BrimDeck.Core.WobRainy.Battery(Padded(256, "BE BB 06 65 00 ED")) is null
-            && BrimDeck.Core.WobRainy.Battery(Padded(256, "BE BB 06 50 03 ED")) is null
-            && BrimDeck.Core.WobRainy.Battery(Padded(256, "BE BB 06 50 00 EE")) is null
-            && BrimDeck.Core.WobRainy.Battery(request) is null);
+            DeckIsland.Core.WobRainy.Battery(Padded(256, "BE BB 06 4E 00 ED")) == new BatteryRead(78)
+            && DeckIsland.Core.WobRainy.Battery(Padded(257, "00 BE BB 00 50 02 ED")) == new BatteryRead(80, true)
+            && DeckIsland.Core.WobRainy.Battery(Padded(256, "BE BB 0A 64 01 00 00 00 00 ED")) == new BatteryRead(100)
+            && DeckIsland.Core.WobRainy.Battery(Padded(256, "BE BB 0E 2D 02 00 00 00 00 00 00 00 00 ED")) == new BatteryRead(45, true)
+            && DeckIsland.Core.WobRainy.Battery(zeroTailBad) is null
+            && DeckIsland.Core.WobRainy.Battery(Padded(256, "BE BB 06 00 00 ED")) is null
+            && DeckIsland.Core.WobRainy.Battery(Padded(256, "BE BB 06 65 00 ED")) is null
+            && DeckIsland.Core.WobRainy.Battery(Padded(256, "BE BB 06 50 03 ED")) is null
+            && DeckIsland.Core.WobRainy.Battery(Padded(256, "BE BB 06 50 00 EE")) is null
+            && DeckIsland.Core.WobRainy.Battery(request) is null);
 
         var rdrRx33 = Shape(0x36B0, 0x3002, 0xFF60, 0x61, 1, input: 33, output: 33, outputIds: [0x00], name: "PMO Wave75 2.4G Receiver");
         var rdrRx65 = rdrRx33 with { InputLength = 65, OutputLength = 65 };
@@ -245,15 +245,15 @@ static class BrandsKeyboardTests
             && BrandFamilies.Find(rdrRx33 with { Name = "2.4G Wireless Receiver" }) is null
             && BrandFamilies.Find(zen with { InputLength = 33, OutputLength = 33 }) is null);
         check("PMO / WOBKEY RDR: AA D0 online status == 4 and AA 30 battery status 0x55",
-            BrimDeck.Core.WobRainy.RdrOnline(Padded(32, "AA D0 00 00 18 00 00 55 00 00 00 00 00 04")) == true
-            && BrimDeck.Core.WobRainy.RdrOnline(Padded(33, "00 AA D0 00 00 18 00 00 55 00 00 00 00 00 01")) == false
-            && BrimDeck.Core.WobRainy.RdrOnline(Padded(32, "AA D0 00 00 18 00 00 55 00 00 00 00 00 05")) is null
-            && BrimDeck.Core.WobRainy.RdrBattery(Padded(32, "AA 30 00 00 18 00 00 55 4E 00")) == new BatteryRead(78)
-            && BrimDeck.Core.WobRainy.RdrBattery(Padded(65, "00 AA 30 00 00 18 00 00 55 50 01")) == new BatteryRead(80, true)
-            && BrimDeck.Core.WobRainy.RdrBattery(Padded(32, "AA 30 00 00 18 00 00 0F 50 00")) is null
-            && BrimDeck.Core.WobRainy.RdrBattery(Padded(32, "AA 30 00 00 18 00 00 55 00 00")) is null
-            && BrimDeck.Core.WobRainy.RdrBattery(Padded(32, "AA 30 00 00 18 00 00 55 65 00")) is null
-            && BrimDeck.Core.WobRainy.RdrBattery(BrimDeck.Core.WobRainy.RdrFrame(65, 0x30, 0x18)) is null);
+            DeckIsland.Core.WobRainy.RdrOnline(Padded(32, "AA D0 00 00 18 00 00 55 00 00 00 00 00 04")) == true
+            && DeckIsland.Core.WobRainy.RdrOnline(Padded(33, "00 AA D0 00 00 18 00 00 55 00 00 00 00 00 01")) == false
+            && DeckIsland.Core.WobRainy.RdrOnline(Padded(32, "AA D0 00 00 18 00 00 55 00 00 00 00 00 05")) is null
+            && DeckIsland.Core.WobRainy.RdrBattery(Padded(32, "AA 30 00 00 18 00 00 55 4E 00")) == new BatteryRead(78)
+            && DeckIsland.Core.WobRainy.RdrBattery(Padded(65, "00 AA 30 00 00 18 00 00 55 50 01")) == new BatteryRead(80, true)
+            && DeckIsland.Core.WobRainy.RdrBattery(Padded(32, "AA 30 00 00 18 00 00 0F 50 00")) is null
+            && DeckIsland.Core.WobRainy.RdrBattery(Padded(32, "AA 30 00 00 18 00 00 55 00 00")) is null
+            && DeckIsland.Core.WobRainy.RdrBattery(Padded(32, "AA 30 00 00 18 00 00 55 65 00")) is null
+            && DeckIsland.Core.WobRainy.RdrBattery(DeckIsland.Core.WobRainy.RdrFrame(65, 0x30, 0x18)) is null);
     }
 
     private static void NuPhy(Action<string, bool> check)
@@ -281,23 +281,23 @@ static class BrandsKeyboardTests
             && BrandFamilies.Find(futureCable with { Name = "NuPhy Upgrader" }) is null
             && BrandFamilies.Find(futureCable with { Name = "NuPhy Boot" }) is null
             && BrandFamilies.Find(futureCable with { Name = "NuPhy DFU" }) is null);
-        var req1 = BrimDeck.Core.NuPhy.Request(BrimDeck.Core.NuPhy.Profile1BatteryOffset);
-        var req0 = BrimDeck.Core.NuPhy.Request(BrimDeck.Core.NuPhy.Profile0BatteryOffset);
+        var req1 = DeckIsland.Core.NuPhy.Request(DeckIsland.Core.NuPhy.Profile1BatteryOffset);
+        var req0 = DeckIsland.Core.NuPhy.Request(DeckIsland.Core.NuPhy.Profile0BatteryOffset);
         check("NuPhy: 55 05 func read requests with checksum and AA 05 / FA FB 07 replies; bad sum, wrong offset, 0, >100 and request echo are none",
             req1.Length == 65 && req1[..9].SequenceEqual(Hex("00 55 05 00 61 01 60 00 00")) && req1.Skip(9).All(b => b == 0)
             && req0.Length == 65 && req0[..9].SequenceEqual(Hex("00 55 05 00 21 01 20 00 00"))
-            && BrimDeck.Core.NuPhy.Battery(Padded(65, "00 AA 05 00 96 01 60 00 00 35"), 0x0060) == new BatteryRead(53)
-            && BrimDeck.Core.NuPhy.Battery(Padded(64, "AA 05 00 16 01 60 00 00 B5"), 0x0060) == new BatteryRead(53, true)
-            && BrimDeck.Core.NuPhy.Battery(Padded(64, "AA 05 00 71 01 20 00 00 50"), 0x0020) == new BatteryRead(80)
-            && BrimDeck.Core.NuPhy.Battery(Padded(64, "FA FB 07 00 00 4B"), 0x0060) == new BatteryRead(75)
-            && BrimDeck.Core.NuPhy.Battery(Padded(65, "00 FA FB 07 00 01 32"), 0x0060) == new BatteryRead(50, true)
-            && BrimDeck.Core.NuPhy.Battery(Padded(64, "FA FB 07 00 04 64"), 0x0060) == new BatteryRead(100)
-            && BrimDeck.Core.NuPhy.Battery(Padded(64, "AA 05 00 97 01 60 00 00 35"), 0x0060) is null
-            && BrimDeck.Core.NuPhy.Battery(Padded(64, "AA 05 00 71 01 20 00 00 50"), 0x0060) is null
-            && BrimDeck.Core.NuPhy.Battery(Padded(64, "AA 05 00 61 01 60 00 00 00"), 0x0060) is null
-            && BrimDeck.Core.NuPhy.Battery(Padded(64, "AA 05 00 C6 01 60 00 00 65"), 0x0060) is null
-            && BrimDeck.Core.NuPhy.Battery(Padded(64, "FA FB 07 00 00 00"), 0x0060) is null
-            && BrimDeck.Core.NuPhy.Battery(Padded(64, "FA FB 07 00 05 50"), 0x0060) is null
-            && BrimDeck.Core.NuPhy.Battery(req1, 0x0060) is null);
+            && DeckIsland.Core.NuPhy.Battery(Padded(65, "00 AA 05 00 96 01 60 00 00 35"), 0x0060) == new BatteryRead(53)
+            && DeckIsland.Core.NuPhy.Battery(Padded(64, "AA 05 00 16 01 60 00 00 B5"), 0x0060) == new BatteryRead(53, true)
+            && DeckIsland.Core.NuPhy.Battery(Padded(64, "AA 05 00 71 01 20 00 00 50"), 0x0020) == new BatteryRead(80)
+            && DeckIsland.Core.NuPhy.Battery(Padded(64, "FA FB 07 00 00 4B"), 0x0060) == new BatteryRead(75)
+            && DeckIsland.Core.NuPhy.Battery(Padded(65, "00 FA FB 07 00 01 32"), 0x0060) == new BatteryRead(50, true)
+            && DeckIsland.Core.NuPhy.Battery(Padded(64, "FA FB 07 00 04 64"), 0x0060) == new BatteryRead(100)
+            && DeckIsland.Core.NuPhy.Battery(Padded(64, "AA 05 00 97 01 60 00 00 35"), 0x0060) is null
+            && DeckIsland.Core.NuPhy.Battery(Padded(64, "AA 05 00 71 01 20 00 00 50"), 0x0060) is null
+            && DeckIsland.Core.NuPhy.Battery(Padded(64, "AA 05 00 61 01 60 00 00 00"), 0x0060) is null
+            && DeckIsland.Core.NuPhy.Battery(Padded(64, "AA 05 00 C6 01 60 00 00 65"), 0x0060) is null
+            && DeckIsland.Core.NuPhy.Battery(Padded(64, "FA FB 07 00 00 00"), 0x0060) is null
+            && DeckIsland.Core.NuPhy.Battery(Padded(64, "FA FB 07 00 05 50"), 0x0060) is null
+            && DeckIsland.Core.NuPhy.Battery(req1, 0x0060) is null);
     }
 }

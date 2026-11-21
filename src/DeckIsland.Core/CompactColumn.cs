@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // The collapsed content of a notch on a side edge (EdgeFrame.Across): the parts the row would show side by side stand one below
 // the other, centred across the column, with the row's gap between them. Text stays upright. The column is as wide as its

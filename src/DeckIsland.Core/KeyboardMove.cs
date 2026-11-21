@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Moving the collapsed surface with the move shortcut (HotkeyKind.Move): each press of an arrow key moves it one step, within the
 // places its settings allow on its monitor. The notch and the line move along the edge they hang from (Left and Right on the top

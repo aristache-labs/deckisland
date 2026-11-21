@@ -1,7 +1,7 @@
 using System.Windows;
 using System.Windows.Interop;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 // The keyboard of a panel opened by a hotkey. The panel never activates otherwise (WS_EX_NOACTIVATE, WindowsHost.SetCapturable): a
 // panel the pointer opens leaves the keyboard where it is. Opened by a hotkey it is a window that can be active for as long as it

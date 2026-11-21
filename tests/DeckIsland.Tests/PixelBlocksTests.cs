@@ -1,4 +1,4 @@
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // The pixel blocks theme and the pixel art effects it is made of: steps, texture and the pixel clock.
 internal static class PixelBlocksTests

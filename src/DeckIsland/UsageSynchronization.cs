@@ -1,10 +1,10 @@
 using System.Windows;
-using BrimDeck.Core;
+using DeckIsland.Core;
 using System.Windows.Automation;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 public partial class MainWindow
 {
@@ -46,7 +46,7 @@ public partial class MainWindow
 
     // From another page the switch shows the usage page out of the model details (ShowPage leaves them). The tab is hidden in the
     // details, so on the usage page it has nothing to do.
-    private void AIUsage_Click(object sender, RoutedEventArgs e) { if (!IsUsagePage) SelectPage(BrimDeck.Core.DeckPage.Usage); }
+    private void AIUsage_Click(object sender, RoutedEventArgs e) { if (!IsUsagePage) SelectPage(DeckIsland.Core.DeckPage.Usage); }
 
     private async void Sync_Click(object sender, RoutedEventArgs e)
     {

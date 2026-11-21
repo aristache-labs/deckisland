@@ -2,7 +2,7 @@
 
 The device batteries page shows the battery of the connected wireless mice, keyboards, headsets, controllers, pens and phones; the notch and capsule can show them too. The settings are under Settings › Display and devices.
 
-BrimDeck only reads batteries: it never pairs, disconnects or changes any device or Windows setting, needs no administrator rights and installs no driver. Devices are read only while the device batteries page is open, the notch or capsule shows device batteries, or Settings › Display and devices is open.
+DeckIsland only reads batteries: it never pairs, disconnects or changes any device or Windows setting, needs no administrator rights and installs no driver. Devices are read only while the device batteries page is open, the notch or capsule shows device batteries, or Settings › Display and devices is open.
 
 ## Supported connections
 
@@ -50,7 +50,7 @@ HID devices that carry the standard battery report are shown too.
 | Xbox, BETOP, Flydigi, GameSir, 8BitDo | Whole brand |
 | PlayStation (DualSense, DualSense Edge, DualShock 4), Steam Controller, NVIDIA SHIELD, Xbox 360 wireless receiver | Known models |
 
-- Many models are implemented from public protocol notes and have not been checked on real hardware. If a battery does not show or reads wrong, please report the model, and the receiver's hardware ID from Device Manager, in [Issues](https://github.com/MoFeng2223/BrimDeck/issues).
+- Many models are implemented from public protocol notes and have not been checked on real hardware. If a battery does not show or reads wrong, please report the model, and the receiver's hardware ID from Device Manager, in [Issues](https://github.com/aristache-labs/deckisland/issues).
 - Flydigi controllers, the Xbox 360 wireless receiver and some headsets report only a few steps; their level shows as an estimate.
 - While a device sleeps or is out of range, the last level is shown.
 
@@ -58,7 +58,7 @@ HID devices that carry the standard battery report are shown too.
 
 - Only battery reads are sent, never a command that changes a setting.
 - Where a brand has several reads, they are tried in turn only when the device is first seen, three rounds at most. The read that answers is kept on this computer and is the only one sent from then on, across updates. If it stops answering for a long time, the others are tried once more.
-- A read during which the device misbehaves (it disconnects right after, or BrimDeck ends while waiting for the answer) is never sent to it again; after two such reads the device is no longer read.
+- A read during which the device misbehaves (it disconnects right after, or DeckIsland ends while waiting for the answer) is never sent to it again; after two such reads the device is no longer read.
 - A device recognized without a reading shows "No battery reported". Turning "Read" off for it in the device list stops every request to it.
 
 ## Display and settings
@@ -69,7 +69,7 @@ HID devices that carry the standard battery report are shown too.
 
 ## Acknowledgements
 
-Parts of the protocols are ported from or follow these open-source projects; the full licenses are in [ThirdPartyNotices.txt](../../src/BrimDeck/ThirdPartyNotices.txt):
+Parts of the protocols are ported from or follow these open-source projects; the full licenses are in [ThirdPartyNotices.txt](../../src/DeckIsland/ThirdPartyNotices.txt):
 
 - [device-battery-viewer](https://github.com/CharlesGool/device-battery-viewer) (Logitech HID++)
 - [razer-battery-report](https://github.com/xzeldon/razer-battery-report) (Razer)

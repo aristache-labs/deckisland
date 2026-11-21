@@ -2,9 +2,9 @@ using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Threading;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // The What's new window: the notes built into this copy (ReleaseHistory), newest first. It opens from the About page, and
 // from the panel's gear after an update, which marks the versions the update brought.
@@ -27,10 +27,10 @@ public sealed partial class SettingsWindow
         if (_notesDialog is not null || _updateDialog is not null || !IsVisible) return;
         var updates = _app.Updates;
         string? updatedFrom = updates.UpdatedFrom;
-        var dialog = new Window { Title = Loc.T("BrimDeck 更新内容", "What's new in BrimDeck"), Owner = this, Width = 560, SizeToContent = SizeToContent.Height,
+        var dialog = new Window { Title = Loc.T("DeckIsland 更新内容", "What's new in DeckIsland"), Owner = this, Width = 560, SizeToContent = SizeToContent.Height,
             WindowStartupLocation = WindowStartupLocation.CenterOwner, ShowInTaskbar = false, FontFamily = SettingsFont(UiFontRole.Panel),
             Background = UI.Brush(Surface), Foreground = UI.Brush(TextPrimary) };
-        dialog.Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("/BrimDeck;component/SettingsResources.xaml", UriKind.Relative) });
+        dialog.Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("/DeckIsland;component/SettingsResources.xaml", UriKind.Relative) });
         _palette.Apply(dialog.Resources); Native.SettingsChrome.Apply(dialog); dialog.ResizeMode = ResizeMode.NoResize;
         dialog.SourceInitialized += (_, _) => Native.SettingsChrome.SetTheme(dialog, _palette.Dark);
         var panel = new StackPanel { Margin = new Thickness(26, 22, 26, 24) };

@@ -1,6 +1,6 @@
 using System.Net;
 using System.Text.Json;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 static class WorkBuddyUsageTests
 {
@@ -123,11 +123,11 @@ static class WorkBuddyUsageTests
         using var packages = JsonDocument.Parse("""{"Packages":[{"CycleTotalCapacity":"300","CycleRemainCapacity":"100"},{"CycleTotalCapacity":200,"CycleRemainCapacity":200}]}""");
         var summed = WorkBuddyUsage.Parse(packages.RootElement);
         check("WorkBuddy adds up the packages without credit groups", summed.Metrics.Single() is { Total: 500, Used: 200 });
-        check("WorkBuddy accepts only its own login page for the state", WorkBuddyUsage.LoginUrlMatches(WorkBuddyUsage.China, "https://www.workbuddy.cn/login?platform=brimdeck&state=abc", "abc")
+        check("WorkBuddy accepts only its own login page for the state", WorkBuddyUsage.LoginUrlMatches(WorkBuddyUsage.China, "https://www.workbuddy.cn/login?platform=deckisland&state=abc", "abc")
             && !WorkBuddyUsage.LoginUrlMatches(WorkBuddyUsage.China, "https://www.workbuddy.cn/login?state=other", "abc") && !WorkBuddyUsage.LoginUrlMatches(WorkBuddyUsage.China, "https://example.com/login?state=abc", "abc")
             && !WorkBuddyUsage.LoginUrlMatches(WorkBuddyUsage.China, "http://www.workbuddy.cn/login?state=abc", "abc")
-            && WorkBuddyUsage.LoginUrlMatches(WorkBuddyUsage.International, "https://www.workbuddy.ai/login?platform=brimdeck&state=abc", "abc")
-            && !WorkBuddyUsage.LoginUrlMatches(WorkBuddyUsage.International, "https://www.workbuddy.cn/login?platform=brimdeck&state=abc", "abc"));
+            && WorkBuddyUsage.LoginUrlMatches(WorkBuddyUsage.International, "https://www.workbuddy.ai/login?platform=deckisland&state=abc", "abc")
+            && !WorkBuddyUsage.LoginUrlMatches(WorkBuddyUsage.International, "https://www.workbuddy.cn/login?platform=deckisland&state=abc", "abc"));
         check("WorkBuddy sign-in survives saving", WorkBuddyUsage.Session.Parse(new WorkBuddyUsage.Session("a", "r", "u", "www.workbuddy.cn").Serialize()) is { AccessToken: "a", RefreshToken: "r", Uid: "u" }
             && WorkBuddyUsage.Session.Parse("") is null && WorkBuddyUsage.Session.Parse("{broken") is null);
     }
@@ -242,7 +242,7 @@ static class WorkBuddyUsageTests
         });
         using var http = new HttpClient(handler);
         var reading = await WorkBuddyUsage.ReadAsync(http, WorkBuddyUsage.International, new("token", "refresh", "uid", "www.workbuddy.ai"), _ => { }, CancellationToken.None);
-        // The international sign-in names the platform "cli", the one its website's page opens no app for; the China one names BrimDeck.
+        // The international sign-in names the platform "cli", the one its website's page opens no app for; the China one names DeckIsland.
         var started = new List<string>();
         using var states = new Site(request =>
         {
@@ -252,8 +252,8 @@ static class WorkBuddyUsageTests
         using var signIn = new HttpClient(states);
         await WorkBuddyUsage.StartLoginAsync(signIn, WorkBuddyUsage.International, CancellationToken.None);
         await WorkBuddyUsage.StartLoginAsync(signIn, WorkBuddyUsage.China, CancellationToken.None);
-        check("WorkBuddy AI signs in as cli so its website opens no app; the China edition names BrimDeck", started.SequenceEqual(
-            ["www.workbuddy.ai/v2/plugin/auth/state?platform=cli", "www.workbuddy.cn/v2/plugin/auth/state?platform=brimdeck"]));
+        check("WorkBuddy AI signs in as cli so its website opens no app; the China edition names DeckIsland", started.SequenceEqual(
+            ["www.workbuddy.ai/v2/plugin/auth/state?platform=cli", "www.workbuddy.cn/v2/plugin/auth/state?platform=deckisland"]));
         check("WorkBuddy AI is read at its own website", hosts.SetEquals(["www.workbuddy.ai"]) && reading.Plan == "Free");
         var plan = reading.Metrics.Single(m => m.Label == "套餐积分");
         var reward = reading.Metrics.Single(m => m.Label == "奖励积分");

@@ -1,4 +1,4 @@
-using BrimDeck.Native;
+using DeckIsland.Native;
 using Jint;
 
 // Runs the injected player bridge against a mocked client store in a JavaScript engine.
@@ -29,7 +29,7 @@ internal static class NeteaseBridgeTests
             const loader={c:{one:{exports:{a:{getStore:()=>store.getState(),getDispatch:()=>store.dispatch,app:{_store:store}}}},two:{exports:{AudioPlayer:player}},three:{exports:{b:{lastPlaying:{get:()=>Promise.resolve({trackId:42,current:57})}}}}}};
             let clock=100000;
             globalThis.performance={now:()=>2000}; Date.now=()=>clock;
-            globalThis.__brimDeckMediaPush=s=>pushes.push(JSON.parse(s));
+            globalThis.__deckIslandMediaPush=s=>pushes.push(JSON.parse(s));
             globalThis.webpackJsonp={push:entry=>{ for(const module of Object.values(entry[1])) module({}, {}, loader); }};
             globalThis._enterAppTime=1000;
             check(!run().ready && subscribers.length===0,'startup waits for client window initialization before attaching');
@@ -41,7 +41,7 @@ internal static class NeteaseBridgeTests
             check(pushes.at(-1).positionMs===57000,'initial paused position reads current-track storage only');
             result=run();
             check(listeners.playprogress.length===1 && subscribers.length===1,'reconnect does not add duplicate subscriptions');
-            const cmd=__brimDeckMusicV2.command;
+            const cmd=__deckIslandMusicV2.command;
             check(cmd({command:'seek',seconds:80,songId:'42'}).dispatched && actions.at(-1).type==='playing/setPlayingPosition' && actions.at(-1).payload.duration===80,'seek dispatch uses seconds');
             const before=actions.length;
             check(!cmd({command:'seek',seconds:80,songId:'43'}).dispatched && actions.length===before,'stale-song seek rejected before dispatch');
@@ -66,12 +66,12 @@ internal static class NeteaseBridgeTests
             check(pushes.at(-1).positionMs===80000,'old track event cannot corrupt current progress');
             p.resourceTrackId=43;p.resourceName='Next';subscribers[0]();
             check(pushes.at(-1).positionMs===null && pushes.at(-1).songId==='43','track change clears old time anchor');
-            __brimDeckMusicV2.detach('__brimDeckMediaPush');const previous=pushes.length;
+            __deckIslandMusicV2.detach('__deckIslandMediaPush');const previous=pushes.length;
             listeners.seek[0]({playId:'43_audio',position:30,code:0});
             check(pushes.length===previous,'detached bridge sends no events');
             let activePushes=0,stalePushes=0;
             globalThis.activeClient=()=>activePushes++; globalThis.crashedClient=()=>stalePushes++;
-            const bridge=__brimDeckMusicV2;
+            const bridge=__deckIslandMusicV2;
             bridge.attach('activeClient');bridge.attach('crashedClient');
             const staleCount=stalePushes;
             clock+=60000;bridge.keepalive('activeClient');clock+=40000;bridge.keepalive('activeClient');
@@ -92,7 +92,7 @@ internal static class NeteaseBridgeTests
             const store={getState:()=>({playing:q}),subscribe:f=>{subscribers.push(f);return()=>{}},dispatch:()=>{}};
             const loader={c:{one:{exports:{a:{getStore:()=>store.getState(),getDispatch:()=>store.dispatch,app:{_store:store}}}},three:{exports:{b:{lastPlaying:{get:()=>Promise.resolve({trackId:'77',current:39})}}}}}};
             globalThis.performance={now:()=>2000}; Date.now=()=>1;
-            globalThis.__brimDeckMediaPush=s=>pushes.push(JSON.parse(s));
+            globalThis.__deckIslandMediaPush=s=>pushes.push(JSON.parse(s));
             globalThis.webpackJsonp={push:entry=>{ for(const module of Object.values(entry[1])) module({}, {}, loader); }};
             check(run().ready,'bridge attaches while the restored track id is still missing');
             """);
@@ -102,7 +102,7 @@ internal static class NeteaseBridgeTests
             """);
         restored.Execute("check(pushes.at(-1).positionMs===39000 && pushes.at(-1).songId==='77','saved paused position is read once the restored track id arrives');");
 
-        // Liking uses the client's own liked songs and toggle; a bridge left by an earlier BrimDeck stops pushing.
+        // Liking uses the client's own liked songs and toggle; a bridge left by an earlier DeckIsland stops pushing.
         var liking = Page();
         liking.Execute("""
             const actions=[], pushes=[], subscribers=[], released=[];
@@ -111,15 +111,15 @@ internal static class NeteaseBridgeTests
             const store={getState:()=>s,subscribe:f=>{subscribers.push(f);return()=>{}},dispatch:a=>actions.push(a)};
             const loader={c:{one:{exports:{a:{getStore:()=>store.getState(),getDispatch:()=>store.dispatch,app:{_store:store}}}}}};
             globalThis.performance={now:()=>2000}; Date.now=()=>1;
-            globalThis.__brimDeckMediaPush=x=>pushes.push(JSON.parse(x));
-            globalThis.__brimDeckMediaPush_0123456789abcdef0123456789abcdef=()=>{};
-            globalThis.__brimDeckMusicV1={version:1,detach:name=>released.push(name)};
+            globalThis.__deckIslandMediaPush=x=>pushes.push(JSON.parse(x));
+            globalThis.__deckIslandMediaPush_0123456789abcdef0123456789abcdef=()=>{};
+            globalThis.__deckIslandMusicV1={version:1,detach:name=>released.push(name)};
             globalThis.webpackJsonp={push:entry=>{ for(const module of Object.values(entry[1])) module({}, {}, loader); }};
             const result=run();
             check(result.ready && result.snapshot.canLike && result.snapshot.liked,'a liked song is read from the client liked songs');
-            check(released.includes('__brimDeckMediaPush') && released.includes('__brimDeckMediaPush_0123456789abcdef0123456789abcdef'),'an earlier bridge releases its clients');
-            check(__brimDeckMusicV2.version===2 && __brimDeckMusicV1.version===1,'the new bridge installs beside the earlier one');
-            const cmd=__brimDeckMusicV2.command;
+            check(released.includes('__deckIslandMediaPush') && released.includes('__deckIslandMediaPush_0123456789abcdef0123456789abcdef'),'an earlier bridge releases its clients');
+            check(__deckIslandMusicV2.version===2 && __deckIslandMusicV1.version===1,'the new bridge installs beside the earlier one');
+            const cmd=__deckIslandMusicV2.command;
             check(cmd({command:'like',songId:'42'}).dispatched && actions.at(-1).type==='async:hostResource/setLikeCurPlayingTrack','like dispatches the client toggle for the current song');
             const count=actions.length;
             check(!cmd({command:'like',songId:'41'}).dispatched && actions.length===count,'like for a song that is no longer playing is rejected');

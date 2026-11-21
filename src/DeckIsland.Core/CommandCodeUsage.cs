@@ -3,7 +3,7 @@ using System.Net;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Command Code (commandcode.ai). Its CLI and desktop app share %USERPROFILE%\.commandcode: the sign-in is an API key of the account,
 // kept as apiKey in auth.json, and the session records are projects\<project>\<session>.jsonl. Keys created in Command Code Studio

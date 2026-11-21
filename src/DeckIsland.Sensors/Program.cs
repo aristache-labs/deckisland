@@ -4,16 +4,16 @@ using System.Security.AccessControl;
 using System.Security.Principal;
 using System.ServiceProcess;
 using System.Text;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck.Sensors;
+namespace DeckIsland.Sensors;
 
-// The service BrimDeck's enhanced sensors page installs (Native.SensorSetup): started on demand by BrimDeck, it answers each
+// The service DeckIsland's enhanced sensors page installs (Native.SensorSetup): started on demand by DeckIsland, it answers each
 // request on the pipe with one reading (SensorReport) and stops itself once nobody has asked for IdleSeconds. "--console" reads
 // twice and prints the readings, for a look by hand from an elevated prompt.
 internal static class Program
 {
-    public const string PipeName = "BrimDeck.Sensors";
+    public const string PipeName = "DeckIsland.Sensors";
 
     public static int Main(string[] args)
     {
@@ -37,7 +37,7 @@ internal sealed class SensorService : ServiceBase
     private readonly CancellationTokenSource _stop = new();
     private Thread? _worker;
 
-    public SensorService() { ServiceName = "BrimDeckSensors"; CanStop = true; CanShutdown = true; }
+    public SensorService() { ServiceName = "DeckIslandSensors"; CanStop = true; CanShutdown = true; }
 
     protected override void OnStart(string[] args)
     {
@@ -50,7 +50,7 @@ internal sealed class SensorService : ServiceBase
 
     // Readings are taken on this one thread (a core's registers need the thread on that core), one per request; the energy
     // counters give their watts over the time between two requests. A driver that was not running yet (the service started with
-    // Windows before it) is looked for again every RetrySeconds while BrimDeck keeps asking.
+    // Windows before it) is looked for again every RetrySeconds while DeckIsland keeps asking.
     private void Serve()
     {
         var clock = Stopwatch.StartNew();
@@ -67,7 +67,7 @@ internal sealed class SensorService : ServiceBase
             {
                 using var pipe = NamedPipeServerStreamAcl.Create(Program.PipeName, PipeDirection.InOut, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous, 256, 4096, security);
                 var waiting = pipe.WaitForConnectionAsync(_stop.Token);
-                // Asked nothing for a while: the service stops, and BrimDeck starts it again when it next wants a reading.
+                // Asked nothing for a while: the service stops, and DeckIsland starts it again when it next wants a reading.
                 if (!waiting.Wait(TimeSpan.FromSeconds(Math.Max(1, IdleSeconds - (clock.Elapsed.TotalSeconds - lastAsked))))) { if (clock.Elapsed.TotalSeconds - lastAsked >= IdleSeconds) break; continue; }
                 var request = new byte[64];
                 using (var timeout = CancellationTokenSource.CreateLinkedTokenSource(_stop.Token))

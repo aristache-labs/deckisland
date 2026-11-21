@@ -3,7 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // A label followed by its info icon. The label is centered in the height the panel is given, and the icon's center goes on
 // the middle of the label's glyphs. The settings window draws text in Display mode, which snaps the baseline to device

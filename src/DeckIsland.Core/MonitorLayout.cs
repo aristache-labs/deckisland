@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // The system monitor page's color schemes: ftop's three palettes by Nongfsq (https://github.com/Nongfsq/ftop, MIT License;
 // see ThirdPartyNotices.txt), Theme, which takes the colors of the panel theme in use (the app resolves it, as only it knows

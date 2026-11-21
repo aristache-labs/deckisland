@@ -2,10 +2,10 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Channels;
-using BrimDeck.Core;
+using DeckIsland.Core;
 using Microsoft.Win32.SafeHandles;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 // One reader belongs to one main-process generation. The owner disposes it as soon
 // as the process exits or CDP takes over. No timers or file handles survive disposal.

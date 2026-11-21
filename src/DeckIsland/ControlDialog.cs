@@ -3,9 +3,9 @@ using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // The window a player's full control asks in before it is switched on (Apple Music, KuGou, and NetEase Cloud Music by a restart
 // or by its changed file): a title, what the control adds and does to the player in a few lines, a notice about the debugging
@@ -19,8 +19,8 @@ internal abstract class ControlDialog : Window
     protected ControlDialog(SettingsTheme theme, string title)
     {
         Palette = new SettingsPalette(SettingsPalette.IsDark(theme));
-        Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("/BrimDeck;component/SettingsResources.xaml", UriKind.Relative) });
-        Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("/BrimDeck;component/NeteaseControlResources.xaml", UriKind.Relative) });
+        Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("/DeckIsland;component/SettingsResources.xaml", UriKind.Relative) });
+        Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("/DeckIsland;component/NeteaseControlResources.xaml", UriKind.Relative) });
         Palette.Apply(Resources); Style = (Style)FindResource(typeof(Window));
         Title = title; Width = 480; SizeToContent = SizeToContent.Height;
         ResizeMode = ResizeMode.NoResize; WindowStartupLocation = WindowStartupLocation.CenterScreen; ShowInTaskbar = false;

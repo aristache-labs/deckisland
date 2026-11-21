@@ -1,6 +1,6 @@
 using System.Globalization;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // A volume with a drive letter: its letter ("C:"), its label and its size and free space in bytes, as the file system reports
 // them for the current user.

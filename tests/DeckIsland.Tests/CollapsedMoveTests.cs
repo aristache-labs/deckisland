@@ -1,4 +1,4 @@
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // Moving the collapsed notch or capsule by dragging it (CollapsedMove): which edge the notch takes, where the surfaces are held,
 // and the settings that put them back where they were dropped.

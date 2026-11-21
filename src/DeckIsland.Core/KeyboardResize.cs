@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Resizing with the resize shortcut (HotkeyKind.Resize): each press of an arrow key moves the size the panel is heading for by
 // one step, within the same limits as dragging an edge. Left and Right change the width (of the open page, or of the collapsed

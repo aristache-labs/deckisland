@@ -1,4 +1,4 @@
-using BrimDeck.Core;
+using DeckIsland.Core;
 using static EqualizerAudio;
 
 // The Flow way of the equalizer (EqualizerMode.Flow): one value for the whole sound, shown at increasing delays from left to right.

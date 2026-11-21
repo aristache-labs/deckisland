@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // The OpenCode sign-in that reads the Go allowance: an OAuth access token from signing in to OpenCode Console, or an API key;
 // when the token expires; and the Console workspace (orgID) and address it signed in to. Held in memory only and never shown.

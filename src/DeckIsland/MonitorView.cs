@@ -2,9 +2,9 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // A monitor color scheme as the panel draws it on the panel theme in use: ftop's palettes in their light or dark variant by the
 // theme, or the theme's own colors (its accent and its cyan, pink and lime), or the custom colors over the scheme they start

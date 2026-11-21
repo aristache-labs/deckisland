@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // NetEase Cloud Music starts its DevTools port only when --remote-debugging-port is passed. Two changes in its libcef.dll make
 // it open the port on 127.0.0.1:21631 every time it starts, without the switch: each replaces the instruction that loads the

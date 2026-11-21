@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // A panel theme file as JSON (see PanelThemes). Property names are camelCase in the file; unknown properties are ignored, and
 // comments and trailing commas are allowed. Everything left out comes from the base theme.

@@ -1,5 +1,5 @@
 using System.Text.Json;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // The core dot matrix: the placement for any count and room, hit testing, the Auto rule, the strip's width and the setting.
 internal static class CoreMatrixTests

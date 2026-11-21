@@ -1,4 +1,4 @@
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // Whether the session's display is off while the session is unlocked (DisplayWatch): what Windows reports, and the user being
 // there bringing it back whatever was reported last.

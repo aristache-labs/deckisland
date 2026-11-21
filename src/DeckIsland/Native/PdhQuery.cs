@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 // A Performance Data Helper query of wildcard counters, read the way Task Manager reads processor time, processor
 // frequency and the graphics engines. Rate counters need two collections, so the first reading of each is unavailable.

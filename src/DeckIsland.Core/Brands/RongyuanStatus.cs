@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Keyboards on Rongyuan's (Royuan's) 2.4 GHz receivers, which answer the battery themselves: MonsGeek, AJAZZ, VGN and
 // CAROTMAS. The receivers carry the chip maker's vendor ids (Yichip's 0x3151, and 0x391D), shared with other products, so

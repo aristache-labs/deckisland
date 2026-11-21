@@ -1,7 +1,7 @@
 using System.Windows;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // The collapsed surface's pointer area (see CollapsedHover), in the two forms the window needs: a screen rectangle in device
 // pixels for the cursor checks, and the box of the nearly transparent HoverExtension layer that receives the mouse there.

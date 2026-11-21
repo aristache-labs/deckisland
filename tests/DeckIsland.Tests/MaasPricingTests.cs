@@ -1,4 +1,4 @@
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // Model names of MaaS gateways (CodeAgent, and other tools that reach its models through a proxy) take the price of the catalog
 // model they serve, whatever tool recorded them (Pricing.MaasName). The names are those found in CodeAgent records and its model list.

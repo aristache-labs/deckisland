@@ -1,6 +1,6 @@
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-// The curves behind the panel's timed animations (BrimDeck.Soft).
+// The curves behind the panel's timed animations (DeckIsland.Soft).
 internal static class CurvesTests
 {
     public static void Run(Action<string, bool> check)

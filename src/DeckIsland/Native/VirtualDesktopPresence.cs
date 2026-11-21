@@ -3,7 +3,7 @@ using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Threading;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 // Pin the overlay's shell view, not its application ID: settings windows remain ordinary windows.
 internal sealed class VirtualDesktopPresence : IDisposable

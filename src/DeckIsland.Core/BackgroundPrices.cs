@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Runs the price refresh beside the usage read instead of in front of it: Start returns at once, a refresh still under way is
 // not started a second time, and landed is called when one ends without failing and reports that the prices changed (so costs are
@@ -15,7 +15,7 @@ public sealed class BackgroundPrices(Func<CancellationToken, Task<bool>> refresh
             bool changed;
             try { changed = await refresh(cancellation).ConfigureAwait(false); }
             catch (OperationCanceledException) { return; }
-            catch (Exception ex) { System.Diagnostics.Trace.WriteLine("BrimDeck prices: " + ex.GetType().Name); return; }
+            catch (Exception ex) { System.Diagnostics.Trace.WriteLine("DeckIsland prices: " + ex.GetType().Name); return; }
             if (changed) landed();
         }, CancellationToken.None);
     }

@@ -3,10 +3,10 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
-using BrimDeck.Core;
-using BrimDeck.Native;
+using DeckIsland.Core;
+using DeckIsland.Native;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // Choosing several entries of a column at once, as icons are chosen on the desktop. Ctrl with a click adds or takes one, Shift
 // with a click takes all from the last one chosen to this one, and a drag that starts on an empty part of the list draws a

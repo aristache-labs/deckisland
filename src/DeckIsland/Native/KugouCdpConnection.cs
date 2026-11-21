@@ -5,9 +5,9 @@ using System.Net.Http;
 using System.Net.NetworkInformation;
 using System.Net.WebSockets;
 using System.Text.Json;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 // KuGou's full control: once its libcef.dll is patched (KugouInstall), each KuGou opens its DevTools port at 127.0.0.1:12233
 // and this connection reads what plays from one of its pages, through the bridge its pages use to call the client
@@ -165,7 +165,7 @@ internal sealed class KugouCdpConnection : IMediaPlayerConnection
     // 3 seconds counts as none.
     internal static string Call(int number, object? fields = null) => $$"""
         new Promise(function (resolve) {
-            var name = "__brimDeckKugou" + Date.now() + Math.random().toString(36).slice(2);
+            var name = "__deckIslandKugou" + Date.now() + Math.random().toString(36).slice(2);
             var timer = setTimeout(function () { window[name] = null; resolve(""); }, 3000);
             window[name] = function (data) { clearTimeout(timer); window[name] = null; resolve(typeof data === "string" ? data : JSON.stringify(data)); };
             try { external.SuperCall({{number}}, JSON.stringify(Object.assign({{JsonSerializer.Serialize(fields ?? new { })}}, { callback: name }))); }

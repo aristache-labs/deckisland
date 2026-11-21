@@ -1,4 +1,4 @@
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // The models added to brands already read: each new id goes to its documented collection alone, and each reply is parsed as
 // its source documents it (the bytes below are the sources' own samples where they give one).

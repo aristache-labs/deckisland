@@ -1,4 +1,4 @@
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // The system monitor's drives: which volumes are listed and on which physical drive, a drive split into several letters, the
 // entries the page shows (one per volume, in one or two columns) and the volumes folded into the last one, their figures, their

@@ -6,9 +6,9 @@ using System.IO.Pipes;
 using System.Security.Principal;
 using System.ServiceProcess;
 using System.Text;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 // Asks the sensor service (SensorSetup) for the processor's temperature and power, from the sampling thread: the service is
 // started when it is not running (interactive users may start it, nothing more) and answers on its pipe. Nothing here needs
@@ -63,7 +63,7 @@ internal sealed class SensorClient
         try
         {
             // Identification: whoever answers on the pipe's name may learn who asks, never act as them.
-            using var pipe = new NamedPipeClientStream(".", "BrimDeck.Sensors", PipeDirection.InOut, PipeOptions.Asynchronous, TokenImpersonationLevel.Identification);
+            using var pipe = new NamedPipeClientStream(".", "DeckIsland.Sensors", PipeDirection.InOut, PipeOptions.Asynchronous, TokenImpersonationLevel.Identification);
             pipe.Connect(connect);
             pipe.Write("read\n"u8);
             pipe.Flush();

@@ -4,12 +4,12 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // WorkBuddy, China edition (www.workbuddy.cn, desktop app "WorkBuddy") and international edition (www.workbuddy.ai, desktop app
 // "WorkBuddy AI"). The two have their own accounts and answer the same requests, each at its own website (Edition). The desktop
-// apps encrypt their own sign-in, so BrimDeck signs in on its own: the user signs in on the WorkBuddy website in the default
-// browser, and the website hands BrimDeck a sign-in of its own (the login used by CodeBuddy plugins). Nothing of the desktop apps is
+// apps encrypt their own sign-in, so DeckIsland signs in on its own: the user signs in on the WorkBuddy website in the default
+// browser, and the website hands DeckIsland a sign-in of its own (the login used by CodeBuddy plugins). Nothing of the desktop apps is
 // read for the quota.
 //
 // Sign-in: POST /v2/plugin/auth/state?platform=<Edition.Platform> returns {state, authUrl} (<website>/login?platform&state); the
@@ -28,9 +28,9 @@ public static class WorkBuddyUsage
     // An edition's website, the id the secrets store keeps its sign-in under (apart from the keys of the rows entered by hand), which
     // kind of credits each of its packages is (KindsFor), and the platform its sign-in names. After signing in, the international
     // website's page opens the client the platform names, and an app it does not know as vscode://; only "cli" opens nothing, so the
-    // international sign-in names it. The China website's page opens nothing by itself, and its sign-in names BrimDeck.
+    // international sign-in names it. The China website's page opens nothing by itself, and its sign-in names DeckIsland.
     public sealed record Edition(ProviderId Id, string Origin, Guid SessionKey, IReadOnlyDictionary<string, string> PackageKinds, string Platform);
-    public static readonly Edition China = new(ProviderId.WorkBuddy, "https://www.workbuddy.cn", new("6b3f1d2e-8a4c-4f57-9c1e-2d7a5b0e4f81"), KindsFor(international: false), "brimdeck");
+    public static readonly Edition China = new(ProviderId.WorkBuddy, "https://www.workbuddy.cn", new("6b3f1d2e-8a4c-4f57-9c1e-2d7a5b0e4f81"), KindsFor(international: false), "deckisland");
     public static readonly Edition International = new(ProviderId.WorkBuddyAi, "https://www.workbuddy.ai", new("c41e7a90-3d52-4b8f-a6e1-95f0b2d7c368"), KindsFor(international: true), "cli");
     public static Edition For(ProviderId id) => id == ProviderId.WorkBuddyAi ? International : China;
 
@@ -266,7 +266,7 @@ public static class WorkBuddyUsage
     private static async Task<JsonDocument> SendAsync(HttpClient http, HttpRequestMessage request, CancellationToken ct, bool allowBadRequest = false)
     {
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-        request.Headers.UserAgent.ParseAdd("BrimDeck/1.0");
+        request.Headers.UserAgent.ParseAdd("DeckIsland/1.0");
         using var deadline = CancellationTokenSource.CreateLinkedTokenSource(ct); deadline.CancelAfter(TimeSpan.FromSeconds(15));
         using var response = await http.SendAsync(request, deadline.Token);
         if (response.StatusCode == HttpStatusCode.Unauthorized) throw new RejectedException();

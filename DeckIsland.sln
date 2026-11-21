@@ -5,19 +5,19 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{827E0CD3-B72D-47B6-A68D-7590B98EB39B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BrimDeck.Core", "src\BrimDeck.Core\BrimDeck.Core.csproj", "{454BEFE9-515E-4995-8053-409543327542}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DeckIsland.Core", "src\DeckIsland.Core\DeckIsland.Core.csproj", "{454BEFE9-515E-4995-8053-409543327542}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BrimDeck", "src\BrimDeck\BrimDeck.csproj", "{1BE372D1-6075-4AE2-87BE-36E069FC1BC2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DeckIsland", "src\DeckIsland\DeckIsland.csproj", "{1BE372D1-6075-4AE2-87BE-36E069FC1BC2}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{0AB3BF05-4346-4AA6-1389-037BE0695223}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BrimDeck.Tests", "tests\BrimDeck.Tests\BrimDeck.Tests.csproj", "{21AFABAB-FF57-4095-9ED6-427416FCC5EC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DeckIsland.Tests", "tests\DeckIsland.Tests\DeckIsland.Tests.csproj", "{21AFABAB-FF57-4095-9ED6-427416FCC5EC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BrimDeck.MediaTests", "tests\BrimDeck.MediaTests\BrimDeck.MediaTests.csproj", "{1BD1488E-7923-4BEF-A2C5-F1A3064CC087}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DeckIsland.MediaTests", "tests\DeckIsland.MediaTests\DeckIsland.MediaTests.csproj", "{1BD1488E-7923-4BEF-A2C5-F1A3064CC087}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BrimDeck.WindowsTests", "tests\BrimDeck.WindowsTests\BrimDeck.WindowsTests.csproj", "{966304DB-7E85-49FD-B445-B7B682209157}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DeckIsland.WindowsTests", "tests\DeckIsland.WindowsTests\DeckIsland.WindowsTests.csproj", "{966304DB-7E85-49FD-B445-B7B682209157}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BrimDeck.Sensors", "src\BrimDeck.Sensors\BrimDeck.Sensors.csproj", "{929B0054-C754-4047-B212-8B4095AB5008}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DeckIsland.Sensors", "src\DeckIsland.Sensors\DeckIsland.Sensors.csproj", "{929B0054-C754-4047-B212-8B4095AB5008}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

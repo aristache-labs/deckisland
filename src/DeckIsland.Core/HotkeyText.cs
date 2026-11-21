@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Resize and Move are each one setting for four registrations: their modifiers with each arrow key (see Arrows). Page1 to Page10
 // open the shown pages in the order of the page switch. CycleStyle turns the collapsed style to the next one: notch, capsule, line,

@@ -1,8 +1,8 @@
 using System.Windows;
 using System.Windows.Controls;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // Mouse pass-through (DeckSettings.ClickThrough) in the General page's Compatibility group: its switch, and under it, while it is on, whether the open
 // panel takes clicks (ClickThroughPanel) and the keyboard (ClickThroughKeyboard). Its shortcut and the tray menu also turn it on and off; the switch follows them.

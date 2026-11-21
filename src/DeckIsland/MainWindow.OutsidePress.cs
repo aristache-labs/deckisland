@@ -1,7 +1,7 @@
 using System.Windows;
-using BrimDeck.Native;
+using DeckIsland.Native;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // A press outside the open panel closes it at once. The panel does not take the foreground, so a press in another app reaches only
 // that app; the panel learns of it from a low-level hook, kept only while the panel is open and the pointer has left it. The press

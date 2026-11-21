@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // The vendor protocols the devices page reads batteries with, as bytes in and readings out: building each request and parsing
 // each reply, with no I/O, so every one is tested against the bytes it is documented with. The app's HID layer
@@ -178,7 +178,7 @@ public static class Hidpp
 
     // What a receiver or device sends unasked, as Solaar and the Linux driver read it. A receiver's register 0x00 holds which
     // notices it sends: bit 0 of its second byte is the wireless one (0x41, a device's link made or lost), which OpenLogi and
-    // Solaar turn on and BrimDeck turns on the same way, leaving the other bits as they were.
+    // Solaar turn on and DeckIsland turns on the same way, leaving the other bits as they were.
     public const byte NotificationFlags = 0x00, WirelessNotifications = 0x01;
     // The register's three bytes in a reply to RegisterRequest(0xFF, NotificationFlags); null for any other report.
     public static byte[]? Flags(byte[] report) => report.Length >= 7 && report[0] == Short && report[1] == 0xFF && report[2] == 0x81 && report[3] == NotificationFlags

@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace BrimDeck.Core.ClipboardSync;
+namespace DeckIsland.Core.ClipboardSync;
 
 // The clipboard's HTML form (CF_HTML) is a short header of byte offsets followed by a document in which two comments mark
 // the copied fragment. A sync service carries the fragment alone.

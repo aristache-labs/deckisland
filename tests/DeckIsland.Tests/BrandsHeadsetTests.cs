@@ -1,4 +1,4 @@
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // The headset brand families: what each takes (and what it leaves to the readers that already have it), its requests, the
 // answers its sources quote, and the request read back or an acknowledgement read as no reading.
@@ -27,8 +27,8 @@ static class BrandsHeadsetTests
         var paLevelReply = (byte[])paCharge.Clone(); paLevelReply[12] = 0x21; paLevelReply[15] = 79;
         var bcCharge = new byte[64]; bcCharge[0] = 0x01; bcCharge[3] = 0x50; bcCharge[4] = 0x49; bcCharge[13] = 0x2A; bcCharge[14] = 0x01; bcCharge[15] = 0x01; bcCharge[16] = 0x00;
         check("Razer PA and Barracuda Pro: the charging question (2A) after the level, its answer, and the level answer is not a charging one",
-            BrimDeck.Core.RazerHeadsets.PaQuery(0x2A)[10] == 0x2A && BrimDeck.Core.RazerHeadsets.PaCharging(paCharge) == true
-            && BrimDeck.Core.RazerHeadsets.PaCharging(paLevelReply) is null && BrimDeck.Core.RazerHeadsets.BarracudaCharging(bcCharge) == false
+            DeckIsland.Core.RazerHeadsets.PaQuery(0x2A)[10] == 0x2A && DeckIsland.Core.RazerHeadsets.PaCharging(paCharge) == true
+            && DeckIsland.Core.RazerHeadsets.PaCharging(paLevelReply) is null && DeckIsland.Core.RazerHeadsets.BarracudaCharging(bcCharge) == false
             && BrandFamilies.Find(new HidShape(0x1532, 0x0555, 0xFF00, 1, -1, 64, 64, 0, new HashSet<byte> { 0x02 }, new HashSet<byte>(), "")) is { } pa
             && pa.Ways[0].Then is { } then && then[10] == 0x2A && pa.Ways[0].Charging is not null);
 
@@ -52,10 +52,10 @@ static class BrandsHeadsetTests
         int[] razer = [.. RazerHeadsets.Status2020, .. RazerHeadsets.Pa, RazerHeadsets.BarracudaPro, .. RazerHeadsets.MtkModels.Select(m => m.Product), .. RazerHeadsets.V3x];
         int[] steelseries = [0x12B3, 0x12B6, 0x12D7, 0x12D5, 0x220E, 0x2212, 0x2216, 0x2236, 0x2269, 0x226D, 0x2232, 0x2253, 0x230A, 0x2244, 0x2290];
         check("Headset brands: no product is one Razer, Headsets, SteelSeriesMice, Asus or Pushes reads already",
-            razer.All(product => BrimDeck.Core.Razer.Find(product) is null)
+            razer.All(product => DeckIsland.Core.Razer.Find(product) is null)
             && steelseries.All(product => Headsets.Find(SteelSeriesHeadsets.Vendor, product) is null && SteelSeriesMice.Find(SteelSeriesHeadsets.Vendor, product) is null
                 && SteelSeriesHeadsets.Find(product) is not null)
-            && BrimDeck.Core.Asus.Find(AsusStrixGo.Vendor, AsusStrixGo.Dongle) is null && BrimDeck.Core.Asus.Find(AsusStrixGo.Vendor, AsusStrixGo.Cable) is null
+            && DeckIsland.Core.Asus.Find(AsusStrixGo.Vendor, AsusStrixGo.Dongle) is null && DeckIsland.Core.Asus.Find(AsusStrixGo.Vendor, AsusStrixGo.Cable) is null
             && new[] { SonyInzone.H5, SonyInzone.H9II }.All(product => Pushes.Find(SonyInzone.Vendor, product, 0xFF04, 1, -1, 64) is null));
         check("Headset brands: SteelSeries headsets the Headsets class reads (Nova 7) and its mice are not taken",
             Untaken(Shape(0x1038, 0x22A1, 0xFFC0, 1, 3, outputIds: [0]), "SteelSeries Headset")
@@ -206,15 +206,15 @@ static class BrandsHeadsetTests
             && Untaken(Shape(0x0B0E, 0x24C7, 0xFF00, 2, 3, outputIds: [0x05]), brand) && Untaken(Shape(0x0B0F, 0x24C7, 0xFF00, 1, 3, outputIds: [0x05]), brand));
         // The refusals as HeadsetControl documents them (group FE, the reason in place of the command; constructed).
         check("Jabra: the GET 12/02 to the headset; HaloBattery's measured payload 04 15 (21 %); the dongle's \"headset offline\" refusal (F3) the headset asleep; \"nothing at that address\" (F5), F3 from the cable's address, the request read back and another address's answer are none",
-            BrimDeck.Core.Jabra.Request(BrimDeck.Core.Jabra.Dongle).SequenceEqual(Hex("05 04 00 20 46 12 02"))
-            && BrimDeck.Core.Jabra.Request(BrimDeck.Core.Jabra.Usb).SequenceEqual(Hex("05 08 00 20 46 12 02"))
-            && BrimDeck.Core.Jabra.Battery(0x04)(Hex("05 00 04 20 C8 12 02 04 15", 64)) == new BatteryRead(21)
-            && BrimDeck.Core.Jabra.Battery(0x04)(Hex("05 00 04 20 CA 12 02 01 3C 0F A0", 64)) == new BatteryRead(60, true)
-            && BrimDeck.Core.Jabra.Battery(0x04)(Hex("05 00 04 20 C6 FE F3", 64)) == new BatteryRead(null, Asleep: true)
-            && BrimDeck.Core.Jabra.Battery(0x04)(Hex("05 00 04 20 C6 FE F5", 64)) is null
-            && BrimDeck.Core.Jabra.Battery(0x08)(Hex("05 00 08 20 C6 FE F3", 64)) is null
-            && BrimDeck.Core.Jabra.Battery(0x04)(Hex("05 04 00 20 46 12 02", 64)) is null
-            && BrimDeck.Core.Jabra.Battery(0x08)(Hex("05 00 04 20 C8 12 02 04 15", 64)) is null);
+            DeckIsland.Core.Jabra.Request(DeckIsland.Core.Jabra.Dongle).SequenceEqual(Hex("05 04 00 20 46 12 02"))
+            && DeckIsland.Core.Jabra.Request(DeckIsland.Core.Jabra.Usb).SequenceEqual(Hex("05 08 00 20 46 12 02"))
+            && DeckIsland.Core.Jabra.Battery(0x04)(Hex("05 00 04 20 C8 12 02 04 15", 64)) == new BatteryRead(21)
+            && DeckIsland.Core.Jabra.Battery(0x04)(Hex("05 00 04 20 CA 12 02 01 3C 0F A0", 64)) == new BatteryRead(60, true)
+            && DeckIsland.Core.Jabra.Battery(0x04)(Hex("05 00 04 20 C6 FE F3", 64)) == new BatteryRead(null, Asleep: true)
+            && DeckIsland.Core.Jabra.Battery(0x04)(Hex("05 00 04 20 C6 FE F5", 64)) is null
+            && DeckIsland.Core.Jabra.Battery(0x08)(Hex("05 00 08 20 C6 FE F3", 64)) is null
+            && DeckIsland.Core.Jabra.Battery(0x04)(Hex("05 04 00 20 46 12 02", 64)) is null
+            && DeckIsland.Core.Jabra.Battery(0x08)(Hex("05 00 04 20 C8 12 02 04 15", 64)) is null);
     }
 
     // FIFINE and ATK's N9 V2 Ultimate: the same 55 65 frame.
@@ -248,8 +248,8 @@ static class BrandsHeadsetTests
             && Untaken(Shape(0x36F9, 0xF008, 0x000C, 1, outputIds: [0x55]), "XIBERIA")
             && BrandFamilies.Find(Shape(0x36F9, 0xF008, 0xFF00, 1, outputIds: [0x41])) is { Ways.Count: 0 });
         check("XIBERIA: the query 55 65 00 00, Voltide's documented answer (55 65 00 4B, 75 %), and the query read back none",
-            BrimDeck.Core.Xiberia.Request().SequenceEqual(Hex("55 65 00 00")) && BrimDeck.Core.Xiberia.Battery(Hex("55 65 00 4B", 64)) == new BatteryRead(75)
-            && BrimDeck.Core.Xiberia.Battery(Hex("55 65 00 00", 64)) is null && BrimDeck.Core.Xiberia.Battery(Hex("55 65 00 65", 64)) is null);
+            DeckIsland.Core.Xiberia.Request().SequenceEqual(Hex("55 65 00 00")) && DeckIsland.Core.Xiberia.Battery(Hex("55 65 00 4B", 64)) == new BatteryRead(75)
+            && DeckIsland.Core.Xiberia.Battery(Hex("55 65 00 00", 64)) is null && DeckIsland.Core.Xiberia.Battery(Hex("55 65 00 65", 64)) is null);
     }
 
     private static void Asus(Action<string, bool> check)
@@ -315,31 +315,31 @@ static class BrandsHeadsetTests
             && family.Value.Ways[0].StripZero
             && Untaken(Shape(0x3654, 0x6901, 0xFF02, 2, 4, outputIds: [0x02]), "DARKRIM") && Untaken(Shape(0x3654, 0x6902, 0xFF02, 2, 3, input: 65, output: 65, outputIds: [0]), "DARKRIM"));
         var charging = Hex("FE 00 11 00 03 00 00 03 00 01 01 DA 00 00");
-        ushort crc = BrimDeck.Core.Darkrim.Crc16(charging.AsSpan(0, 12));
+        ushort crc = DeckIsland.Core.Darkrim.Crc16(charging.AsSpan(0, 12));
         charging[12] = (byte)(crc >> 8); charging[13] = (byte)crc;
         check("DARKRIM: the CRC on vigil-watt's captured frames, the GetBasicInfo request, the measured notice (90 %) and charging (DA); the request read back, the GetVersion echo and a bad CRC are none",
-            BrimDeck.Core.Darkrim.Crc16(Hex("FE 00 10 00 02 00 00 03 00 09 01 00")) == 0xE23C && BrimDeck.Core.Darkrim.Crc16(Hex("FE 04 10 00 02 00 00 03 00 09 01 00")) == 0xB37B
-            && BrimDeck.Core.Darkrim.Request().Length == 65 && BrimDeck.Core.Darkrim.Request().AsSpan(0, 15).SequenceEqual(Hex("00 FE 00 10 00 02 00 00 03 00 09 01 00 E2 3C"))
-            && BrimDeck.Core.Darkrim.Battery(Hex("FE 00 11 00 03 00 00 03 00 01 01 5A 98 B4", 64)) == new BatteryRead(90)
-            && BrimDeck.Core.Darkrim.Battery(charging) == new BatteryRead(90, true)
-            && BrimDeck.Core.Darkrim.Battery(Hex("FE 00 10 00 02 00 00 03 00 09 01 00 E2 3C", 64)) is null
-            && BrimDeck.Core.Darkrim.Battery(Hex("FE 05 10 00 02 00 00 03 00 01 01 5A 39 2C", 64)) is null
-            && BrimDeck.Core.Darkrim.Battery(Hex("FE 00 11 00 03 00 00 03 00 01 01 5A 98 B5", 64)) is null
-            && BrimDeck.Core.Darkrim.Battery(Hex("FE 00 11 00 03 00 00 10 00 03 0E 00 01 01 01 09 30 31 2E 30 31 2E 30 35 00 7A DC", 64)) is null);
+            DeckIsland.Core.Darkrim.Crc16(Hex("FE 00 10 00 02 00 00 03 00 09 01 00")) == 0xE23C && DeckIsland.Core.Darkrim.Crc16(Hex("FE 04 10 00 02 00 00 03 00 09 01 00")) == 0xB37B
+            && DeckIsland.Core.Darkrim.Request().Length == 65 && DeckIsland.Core.Darkrim.Request().AsSpan(0, 15).SequenceEqual(Hex("00 FE 00 10 00 02 00 00 03 00 09 01 00 E2 3C"))
+            && DeckIsland.Core.Darkrim.Battery(Hex("FE 00 11 00 03 00 00 03 00 01 01 5A 98 B4", 64)) == new BatteryRead(90)
+            && DeckIsland.Core.Darkrim.Battery(charging) == new BatteryRead(90, true)
+            && DeckIsland.Core.Darkrim.Battery(Hex("FE 00 10 00 02 00 00 03 00 09 01 00 E2 3C", 64)) is null
+            && DeckIsland.Core.Darkrim.Battery(Hex("FE 05 10 00 02 00 00 03 00 01 01 5A 39 2C", 64)) is null
+            && DeckIsland.Core.Darkrim.Battery(Hex("FE 00 11 00 03 00 00 03 00 01 01 5A 98 B5", 64)) is null
+            && DeckIsland.Core.Darkrim.Battery(Hex("FE 00 11 00 03 00 00 10 00 03 0E 00 01 01 01 09 30 31 2E 30 31 2E 30 35 00 7A DC", 64)) is null);
         static byte[] Notice(params byte[] payload)
         {
             var frame = new byte[64];
             new byte[] { 0xFE, 0x00, 0x11, 0x00, 0x03, 0x00, 0x00, (byte)payload.Length, 0x00 }.CopyTo(frame, 0);
             payload.CopyTo(frame, 9);
-            ushort sum = BrimDeck.Core.Darkrim.Crc16(frame.AsSpan(0, 9 + payload.Length));
+            ushort sum = DeckIsland.Core.Darkrim.Crc16(frame.AsSpan(0, 9 + payload.Length));
             frame[9 + payload.Length] = (byte)(sum >> 8); frame[10 + payload.Length] = (byte)sum;
             return frame;
         }
         check("DARKRIM: left, right and case: the lower bud, charging by bit 7; all three 0 (not linked) asleep; a single 0 none",
-            BrimDeck.Core.Darkrim.Battery(Notice(0x01, 0x03, 0x50, 0x46, 0x64)) == new BatteryRead(70)
-            && BrimDeck.Core.Darkrim.Battery(Notice(0x01, 0x03, 0xD0, 0x46, 0x64)) == new BatteryRead(70, true)
-            && BrimDeck.Core.Darkrim.Battery(Notice(0x01, 0x03, 0x00, 0x00, 0x00)) == new BatteryRead(null, Asleep: true)
-            && BrimDeck.Core.Darkrim.Battery(Notice(0x01, 0x01, 0x00)) is null);
+            DeckIsland.Core.Darkrim.Battery(Notice(0x01, 0x03, 0x50, 0x46, 0x64)) == new BatteryRead(70)
+            && DeckIsland.Core.Darkrim.Battery(Notice(0x01, 0x03, 0xD0, 0x46, 0x64)) == new BatteryRead(70, true)
+            && DeckIsland.Core.Darkrim.Battery(Notice(0x01, 0x03, 0x00, 0x00, 0x00)) == new BatteryRead(null, Asleep: true)
+            && DeckIsland.Core.Darkrim.Battery(Notice(0x01, 0x01, 0x00)) is null);
     }
 
     private static void Edifier(Action<string, bool> check)
@@ -348,11 +348,11 @@ static class BrandsHeadsetTests
             Names(Shape(0x2D99, 0xE049, 0xFF14, 1, 4, outputIds: [0x2E]), "EDIFIER").SequenceEqual(["edifier.battery"])
             && Untaken(Shape(0x2D99, 0xE049, 0xFF13, 1, 4, outputIds: [0x2E]), "EDIFIER") && Untaken(Shape(0x2D99, 0xE04A, 0xFF14, 1, 4, outputIds: [0x2E]), "EDIFIER"));
         check("EDIFIER Halo Space: the request 2E AA EC D0 00 00 66, FerrisPulse's capture 2F BB EC D0 00 01 86 FE (35 %), a wrong sum and the request read back none",
-            BrimDeck.Core.Edifier.Request().SequenceEqual(Hex("2E AA EC D0 00 00 66"))
-            && BrimDeck.Core.Edifier.Battery(Hex("2F BB EC D0 00 01 86 FE 5A A3 A1 A5", 64)) == new BatteryRead(35)
-            && BrimDeck.Core.Edifier.Battery(Hex("2F BB EC D0 00 01 86 FD", 64)) is null
-            && BrimDeck.Core.Edifier.Battery(Hex("2E AA EC D0 00 00 66", 64)) is null
-            && BrimDeck.Core.Edifier.Battery(Hex("2F BB EC C9 00 01 86 F7", 64)) is null);
+            DeckIsland.Core.Edifier.Request().SequenceEqual(Hex("2E AA EC D0 00 00 66"))
+            && DeckIsland.Core.Edifier.Battery(Hex("2F BB EC D0 00 01 86 FE 5A A3 A1 A5", 64)) == new BatteryRead(35)
+            && DeckIsland.Core.Edifier.Battery(Hex("2F BB EC D0 00 01 86 FD", 64)) is null
+            && DeckIsland.Core.Edifier.Battery(Hex("2E AA EC D0 00 00 66", 64)) is null
+            && DeckIsland.Core.Edifier.Battery(Hex("2F BB EC C9 00 01 86 F7", 64)) is null);
     }
 
     private static void SteelSeries(Action<string, bool> check)

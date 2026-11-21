@@ -1,9 +1,9 @@
 using System.Runtime.InteropServices;
 using System.Windows.Threading;
-using BrimDeck.Core;
+using DeckIsland.Core;
 using Microsoft.Win32;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 // Whether the devices' batteries are wanted. Watch: a panel shows the devices page or the collapsed battery reading, so every
 // source reads, the ones without events as often as DevicePolling has it. None: every source is stopped and lets its devices

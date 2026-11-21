@@ -2,9 +2,9 @@
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows.Threading;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 // Reads the system for the monitor page on a thread of its own, only while a panel shows the page and for a while after (the
 // memory mode's ReadingsLinger), so the page costs nothing while it is not looked at. The structure follows ftop's SystemSampler by Nongfsq
@@ -150,7 +150,7 @@ internal sealed class SystemSampler : IDisposable
 
     private void StartThread(int generation)
     {
-        var thread = new Thread(() => Run(generation)) { IsBackground = true, Name = "BrimDeck system monitor", Priority = ThreadPriority.BelowNormal };
+        var thread = new Thread(() => Run(generation)) { IsBackground = true, Name = "DeckIsland system monitor", Priority = ThreadPriority.BelowNormal };
         // The shell's icon lookup (ProcessIcons) needs a single-threaded apartment.
         thread.SetApartmentState(ApartmentState.STA);
         _thread = thread;
@@ -287,7 +287,7 @@ internal sealed class SystemSampler : IDisposable
                 }
                 // The counters join now, after the first figures: their first collection starts the processor's and the adapters' windows,
                 // which the next pass primes as for counters just asked for. Joining takes half a second of this process's CPU, so the
-                // processes are primed again too: the next list would otherwise count that time against BrimDeck.
+                // processes are primed again too: the next list would otherwise count that time against DeckIsland.
                 if (!_cpu!.Attached) { AttachCounters(); _primeCounters = true; if (_listProcesses) _primeProcesses = true; continue; }
                 Pause(_intervalMilliseconds);
             }

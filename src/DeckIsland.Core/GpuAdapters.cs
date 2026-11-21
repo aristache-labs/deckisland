@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // The graphics adapters of a machine with more than one, such as a laptop's integrated and discrete GPUs (issue #80). Every
 // adapter is read on its own as Task Manager reads it; which one the monitor shows is the user's choice (DeckSettings.MonitorGpu),

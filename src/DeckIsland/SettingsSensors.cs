@@ -3,9 +3,9 @@ using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Shapes;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // "系统监控 › 增强传感器": the processor's temperature and power read through the PawnIO driver (Native.SensorSetup). Two steps,
 // each with its state: PawnIO, which the user installs (winget in a window of its own, or PawnIO's own download), and the sensor

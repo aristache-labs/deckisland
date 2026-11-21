@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // The panel's own coordinates for the edge it hangs from. Everything the collapsed shape, the open panel and their animations
 // compute (CollapsedGeometry, CollapsedHover, MainWindow.SetExpanded) is laid out as if the panel hung from the top of the

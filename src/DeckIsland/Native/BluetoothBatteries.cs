@@ -1,11 +1,11 @@
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Windows.Threading;
-using BrimDeck.Core;
+using DeckIsland.Core;
 using Windows.Devices.Bluetooth;
 using Windows.Devices.Bluetooth.GenericAttributeProfile;
 using Windows.Devices.Enumeration;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 // Paired Bluetooth devices and the battery Windows itself reads for them, as Settings › Bluetooth shows it: the device node's
 // DEVPKEY_Bluetooth_Battery ({104EA319-6EE2-4701-BD47-8DDBF425BBE5}, 2), which Windows keeps for hands-free headsets (the

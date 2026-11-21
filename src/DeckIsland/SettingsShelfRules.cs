@@ -4,9 +4,9 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // A category's options: in its row, on the clipboard, whether what is in it is kept; under its row, what goes in by itself
 // (ShelfRules). Changes are saved as they are made; a text box is saved when it is left, and the row's summary and the count of

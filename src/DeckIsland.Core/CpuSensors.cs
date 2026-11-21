@@ -1,14 +1,14 @@
 using System.Globalization;
 using System.Text;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
-// The processor's own temperature and power as the sensor service reads them (BrimDeck.Sensors, through the PawnIO driver), and
-// the reply it gives BrimDeck. This file is compiled into the service as well, so it uses nothing but the base library.
+// The processor's own temperature and power as the sensor service reads them (DeckIsland.Sensors, through the PawnIO driver), and
+// the reply it gives DeckIsland. This file is compiled into the service as well, so it uses nothing but the base library.
 
 public enum SensorStatus { Ok, NoDriver, NoModule, Unsupported, Failed }
 
-// One reply: Version is the service's protocol, so BrimDeck can tell an older service to update. Cores holds each core's
+// One reply: Version is the service's protocol, so DeckIsland can tell an older service to update. Cores holds each core's
 // temperature (Intel) or each CCD's (AMD, CoresAreCcds); a figure the processor does not give is null. Watts: the package, its
 // cores, its graphics, the memory behind it and the whole platform (Intel's PSYS), as RAPL or AMD's energy counters give them.
 public sealed record SensorReport(SensorStatus Status)

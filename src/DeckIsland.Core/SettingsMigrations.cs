@@ -2,9 +2,9 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using NodeValue = System.Text.Json.Nodes.JsonValue;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
-// settings.json records AppVersion, the version of the BrimDeck that last saved it. Each step is labelled with the
+// settings.json records AppVersion, the version of the DeckIsland that last saved it. Each step is labelled with the
 // application version that introduced a format change and converts files saved by earlier versions. Read runs, in
 // order, every step newer than the file's version and not newer than the running application; files without
 // AppVersion count as 0.0.0.

@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // The Razer BlackShark V3 (057A 2.4 GHz dongle, 0579 USB-C cable) and V3 Pro (0577 2.4 GHz dongle, 0576 USB-C cable; OpenRazer
 // #2567/#2794/#2838 facts only), on their vendor collection: usage page 0xFF14 usage 1, interface 5, 64-byte frames with report id 02.

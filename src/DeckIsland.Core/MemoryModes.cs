@@ -1,6 +1,6 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
-// How much BrimDeck keeps in memory between uses (DeckSettings.MemoryMode). Saver gives back as much as it can soon after use, keeps
+// How much DeckIsland keeps in memory between uses (DeckSettings.MemoryMode). Saver gives back as much as it can soon after use, keeps
 // giving it back while nothing is used, and does less work while the panel is collapsed, saving processor time as well, without
 // slowing what is on screen while it is used; Balanced gives back what has not been used for a few minutes, less often; Smooth
 // gives nothing back while the panel is collapsed, keeps readings, captures and caches longer and prepares the pages' code at
@@ -12,7 +12,7 @@ public enum MemoryMode { Saver, Balanced, Smooth }
 public sealed record MemoryPlan
 {
     // Whether memory is given back while the panel sits collapsed: the heap is compacted, the room it no longer uses handed back to
-    // Windows, and the process's pages taken out of its working set. Most of what BrimDeck holds is not on the heap (the windows'
+    // Windows, and the process's pages taken out of its working set. Most of what DeckIsland holds is not on the heap (the windows'
     // pictures, the code in use, what Windows keeps for it), so compacting alone leaves the figure Task Manager shows as it was;
     // taking the pages out is what lowers it. What is taken out comes back on the next use, page by page, so the first opening
     // after a clean-up can be a little slower: the saver mode cleans up soon and often, the balanced mode only after a few minutes
@@ -58,7 +58,7 @@ public sealed record MemoryPlan
     public static readonly TimeSpan OwedAfter = TimeSpan.FromMinutes(1);
 
     // When the next clean-up is due, or null for none. usedAt: the last use (a panel closed, the settings closed, the mode changed);
-    // work BrimDeck does on its own (reading the usage every minute) is not a use and does not put the clean-up off. trimmedAt: the
+    // work DeckIsland does on its own (reading the usage every minute) is not a use and does not put the clean-up off. trimmedAt: the
     // last clean-up, or null while one is owed. An owed one runs OwedAfter after the last use, or sooner in a mode that cleans up
     // sooner; the others TrimAfter after the last use and no sooner than TrimEvery after the last clean-up, in the modes that clean up.
     public DateTime? TrimDue(DateTime usedAt, DateTime? trimmedAt)

@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // One application's collapsed quota ring. Shares: what each ring fills, outside in, 0 to 100 (one share for one ring); a null
 // share is a quota chosen for the ring that has no share now (the source does not report it, or a balance or an amount spent has

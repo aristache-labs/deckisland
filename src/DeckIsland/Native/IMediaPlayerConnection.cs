@@ -1,6 +1,6 @@
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 internal sealed record DesktopMediaSnapshot(string Title, string Artist, string Album,
     TimeSpan? Position, TimeSpan? Duration, MediaState? State,

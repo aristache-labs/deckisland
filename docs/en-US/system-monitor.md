@@ -57,7 +57,7 @@ Choose the period under General › Traffic period:
 - Today: from midnight local time, starting over each midnight.
 - 1 day, 7 days, 30 days: that long back from now.
 
-The traffic comes from Windows' own record, the one the Data usage page in Windows Settings shows, so it includes the time BrimDeck was not running and does not start over when it restarts. Wi-Fi, Ethernet and cellular networks are counted; a VPN or another virtual network is not counted again, as its traffic is already counted on the network it runs over. Windows updates its record a little later, so traffic that has just happened may be counted some time afterwards.
+The traffic comes from Windows' own record, the one the Data usage page in Windows Settings shows, so it includes the time DeckIsland was not running and does not start over when it restarts. Wi-Fi, Ethernet and cellular networks are counted; a VPN or another virtual network is not counted again, as its traffic is already counted on the network it runs over. Windows updates its record a little later, so traffic that has just happened may be counted some time afterwards.
 
 ## Drives
 
@@ -76,12 +76,12 @@ The traffic comes from Windows' own record, the one the Data usage page in Windo
 
 When the CPU temperature cannot be read, there are two ways to get it:
 
-- Turn on [enhanced sensors](enhanced-sensors.md), so BrimDeck's sensor service reads it from the processor.
-- Run HWiNFO (with shared memory on) or LibreHardwareMonitor (with its remote web server on); BrimDeck reads the figure from them.
+- Turn on [enhanced sensors](enhanced-sensors.md), so DeckIsland's sensor service reads it from the processor.
+- Run HWiNFO (with shared memory on) or LibreHardwareMonitor (with its remote web server on); DeckIsland reads the figure from them.
 
 The tooltip of a temperature names its source.
 
-If the PC freezes while a temperature or a power figure is being read, BrimDeck stops reading that item the next time it starts. Stopped items are listed under "When expanded" and can be turned back on one by one.
+If the PC freezes while a temperature or a power figure is being read, DeckIsland stops reading that item the next time it starts. Stopped items are listed under "When expanded" and can be turned back on one by one.
 
 ## System power
 

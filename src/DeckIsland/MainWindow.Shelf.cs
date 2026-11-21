@@ -8,11 +8,11 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using System.Windows.Threading;
-using BrimDeck.Core;
-using BrimDeck.Native;
+using DeckIsland.Core;
+using DeckIsland.Native;
 using Path = System.Windows.Shapes.Path;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // The clipboard and file transfer page: the clipboard at the left, the file transfer at the right, both lists at once. A click on a
 // row pastes it into the window the user is typing in (the panel takes no focus, so that window keeps it); "›" or the details show
@@ -653,7 +653,7 @@ public partial class MainWindow
         if (on) tab.Background = new SolidColorBrush(Color.FromArgb(40, accent.R, accent.G, accent.B));
         else tab.Background = Brushes.Transparent;
     }
-    private const string ShelfFormat = "BrimDeck.ShelfItems";
+    private const string ShelfFormat = "DeckIsland.ShelfItems";
     private static bool TabAccepts(ShelfSide side, Guid? id, IDataObject data)
     {
         if (data.GetDataPresent(ShelfFormat)) return id is not null && data.GetData(ShelfFormat) is string text && text.StartsWith(side + "|", StringComparison.Ordinal);
@@ -1073,7 +1073,7 @@ public partial class MainWindow
         }
         return DragDropEffects.None;
     }
-    // The word beside the pointer. Over BrimDeck itself, where the drag begins and letting go moves no file, it is what this drag
+    // The word beside the pointer. Over DeckIsland itself, where the drag begins and letting go moves no file, it is what this drag
     // is set to do; elsewhere what the place under the pointer says it will do, and nothing where it takes no files.
     private static string? DragWord(DragDropEffects effects, bool move)
     {
@@ -1163,7 +1163,7 @@ public partial class MainWindow
         _app.Shelf.Paste(ShelfService.FileData(present.Select(file => file.Path)), result => { string word = PasteWord(result); foreach (var file in present) Flash(file.Id, word); });
     }
     // What the row says after a click: pasted, or copied with the paste left to the user. The window of a program run as
-    // administrator takes no paste from BrimDeck: the row says copied, and the reason, too long for a row's end, stands at the
+    // administrator takes no paste from DeckIsland: the row says copied, and the reason, too long for a row's end, stands at the
     // foot of the panel for a moment.
     private string PasteWord(PasteResult result)
     {

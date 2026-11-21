@@ -1,7 +1,7 @@
 using System.Buffers.Binary;
 using System.Text;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // The title, artist and lyrics written in a local audio file's tags: Vorbis comments in FLAC, ID3v2 in MP3 (and an ID3v2 tag
 // some FLAC files carry ahead of their stream). Other formats are not read. Lyrics are kept as written, timed (LRC) or not.

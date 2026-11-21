@@ -1,10 +1,10 @@
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
-using BrimDeck.Core;
-using BrimDeck.Native;
+using DeckIsland.Core;
+using DeckIsland.Native;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // Resizing by dragging, one gesture for both forms, as ftop's panel resizes and its strip fits:
 // - Open, on any page (AI usage, system monitor, media), the bottom edge changes the page's height, a side edge its width (both

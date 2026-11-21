@@ -1,6 +1,6 @@
 using NAudio.CoreAudioApi;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 // The default playback device's master volume, held open while a drag adjusts it (MainWindow.MusicGestures.cs). Setting the level
 // directly changes it in any amount, unlike the volume keys' fixed steps, and shows no system flyout.

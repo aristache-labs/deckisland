@@ -1,6 +1,6 @@
 using System.Net;
 using System.Text.Json;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 static class PiUsageTests
 {

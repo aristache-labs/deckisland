@@ -5,13 +5,13 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
-using BrimDeck.Core;
-using BrimDeck.Native;
+using DeckIsland.Core;
+using DeckIsland.Native;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // The clipboard and file transfer's settings, in their own group ("中转站"). The page's size is set with the other pages under
-// "展开外观". "剪贴板": whether the clipboard is recorded (the history stays on this computer until BrimDeck exits or, when kept
+// "展开外观". "剪贴板": whether the clipboard is recorded (the history stays on this computer until DeckIsland exits or, when kept
 // past an exit, for the length chosen), its categories and the phrases; "文件中转": its categories. The panel only uses the categories and
 // phrases; they are made and changed here, each category with what goes in by itself (SettingsShelfRules) and, on the clipboard,
 // whether what is in it is kept. "文件中转" also sets whether files dragged out are copied or moved.
@@ -43,7 +43,7 @@ public partial class SettingsWindow
         WatchShelf();
         var record = Toggle(Loc.T("记录剪贴板", "Record the clipboard"), S.ClipboardRecord, value => { Change(s => s.ClipboardRecord = value); ShowPage(_page); },
             help: Loc.T("记录复制的文字和图片，只保存在本机。", "Keeps the text and pictures you copy, only on this computer."));
-        // Whether the history outlives BrimDeck, and for how long; the categories set to keep are not affected (KeepSwitch).
+        // Whether the history outlives DeckIsland, and for how long; the categories set to keep are not affected (KeepSwitch).
         var keep = Toggle(Loc.T("退出后保留历史", "Keep history after exit"), S.ClipboardKeepHistory, value => { Change(s => s.ClipboardKeepHistory = value); ShowPage(_page); },
             help: Loc.T("开启后，退出时不清除历史，超过保存时长的自动删除。记录越多，占用的内存越多。",
                 "On, the history stays after exit and entries older than the chosen length are deleted. More entries use more memory."));

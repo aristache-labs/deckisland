@@ -2,9 +2,9 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // Diagrams for the cards that choose the open page's layout ("展开时"). Each card draws its own page, as the cover and the lyrics
 // are shown now: the record and the lyric lines come and go with them, and without the record the stacked layout's column

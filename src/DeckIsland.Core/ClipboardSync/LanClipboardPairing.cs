@@ -6,7 +6,7 @@ using System.Security.Authentication;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 
-namespace BrimDeck.Core.ClipboardSync;
+namespace DeckIsland.Core.ClipboardSync;
 
 public sealed class LanPairingRateLimitedException()
     : IOException("Too many pairing attempts.");
@@ -39,7 +39,7 @@ public static partial class LanClipboardLink
         using var stream = new SslStream(socket.GetStream(), false, (_, certificate, _, _) => certificate is not null);
         await stream.AuthenticateAsClientAsync(new SslClientAuthenticationOptions
         {
-            TargetHost = "BrimDeck LAN",
+            TargetHost = "DeckIsland LAN",
             EnabledSslProtocols = SslProtocols.Tls12 | SslProtocols.Tls13
         }, connect.Token).ConfigureAwait(false);
         byte[] pin = stream.RemoteCertificate?.GetCertHash(HashAlgorithmName.SHA256)
@@ -187,7 +187,7 @@ public static partial class LanClipboardLink
     private static X509Certificate2 CreatePairingCertificate()
     {
         using var key = RSA.Create(2048);
-        var request = new CertificateRequest("CN=BrimDeck LAN", key, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+        var request = new CertificateRequest("CN=DeckIsland LAN", key, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
         using var generated = request.CreateSelfSigned(DateTimeOffset.UtcNow.AddDays(-1), DateTimeOffset.UtcNow.AddYears(5));
         return X509CertificateLoader.LoadPkcs12(generated.Export(X509ContentType.Pkcs12), null, X509KeyStorageFlags.Exportable);
     }

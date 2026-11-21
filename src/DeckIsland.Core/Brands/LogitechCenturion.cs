@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Logitech G PRO X 2 LIGHTSPEED headset on its receiver (046D:0AF7), whose battery is not on HID++: its vendor collection
 // (usage page 0xFFA0, usage 1, 64-byte reports) takes output report 0x51 with the fixed legacy battery request

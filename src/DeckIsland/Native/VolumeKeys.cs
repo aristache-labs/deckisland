@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 // Changes the system volume by pressing the keyboard's volume keys, so Windows steps it as the keys do and shows its own
 // volume flyout.

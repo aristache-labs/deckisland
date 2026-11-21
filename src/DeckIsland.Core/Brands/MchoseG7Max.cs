@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // MCHOSE G7 MAX mouse on 41E4:1204 (its cable: the driver's connect mode is wired for 1204) and 41E4:1001 and 1003 (in the same
 // list, taken here as its receivers; not confirmed). M HUB's web driver (mchose.com.cn, main bundle) opens their usage page 0xFF00

@@ -5,9 +5,9 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 using System.Windows.Shapes;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // The custom date range picker of the AI usage page, inside its pop-up window (ModelDateWindow). It is built once and changed in
 // place, as the system monitor page is (DatePickerMotion): the start and end markers glide between days as the monitor's sort
@@ -16,7 +16,7 @@ namespace BrimDeck;
 // header the way of travel, the old month leaving before the new one arrives; the validation message opens and closes on the
 // shared curve, and the apply and month buttons ease between available and not. Every value is driven from one step on the
 // panel's shared frame clock (Motion) that runs only while something moves, at the panel's feedback pace (DatePickerTiming.Fixed);
-// with animations off (BrimDeck's or Windows') everything is set at once. Hover and press on its buttons fade as the monitor's
+// with animations off (DeckIsland's or Windows') everything is set at once. Hover and press on its buttons fade as the monitor's
 // do (Feedback).
 internal sealed class ModelDatePicker : Border
 {
@@ -88,7 +88,7 @@ internal sealed class ModelDatePicker : Border
         _singleFutureDate = singleFutureDate;
         _palette = palette ?? PanelTheme.Main.Current;
         _start = range.Start.Date; _end = range.End.Date; _month = new(_start.Year, _start.Month, 1);
-        _styles ??= (ResourceDictionary)Application.LoadComponent(new Uri("/BrimDeck;component/ModelDetailsResources.xaml", UriKind.Relative));
+        _styles ??= (ResourceDictionary)Application.LoadComponent(new Uri("/DeckIsland;component/ModelDetailsResources.xaml", UriKind.Relative));
         Resources.MergedDictionaries.Add(_styles);
         // The picker's own theme brushes, so a preview of another palette shows that palette throughout.
         foreach (var (resource, token) in new[] { ("PanelHover", "hover"), ("PanelPressed", "pressed"), ("PanelAccent", "accent") }) Resources[resource] = Brush(token);

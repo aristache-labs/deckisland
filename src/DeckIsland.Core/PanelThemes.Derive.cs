@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // The three colors the settings page offers first: the background (surface), the foreground (primary text) and the accent. The
 // other tokens follow from them by the proportions of the dark and light themes, so a theme can be made by choosing three colors.

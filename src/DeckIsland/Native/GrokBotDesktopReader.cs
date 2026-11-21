@@ -2,9 +2,9 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 // The Grok Bot desktop app keeps its sign-ins in %APPDATA%\Grok Bot\sand-secrets.json: "cursor-accounts" is a JSON
 // string naming the active account, and each account's tokens are encrypted with the app's own os_crypt key. Only the

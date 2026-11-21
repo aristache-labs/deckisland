@@ -5,9 +5,9 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // The system monitor's own settings page ("系统监控 › 显示与读数"), as AI usage and music have theirs: how the expanded page looks
 // and what the collapsed notch or capsule shows. The page's size stays with the other pages' sizes under "展开外观", and the
@@ -107,7 +107,7 @@ public sealed partial class SettingsWindow
                 var notice = TextLine(SensorStops.Notice(stop), 12.5, CautionColor);
                 notice.TextWrapping = TextWrapping.Wrap; notice.VerticalAlignment = VerticalAlignment.Center; notice.Margin = new Thickness(0, 0, 12, 0);
                 var resume = ActionButton(Loc.T("重新开启", "Turn on again"), () => Native.SensorGuard.Resume(stop));
-                resume.ToolTip = Loc.T("重新开启后如果电脑再次卡住，BrimDeck 会再次自动停止读取。", "Should the PC freeze again, BrimDeck stops the reading again by itself.");
+                resume.ToolTip = Loc.T("重新开启后如果电脑再次卡住，DeckIsland 会再次自动停止读取。", "Should the PC freeze again, DeckIsland stops the reading again by itself.");
                 AutomationProperties.SetName(resume, Loc.T("重新开启：", "Turn on again: ") + SensorStops.Notice(stop));
                 resume.VerticalAlignment = VerticalAlignment.Center; Grid.SetColumn(resume, 1);
                 line.Children.Add(notice); line.Children.Add(resume);

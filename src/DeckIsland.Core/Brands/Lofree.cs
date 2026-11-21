@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // The Lofree Flow Lite84 on its 2.4 GHz receiver. The receiver borrows Apple's ids, 05AC:024F, which Apple's own wired
 // Aluminium Keyboard carries too, and other makers' receivers as well; that keyboard has no 0xFF02 collection. So only the

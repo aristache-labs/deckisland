@@ -1,9 +1,9 @@
 using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // The music page's gestures (MusicGestures), on a page of their own under music: dragging with the left button in four directions,
 // and a two-finger touchpad swipe to either side. A two-finger swipe up or down is the mouse wheel's (DeckSettings.MouseWheel).

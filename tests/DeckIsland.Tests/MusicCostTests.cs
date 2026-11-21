@@ -1,4 +1,4 @@
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // What the collapsed music row costs while a song plays: the title rests after its laps, the bars draw only what moves a
 // half pixel, and the audio is analysed 30 times a second.

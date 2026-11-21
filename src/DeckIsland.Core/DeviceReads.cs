@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // What is kept of one device ("VVVV:PPPP"): the read that answered it (by its stable name) and the collection it answered on
 // ("page:usage:interface"), the reads that went wrong on it, and whether it is no longer read at all.

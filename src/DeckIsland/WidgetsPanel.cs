@@ -5,10 +5,10 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Documents;
 using System.Windows.Threading;
 using System.Windows.Media;
-using BrimDeck.Core;
-using BrimDeck.Native;
+using DeckIsland.Core;
+using DeckIsland.Native;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 public partial class MainWindow
 {
@@ -357,7 +357,7 @@ public partial class MainWindow
         bool capsule = style == CompactStyle.Capsule;
         return WidgetLayout.MinimalParts((Settings.ShowsFocus(style) || Settings.FocusSimplifiesCompact(style)) && _app.FocusSession.Phase != FocusPhase.Idle,
             !FocusCompactOnly && Settings.ShowsTransfer(style) && (_draggingOut || _dropping) && ShelfData.Files.Count > 0,
-            !FocusCompactOnly && Settings.ShowsMusic(style) && _mediaTrack is { State: BrimDeck.Core.MediaState.Playing },
+            !FocusCompactOnly && Settings.ShowsMusic(style) && _mediaTrack is { State: DeckIsland.Core.MediaState.Playing },
             capsule ? Settings.CapsuleMinimalFirst : Settings.NotchMinimalFirst,
             capsule ? Settings.CapsuleMinimalSecond : Settings.NotchMinimalSecond);
     }

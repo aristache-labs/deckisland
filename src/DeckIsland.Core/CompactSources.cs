@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // The sensors behind the collapsed row's temperatures and drives, as the sampler knows them: the processor's thermal zones, the
 // graphics adapters, the drives listed, and the drives' temperatures.

@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // What choosing a theme changes besides the theme itself: the application columns' colors and the clock.
 public static partial class PanelThemes

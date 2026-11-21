@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Scyrox's newer mice on 0x395A (the older V6 and V8 are on Compx's 0x3554 and read with the Compx frame elsewhere). Its
 // models speak different commands on the same report, so each read goes only to the products its source names, on the

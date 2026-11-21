@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // MCHOSE V9 Pro and G9 PRO headsets on their C-Media receiver or cable (291D:385D). 291D is C-Media's id, which MCHOSE's S9 PRO, G9 PRO and
 // V9 share (wzk112/MchoseHub's catalog), so only a collection whose product string names the V9 PRO is asked, and only its

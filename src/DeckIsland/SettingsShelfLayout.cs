@@ -4,9 +4,9 @@ using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Documents;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // "页面布局", first in the clipboard's group ("中转站"): which columns the clipboard and file transfer page shows, and, when it
 // shows both, how it arranges them, chosen on cards with a diagram of each arrangement (ShelfArrangementPreview). With one column

@@ -1,6 +1,6 @@
 using System.Buffers;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // The lines added to a session log since it was last read. The logs that LogReader and KimiSessions read only grow at their end,
 // so each file remembers where its last complete line ended and a refresh reads from there.

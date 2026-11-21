@@ -2,9 +2,9 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // A diagram for the arrangement cards in the settings ("页面布局"): not a picture of the panel, only how its two columns are laid
 // out, drawn large enough to read at a glance in the settings' own colors, and standing still. Side by side, the clipboard and the

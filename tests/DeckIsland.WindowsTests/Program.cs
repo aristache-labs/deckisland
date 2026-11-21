@@ -2,8 +2,8 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Interop;
 using System.Windows.Shell;
-using BrimDeck.Core;
-using BrimDeck.Native;
+using DeckIsland.Core;
+using DeckIsland.Native;
 
 internal static class Program
 {
@@ -25,7 +25,7 @@ internal static class Program
             if (args is ["--only", "ringletter", ..]) { RingLetterChecks.Run(Check, args.Length > 2 ? args[2] : null); return Finish(); }
             if (args is ["--only", "drawn"]) { DrawnAutomationTests.Run(Check); return Finish(); }
             if (args is ["--only", "paste"]) { PasteInputChecks.Run(Check); return Finish(); }
-            if (args is ["--only", "settings"]) { SettingsFocusTests.Run(Check); BrimDeck.MainWindow.CheckPageCapsuleFit(Check); return Finish(); }
+            if (args is ["--only", "settings"]) { SettingsFocusTests.Run(Check); DeckIsland.MainWindow.CheckPageCapsuleFit(Check); return Finish(); }
             if (args is ["--only", "popup"]) { PopupGhostChecks.Run(Check); return Finish(); }
             if (args is ["--only", "themecards"]) { ThemeCardChecks.Run(Check); return Finish(); }
             if (args is ["--only", "fonts"]) { FontFollowTests.Run(Check); return Finish(); }
@@ -48,10 +48,10 @@ internal static class Program
             ThemeCardChecks.Run(Check);
             PopupGhostChecks.Run(Check);
             PanelKeyboardTests.Run(Check);
-            BrimDeck.MainWindow.CheckPageCapsule(Check);
-            BrimDeck.MainWindow.CheckPageCapsuleFit(Check);
-            BrimDeck.MainWindow.CheckPageCapsuleStretch(Check);
-            BrimDeck.MainWindow.CheckShadowLifetime();
+            DeckIsland.MainWindow.CheckPageCapsule(Check);
+            DeckIsland.MainWindow.CheckPageCapsuleFit(Check);
+            DeckIsland.MainWindow.CheckPageCapsuleStretch(Check);
+            DeckIsland.MainWindow.CheckShadowLifetime();
             if (hosted) Console.WriteLine("EXCLUDED on a hosted runner: GPU, display, frame rate, temperature, device battery and power readings, and the application identity the shell resolves (they read this machine or its shell).");
             else
             {
@@ -140,7 +140,7 @@ internal static class Program
             {
                 byte[] Draw(bool settled)
                 {
-                    var island = new BrimDeck.IslandBorder { Width = 300, Height = 36, Background = System.Windows.Media.Brushes.Black, CornerRadius = corners,
+                    var island = new DeckIsland.IslandBorder { Width = 300, Height = 36, Background = System.Windows.Media.Brushes.Black, CornerRadius = corners,
                         ShoulderRadius = shoulder, MaterialOpacity = 1, RimWidth = 1, RimBrush = System.Windows.Media.Brushes.White, ClipToBounds = true,
                         SettledClip = settled };
                     island.Measure(new Size(300, 36)); island.Arrange(new Rect(0, 0, 300, 36)); island.UpdateLayout();
@@ -160,7 +160,7 @@ internal static class Program
             }
     }
 
-    // A page left without the pointer moving closes the tooltips opened over it, and only those (BrimDeck.PageToolTips).
+    // A page left without the pointer moving closes the tooltips opened over it, and only those (DeckIsland.PageToolTips).
     private static void CheckPageToolTips()
     {
         var left = new Border { Width = 40, Height = 20 }; var kept = new Border { Width = 40, Height = 20 };
@@ -177,11 +177,11 @@ internal static class Program
             left.ToolTip = leftTip; kept.ToolTip = keptTip;
             leftTip.IsOpen = true; keptTip.IsOpen = true;
             Check("tooltips open for the page check", leftTip.IsOpen && keptTip.IsOpen);
-            int closed = BrimDeck.PageToolTips.CloseWithin(page);
+            int closed = DeckIsland.PageToolTips.CloseWithin(page);
             Check("leaving a page closes the tooltip opened over it", closed == 1 && !leftTip.IsOpen);
             Check("leaving a page keeps a tooltip opened elsewhere", keptTip.IsOpen);
             keptTip.IsOpen = false;
-            Check("nothing open over the page closes nothing", BrimDeck.PageToolTips.CloseWithin(page) == 0);
+            Check("nothing open over the page closes nothing", DeckIsland.PageToolTips.CloseWithin(page) == 0);
         }
         finally { window.Close(); }
     }

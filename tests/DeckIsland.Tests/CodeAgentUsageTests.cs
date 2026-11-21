@@ -1,6 +1,6 @@
 using System.Net;
 using System.Text.Json;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // CodeAgent CLI keeps Claude Code-format session records under <CODEAGENT3_CONFIG_DIR or ~/.cac>/projects, next to
 // per-session metric files (model-io, observability) that must not be counted again.

@@ -4,7 +4,7 @@ using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Threading;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 // While Start, search or another shell flyout is open, Windows moves the taskbar out of band 1, where every application
 // window lives (topmost ones included), into a higher band of the shell's, and moves it back a second or two after the flyout
@@ -30,7 +30,7 @@ namespace BrimDeck.Native;
 internal sealed class TaskbarMirror : IDisposable
 {
     private const uint DesktopBand = 1, SwitcherBand = 16;
-    private const string ClassName = "BrimDeckTaskbarMirror";
+    private const string ClassName = "DeckIslandTaskbarMirror";
     // The island in screen physical pixels: whether it reaches into a lifted taskbar decides whether a lens is needed. The
     // reach is the island with room for its resize grips while the pointer is near or a resize runs: the lens shows that much.
     private readonly Func<Rect?> _strip, _reach;
@@ -221,7 +221,7 @@ internal sealed class TaskbarMirror : IDisposable
             // WS_EX_NOREDIRECTIONBITMAP | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE | WS_EX_TOPMOST; WS_POPUP. Without a surface of its own the
             // lens shows nothing but the thumbnail, so the panel's clear parts stay clear.
             if (Register())
-                lens.Window = CreateWindowInBand(0x00200000 | 0x08000000 | 0x80 | 0x08, ClassName, "BrimDeck", 0x80000000, 0, 0, 0, 0,
+                lens.Window = CreateWindowInBand(0x00200000 | 0x08000000 | 0x80 | 0x08, ClassName, "DeckIsland", 0x80000000, 0, 0, 0, 0,
                     IntPtr.Zero, IntPtr.Zero, GetModuleHandle(IntPtr.Zero), IntPtr.Zero, SwitcherBand);
         }
         catch (EntryPointNotFoundException) { }

@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Keychron mice on Keychron's own vendor id 0x3434: any of its devices with the collection Keychron Launcher's "8k" mouse
 // protocol runs on (usage page 0xFFC1, usage 1), which Launcher itself treats as a mouse whatever the product (the M6 on

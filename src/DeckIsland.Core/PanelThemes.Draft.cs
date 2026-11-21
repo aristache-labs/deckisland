@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Changes made to a theme on the settings page and not yet saved: token colors, app colors and effects by their keys in the file.
 // The settings page lays them over the theme's file to show what saving would give (PanelThemes.ApplyDraft); nothing reaches the

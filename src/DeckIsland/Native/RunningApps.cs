@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 // The applications that currently have a visible top-level window, for a list that picks an app by process name. One entry
 // per process: several windows of an app describe the same application.

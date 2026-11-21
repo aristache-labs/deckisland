@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.Net;
 using System.Security.Cryptography;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 internal static class InstallerUpdateTests
 {
@@ -11,7 +11,7 @@ internal static class InstallerUpdateTests
     public static async Task Run(string root, Action<string, bool> check)
     {
         var installer = RandomNumberGenerator.GetBytes(300_000);
-        var manifest = new UpdateManifest("0.2.0", "Release notes", "BrimDeck-0.2.0-Setup.exe", installer.Length,
+        var manifest = new UpdateManifest("0.2.0", "Release notes", "DeckIsland-0.2.0-Setup.exe", installer.Length,
             Convert.ToHexString(SHA256.HashData(installer)).ToLowerInvariant());
         var server = new ReleaseServer { Manifest = manifest.ToJson(), Installer = installer };
         using var http = new HttpClient(server);
@@ -39,8 +39,8 @@ internal static class InstallerUpdateTests
 
         foreach (var (name, json) in new[]
         {
-            ("path in installer name", (manifest with { File = @"..\BrimDeck-0.2.0-Setup.exe" }).ToJson()),
-            ("non-executable installer", (manifest with { File = "BrimDeck-0.2.0-Setup.zip" }).ToJson()),
+            ("path in installer name", (manifest with { File = @"..\DeckIsland-0.2.0-Setup.exe" }).ToJson()),
+            ("non-executable installer", (manifest with { File = "DeckIsland-0.2.0-Setup.zip" }).ToJson()),
             ("short checksum", (manifest with { Sha256 = "abc" }).ToJson()),
             ("four-part version", (manifest with { Version = "0.2.0.1" }).ToJson()),
             ("path in version", (manifest with { Version = "0.2.0-beta/../x" }).ToJson()),
@@ -127,7 +127,7 @@ internal static class InstallerUpdateTests
             if (request.RequestUri == BetaManifestUri) BetaRequests++;
             HttpContent? content = request.RequestUri == ManifestUri ? new StringContent(Manifest)
                 : request.RequestUri == BetaManifestUri && BetaManifest is not null ? new StringContent(BetaManifest)
-                : request.RequestUri?.AbsolutePath == "/v0.2.0/BrimDeck-0.2.0-Setup.exe" ? new ByteArrayContent(Installer) : null;
+                : request.RequestUri?.AbsolutePath == "/v0.2.0/DeckIsland-0.2.0-Setup.exe" ? new ByteArrayContent(Installer) : null;
             return Task.FromResult(new HttpResponseMessage(content is null ? HttpStatusCode.NotFound : HttpStatusCode.OK) { Content = content ?? new StringContent("") });
         }
     }

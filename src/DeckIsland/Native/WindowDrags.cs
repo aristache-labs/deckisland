@@ -1,9 +1,9 @@
 using System.Runtime.InteropServices;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 // Whether some window on the desktop is being moved or resized by the system's move loop: dragging a title bar or an edge,
-// in any process, BrimDeck's settings window included. Windows reports the start and the end as WinEvents, which arrive on
+// in any process, DeckIsland's settings window included. Windows reports the start and the end as WinEvents, which arrive on
 // the thread that created this object, so it must have a message loop.
 internal sealed class WindowDrags : IDisposable
 {

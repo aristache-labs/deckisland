@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 // Sends a file or a folder to the Recycle Bin, so a theme deleted by mistake can be brought back.
 internal static class RecycleBin

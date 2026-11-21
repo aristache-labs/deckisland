@@ -3,9 +3,9 @@ using System.Windows.Controls;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Threading;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // Soft reads only this property. No real App startup, accounts or user settings are involved.
 public sealed class App : Application
@@ -94,7 +94,7 @@ public partial class MainWindow
             window.CurrentPage = DeckPage.Usage; window.UpdateLayout(); window.PlacePageCapsule();
             window.CurrentPage = DeckPage.Monitor; window.PlacePageCapsule();
             check("the capsule's width is the new button's at once", window.PageCapsule.Width == window.MonitorPageButton.ActualWidth && window.MonitorPageButton.ActualWidth == 90);
-            if (!BrimDeck.Soft.Enabled) { check("animations are off here: the stretch check is skipped", true); return; }
+            if (!DeckIsland.Soft.Enabled) { check("animations are off here: the stretch check is skipped", true); return; }
             check("the capsule's width is not what glides", !window.PageCapsule.HasAnimatedProperties);
             check("the change of width is drawn by stretching the capsule from the left", window.PageCapsuleStretch.HasAnimatedProperties);
             window.CurrentPage = DeckPage.Monitor; window.PlacePageCapsule();

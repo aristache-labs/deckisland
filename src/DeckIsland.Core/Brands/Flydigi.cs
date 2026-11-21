@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Flydigi (飞智) controllers on their dongles and cables, vendor 0x37D7 (Flydigi's own): every pad on the vendor collection
 // below, not a list of models (SDL's driver names the Vader 5 Pro 2401, Apex 5 2501 and Apex 6 2502; later pads on the same

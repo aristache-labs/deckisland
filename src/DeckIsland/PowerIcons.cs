@@ -3,9 +3,9 @@ using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Threading;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // The bolt before the power figures (the monitor page and the collapsed row), on a 16 unit grid, set in the theme's graphic language
 // (PowerLook): plain, rounder for the island, straight edges for the HUD look and the industrial plate (IconStyle), and 8 by 8 squares

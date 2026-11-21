@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // The Lenovo Wireless VoIP Headset's receiver (17EF:A07D). 0x17EF is shared by all of Lenovo's devices, so only this product,
 // on its vendor collection (usage page 0xFF07 usage 0x0222, interface 3): the status command is feature report 24 01 (61

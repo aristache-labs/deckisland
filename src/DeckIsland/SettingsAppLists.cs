@@ -1,10 +1,10 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using BrimDeck.Core;
+using DeckIsland.Core;
 using Microsoft.Win32;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // Rows that list applications: the music's ignored apps and the clipboard's apps not recorded. The row shows the count and the
 // "Add app" button at the right; a click on the row or its arrow shows the apps under the title, as the app rules row does.

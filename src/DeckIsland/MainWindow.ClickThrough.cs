@@ -1,8 +1,8 @@
 using System.Runtime.InteropServices;
 using System.Windows.Interop;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // Mouse pass-through (DeckSettings.ClickThrough). The window lets every click through to the window beneath (WS_EX_TRANSPARENT)
 // and hovering does not open the panel; only the shortcuts do. Open, the panel takes clicks only with ClickThroughPanel on, and

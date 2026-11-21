@@ -1,12 +1,12 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 // NetEase Cloud Music's installation and the change to its libcef.dll that opens the DevTools port (NeteasePatch). Once the file
-// is changed, every normal start of NetEase Cloud Music opens the port, so BrimDeck connects to it without passing a switch. The
+// is changed, every normal start of NetEase Cloud Music opens the port, so DeckIsland connects to it without passing a switch. The
 // file write itself (in place, around a held file, elevated when needed) is LibcefFile; this class finds the installation and,
 // when enabling, closes and starts NetEase Cloud Music so the change takes effect at once.
 internal static class NeteaseInstall

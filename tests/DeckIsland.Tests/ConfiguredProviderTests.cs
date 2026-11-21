@@ -1,6 +1,6 @@
 using System.Net;
 using System.Text.Json;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 internal static class ConfiguredProviderTests
 {
@@ -232,7 +232,7 @@ internal static class ConfiguredProviderTests
         var go = (await providers.TestAsync(entry)).Snapshot;
         check("An OpenCode Go key reads the Go allowance with the Bearer key and a user agent Cloudflare accepts",
             handler.Calls.Select(c => c.Path).SequenceEqual(["/zen/go/v1/usage"]) && handler.Calls.Single().Authorization == "Bearer fixture-key-a" &&
-            agent.StartsWith("BrimDeck/", StringComparison.Ordinal) && go.LiveQuota && go.Scope == "plan" && go.Source == "OpenCode Go" && go.StatusLabel == "已连接" &&
+            agent.StartsWith("DeckIsland/", StringComparison.Ordinal) && go.LiveQuota && go.Scope == "plan" && go.Source == "OpenCode Go" && go.StatusLabel == "已连接" &&
             go.Metrics.Select(m => m.Window).SequenceEqual(new int?[] { 300, 10080, null }) && go.Metrics[0] is { Label: "5 小时额度", Percent: 4 });
         handler.Respond = request => GoReply(request, () => Reply("""{"usage":{"rolling":{"status":"rate-limited","percent":100},"weekly":{"percent":30},"monthly":{"percent":10}}}"""));
         check("A reached Go limit is told after the connected state", (await providers.TestAsync(entry)).Snapshot is { LiveQuota: true } limitedGo && limitedGo.Status.Contains("上限"));

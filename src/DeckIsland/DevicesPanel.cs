@@ -1,8 +1,8 @@
 using System.Windows;
-using BrimDeck.Core;
-using BrimDeck.Native;
+using DeckIsland.Core;
+using DeckIsland.Native;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // The devices page and the collapsed devices' reading. The sources (App.Devices) run while any panel shows either; every panel
 // draws the same readings. As the monitor page, the page is built once per layout step (DevicesLayout), theme and language,
@@ -106,7 +106,7 @@ public partial class MainWindow
         if (devices.Devices.Any(device => device.Percent is not null) || DevicesSettled || _stripDevices.Figures != devices.Figures) _stripDevices = devices;
         return _stripDevices;
     }
-    private StripDevices _stripDevices = BrimDeck.StripDevices.None;
+    private StripDevices _stripDevices = DeckIsland.StripDevices.None;
     // The collapsed part as the row is built: none while the surface does not show it or no device reports a charge.
     private DeviceStrip? _compactDevices;
     private DeviceStrip? CompactDevices(double scale)

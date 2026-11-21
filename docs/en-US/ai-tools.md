@@ -43,7 +43,7 @@ Sources you enter by hand and Grok Bot have no local usage records; choose anoth
 
 When a record carries its own amount (Cursor, OpenCode and Command Code, for example), that amount is used. Other records are costed at the prices in the OpenRouter model list.
 
-A price in that list usually comes from the cheapest provider and can differ from the model maker's list price. For example, GLM-5.3 is listed at 0.07 and 1.4 USD per million input and output tokens, while Z.AI charges 1.4 and 4.4. So for each model your records use, BrimDeck looks up the model maker's own endpoint on OpenRouter and uses its prices instead; a model whose maker has no endpoint there keeps the list price. Each model's endpoint prices are looked up once a day and saved on this PC; when a lookup fails, the prices saved before are used. Prices added by hand take precedence.
+A price in that list usually comes from the cheapest provider and can differ from the model maker's list price. For example, GLM-5.3 is listed at 0.07 and 1.4 USD per million input and output tokens, while Z.AI charges 1.4 and 4.4. So for each model your records use, DeckIsland looks up the model maker's own endpoint on OpenRouter and uses its prices instead; a model whose maker has no endpoint there keeps the list price. Each model's endpoint prices are looked up once a day and saved on this PC; when a lookup fails, the prices saved before are used. Prices added by hand take precedence.
 
 ## Quota rings and off-peak time
 
@@ -55,7 +55,7 @@ Expand an app's row under Settings › Quotas and usage › Apps to set:
 
 ## Usage in WSL
 
-When "Include usage from WSL" is turned on in Settings › Quotas and usage, BrimDeck reads the Claude Code and Codex CLI session records inside installed WSL distributions and counts them in the tokens and cost of Claude and Codex. Only Claude and Codex support WSL at present.
+When "Include usage from WSL" is turned on in Settings › Quotas and usage, DeckIsland reads the Claude Code and Codex CLI session records inside installed WSL distributions and counts them in the tokens and cost of Claude and Codex. Only Claude and Codex support WSL at present.
 
 - The records of the root user and of every user under `/home` in each distribution are read. The distributions that Docker Desktop and Rancher Desktop add are not read.
 - Reading starts a distribution that is not running, so this option is off by default.
@@ -64,7 +64,7 @@ When "Include usage from WSL" is turned on in Settings › Quotas and usage, Bri
 
 Rows whose quota source is Claude or Grok Bot can be expanded, and each row has its own "Fetch quota online" switch (on by default):
 
-- **On**: the app's sign-in on this PC is used to read the account quota online. If a read fails, the last successful reading or the quota the desktop app recorded on this PC is shown, with its time. For Claude it is still shown after restarting BrimDeck, for the same account. When a Claude account belongs to several organizations (a personal Pro and a Team, for example), the row shows the quotas of each, the personal subscription first; click the column for the next page. When Claude's account API answers that there are too many requests (429), requests pause for the wait it names (a wait over 7 days is taken as invalid), or for 2, 4, 8 and 16 minutes in turn (30 at most) when it names none. No request goes out each minute during the pause, a manual refresh does not go round it, and the status gives the time of the next request.
+- **On**: the app's sign-in on this PC is used to read the account quota online. If a read fails, the last successful reading or the quota the desktop app recorded on this PC is shown, with its time. For Claude it is still shown after restarting DeckIsland, for the same account. When a Claude account belongs to several organizations (a personal Pro and a Team, for example), the row shows the quotas of each, the personal subscription first; click the column for the next page. When Claude's account API answers that there are too many requests (429), requests pause for the wait it names (a wait over 7 days is taken as invalid), or for 2, 4, 8 and 16 minutes in turn (30 at most) when it names none. No request goes out each minute during the pause, a manual refresh does not go round it, and the status gives the time of the next request.
 - **Off**: no sign-in is read and nothing is sent; only the latest quota the desktop app recorded on this PC is shown. This data is marked as old and does not trigger quota alerts.
 
 ## Grok Bot
@@ -98,7 +98,7 @@ Reads local session usage and cost statistics from Pi Coding Agent (`~/.pi/agent
 
 - **Usage app**: select Pi under "Usage app" and pair it with an existing quota source. Pi is not offered under "Quota source". No Pi sign-in, third-party subscription quota or Pi account switching is read or provided.
 - **Tokens and cost**: reads session records from `~/.pi/agent/sessions` and counts token usage and Pi-recorded costs for Today and Week, not subscription charges.
-- **Session path**: `PI_CODING_AGENT_SESSION_DIR` takes precedence; otherwise reads `sessions` under `PI_CODING_AGENT_DIR`, or the default directory when neither is set. Pi-specific resolution supports `~`, `~/...`, relative paths and local `file://` URLs; Windows also supports `~\...` and Git Bash/MSYS/Cygwin/WSL drive paths. Relative paths use the BrimDeck process working directory, which may differ from Pi running in another terminal. Only the selected directory is read; other Pi profiles are not automatically scanned.
+- **Session path**: `PI_CODING_AGENT_SESSION_DIR` takes precedence; otherwise reads `sessions` under `PI_CODING_AGENT_DIR`, or the default directory when neither is set. Pi-specific resolution supports `~`, `~/...`, relative paths and local `file://` URLs; Windows also supports `~\...` and Git Bash/MSYS/Cygwin/WSL drive paths. Relative paths use the DeckIsland process working directory, which may differ from Pi running in another terminal. Only the selected directory is read; other Pi profiles are not automatically scanned.
 
 ## OpenCode
 
@@ -120,10 +120,10 @@ The Command Code CLI and desktop app share one data folder (`%USERPROFILE%\.comm
 
 ## WorkBuddy
 
-Supports the WorkBuddy China edition (www.workbuddy.cn). The WorkBuddy desktop app keeps its own sign-in encrypted; BrimDeck does not read it and signs in once on the WorkBuddy website instead.
+Supports the WorkBuddy China edition (www.workbuddy.cn). The WorkBuddy desktop app keeps its own sign-in encrypted; DeckIsland does not read it and signs in once on the WorkBuddy website instead.
 
 - **Quota**: shows the credits left in the WorkBuddy account, split into plan credits, plan bonus credits, bought credits and reward credits; kinds the account does not have are not shown. The plan name (for example 体验版, the trial plan) appears next to the name. Times follow the WorkBuddy client: plan and plan bonus credits show when their current cycle renews; bought and reward credits do not renew, so they show the earliest expiry among the packages not yet expired, leaving expired ones out. A China edition account shares its credits between WorkBuddy and CodeBuddy, so the balance includes what CodeBuddy used.
-- **Sign-in**: expand the WorkBuddy row in settings, click "Sign in in the browser", then sign in and allow access on the WorkBuddy website that opens, within 10 minutes. BrimDeck gets a sign-in of its own, stored encrypted on this PC and sent only to www.workbuddy.cn. It is renewed automatically when it expires; when renewal fails, the status reads "Sign-in expired" and signing in again fixes it. "Sign out" removes the sign-in saved on this PC. Only personal accounts are supported.
+- **Sign-in**: expand the WorkBuddy row in settings, click "Sign in in the browser", then sign in and allow access on the WorkBuddy website that opens, within 10 minutes. DeckIsland gets a sign-in of its own, stored encrypted on this PC and sent only to www.workbuddy.cn. It is renewed automatically when it expires; when renewal fails, the status reads "Sign-in expired" and signing in again fixes it. "Sign out" removes the sign-in saved on this PC. Only personal accounts are supported.
 - **Tokens and cost**: read from the session records of the WorkBuddy China edition desktop app on this PC (`%USERPROFILE%\.workbuddy\projects`), counting the input, cache read, cache write and output tokens of each model reply. The cost is estimated at public model prices, not the credits WorkBuddy charged. WorkBuddy names models with a channel suffix (such as `hy4-free`); the statistics show that name, and the price is looked up by the model name the record also keeps (such as Hy4, `tencent/hy4` in the price list). Models missing from the price list show tokens only. A reply that appears in several sessions is counted once.
 - WorkBuddy plan credits can be used only in WorkBuddy and CodeBuddy; there is no API key that spends them in other tools.
 - **International edition**: the WorkBuddy international edition (www.workbuddy.ai, desktop app WorkBuddy AI) has accounts of its own; choose WorkBuddy AI as the quota source and usage app, and it is signed in to and shown apart from the China edition. It is read the same way, with session records from `%USERPROFILE%\.workbuddy-ai\projects`, and its sign-in is sent only to www.workbuddy.ai. Credits are sorted as the WorkBuddy AI client sorts them; trial credits, for example, count as reward credits there. Its default color is the China edition's.
@@ -133,12 +133,12 @@ Supports the WorkBuddy China edition (www.workbuddy.cn). The WorkBuddy desktop a
 MiMo Code CLI and the Xiaomi MiMo desktop app share one database (`%USERPROFILE%\.local\share\mimocode\mimocode.db`), so the conversations of both are counted together.
 
 - **Quota**: shows the share used and the reset time of the weekly allowance of the Xiaomi MiMo desktop membership, with the membership tier (Starter, Plus, Pro or Ultra) beside the name. The desktop membership and Token Plan are separate subscriptions; Token Plan is not shown here.
-- **Sign-in**: the desktop membership has no API key, so BrimDeck signs in to a Xiaomi account of its own. Expand the Xiaomi MiMo Desktop subscription row in settings and click "Sign in": BrimDeck opens Xiaomi's own sign-in page in a separate new window of the default browser (Edge when the default browser is not a Chromium browser such as Chrome or Edge), where a password, a text message, WeChat, Alipay and the other ways Xiaomi offers all work, within 10 minutes. BrimDeck then closes that window and keeps only what reading the quota needs, encrypted on this PC; the browser you normally use and its sign-ins are not touched. An expired sign-in is renewed automatically; when renewing fails, the status shows "Sign-in expired" and signing in again fixes it. "Sign out" deletes what is kept on this PC.
+- **Sign-in**: the desktop membership has no API key, so DeckIsland signs in to a Xiaomi account of its own. Expand the Xiaomi MiMo Desktop subscription row in settings and click "Sign in": DeckIsland opens Xiaomi's own sign-in page in a separate new window of the default browser (Edge when the default browser is not a Chromium browser such as Chrome or Edge), where a password, a text message, WeChat, Alipay and the other ways Xiaomi offers all work, within 10 minutes. DeckIsland then closes that window and keeps only what reading the quota needs, encrypted on this PC; the browser you normally use and its sign-ins are not touched. An expired sign-in is renewed automatically; when renewing fails, the status shows "Sign-in expired" and signing in again fixes it. "Sign out" deletes what is kept on this PC.
 - **Tokens and cost**: the input, cache read, cache write and output tokens of each model reply in the MiMo database on this PC. Desktop membership requests are recorded at 0 and estimated at public model prices; requests made with an Open Platform key use the amount MiMo recorded.
 
 ## Xiaomi MiMo
 
-Reads the Open Platform API key or Token Plan linked in the Xiaomi MiMo desktop app and MiMo Code CLI (`auth.json` beside the database); nothing needs to be entered in BrimDeck.
+Reads the Open Platform API key or Token Plan linked in the Xiaomi MiMo desktop app and MiMo Code CLI (`auth.json` beside the database); nothing needs to be entered in DeckIsland.
 
 - A linked Token Plan shows the plan name and its Credits quota; a linked pay-as-you-go API key shows the account balance, the topped-up and granted balances and this month's charges. With both linked, one column shows them together.
 - The file is read again on every refresh. Linking in the desktop app and signing in to the CLI both rewrite it: after signing in to the CLI again, for example, the Token Plan the desktop app linked is gone from the file and is no longer shown here.
@@ -166,7 +166,7 @@ The Xiaomi MiMo desktop membership has no API key; use "Xiaomi MiMo Desktop subs
 
 ### Xiaomi MiMo Token Plan
 
-Enter the API key shown on the Token Plan page (starting with `tp-` or `ttp-`). Shows the plan name (Lite, for example), the Credits used of the plan's quota, and when the current period ends. BrimDeck asks the China, Singapore and Europe clusters in turn until the key's own answers. The Token Plan quota is shared by every tool that uses the plan.
+Enter the API key shown on the Token Plan page (starting with `tp-` or `ttp-`). Shows the plan name (Lite, for example), the Credits used of the plan's quota, and when the current period ends. DeckIsland asks the China, Singapore and Europe clusters in turn until the key's own answers. The Token Plan quota is shared by every tool that uses the plan.
 
 ### DeepSeek
 

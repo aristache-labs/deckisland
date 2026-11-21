@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // The applications whose copies the clipboard leaves out (DeckSettings.ClipboardExcluded). An entry is the executable's full
 // path when the app was picked in the settings, or a process name typed in earlier versions. Either matches every process

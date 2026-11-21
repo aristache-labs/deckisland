@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // What a gesture over the expanded music page does. Saved as numbers, so new members go at the end.
 public enum MusicGestureAction { None, NextTrack, PreviousTrack, NextPlayer, PreviousPlayer, PlayPause, VolumeUp, VolumeDown }

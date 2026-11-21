@@ -1,5 +1,5 @@
 using System.Text.Json;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // The devices page: its layout steps, its settings, and the collapsed battery reading's place among the readings.
 static class DevicesPageTests

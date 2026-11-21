@@ -1,7 +1,7 @@
 using System.Net;
 using System.Runtime.InteropServices;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 // IPv4 listening sockets with their owning process, read from the system table without starting netstat.
 internal static class TcpListeners

@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // SteelSeries headsets the Headsets class does not list, vendor 0x1038 (shared with the mice SteelSeriesMice takes and the
 // headsets Headsets takes, so only these products). Each on interface 3:

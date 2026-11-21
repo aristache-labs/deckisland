@@ -1,7 +1,7 @@
 using System.Text;
 using System.Text.Json;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Lyrics for a local file playing in QueMusic, read the way QueMusic reads them: a .lrc (or timed .txt) of the same name beside
 // the file, then the lyrics in the file's tags. Windows reports QueMusic's song without its file, so the file is the newest entry

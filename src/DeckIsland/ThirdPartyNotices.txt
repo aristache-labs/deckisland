@@ -100,7 +100,7 @@ https://github.com/Nongfsq/ftop
 
 The system monitor page is adapted from ftop: its reading model, the steady process ranking (SteadyRanking), the
 folding of an app's processes, the number formatting, the layout ladder and the Sea, Graphite and Warm palettes.
-The Windows readings are BrimDeck's own; no ftop code runs as is.
+The Windows readings are DeckIsland's own; no ftop code runs as is.
 
 MIT License
 
@@ -834,7 +834,7 @@ aj179-linux
 https://github.com/Rockeyxx/aj179-linux
 
 The devices page's AJAZZ / AJ179 (XCTECH) interrupt report framing and 0x10 / 0xC0 field layout follow aj179-linux's
-PROTOCOL.md (MIT). No aj179-linux source was copied into BrimDeck.
+PROTOCOL.md (MIT). No aj179-linux source was copied into DeckIsland.
 
 MIT License
 

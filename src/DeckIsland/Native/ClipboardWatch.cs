@@ -6,9 +6,9 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 // What one copy held, as read from the clipboard: text with its rich forms, or a picture encoded as PNG.
 // Source: the name of the application that copied; SourcePath: its program file, when it can be told.
@@ -34,14 +34,14 @@ internal sealed class ClipboardWatch : IDisposable
     {
         _copied = copied; _excluded = excluded;
         // HWND_MESSAGE: a window that only receives messages.
-        _window = new HwndSource(new HwndSourceParameters("BrimDeck.ClipboardWatch") { ParentWindow = new IntPtr(-3), WindowStyle = 0, Width = 0, Height = 0 });
+        _window = new HwndSource(new HwndSourceParameters("DeckIsland.ClipboardWatch") { ParentWindow = new IntPtr(-3), WindowStyle = 0, Width = 0, Height = 0 });
         _window.AddHook(Hook);
         if (!AddClipboardFormatListener(_window.Handle)) { int error = Marshal.GetLastWin32Error(); _window.Dispose(); throw new Win32Exception(error); }
         _seen = GetClipboardSequenceNumber();
         _read.Tick += (_, _) => Read();
     }
 
-    // The clipboard as BrimDeck itself just set it, to paste: not recorded as a new copy.
+    // The clipboard as DeckIsland itself just set it, to paste: not recorded as a new copy.
     public void IgnoreCurrent() => _written = _seen = GetClipboardSequenceNumber();
 
     private IntPtr Hook(IntPtr hwnd, int message, IntPtr wParam, IntPtr lParam, ref bool handled)

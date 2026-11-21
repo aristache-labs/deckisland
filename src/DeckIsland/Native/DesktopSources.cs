@@ -3,9 +3,9 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 public sealed class DesktopSources(MiMoAccount? mimo = null) : IDesktopSources
 {
@@ -15,7 +15,7 @@ public sealed class DesktopSources(MiMoAccount? mimo = null) : IDesktopSources
     public GrokBotSignIn ReadGrokBotDesktop(DataLocations locations) => GrokBotDesktopReader.Read(locations);
 
     // Starts `codeagentcli auth status` without a window, with the environment the codeagent launcher sets (its certificates,
-    // no proxy) and the data folder BrimDeck reads, and waits until the sign-in file holds a later expiry or the CLI ends. The
+    // no proxy) and the data folder DeckIsland reads, and waits until the sign-in file holds a later expiry or the CLI ends. The
     // CLI writes the renewed sign-in within a few seconds; it is ended once that is written, or after 30 seconds.
     public async Task<bool> RenewCodeAgentAsync(string home, CancellationToken cancellation)
     {
@@ -150,7 +150,7 @@ public sealed class DesktopSources(MiMoAccount? mimo = null) : IDesktopSources
             foreach (var (pid, command) in processes)
             {
                 var match = Regex.Match(command, "--csrf_token(?:=|\\s+)\"?([^\\s\"]+)");
-                // WMI returns no command line for a process that runs as administrator when BrimDeck does not.
+                // WMI returns no command line for a process that runs as administrator when DeckIsland does not.
                 if (!match.Success) { AntigravityUnreadable |= command.Length == 0; continue; }
                 if (StartTime(pid) is not { } started) continue;
                 var endpoints = listeners.Where(l => l.ProcessId == pid).Select(l => l.Port).Distinct()

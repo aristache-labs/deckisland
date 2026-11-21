@@ -1,6 +1,6 @@
 using System.Globalization;
 using System.Windows;
-using BrimDeck.Core;
+using DeckIsland.Core;
 using System.Windows.Automation;
 using System.Windows.Automation.Peers;
 using System.Windows.Controls;
@@ -9,7 +9,7 @@ using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 internal static class MusicVisuals
 {
@@ -708,17 +708,17 @@ internal sealed class QuotaCarousel : GlideCarousel
     {
         var Look = look ?? PanelTheme.Main;
         int count = Math.Max(1, item.Shares.Count);
-        double gap = Math.Max(.5, BrimDeck.Core.CompactMusicLayout.Half((count >= 3 ? 1 : 2) * scale));
-        if (count >= 3) thickness = Math.Max(.5, BrimDeck.Core.CompactMusicLayout.Half(1.5 * scale));
+        double gap = Math.Max(.5, DeckIsland.Core.CompactMusicLayout.Half((count >= 3 ? 1 : 2) * scale));
+        if (count >= 3) thickness = Math.Max(.5, DeckIsland.Core.CompactMusicLayout.Half(1.5 * scale));
         var ring = count == 1 ? UI.Ring(item.Shares.Count == 0 ? 0 : item.Shares[0] ?? 0, item.Color, size, thickness, look: Look) : UI.NestedRings(item.Shares, item.Color, size, thickness, gap, Look);
         double hole = size - 2 * (count * thickness + (count - 1) * gap);
         // Empty without the setting (DeckSettings.QuotaRingLetters): the ring is then as it was without letters.
         if (item.Letter.Length > 0
-            && RingLetter.Create(item.Letter, Math.Max(1, BrimDeck.Core.CompactMusicLayout.Half(7 * scale)), size, Math.Max(1, hole),
+            && RingLetter.Create(item.Letter, Math.Max(1, DeckIsland.Core.CompactMusicLayout.Half(7 * scale)), size, Math.Max(1, hole),
                 Application.Current?.MainWindow is { } window ? VisualTreeHelper.GetDpi(window).PixelsPerDip : 1, UI.PanelFont, UI.Brush(Look.Secondary)) is { } letter)
             ring.Children.Add(letter);
         // A reading of the previous run (UsageLastSeen) is dimmed until the new one replaces it.
-        if (item.Stale) ring.Opacity = BrimDeck.Core.UsageLastSeen.Dimmed;
+        if (item.Stale) ring.Opacity = DeckIsland.Core.UsageLastSeen.Dimmed;
         return ring;
     }
 

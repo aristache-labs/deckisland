@@ -1,6 +1,6 @@
 using System.Globalization;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // A solid-state drive's temperature as the drive reports it, in degrees Celsius, with the drive's own warning and critical
 // temperatures where it gives them. Name is the drive's model, Number its number (\\.\PhysicalDriveN), -1 where unknown.

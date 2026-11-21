@@ -1,9 +1,9 @@
 using System.IO;
 using System.Text;
 using System.Text.Json;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 // The kept reads (DeviceReadBook) on disk, in the app's data folder (device-reads.json), and the guard around trying a read
 // a device has not answered before: a mark (device-probe.json) is written through to the disk before the read is sent and

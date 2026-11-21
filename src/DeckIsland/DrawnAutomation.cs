@@ -3,7 +3,7 @@ using System.Windows.Automation;
 using System.Windows.Automation.Peers;
 using System.Windows.Automation.Provider;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // How the panel's drawn parts read to UI Automation (Narrator, Windows' other screen readers). An element that draws itself has
 // no automation peer, so a screen reader passes over it even when it has a name. DrawnPeer gives it one: what it shows now as its

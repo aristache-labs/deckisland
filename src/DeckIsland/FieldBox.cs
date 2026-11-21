@@ -2,7 +2,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // A text field in a frame that is drawn around it, such as a number box with its unit and steppers: a click anywhere in the frame
 // that is not a control of its own (the padding, the unit, the divider) puts the focus in the field and selects its text, as a

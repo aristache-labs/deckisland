@@ -1,12 +1,12 @@
 using System.Globalization;
 using System.Windows;
 using System.Windows.Data;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // The expanded panel's scale (DeckSettings.PanelScale): the open panel's content, its header included, is laid out at the page
-// sizes and drawn at the scale (UI.Scale), so it looks as it would with Windows' display scaling raised for BrimDeck alone. Page
+// sizes and drawn at the scale (UI.Scale), so it looks as it would with Windows' display scaling raised for DeckIsland alone. Page
 // sizes, the resize limits and the settings' sliders stay in unscaled DIPs; the island, the window and the panel's place on the
 // monitor take the sizes times the scale. The collapsed surface takes the scale in CollapsedGeometry.Resolve (ShapeFor).
 public partial class MainWindow

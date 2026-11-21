@@ -3,9 +3,9 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Interop;
 using System.Windows.Media;
-using BrimDeck.Native;
+using DeckIsland.Native;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // The word beside the pointer while files are dragged out of the file transfer: what letting go there does, "复制" or "移动"
 // (MainWindow.DragOut). The pointer leaves the panel during the drag, so the word has a window of its own: above everything, never
@@ -20,7 +20,7 @@ internal sealed class DragHint : Window
     {
         WindowStyle = WindowStyle.None; AllowsTransparency = true; Background = Brushes.Transparent; ResizeMode = ResizeMode.NoResize;
         SizeToContent = SizeToContent.WidthAndHeight;
-        Topmost = true; ShowActivated = false; ShowInTaskbar = false; Focusable = false; IsHitTestVisible = false; Title = "BrimDeck";
+        Topmost = true; ShowActivated = false; ShowInTaskbar = false; Focusable = false; IsHitTestVisible = false; Title = "DeckIsland";
         Content = _frame = Frame(look);
         _text = (TextBlock)_frame.Child;
         SourceInitialized += (_, _) =>

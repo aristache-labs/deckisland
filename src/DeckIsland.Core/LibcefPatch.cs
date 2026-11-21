@@ -1,7 +1,7 @@
 using System.Buffers;
 using System.IO;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Every site holds either its original or its patched bytes, but not all the same, as when a patch was interrupted or
 // another tool changed only some of them. Unsupported: a site is missing, is not unique, or is present in both forms.

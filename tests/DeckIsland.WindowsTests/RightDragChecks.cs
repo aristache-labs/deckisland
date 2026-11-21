@@ -1,6 +1,6 @@
 using System.Reflection;
 using System.Windows.Threading;
-using BrimDeck.Native;
+using DeckIsland.Native;
 
 internal static class RightDragChecks
 {

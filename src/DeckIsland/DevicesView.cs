@@ -1,9 +1,9 @@
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // The devices page, set out by DevicesLayout: a ring per device whose arc is the charge, with the device's icon inside, and under it
 // the figure, the name and a line (the earbuds' parts, charging, low, no battery reported, or where the reading comes from); one

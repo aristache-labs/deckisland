@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // How the power and battery readings look in a panel theme: the shape of the battery, the shape of the curve and the colors of its
 // states. Every built-in theme has a look of its own (PowerLooks.Table); a theme without one takes the closest by what it is made

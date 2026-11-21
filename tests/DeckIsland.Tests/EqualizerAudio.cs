@@ -1,4 +1,4 @@
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // Sounds for the equalizer tests, and the way the capture hands them to EqualizerSignal: 10 ms blocks of stereo audio, an analysis
 // every third block (30 a second), and the bars read as the panel reads them after each analysis.

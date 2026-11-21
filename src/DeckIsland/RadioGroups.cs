@@ -4,7 +4,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // The settings window's radio groups (segmented controls, theme and style cards, clock tiles and swatches) behave as Windows' radio
 // groups (SW-06): the group is one Tab stop, on its chosen option (or its first), and the arrow keys move the focus to the next or

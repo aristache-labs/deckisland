@@ -2,7 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Prices are USD per token, exactly as returned by the remote catalog.
 public sealed record TokenPrices(decimal Input, decimal Output, decimal? CacheRead, decimal? CacheWrite, decimal? CacheWriteHour);
@@ -153,7 +153,7 @@ public sealed class Pricing : IDisposable
         try
         {
             using var request = new HttpRequestMessage(HttpMethod.Get, Source);
-            request.Headers.UserAgent.ParseAdd("BrimDeck/0.1.0");
+            request.Headers.UserAgent.ParseAdd("DeckIsland/0.1.0");
             using var response = await _http.SendAsync(request, cancellation).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
             var json = await response.Content.ReadAsStringAsync(cancellation).ConfigureAwait(false);
@@ -221,7 +221,7 @@ public sealed class Pricing : IDisposable
             try
             {
                 using var request = new HttpRequestMessage(HttpMethod.Get, EndpointsSource(model));
-                request.Headers.UserAgent.ParseAdd("BrimDeck/0.1.0");
+                request.Headers.UserAgent.ParseAdd("DeckIsland/0.1.0");
                 using var response = await _http.SendAsync(request, ct).ConfigureAwait(false);
                 response.EnsureSuccessStatusCode();
                 using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false));

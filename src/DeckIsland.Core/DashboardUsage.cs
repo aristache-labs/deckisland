@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Keep the two original snapshots separate: quota failures must not replace valid usage data.
 public sealed record DashboardColumn(AppEntry Entry, ProviderSnapshot Quota, ProviderSnapshot Usage);

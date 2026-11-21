@@ -1,9 +1,9 @@
 using System.IO;
 using System.Media;
 using System.Windows.Threading;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 public partial class App
 {

@@ -1,7 +1,7 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 // The running processes from one Toolhelp snapshot: their ids, parents and executable file names, without opening any of them.
 // Far cheaper than Process.GetProcessesByName, which reads every process's threads too, so a player that is not running costs

@@ -2,7 +2,7 @@ using System.Globalization;
 using System.Text;
 using System.Text.Json;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // What DeepSeek Harness keeps for its DeepSeek connection: the account grant from signing in, and the API key saved on
 // its Models page. Either may be empty. Values are held in memory only.

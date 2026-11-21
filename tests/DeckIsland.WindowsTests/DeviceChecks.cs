@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.Windows.Threading;
-using BrimDeck.Core;
-using BrimDeck.Native;
+using DeckIsland.Core;
+using DeckIsland.Native;
 
 // Reads this machine's wireless devices the way the devices page does (DeviceBatteries), read only: nothing is paired, written
 // or changed. A machine may have none connected, so the checks hold either way: every reading is a percentage or none, every

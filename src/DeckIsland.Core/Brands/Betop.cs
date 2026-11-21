@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // BETOP (北通) controllers on their 2.4 GHz receivers, vendor 0x20BC (BETOP's own: the Kunpeng 20 on 20BC:5191 and the KP40D on
 // 20BC:515C answer the same status read, so every 20BC receiver is asked it rather than a list of models). The receiver has

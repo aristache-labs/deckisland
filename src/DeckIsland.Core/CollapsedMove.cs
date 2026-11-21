@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Moving the collapsed notch, line or capsule by dragging it (MainWindow.Move.cs). Places are on the screen, in DIPs relative to
 // the monitor's top-left corner, not in an edge's frame; work is the monitor's work area in the same coordinates.

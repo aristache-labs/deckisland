@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Files owned by other applications are read while those applications may be rewriting them.
 // Allowing concurrent writes and replacement avoids a sharing violation that would read as a failed refresh.

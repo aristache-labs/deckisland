@@ -3,7 +3,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 // Windows HID access for the devices page: listing the HID collections, and reading and writing reports with timeouts. Ported
 // from device-battery-viewer by CharlesGool (https://github.com/CharlesGool/device-battery-viewer, src/Hid.cs, MIT License;
@@ -34,8 +34,8 @@ internal sealed class HidInfo
     private string? _group;
     // Which reader takes the collection, worked out once by the battery worker from the attributes above (HidBatteries.Sort).
     internal bool Sorted;
-    internal Func<HidInfo, HashSet<string>, IEnumerable<BrimDeck.Core.DeviceBattery>>? Dongle;
-    internal (BrimDeck.Core.BrandFamily Family, IReadOnlyList<BrimDeck.Core.BrandWay> Ways)? Brand;
+    internal Func<HidInfo, HashSet<string>, IEnumerable<DeckIsland.Core.DeviceBattery>>? Dongle;
+    internal (DeckIsland.Core.BrandFamily Family, IReadOnlyList<DeckIsland.Core.BrandWay> Ways)? Brand;
     // Reached through Bluetooth (classic or LE) rather than USB.
     public bool Bluetooth => Hid.IsBluetooth(Path);
 }

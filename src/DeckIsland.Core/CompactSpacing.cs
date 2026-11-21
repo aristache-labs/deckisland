@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Where the collapsed row's parts stand once CompactMusicLayout has given each its share. Every gap between two parts is the
 // same; the quota rings and the system readings keep their own closer spacing inside their part (CompactMusicLayout.RingGap,

@@ -2,9 +2,9 @@ using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 // The frame rate of the program in front, for the collapsed row and the system monitor page: one figure for every panel, with the
 // program's name. The frames each program presents are read from Windows' event tracing, as PresentMon reads them (GameTechDev/
@@ -16,7 +16,7 @@ namespace BrimDeck.Native;
 // submits, as Steam's and other games' counters show them: one that does not wait for the display (sync interval 0, as Chromium
 // and Electron present; Claude submitted 101 to 115 frames a second on a 60 Hz display while it redrew) submits more frames than the
 // display shows, and the compositor drops the rest, so it may read above the refresh rate, as an uncapped game does. The frames the
-// display itself takes are not counted: they include everything that moves on it (a chat writing, BrimDeck's own panel), not one
+// display itself takes are not counted: they include everything that moves on it (a chat writing, DeckIsland's own panel), not one
 // program.
 // The desktop and the taskbar in front show the desktop's own frames: a live wallpaper (Wallpaper Engine, Lively) draws in a
 // window of its own inside the desktop's (a child of Progman or WorkerW not owned by explorer), so that program's frame rate and
@@ -33,13 +33,13 @@ namespace BrimDeck.Native;
 // A UWP app's window (Settings) is ApplicationFrameHost's frame around the app's own, so the app's process counts (Owner).
 // While the program in front presents nothing (a chat beside a game on another display), the figure stays with the last program
 // that did, so it does not drop to 0 at every click; once that one has stopped too, the program in front shows, at 0.
-// The session is named for this process ("BrimDeck Frames 1234"): a test or a second copy has a session of its own, and a session
-// stopped by anything else is started again (Sample, at most every few seconds). Sessions left by a BrimDeck that has ended are
+// The session is named for this process ("DeckIsland Frames 1234"): a test or a second copy has a session of its own, and a session
+// stopped by anything else is started again (Sample, at most every few seconds). Sessions left by a DeckIsland that has ended are
 // stopped when a session starts, as Windows keeps a session until it is stopped and has few of them.
 // Want is called on the UI thread, Sample on the sampler's; the events arrive on a thread of their own.
 internal sealed class FrameRates : IDisposable
 {
-    private const string SessionPrefix = "BrimDeck Frames";
+    private const string SessionPrefix = "DeckIsland Frames";
     private static readonly string Session = $"{SessionPrefix} {Environment.ProcessId}";
     private double _restarted = double.NegativeInfinity;
     private static readonly Guid Dxgi = new("CA11C036-0102-4A2D-A6AD-F03CFED5D3C9"), D3D9 = new("783ACA0A-790E-4D7F-8451-AA850511C6B9"),
@@ -94,7 +94,7 @@ internal sealed class FrameRates : IDisposable
     public FrameRates() => _callback = OnEvent;
 
     // Found while the events are read, None once the session was refused (no permission); Unknown before it is asked for. Kept
-    // while not wanted, so a refusal is not asked again until BrimDeck starts again.
+    // while not wanted, so a refusal is not asked again until DeckIsland starts again.
     public SensorState State { get; private set; } = SensorState.Unknown;
 
     // Reads frame rates from now on, or stops (the session ends, nothing is counted).
@@ -371,7 +371,7 @@ internal sealed class FrameRates : IDisposable
         }
         finally { Marshal.FreeHGlobal(logfile); }
         ulong trace = _trace;
-        _reader = new Thread(() => ProcessTrace([trace], 1, IntPtr.Zero, IntPtr.Zero)) { IsBackground = true, Name = "BrimDeck frame events" };
+        _reader = new Thread(() => ProcessTrace([trace], 1, IntPtr.Zero, IntPtr.Zero)) { IsBackground = true, Name = "DeckIsland frame events" };
         _reader.Start();
         _flusher = new Timer(_ => Control(0, Session, 3 /* EVENT_TRACE_CONTROL_FLUSH */), null, FlushEvery, FlushEvery);
     }
@@ -389,7 +389,7 @@ internal sealed class FrameRates : IDisposable
         _events = []; _drained = [];
     }
 
-    // Stops the sessions of BrimDecks no longer running (and the one this process may have left), found among all the machine's
+    // Stops the sessions of DeckIslands no longer running (and the one this process may have left), found among all the machine's
     // sessions (QueryAllTracesW, at most 64).
     private static void StopLeftSessions()
     {

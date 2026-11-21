@@ -6,7 +6,7 @@ using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // How a rebuilt page takes over from the one it replaces.
 internal enum Handover

@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // The ASTRO A50 Gen 5 base station (046D:0B1C). 0x046D is Logitech's id, which Hidpp reads on usage page 0xFF00, so only this
 // product and its own vendor collection (usage page 0xFF32 usage 0x74; interface 8): report 02, 64-byte interrupt frames

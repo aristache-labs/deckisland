@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\BrimDeck.Core\BrimDeck.Core.csproj" />
+    <ProjectReference Include="..\..\src\DeckIsland.Core\DeckIsland.Core.csproj" />
     <Content Include="Fixtures\*" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 

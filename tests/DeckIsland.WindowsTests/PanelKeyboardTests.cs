@@ -1,7 +1,7 @@
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
-using BrimDeck.Native;
+using DeckIsland.Native;
 
 // What a panel opened by a hotkey does to its window: it can be active while it holds the keyboard, and goes back to the style it
 // had (never activated, or not when the user lets recording apps capture it) when the keyboard is given up. Real windows and real

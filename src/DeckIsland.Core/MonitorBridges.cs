@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // The processor's temperature and power taken from a hardware monitor the user already runs, for a machine where Windows gives
 // neither and enhanced sensors are not set up: HWiNFO's shared memory, and LibreHardwareMonitor's own web server (Options ›
@@ -26,7 +26,7 @@ public static class MonitorBridges
                     if (sensor.Kind == kind && sensor.Label.Equals(label, StringComparison.OrdinalIgnoreCase) && plausible(sensor.Value)) return sensor.Value;
             return null;
         }
-        return (Pick(BridgeReading.Temperature, Temperatures, celsius => celsius > 0 && BrimDeck.Core.Temperatures.Plausible(celsius) is not null),
+        return (Pick(BridgeReading.Temperature, Temperatures, celsius => celsius > 0 && DeckIsland.Core.Temperatures.Plausible(celsius) is not null),
             Pick(BridgeReading.Power, Powers, PowerResolver.Plausible));
     }
 

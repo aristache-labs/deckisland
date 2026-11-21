@@ -7,11 +7,11 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Channels;
 using System.Windows.Media.Imaging;
-using BrimDeck.Core;
-using BrimDeck.Core.ClipboardSync;
-using BrimDeck.Native;
+using DeckIsland.Core;
+using DeckIsland.Core.ClipboardSync;
+using DeckIsland.Native;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 internal sealed partial class ClipboardSyncService
 {

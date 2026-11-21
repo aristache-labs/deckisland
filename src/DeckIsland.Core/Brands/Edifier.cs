@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // The EDIFIER HALO SPACE (花再 Halo Space) on its 2.4 GHz receiver, 2D99:E049 (only this product: who owns 0x2D99 is not
 // confirmed). Its control collection is usage page 0xFF14 usage 1 (64-byte input and output, interface 4), output report

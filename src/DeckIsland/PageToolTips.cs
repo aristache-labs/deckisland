@@ -2,7 +2,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // A tooltip open over a page that is left without the pointer moving (the wheel walks the pages, music starts and the panel
 // shows its page) stayed on top of the next page: WPF closes a tooltip when the pointer leaves its owner, and the owner never

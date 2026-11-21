@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Pulsar X2 V3 Mini on its Sonix firmware: 3710:5403 its 8K receiver, 3402 on its cable (the X2 CrazyLight Mini on 5406
 // and 3414 takes the Compx frame and is read elsewhere). On interface 3, usage page 0xFFFF usage 1, the unnumbered 64-byte

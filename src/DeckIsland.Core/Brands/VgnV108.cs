@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // The VGN V108 keyboard's 2.4 GHz receiver (391D:2A02; 0x391D is shared with other makers' receivers, so only this pair). VGN
 // HUB asks it on interface 1 with output report 0x13, command 0x4A: 13 4A 01, zeros, and the low byte of the sum of bytes 0 to

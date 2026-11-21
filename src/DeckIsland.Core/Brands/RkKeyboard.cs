@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // The RK R98Pro V2 keyboard on its 2.4 GHz receiver, 258A:01BB or 258A:0233. 0x258A is Sinowealth's, and these receivers
 // serve other makers' keyboards too, so only their vendor collection (usage page 0xFF02 usage 2, 20-byte input and output

@@ -3,9 +3,9 @@ using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Media;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // Drawing shared by the system monitor's page and its collapsed strip. The page draws itself in a few elements that render
 // directly instead of a tree of text blocks and borders: a new reading changes what they draw, never the layout, so it costs

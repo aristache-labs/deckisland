@@ -1,4 +1,4 @@
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // The pieces that keep the monitor's start light: swallowed failures noted once, and the cache of program names kept bounded.
 static class MonitorStartupTests

@@ -1,9 +1,9 @@
 using System.Runtime.InteropServices;
 using System.Windows.Threading;
-using BrimDeck.Core;
+using DeckIsland.Core;
 using Windows.Gaming.Input;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 // Game controllers through Windows.Gaming.Input: Xbox controllers on the Xbox Wireless adapter or a cable, and others Windows
 // gives a battery report for (RawGameController.TryGetBatteryReport: remaining and full capacity, and whether it charges).

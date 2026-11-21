@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Redragon M690 PRO on Sinowealth's shared vendor id 0x258A, so only its two products: 002E on its cable, 002F its 2.4 GHz
 // receiver. The vendor collection (usage page 0xFF00 usage 1, interface 1) carries the 7-byte feature report 5 for short

@@ -1,7 +1,7 @@
 using System.Net;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // The Claude quota kept on disk by an earlier version (one reading, no organization) after the version that reads an account's
 // organizations separately (ClaudeQuotaCache) is installed. Claude Code's account record names the organization it uses, so the
@@ -60,7 +60,7 @@ static class ClaudeUpgradeCacheTests
 
         // The primary organization is rate limited (its reading not yet moved to its own name) while another organization is saved or
         // rejected: the earlier version's reading stays for the primary one, also after a restart (a new read of the file).
-        var path = Path.Combine(Path.GetTempPath(), "brimdeck-upgrade-" + Guid.NewGuid().ToString("N") + ".json");
+        var path = Path.Combine(Path.GetTempPath(), "deckisland-upgrade-" + Guid.NewGuid().ToString("N") + ".json");
         try
         {
             File.WriteAllText(path, earlier);

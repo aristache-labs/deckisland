@@ -1,5 +1,5 @@
 using System.Text.Json;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // Theme edits made on the settings page: drafts laid over a file, written into its text, the three seed colors, and a draft
 // saved as a new theme.
@@ -47,7 +47,7 @@ internal static class PanelThemeEditorTests
         int changedLines = lines.Zip(writtenLines).Count(pair => pair.First != pair.Second);
         check("Writing a draft changes only the lines of the changed values and keeps the comments",
             lines.Length == writtenLines.Length && changedLines == 4 && written.Contains("\"accent\": \"#FF00AA\",            // Keyboard focus", StringComparison.Ordinal)
-            && written.Contains("\"scanlines\": 0.05", StringComparison.Ordinal) && written.Contains("// BrimDeck panel theme template", StringComparison.Ordinal));
+            && written.Contains("\"scanlines\": 0.05", StringComparison.Ordinal) && written.Contains("// DeckIsland panel theme template", StringComparison.Ordinal));
         var reread = PanelThemes.Build("edited", PanelThemes.Parse(written));
         var expected = PanelThemes.Build("edited", PanelThemes.ApplyDraft(templateFile, edits));
         check("The written file reads back as the draft laid over the file",

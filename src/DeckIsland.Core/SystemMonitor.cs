@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // The system monitor page's readings. The model, the rule that a missing reading is never shown as zero, and the folding
 // of an app's processes into one entry follow ftop by Nongfsq (https://github.com/Nongfsq/ftop, MIT License; see

@@ -1,5 +1,5 @@
 using System.Text.Json;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // The collapsed readings' table: migration from the old modes, presets, order, drop priority, widths and copies.
 internal static class CompactReadingTests
@@ -242,9 +242,9 @@ internal static class CompactReadingTests
     private static void ReplacedChildren(Action<string, bool> check)
     {
         var source = new DirectoryInfo(AppContext.BaseDirectory);
-        while (source is not null && !File.Exists(Path.Combine(source.FullName, "BrimDeck.sln"))) source = source.Parent;
+        while (source is not null && !File.Exists(Path.Combine(source.FullName, "DeckIsland.sln"))) source = source.Parent;
         if (source is null) { check("Panel children: the source tree is found", false); return; }
-        var replaced = Directory.EnumerateFiles(Path.Combine(source.FullName, "src", "BrimDeck"), "*.cs", SearchOption.AllDirectories)
+        var replaced = Directory.EnumerateFiles(Path.Combine(source.FullName, "src", "DeckIsland"), "*.cs", SearchOption.AllDirectories)
             .Where(file => System.Text.RegularExpressions.Regex.IsMatch(File.ReadAllText(file), @"\.Children\[[^\]]+\]\s*=(?!=)")).Select(Path.GetFileName).ToList();
         check("Panel children: none is replaced through the indexer" + (replaced.Count > 0 ? " (" + string.Join(", ", replaced) + ")" : ""), replaced.Count == 0);
     }

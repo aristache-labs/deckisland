@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // A player that moves to its next song often reports the song before its timeline: NetEase's log names the song
 // before the player has loaded it, QQ Music clears the old time at once, and an SMTC session may read no timeline

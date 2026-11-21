@@ -4,7 +4,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // The signed-in ZCode account: the region ("bigmodel" or "zai"), its Coding Plan API key, the ZCode token used for
 // the MCP and Start Plan allowances, the region's access token, and ZCode's device id. Values are held in memory only.

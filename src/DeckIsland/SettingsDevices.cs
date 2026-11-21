@@ -3,10 +3,10 @@ using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using BrimDeck.Core;
-using BrimDeck.Native;
+using DeckIsland.Core;
+using DeckIsland.Native;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // The devices page's settings: what the collapsed row shows of the devices (a preview of it, whether it shows them, how and in
 // what order), the level at which a battery shows as low, and the list of devices, read while this page is open: each with a

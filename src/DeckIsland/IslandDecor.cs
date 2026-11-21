@@ -1,9 +1,9 @@
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // A theme's motifs drawn into the island's surface, under its content (PanelDecor): a sea below a horizon, the caustics a sea
 // throws and a palm frond's shadow in the open panel's corner. Nothing here moves: the picture is still, so it costs nothing

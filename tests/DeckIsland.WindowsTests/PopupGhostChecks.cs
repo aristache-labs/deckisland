@@ -7,7 +7,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Threading;
-using BrimDeck;
+using DeckIsland;
 
 // The picture pop-up that lies beneath a drop-down while it is open (PopupMotion.OpenGhost) must cover the real list exactly, also
 // when Windows opens menus right-aligned (SystemParameters.MenuDropAlignment, the left-handed pen setting): the real list then

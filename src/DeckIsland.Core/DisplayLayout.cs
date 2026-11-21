@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Decides which connected monitor each panel window sits on. The main window always has a monitor: the primary one if
 // it shows a panel, otherwise the first chosen monitor in the order given. Every other chosen monitor gets a window of its own.

@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Request/response contracts verified against provider documentation and server sources.
 // These adapters are original implementations; they are also available in the custom editor.

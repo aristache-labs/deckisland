@@ -2,7 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // One reading of a merged Cursor plan's weekly included usage: the amount used (UsedCents) held from First to Last within
 // the week that began at PeriodStart. Tokens is the included tokens of that week, by kind (input, output, cache read, cache
@@ -50,7 +50,7 @@ public sealed class CursorPrices
 
     // A one-way hash of the account id, enough to tell two accounts apart without naming either.
     public static string AccountHash(string account) => string.IsNullOrWhiteSpace(account) ? ""
-        : Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes("BrimDeck Cursor account\n" + account.Trim())))[..32];
+        : Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes("DeckIsland Cursor account\n" + account.Trim())))[..32];
 
     // Switches to the account, reading what the file keeps for it; another account's readings are dropped.
     public void Use(string account)

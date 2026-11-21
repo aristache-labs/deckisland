@@ -1,7 +1,7 @@
 using System.Net.NetworkInformation;
 using Microsoft.Win32;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // Automatic update checks. The panel's minute clock asks whether a check is due; a returning network and waking from
 // sleep ask too. AppUpdates decides when one is due, merges it with any check already running, and keeps failures silent.

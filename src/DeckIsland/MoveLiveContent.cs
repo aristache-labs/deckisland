@@ -1,8 +1,8 @@
 using System.Windows;
 using System.Windows.Media;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // A live view of the compact content, independent of the opacity of its parent window surface.
 // The caller clips it to the ghost and draws the glowing border separately.

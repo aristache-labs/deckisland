@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // A named set of the panel's own settings: its looks, pages and what the collapsed row shows. What belongs to the whole app
 // (startup, language, hotkeys, the applications and their keys, the players' full control, the clipboard's recording, the

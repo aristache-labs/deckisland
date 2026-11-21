@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // The font as the layout needs to know it: Scale is the text's size relative to the default (a larger text takes more room, so
 // less fits), LineFactor the height of a line of body text in body sizes (1.7 in the default face; a custom face may be taller).

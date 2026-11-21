@@ -1,6 +1,6 @@
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // Asks before NetEase Cloud Music's libcef.dll is changed (NeteaseInstall): what it adds, what happens to the player, and the
 // debugging port, in a few lines; the details are in the user documentation (ControlDialog).

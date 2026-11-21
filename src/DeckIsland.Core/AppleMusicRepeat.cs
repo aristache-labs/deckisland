@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Apple Music's repeat button shows one glyph for "off" and "all" and another for "one" (measured: U+10029E and
 // U+10029F); only its name, in the interface language, tells the first two apart. The button cycles off → all → one

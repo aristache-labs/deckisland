@@ -4,7 +4,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // A one-line text placed so that its letters, as the screen draws them, are centred in the height this element is given. A
 // TextBlock centres its line box, which holds the font's ascent and descent: with the panel font, Chinese drawn from Microsoft

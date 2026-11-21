@@ -1,7 +1,7 @@
 using System.Windows.Controls;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 public partial class MainWindow
 {

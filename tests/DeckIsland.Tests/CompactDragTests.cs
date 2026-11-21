@@ -1,4 +1,4 @@
-﻿using BrimDeck.Core;
+﻿using DeckIsland.Core;
 
 // The collapsed row while its surface is dragged (CompactSpacing.ShareFlowing, CutFade): the windows of the rings and the readings
 // follow the room one for one instead of stepping by whole items, so the row moves with the pointer, as 1.2.1's did, and what

@@ -1,4 +1,4 @@
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // Phone Link first, Bluetooth as the fallback: what the merged list shows while Phone Link reports the phone, while it
 // stops (the app closed, the phone away), and which Bluetooth entries survive.

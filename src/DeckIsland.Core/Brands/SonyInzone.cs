@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Sony's INZONE headsets on their 2.4 GHz dongles, vendor 0x054C (shared with the PlayStation controllers and the PULSE 3D,
 // which other readers take), so only these products: the INZONE H5 (0EBF, usage page 0xFF04 usage 2) and H9 II (0FA8, usage

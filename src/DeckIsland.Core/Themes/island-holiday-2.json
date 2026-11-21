@@ -14,7 +14,7 @@
   "nameEn": "Island Holiday 2",
   "description": "海岛明信片：白天是晴空、泻湖海面上的粼粼水光与棕榈叶影，海岸线描边、圆润的珊瑚色时钟、芒果色指示条；夜晚是月光下的深青海面与岛下的海光，按本地时间自动渐变切换。",
   "descriptionEn": "An island postcard: a clear sky over a lagoon with sunlit ripples and a palm's shade by day, with a shoreline rim, a round coral clock and a mango indicator; a moonlit dark teal sea with a soft glow under the island by night, fading over by the local clock.",
-  "author": "BrimDeck",
+  "author": "DeckIsland",
   "license": "Apache-2.0",
   "base": "light",
   "daylight": { "day": "06:30", "night": "18:30" },

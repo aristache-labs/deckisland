@@ -4,9 +4,9 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Shapes;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // The global shortcuts, on a page of their own (HotkeysPage). Each is recorded by clicking its box and pressing the combination; leaving
 // the box cancels, and only the cross inside the box clears it. An arrow shortcut's row (resize, move) reads "Alt + [box] + arrow

@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Decides when a track change briefly shows the new title in the compact view: when the new song starts playing.
 public sealed class TrackNoticeGate

@@ -6,15 +6,15 @@ using System.Text.Json;
 using System.Windows;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
-using BrimDeck.Core;
-using BrimDeck.Core.ClipboardSync;
-using BrimDeck.Native;
+using DeckIsland.Core;
+using DeckIsland.Core.ClipboardSync;
+using DeckIsland.Native;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 internal sealed class ClipboardSyncAccounts
 {
-    public string DeviceName { get; set; } = "BrimDeck " + Environment.MachineName;
+    public string DeviceName { get; set; } = "DeckIsland " + Environment.MachineName;
     public WeTypeIdentity WeType { get; set; } = new();
     public DoubaoIdentity? Doubao { get; set; }
     public LanClipboardPeer? Lan { get; set; }
@@ -163,7 +163,7 @@ internal sealed partial class ClipboardSyncService : IDisposable
         Changed?.Invoke();
     }
     // The account's other devices, for taking one off its list: Doubao's own applications have no way to, and a device whose
-    // sign-in was lost (BrimDeck before a reinstall) cannot sign out itself. They are not told apart by name, which the user
+    // sign-in was lost (DeckIsland before a reinstall) cannot sign out itself. They are not told apart by name, which the user
     // chooses: all are listed, and the user picks.
     public async Task<IReadOnlyList<DoubaoDevice>> OtherDoubaoDevicesAsync(CancellationToken ct)
     {

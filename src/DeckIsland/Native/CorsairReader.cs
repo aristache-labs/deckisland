@@ -1,6 +1,6 @@
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 // Reads the Corsair receivers (Core's Corsair: the Dark Core RGB Pro SE, the Virtuoso SE and XT) on a thread of its own at
 // below normal priority: their answer can take six seconds and is asked twice, which would hold every other device's reading
@@ -28,7 +28,7 @@ internal sealed class CorsairReader(Action<string, DeviceBattery> received) : ID
             _wanted = collections; _stopped = false;
             if (_thread is null)
             {
-                _thread = new Thread(Run) { IsBackground = true, Priority = ThreadPriority.BelowNormal, Name = "BrimDeck Corsair batteries" };
+                _thread = new Thread(Run) { IsBackground = true, Priority = ThreadPriority.BelowNormal, Name = "DeckIsland Corsair batteries" };
                 _thread.Start();
             }
         }

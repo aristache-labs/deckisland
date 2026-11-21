@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // The ROG Strix Go 2.4 headset (0B05:18D6 on its dongle, 18D7 on its USB-C cable). 0x0B05 is ASUS's id for every ROG device,
 // which Asus and the Omni reader take by product, so only these two: feature report 0xFF on the vendor collection with a

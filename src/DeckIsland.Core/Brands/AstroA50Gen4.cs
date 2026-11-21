@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // The ASTRO A50 Gen 4 base station, 9886:002C (Astro Gaming's old id, which nothing else here reads; only this product). Its
 // one vendor collection: interface 6, usage page 0xFF32 usage 0x74, report 02 in 64-byte frames, one reply per request and

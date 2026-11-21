@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // The row above both pages of the open panel: the page switch at the left, the clock in the centre, and the media source,
 // sync and settings buttons at the right. All values are whole DIPs.

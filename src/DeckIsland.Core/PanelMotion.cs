@@ -1,6 +1,6 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
-// How long the panel's opening and closing take, and what a move turned back part way does (BrimDeck.MainWindow.SetExpanded).
+// How long the panel's opening and closing take, and what a move turned back part way does (DeckIsland.MainWindow.SetExpanded).
 // The lengths are milliseconds; 0 means no animation.
 public static class PanelMotion
 {

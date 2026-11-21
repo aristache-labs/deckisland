@@ -1,8 +1,8 @@
 ﻿using System.Windows;
 using System.Windows.Threading;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // The collapsed row while its width is being changed continuously: the windows of the rings and the readings follow the room
 // instead of stepping by whole items (RowFlow, CompactSpacing.ShareFlowing). At rest they hold whole items (CompactSpacing.Share),

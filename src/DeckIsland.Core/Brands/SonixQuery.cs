@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Keyboards on Sonix-platform 2.4 GHz receivers that answer the battery query 20 01 on their raw HID collection (usage page
 // 0xFF60, usage 0x61, 33-byte input and output reports with report id 0): [0, 0x20, 0x01, zeros, checksum], the checksum the

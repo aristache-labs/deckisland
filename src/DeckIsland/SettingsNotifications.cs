@@ -2,9 +2,9 @@ using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Input;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 public sealed partial class SettingsWindow
 {
@@ -16,8 +16,8 @@ public sealed partial class SettingsWindow
         string access = _app.NotificationAccess switch
         {
             NotificationAccess.Ready => "",
-            NotificationAccess.NeedsPackage => Loc.T("读取 Windows 通知需要应用包标识：运行 scripts\notifications\register.ps1 注册后重启 BrimDeck。",
-                "Reading Windows notifications needs a package identity: run scripts\notifications\register.ps1 as described in its header, then restart BrimDeck."),
+            NotificationAccess.NeedsPackage => Loc.T("读取 Windows 通知需要应用包标识：运行 scripts\notifications\register.ps1 注册后重启 DeckIsland。",
+                "Reading Windows notifications needs a package identity: run scripts\notifications\register.ps1 as described in its header, then restart DeckIsland."),
             NotificationAccess.Denied => Loc.T("Windows 未授予通知访问权限。请在 Windows 设置 → 隐私和安全性 → 通知中允许。", "Windows has not allowed notification access. Allow it in Windows Settings, Privacy and security, Notifications."),
             NotificationAccess.Unavailable => Loc.T("此设备无法读取通知。", "Notifications cannot be read on this device."),
             _ => Loc.T("正在连接通知…", "Connecting to notifications…")

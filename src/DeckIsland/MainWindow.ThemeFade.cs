@@ -3,7 +3,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // A change of theme while the island is on screen dissolves from the old look into the new one instead of snapping. Two
 // pictures of the island as it was lie over it while the new colors are already drawn underneath:

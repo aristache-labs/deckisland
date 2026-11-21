@@ -5,7 +5,7 @@ using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Shapes;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 public partial class MainWindow
 {

@@ -1,4 +1,4 @@
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // Resizing the monitor page by dragging: a frame every 16 ms, a few DIPs at a time. Within a layout step every part keeps its place
 // and size except the graph, which takes exactly what the drag adds; a step is taken only past the hysteresis band, once per

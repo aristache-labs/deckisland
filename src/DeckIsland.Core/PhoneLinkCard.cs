@@ -2,7 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // The phone's battery as Phone Link's Start card tells it. Phone Link keeps the card in the app package's local state
 // (StartMenu\StartMenuCompanion.json), an Adaptive Card whose texts carry the phone's name, "87%" and the charging state

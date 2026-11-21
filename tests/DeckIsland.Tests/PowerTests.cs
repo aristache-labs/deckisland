@@ -1,4 +1,4 @@
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // The whole machine's power and its own battery: which source wins and how it is labelled (PowerResolver), the counters' names
 // (FromCounters), a battery's state, time and health from made-up reports (BatteryModel), the collapsed row's Power and Charge readings,
@@ -276,7 +276,7 @@ static class PowerTests
         check("Readings: a table saved before them gets them hidden", saved.Count == table.Count && saved.Where(reading => reading.Item is CompactMonitorItems.Power or CompactMonitorItems.Charge).All(reading => !reading.Visible));
         var settings = new DeckSettings();
         settings.CompactReadings.First(reading => reading.Item == CompactMonitorItems.Power).Visible = true;
-        var folder = Path.Combine(Path.GetTempPath(), "BrimDeck-Tests-power-" + Guid.NewGuid().ToString("N"));
+        var folder = Path.Combine(Path.GetTempPath(), "DeckIsland-Tests-power-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(folder);
         DeckSettings copy;
         try { var store = new SettingsStore(folder); store.Save(settings); copy = new SettingsStore(folder).Load(); }

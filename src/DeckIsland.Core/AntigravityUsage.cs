@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Antigravity 2.x and the Antigravity CLI (agy) keep one SQLite database per conversation, in
 // ~/.gemini/antigravity/conversations and ~/.gemini/antigravity-cli/conversations. Reading them directly

@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // What the user changed while using one panel theme: each application's theme, warning and critical colors, and the clock's
 // style and color. Every theme keeps its own, as an editor keeps per-theme color overrides: switching away saves the current

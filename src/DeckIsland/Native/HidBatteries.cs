@@ -1,9 +1,9 @@
 using System.IO;
 using System.Windows.Threading;
-using BrimDeck.Core;
+using DeckIsland.Core;
 using Windows.Devices.Enumeration;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 // The batteries that only the devices' own protocols tell, over HID: Logitech receivers and cables (HID++), Razer mice and
 // keyboards, the 2.4 GHz mice and keyboards of ATK, VXE, VGN, Pulsar, MCHOSE, Endgame Gear, VAXEE, Inphic, AJAZZ, WLmouse,
@@ -56,7 +56,7 @@ internal sealed class HidBatteries(Dispatcher dispatcher, Action<DeviceSource, I
             _corsair ??= new CorsairReader(Side);
             if (_thread is null)
             {
-                _thread = new Thread(Run) { IsBackground = true, Priority = ThreadPriority.BelowNormal, Name = "BrimDeck HID batteries" };
+                _thread = new Thread(Run) { IsBackground = true, Priority = ThreadPriority.BelowNormal, Name = "DeckIsland HID batteries" };
                 _thread.Start();
             }
         }

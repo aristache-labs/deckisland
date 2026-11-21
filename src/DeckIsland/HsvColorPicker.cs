@@ -5,9 +5,9 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Effects;
 using System.Windows.Shapes;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // A saturation/value square over a hue strip. Dragging (with the mouse captured, so it continues outside the control) or the
 // arrow keys change the color and raise Changed; SetColor moves both thumbs without raising it.

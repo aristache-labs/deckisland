@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // The devices page: the battery of the wireless keyboards, mice, headphones, controllers, pens and phones connected to the PC, from
 // whatever reports it (DeviceSource). Every source gives readings in this one shape; the roster merges them, one entry per

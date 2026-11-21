@@ -1,6 +1,6 @@
 using System.Diagnostics;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // A value that eases to each new target over a short move, ftop's columns' "follow" made cheap: a move takes a little under half
 // a second and the panel rests between readings. The move is a cubic Hermite curve that starts gently and lands softly; a new
@@ -98,7 +98,7 @@ public struct Spring
     }
 }
 
-// The curves behind the panel's timed animations (BrimDeck.Soft), as plain functions of the elapsed fraction of a move.
+// The curves behind the panel's timed animations (DeckIsland.Soft), as plain functions of the elapsed fraction of a move.
 public static class Curves
 {
     // A CSS cubic-bezier(x1, y1, x2, y2): the progress at the elapsed fraction x. x(t) is monotonic while x1 and x2 lie in [0, 1].

@@ -1,6 +1,6 @@
 using System.Windows.Threading;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // A repeating timer for anything the user watches or waits on, used like DispatcherTimer. DispatcherTimer rides on
 // WM_TIMER, which Windows generates only when the message queue is otherwise empty; while the cursor moved, its ticks

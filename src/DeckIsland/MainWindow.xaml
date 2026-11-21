@@ -1,5 +1,5 @@
-<Window x:Class="BrimDeck.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="clr-namespace:BrimDeck" Title="BrimDeck" WindowStyle="None"
+<Window x:Class="DeckIsland.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="clr-namespace:DeckIsland" Title="DeckIsland" WindowStyle="None"
         AllowsTransparency="True" Background="Transparent" ResizeMode="NoResize" Topmost="True"
         ShowActivated="False" ShowInTaskbar="False" Width="760" Height="256" Style="{StaticResource {x:Type Window}}">
   <Window.Resources>

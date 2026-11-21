@@ -5,10 +5,10 @@ using System.Security.Cryptography;
 using System.Windows;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
-using BrimDeck.Core;
-using BrimDeck.Native;
+using DeckIsland.Core;
+using DeckIsland.Native;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // The clipboard history and the file transfer, shared by every panel. Kept in the data folder beside settings.json: shelf.dat
 // holds the entries as JSON, shelf\<id>.dat each picture as PNG and shelf\<id>.html and .rtf a text entry's rich forms, which
@@ -54,12 +54,12 @@ internal sealed class ShelfService : IDisposable
     private readonly DispatcherTimer _expire;
     private bool _applied;
 
-    // Starts or stops recording as the settings ask, and keeps the history or lets it go with BrimDeck as they ask.
+    // Starts or stops recording as the settings ask, and keeps the history or lets it go with DeckIsland as they ask.
     public void Apply(DeckSettings settings)
     {
         bool first = !_applied, kept = !first && _settings().ClipboardKeepHistory;
         _settings = () => settings; _applied = true;
-        // At the first settings: the history goes when BrimDeck exits, so after an exit that did not clear it (a crash, a forced
+        // At the first settings: the history goes when DeckIsland exits, so after an exit that did not clear it (a crash, a forced
         // end) it goes now, unless it is kept; then only what has grown too old goes.
         if (first && !settings.ClipboardKeepHistory && !_unreadable && Shelf.History(Data) is { Count: > 0 } left) Remove(left, raise: false);
         if (settings.ClipboardKeepHistory) { Expire(raise: !first); _expire.Start(); } else _expire.Stop();
@@ -76,7 +76,7 @@ internal sealed class ShelfService : IDisposable
 
     private void Copied(ClipCopy copy)
     {
-        if (BrimDeck.Core.ClipboardSync.LanClipboardLink.ContainsInvitation(copy.Text)) return;
+        if (DeckIsland.Core.ClipboardSync.LanClipboardLink.ContainsInvitation(copy.Text)) return;
         var now = DateTimeOffset.Now;
         ClipEntry entry;
         if (copy.Png is { } png)
@@ -94,7 +94,7 @@ internal sealed class ShelfService : IDisposable
         // The categories whose rules it meets take it, the same text copied again too.
         ShelfRules.Apply(Data, entry);
         Changed?.Invoke();
-        // Unless the history is kept past an exit, it goes when BrimDeck exits and when it next starts, so a copy that is only history
+        // Unless the history is kept past an exit, it goes when DeckIsland exits and when it next starts, so a copy that is only history
         // has nothing to keep on disk: saving it turned the whole list into bytes, on this thread, after every copy. A picture
         // is saved all the same: its file is deleted with its entry, and a start after a forced end finds that entry only in the
         // saved list.
@@ -111,7 +111,7 @@ internal sealed class ShelfService : IDisposable
         if (_settings().ClipboardRecord) Copied(new ClipCopy(text, html, "", null, 0, 0, source));
     }
 
-    internal static BitmapSource DecodeRemoteImage(BrimDeck.Core.ClipboardSync.LanPng png)
+    internal static BitmapSource DecodeRemoteImage(DeckIsland.Core.ClipboardSync.LanPng png)
     {
         using var bytes = new MemoryStream(png.Bytes, writable: false);
         var frame = BitmapFrame.Create(bytes, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.OnLoad);
@@ -124,7 +124,7 @@ internal sealed class ShelfService : IDisposable
     // What another device copied is marked, as it is put on this clipboard, as not for clipboard monitors: an input method
     // installed here and syncing by itself would otherwise take it for a copy made here and send it on, and with the same
     // on the other computer the content went round between the two without end (seen on 2026-11-16: WeType to here, Doubao
-    // back). Windows' own clipboard history leaves it out as well; BrimDeck's history takes it directly.
+    // back). Windows' own clipboard history leaves it out as well; DeckIsland's history takes it directly.
     private static DataObject Synced(DataObject data)
     {
         data.SetData("ExcludeClipboardContentFromMonitorProcessing", new MemoryStream(new byte[4]), false);
@@ -133,7 +133,7 @@ internal sealed class ShelfService : IDisposable
 
     // A picture another device sent through an input method's service, as PNG or JPEG: read within the limits of a copied
     // picture, turned the way a photo's orientation says, and kept as PNG like every picture of the history.
-    internal static (BrimDeck.Core.ClipboardSync.LanPng Png, BitmapSource Image) DecodeRemotePicture(byte[] encoded)
+    internal static (DeckIsland.Core.ClipboardSync.LanPng Png, BitmapSource Image) DecodeRemotePicture(byte[] encoded)
     {
         const int maxBytes = 32 * 1024 * 1024;
         BitmapSource picture;
@@ -141,8 +141,8 @@ internal sealed class ShelfService : IDisposable
         {
             // The size is read from the header before any pixel is decoded.
             var frame = BitmapDecoder.Create(input, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.None).Frames[0];
-            if (frame.PixelWidth is <= 0 or > BrimDeck.Core.ClipboardSync.LanPng.MaxSide || frame.PixelHeight is <= 0 or > BrimDeck.Core.ClipboardSync.LanPng.MaxSide ||
-                (long)frame.PixelWidth * frame.PixelHeight > BrimDeck.Core.ClipboardSync.LanPng.MaxPixels)
+            if (frame.PixelWidth is <= 0 or > DeckIsland.Core.ClipboardSync.LanPng.MaxSide || frame.PixelHeight is <= 0 or > DeckIsland.Core.ClipboardSync.LanPng.MaxSide ||
+                (long)frame.PixelWidth * frame.PixelHeight > DeckIsland.Core.ClipboardSync.LanPng.MaxPixels)
                 throw new InvalidDataException("The picture is too large.");
             ushort orientation = 1;
             try { if ((frame.Metadata as BitmapMetadata)?.GetQuery("/app1/ifd/{ushort=274}") is ushort value) orientation = value; }
@@ -152,7 +152,7 @@ internal sealed class ShelfService : IDisposable
             var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(picture));
             using var output = new MemoryStream(); encoder.Save(output);
             if (output.Length > maxBytes) throw new InvalidDataException("The picture is too large.");
-            var png = new BrimDeck.Core.ClipboardSync.LanPng(output.ToArray(), picture.PixelWidth, picture.PixelHeight);
+            var png = new DeckIsland.Core.ClipboardSync.LanPng(output.ToArray(), picture.PixelWidth, picture.PixelHeight);
             return (png, DecodeRemoteImage(png));
         }
     }
@@ -170,7 +170,7 @@ internal sealed class ShelfService : IDisposable
         return output.Length <= limit ? output.ToArray() : null;
     }
 
-    internal bool AcceptRemoteImage(BrimDeck.Core.ClipboardSync.LanPng png, BitmapSource image, string source)
+    internal bool AcceptRemoteImage(DeckIsland.Core.ClipboardSync.LanPng png, BitmapSource image, string source)
     {
         if (!Put(Synced(ImageData(png.Bytes, image)))) return false;
         if (_settings().ClipboardRecord) Copied(new ClipCopy("", "", "", png.Bytes, png.Width, png.Height, source));
@@ -360,7 +360,7 @@ internal sealed class ShelfService : IDisposable
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or CryptographicException or System.Text.Json.JsonException)
         { _unreadable = true; Data = new(); }
     }
-    // A picture or rich form is written as it is copied, the list only a moment later; files whose entry is not in the list (BrimDeck
+    // A picture or rich form is written as it is copied, the list only a moment later; files whose entry is not in the list (DeckIsland
     // ended in between) are deleted when it starts.
     private void RemoveStrays()
     {
@@ -377,7 +377,7 @@ internal sealed class ShelfService : IDisposable
     public void QueueSave() { _save.Stop(); _save.Start(); }
     // The list is turned into bytes here, on the thread that changes it, so what is written is whole; the writing itself is done
     // on a worker thread, one write after another, so a later save never lands before an earlier one. wait: written before this
-    // returns (leaving BrimDeck).
+    // returns (leaving DeckIsland).
     private Task _writing = Task.CompletedTask;
     public void Save(bool wait = false)
     {
@@ -398,7 +398,7 @@ internal sealed class ShelfService : IDisposable
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException) { }
     }
-    // Leaving BrimDeck: the history goes, unless it is kept past an exit (then only what has grown too old); what is kept
+    // Leaving DeckIsland: the history goes, unless it is kept past an exit (then only what has grown too old); what is kept
     // (ShelfData.Kept) stays. The pictures written for dragging go too.
     public void Exit()
     {
@@ -414,7 +414,7 @@ internal sealed class ShelfService : IDisposable
     // Browsers and Electron applications (Claude, chat clients) take a dropped picture only as a file, not as picture data, so a
     // picture dragged out is also written, unencrypted, to a file of its own under the temporary folder. Files older than ten
     // minutes are cleared at each drag and the folder at exit.
-    private static string DragFolder => Path.Combine(Path.GetTempPath(), "BrimDeck", "Drag");
+    private static string DragFolder => Path.Combine(Path.GetTempPath(), "DeckIsland", "Drag");
     public string? PictureFile(ClipEntry entry)
     {
         if (entry.Kind != ClipKind.Image || PictureBytes(entry.Id) is not { } png) return null;
@@ -515,7 +515,7 @@ internal sealed class ShelfService : IDisposable
     //
     // The paste is always tried first. A window of a program run as administrator does not take it: Windows drops the keys an
     // ordinary program sends there, and says nothing of it, SendInput reporting them sent all the same. So once the paste has
-    // been tried, whether it seemed to go or not, the window's program is looked at: with more rights than BrimDeck it cannot
+    // been tried, whether it seemed to go or not, the window's program is looked at: with more rights than DeckIsland it cannot
     // have had the paste, and done is Elevated.
     public void Paste(DataObject data, Action<PasteResult> done)
     {

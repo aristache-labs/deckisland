@@ -4,10 +4,10 @@ using System.IO.Pipes;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
-using BrimDeck.Core;
+using DeckIsland.Core;
 using Microsoft.Win32.SafeHandles;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 // QQ Music's own transport publishes media changes. No window scanning, DLL injection,
 // player launch, account access, keyboard input, or memory offsets are needed for the pipe.
@@ -26,7 +26,7 @@ internal sealed class QqMediaConnection : IMediaPlayerConnection
     private long _processStart;
     private volatile bool _ready;
     private TaskCompletionSource? _handshake;
-    private readonly byte[] _login = Encoding.UTF8.GetBytes("{\"cmd\":\"login\",\"params\":{\"appName\":\"BrimDeck\",\"appKey\":\"BrimDeck\"}}\n");
+    private readonly byte[] _login = Encoding.UTF8.GetBytes("{\"cmd\":\"login\",\"params\":{\"appName\":\"DeckIsland\",\"appKey\":\"DeckIsland\"}}\n");
 
     public bool Ready => _ready;
     public DesktopMediaSnapshot? Snapshot => Volatile.Read(ref _snapshot);

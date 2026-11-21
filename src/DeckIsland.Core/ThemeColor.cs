@@ -1,6 +1,6 @@
 using System.Globalization;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // A color as the panel themes write it: "#RRGGBB" or "#AARRGGBB". Contrast follows WCAG 2.x: a translucent color is first
 // laid over the opaque background it is drawn on, and the ratio is taken between the two relative luminances.

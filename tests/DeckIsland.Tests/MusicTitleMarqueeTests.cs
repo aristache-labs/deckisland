@@ -1,4 +1,4 @@
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // The title on the open music page (W22): it rests when it fits the room beside the equalizer and scrolls, as the collapsed
 // row's title does, when it does not. The room follows the bar count (3 to 20), the type size and the panel width.

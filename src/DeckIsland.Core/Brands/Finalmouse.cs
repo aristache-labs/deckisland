@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Finalmouse on its own vendor id 0x361D: the dongle's vendor collection (usage page 0xFF00 usage 1), as Finalmouse's web
 // configurator XPanel talks to it. Requests are output report 0x04, 63 bytes: <length> <0x80 | command> <payload length>

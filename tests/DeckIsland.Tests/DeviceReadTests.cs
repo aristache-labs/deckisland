@@ -1,4 +1,4 @@
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // Which read a device is asked (DeviceReadBook): the kept read alone, a limited search otherwise, a check after many misses,
 // reads that went wrong never again, and all of it kept across runs and versions. Then the switches, the read runner's pieces

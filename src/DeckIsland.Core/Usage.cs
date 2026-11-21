@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 public sealed record Quota(string Label, double UsedPercent, DateTimeOffset? ResetAt, int? Minutes = null)
 {

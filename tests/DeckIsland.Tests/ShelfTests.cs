@@ -1,4 +1,4 @@
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // The clipboard and file transfer page's rules (Shelf, ShelfLayout): what kind a copy is, how the history is kept and cleared,
 // how files are added, how the page sizes itself, and that the settings and the saved data read back.
@@ -7,7 +7,7 @@ internal static class ShelfTests
     internal static void Run(Action<string, bool> check)
     {
         check("Shelf kinds: a single web address is a link, other text is not",
-            Shelf.Classify("https://github.com/MoFeng2223/BrimDeck/pull/175") == ClipKind.Link && Shelf.Classify("see https://example.com") == ClipKind.Text
+            Shelf.Classify("https://github.com/aristache-labs/deckisland/pull/175") == ClipKind.Link && Shelf.Classify("see https://example.com") == ClipKind.Text
             && Shelf.Classify("ftp://example.com/file") != ClipKind.Link);
         check("Shelf kinds: colors in hex and rgb() are colors",
             Shelf.Classify("#0A84FF") == ClipKind.Color && Shelf.Classify("#fff") == ClipKind.Color && Shelf.Classify("rgb(10, 132, 255)") == ClipKind.Color
@@ -41,7 +41,7 @@ internal static class ShelfTests
             data.Clips[0] == other && other.Copied == now.AddMinutes(1) && data.Clips.Count == 2 && first.Categories.SequenceEqual([category.Id]));
         Shelf.Recopied(data, first, now);
 
-        // The history goes when BrimDeck exits; phrases, 常用 and categories set to keep stay; a category not kept goes with the history.
+        // The history goes when DeckIsland exits; phrases, 常用 and categories set to keep stay; a category not kept goes with the history.
         var history = new ShelfData();
         var kept = new ShelfCategory { Name = "保留" };
         var passing = new ShelfCategory { Name = "临时", Keep = false };
@@ -383,7 +383,7 @@ internal static class ShelfTests
         check("Shelf rules: the built-in formats take the whole text",
             Is("name@example.com", TextFormat.Email) && !Is("write to name@example.com", TextFormat.Email)
             && Is("138 0013 8000", TextFormat.Phone) && Is("+8613800138000", TextFormat.Phone) && !Is("12800138000", TextFormat.Phone)
-            && Is(@"D:\Projects\BrimDeck", TextFormat.Path) && Is(@"\\server\share\a.txt", TextFormat.Path) && !Is("D:Projects", TextFormat.Path)
+            && Is(@"D:\Projects\DeckIsland", TextFormat.Path) && Is(@"\\server\share\a.txt", TextFormat.Path) && !Is("D:Projects", TextFormat.Path)
             && Is("192.168.1.10:8080", TextFormat.IpAddress) && Is("::1", TextFormat.IpAddress) && !Is("300.1.1.1", TextFormat.IpAddress) && !Is("1", TextFormat.IpAddress)
             && Is("1,280.50", TextFormat.Number) && Is("-42", TextFormat.Number) && !Is("12,34", TextFormat.Number)
             && Is("5e43f0f", TextFormat.Commit) && !Is("5e43f0", TextFormat.Commit) && !Is("hello12", TextFormat.Commit));

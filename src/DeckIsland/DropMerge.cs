@@ -1,9 +1,9 @@
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // Draws one frame of the dot sinking into still water (DotMotion.MergeAt). The figure is the dot and the surface melted into
 // one outline (DotMotion.MergeDistance), filled pixel by pixel on the device's own pixels with its edge smoothed across one

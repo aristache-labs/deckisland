@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Thunderobot (雷神) ML903 NearLink Se on its receiver 369B:0234, usage page 0xFFA0 usage 2, 64-byte input and output
 // reports. Output report 0xA0 with the device-info command 0x02, answered on input report 0xA1: A1 02 and then fields of a

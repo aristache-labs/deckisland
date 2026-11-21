@@ -1,5 +1,5 @@
 using System.Globalization;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 internal static class LanguageTests
 {

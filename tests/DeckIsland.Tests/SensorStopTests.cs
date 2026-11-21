@@ -1,4 +1,4 @@
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // The readings stopped because their driver did not answer (SensorStops): which device and which way of asking a stop holds for,
 // a mark left behind becoming a stop, the files read back, and the line the settings show.

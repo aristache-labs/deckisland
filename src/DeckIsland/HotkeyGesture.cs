@@ -1,7 +1,7 @@
 using System.Windows.Input;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // Reads and writes the saved text of a global hotkey (see HotkeyText) with WPF keys, and turns a combination into the values
 // RegisterHotKey takes. The main key's name is the Key enum name, with the friendlier of two names where WPF has both

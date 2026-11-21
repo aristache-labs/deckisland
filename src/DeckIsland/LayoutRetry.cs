@@ -1,6 +1,6 @@
 using System.Windows;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // Something that needs an element laid out and cannot be done yet is tried again after the next layout pass, not by posting the
 // try to the dispatcher again: an element under a collapsed parent keeps an invalid measure (and its old size) for as long as the

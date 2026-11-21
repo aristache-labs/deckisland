@@ -1,5 +1,5 @@
 using System.Text.Json;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 var passed = 0;
 void Check(string name, bool condition)
@@ -9,7 +9,7 @@ void Check(string name, bool condition)
 }
 JsonElement Json(string value) { using var doc = JsonDocument.Parse(value); return doc.RootElement.Clone(); }
 DeckSettings Only(params ProviderId[] ids) => new() { Apps = ids.Select(id => new AppEntry { Id = id }).ToList() };
-var root = Path.Combine(Path.GetTempPath(), "BrimDeck-Tests-" + Guid.NewGuid().ToString("N"));
+var root = Path.Combine(Path.GetTempPath(), "DeckIsland-Tests-" + Guid.NewGuid().ToString("N"));
 Directory.CreateDirectory(root);
 try
 {
@@ -43,7 +43,7 @@ try
     DaylightTests.Run(root, Check);
     PanelThemeEditorTests.Run(root, Check);
     PixelBlocksTests.Run(root, Check);
-    ThemeCoverageTests.Run(Check, Environment.GetEnvironmentVariable("BRIMDECK_THEME_REPORT") == "1");
+    ThemeCoverageTests.Run(Check, Environment.GetEnvironmentVariable("DECKISLAND_THEME_REPORT") == "1");
     DisplayLayoutTests.Run(Check);
     ProfileTests.Run(Check);
     MediaAppTargetTests.Run(Check);
@@ -464,7 +464,7 @@ try
         Check("The kept Claude reading keeps its sources without the text of the language of the day", !cacheText.Contains("账户配额") && !cacheText.Contains("桌面版"));
         quotaHandler.Override = (_, _) => new(System.Net.HttpStatusCode.TooManyRequests);
         File.WriteAllText(historyPath, History(usageClock.AddMinutes(10), 41, 8));
-        // A switch of account while BrimDeck was closed: the other account's reading is not shown as this one's.
+        // A switch of account while DeckIsland was closed: the other account's reading is not shown as this one's.
         desktopFixture.State = new(true, ClaudeDesktopCache.Parse(cacheFixture, "previous", now));
         using (var switched = new UsageService(desktopFixture, locations, quotaClient, () => usageClock.AddMinutes(5), quotaCache: quotaFile))
         {
@@ -502,7 +502,7 @@ try
         Check("A kept reading is not used while the current account cannot be told", ClaudeQuotaCache.Parse(keptText, usageClock.AddMinutes(1), "") is null);
         Check("A kept reading that names no account, as earlier versions wrote it, is not used",
             ClaudeQuotaCache.Parse(JsonSerializer.Serialize(keptReading), usageClock.AddMinutes(1), "current") is null);
-        // A reading kept while BrimDeck showed Chinese names its sources in English after a change of language and a restart.
+        // A reading kept while DeckIsland showed Chinese names its sources in English after a change of language and a restart.
         ClaudeQuotaSnapshot? readInEnglish;
         Loc.Use(Loc.English);
         try { readInEnglish = ClaudeQuotaCache.Parse(keptText, usageClock.AddMinutes(1), "current"); }
@@ -620,7 +620,7 @@ try
         Check("Offline Claude rows send no request and read no sign-in", quotaHandler.Requests.Count == 0 && desktopFixture.ReadCalls == readCalls);
         Check("Two offline Claude rows share one local reading", localResults.Count(s => s.Configurations.Contains(ProviderCatalog.LocalQuota)) == 1 &&
             localColumns.All(c => c.Quota.LiveQuota && c.Quota.IsStale && c.Quota.StatusLabel == "本地记录" && c.Quota.Quotas.Single(q => q.Minutes == 300).UsedPercent == 44));
-        Check("An offline Claude reading is timed when BrimDeck read it and names the time of the desktop record", localColumns.All(c => c.Quota.QuotaTime == usageClock &&
+        Check("An offline Claude reading is timed when DeckIsland read it and names the time of the desktop record", localColumns.All(c => c.Quota.QuotaTime == usageClock &&
             c.Quota.Status.StartsWith("来自 Claude 桌面版，最新记录于 ", StringComparison.Ordinal)));
 
         var mixed = ClaudeRows(true, false);
@@ -908,7 +908,7 @@ try
 finally
 {
     // A unique test-owned directory, verified before recursive cleanup.
-    if (Path.GetFullPath(root).StartsWith(Path.GetFullPath(Path.GetTempPath()), StringComparison.OrdinalIgnoreCase) && Path.GetFileName(root).StartsWith("BrimDeck-Tests-")) Directory.Delete(root, true);
+    if (Path.GetFullPath(root).StartsWith(Path.GetFullPath(Path.GetTempPath()), StringComparison.OrdinalIgnoreCase) && Path.GetFileName(root).StartsWith("DeckIsland-Tests-")) Directory.Delete(root, true);
 }
 
 sealed class CatalogHandler(string json) : HttpMessageHandler

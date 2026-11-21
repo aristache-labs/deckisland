@@ -1,6 +1,6 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
-// The custom date range picker's motion (BrimDeck.ModelDatePicker) as plain functions, so it can be checked without WPF. The
+// The custom date range picker's motion (DeckIsland.ModelDatePicker) as plain functions, so it can be checked without WPF. The
 // picker is built once and changes in place, as the system monitor page does: the start and end markers glide between days as
 // the monitor's sort pill glides, the range band eases in and out cell by cell, and a month change slides the grid in the
 // direction of travel as the panel's page switch does, the old month leaving before the new one arrives so two sets of figures

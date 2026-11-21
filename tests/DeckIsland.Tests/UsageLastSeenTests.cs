@@ -1,4 +1,4 @@
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // What a start shows from the previous run: the readings that are kept (and the ones that must not be), what is dropped as too old
 // or no longer enabled, how a damaged file is met, and that nothing of it can raise a level notice.

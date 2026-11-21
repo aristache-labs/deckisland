@@ -2,12 +2,12 @@ using System.Runtime;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Threading;
-using BrimDeck.Core;
-using BrimDeck.Native;
+using DeckIsland.Core;
+using DeckIsland.Native;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
-// Gives memory back while BrimDeck sits collapsed, as far as the memory mode asks (DeckSettings.MemoryMode, MemoryPlan).
+// Gives memory back while DeckIsland sits collapsed, as far as the memory mode asks (DeckSettings.MemoryMode, MemoryPlan).
 // Starting, reading the usage logs, building a page and loading covers take memory in bursts; afterwards the garbage collector
 // keeps the room it grew into, and Windows keeps every page ever touched in the working set, which is the figure Task Manager
 // shows: a panel that had only started sat at 130 MB, of which it used some 20 MB while collapsed. A clean-up compacts the heap,
@@ -28,7 +28,7 @@ public partial class App
     internal MemoryPlan MemoryPlan => MemoryPlan.For(Settings.MemoryMode);
 
     // Called whenever a panel collapses, when the settings window closes and when the mode changes: a use, which the clean-up waits
-    // a quiet stretch after. What BrimDeck does on its own (reading the usage every minute) is not one: counted as a use, it put
+    // a quiet stretch after. What DeckIsland does on its own (reading the usage every minute) is not one: counted as a use, it put
     // the balanced mode's clean-up off for good.
     internal void RequestTrim() { _usedAt = DateTime.UtcNow; ScheduleTrim(); }
 

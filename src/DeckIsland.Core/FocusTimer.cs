@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 public enum FocusPhase { Idle, Focus, Break }
 public enum FocusSound { None, Asterisk, Exclamation, Beep, Hand, Question }

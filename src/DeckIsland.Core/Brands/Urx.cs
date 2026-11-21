@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // The URX Core75 on its 2.4 GHz receiver, 36B0:3002 ("URX Core75 Wireless", measured in HaloBattery #245). That receiver id is
 // not URX's alone: mousedock (MIT) reads PMO's keyboards (WAVE 75, Aurora 80, P75, PMO80) behind 36B0:3002 with a protocol of

@@ -2,7 +2,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Security.Authentication;
 using System.Security.Cryptography;
-using BrimDeck.Core.ClipboardSync;
+using DeckIsland.Core.ClipboardSync;
 
 static class LanPairingTests
 {
@@ -55,14 +55,14 @@ static class LanPairingTests
         // A paired computer that comes back with another address is found again by the pair's id.
         byte[] secret = [.. Enumerable.Range(0, 32).Select(i => (byte)(i * 7))];
         Guid link = LanClipboardLink.LinkId(secret);
-        byte[] moved = LanDiscovery.Response(nonce, link, 50123, "BrimDeck", link: true);
+        byte[] moved = LanDiscovery.Response(nonce, link, 50123, "DeckIsland", link: true);
         var movedPeer = IPAddress.Parse("192.168.42.77");
         check("LAN finds its paired computer at a new address",
             LanDiscovery.ParseResponse(moved, nonce, movedPeer, source, link) is { Port: 50123 } found && found.Address.Equals(movedPeer));
         check("LAN pair id is stable for a pair and differs between pairs",
             link == LanClipboardLink.LinkId((byte[])secret.Clone()) && link != LanClipboardLink.LinkId(new byte[32]) && link != Guid.Empty);
         check("LAN ignores another pair's answer and answers of the other kind",
-            LanDiscovery.ParseResponse(LanDiscovery.Response(nonce, Guid.NewGuid(), 50123, "BrimDeck", link: true), nonce, movedPeer, source, link) is null &&
+            LanDiscovery.ParseResponse(LanDiscovery.Response(nonce, Guid.NewGuid(), 50123, "DeckIsland", link: true), nonce, movedPeer, source, link) is null &&
             LanDiscovery.ParseResponse(moved, nonce, movedPeer, source) is null &&
             LanDiscovery.ParseResponse(response, nonce, peer, source, session) is null);
         check("LAN discovery calculates the broadcast address from the subnet prefix",

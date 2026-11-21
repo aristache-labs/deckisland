@@ -1,9 +1,9 @@
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
-using BrimDeck.Native;
+using DeckIsland.Native;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // Clicking the album cover brings the playing application's window to the front, restoring it when minimized. Pressing
 // shrinks the cover slightly, as the transport buttons do. A player left with only a tray icon has no window to show, so

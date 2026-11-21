@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // HyperX Pulsefire mice, on HP's 0x03F0 and Kingston's 0x0951 (their headsets have readers of their own: Headsets,
 // Pushes), so only these products, each on its vendor collection, usage page 0xFF00 usage 1.

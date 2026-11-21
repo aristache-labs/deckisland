@@ -4,7 +4,7 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 public partial class MainWindow
 {
@@ -25,7 +25,7 @@ public partial class MainWindow
             _ => ("", 0, 0)
         };
         if (frames == 0) return null;
-        var sheet = new BitmapImage(new Uri($"pack://application:,,,/BrimDeck;component/Assets/Weather/{name}.png"));
+        var sheet = new BitmapImage(new Uri($"pack://application:,,,/DeckIsland;component/Assets/Weather/{name}.png"));
         CroppedBitmap Frame(int index)
         {
             const int cell = 72;

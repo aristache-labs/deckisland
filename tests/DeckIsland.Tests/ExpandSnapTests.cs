@@ -1,5 +1,5 @@
 using System.Text.RegularExpressions;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // The open page and the island's edges do not step a pixel to and fro in the tail of the opening (SurfaceSnap, SnappedAnimations.cs).
 //
@@ -199,10 +199,10 @@ internal static class ExpandSnapTests
         // The panel uses them: the island's width and its place animate through the snapped animations, and not through the plain
         // ones (a plain animation of either brings the stepping back).
         var source = new DirectoryInfo(AppContext.BaseDirectory);
-        while (source is not null && !File.Exists(Path.Combine(source.FullName, "BrimDeck.sln"))) source = source.Parent;
+        while (source is not null && !File.Exists(Path.Combine(source.FullName, "DeckIsland.sln"))) source = source.Parent;
         check("Expand snap: the source tree is found", source is not null);
         if (source is null) return;
-        string text = File.ReadAllText(Path.Combine(source.FullName, "src", "BrimDeck", "MainWindow.xaml.cs"));
+        string text = File.ReadAllText(Path.Combine(source.FullName, "src", "DeckIsland", "MainWindow.xaml.cs"));
         check("Expand snap: SetExpanded animates the island's width with SnappedWidthAnimation and its place with SnappedLeftAnimation",
             Uses(text));
         check("Expand snap: the finder rejects the plain animations the panel had",

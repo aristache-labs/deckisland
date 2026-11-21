@@ -6,9 +6,9 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 public sealed partial class SettingsWindow
 {
@@ -118,7 +118,7 @@ public sealed partial class SettingsWindow
         bool adding=model is null;
         var dialog=new Window {Title=adding?Loc.T("添加模型", "Add model"):Loc.T("编辑模型价格", "Edit model price"),Owner=this,Width=500,SizeToContent=SizeToContent.Height,ResizeMode=ResizeMode.NoResize,
             WindowStartupLocation=WindowStartupLocation.CenterOwner,Background=UI.Brush(Surface),Foreground=UI.Brush(TextPrimary),FontFamily=SettingsFont(UiFontRole.Panel),ShowInTaskbar=false};
-        dialog.Resources.MergedDictionaries.Add(new ResourceDictionary {Source=new Uri("/BrimDeck;component/SettingsResources.xaml",UriKind.Relative)});_palette.Apply(dialog.Resources);
+        dialog.Resources.MergedDictionaries.Add(new ResourceDictionary {Source=new Uri("/DeckIsland;component/SettingsResources.xaml",UriKind.Relative)});_palette.Apply(dialog.Resources);
         void UpdateDialogTheme()
         {
             _palette.Apply(dialog.Resources);dialog.Background=UI.Brush(Surface);dialog.Foreground=UI.Brush(TextPrimary);

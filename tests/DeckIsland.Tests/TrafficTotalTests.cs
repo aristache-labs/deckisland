@@ -1,5 +1,5 @@
 using System.Text.Json;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // The traffic over a period from Windows' record (TrafficPeriods: where each period starts, its name, the setting), the collapsed row's
 // readings that show it (DownloadTotal, UploadTotal), how it is written and spoken.

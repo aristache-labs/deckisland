@@ -1,6 +1,6 @@
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // Asks before KuGou's libcef.dll is changed (KugouInstall): what it adds, what happens to KuGou, and the debugging port, in a
 // few lines; the details are in the user documentation (ControlDialog).

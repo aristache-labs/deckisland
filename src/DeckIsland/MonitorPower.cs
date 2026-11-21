@@ -3,9 +3,9 @@ using System.Windows.Automation.Peers;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // What the page needs to build the power lines: the look of the theme, the low-battery threshold and whether this machine has a battery.
 // Quick: the battery as the system itself says it at once (BatteryProvider.Quick), shown until the sampler's first reading arrives.

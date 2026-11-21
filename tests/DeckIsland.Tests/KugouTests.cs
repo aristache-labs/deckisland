@@ -1,6 +1,6 @@
 using System.Net;
 using System.Text;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 internal static class KugouTests
 {

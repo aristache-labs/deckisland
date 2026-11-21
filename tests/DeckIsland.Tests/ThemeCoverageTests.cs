@@ -1,4 +1,4 @@
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // Theme coverage across every built-in theme (and "system", which resolves to dark or light): every token the app reads resolves,
 // and the color pairs the panel, its pop-ups and the notice window actually draw keep their contrast.
@@ -70,9 +70,9 @@ internal static class ThemeCoverageTests
     private static void SettingsPalette(Action<string, bool> check, bool report)
     {
         var source = new DirectoryInfo(AppContext.BaseDirectory);
-        while (source is not null && !File.Exists(Path.Combine(source.FullName, "BrimDeck.sln"))) source = source.Parent;
+        while (source is not null && !File.Exists(Path.Combine(source.FullName, "DeckIsland.sln"))) source = source.Parent;
         if (source is null) { check("The source tree is found for the settings palette", false); return; }
-        var text = File.ReadAllText(Path.Combine(source.FullName, "src", "BrimDeck", "SettingsPalette.cs"));
+        var text = File.ReadAllText(Path.Combine(source.FullName, "src", "DeckIsland", "SettingsPalette.cs"));
         var colors = new Dictionary<(string, bool), ThemeColor>();
         foreach (System.Text.RegularExpressions.Match match in System.Text.RegularExpressions.Regex.Matches(text,
             @"(?:public string (\w+) => |Brush\(""(\w+)"", )(?:Dark \? ""(#\w+)"" : ""(#\w+)""|""(#\w+)"")"))

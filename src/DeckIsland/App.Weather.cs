@@ -1,10 +1,10 @@
 using System.Net.Http;
 using System.Text.Json;
 using System.Windows.Threading;
-using BrimDeck.Core;
+using DeckIsland.Core;
 using Windows.Devices.Geolocation;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 public partial class App
 {

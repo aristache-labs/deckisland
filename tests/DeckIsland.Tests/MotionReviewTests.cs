@@ -1,4 +1,4 @@
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // The motion review's panel fixes that can be checked without WPF: the panel's closing and keyboard lengths (C1, C4), a move
 // turned back part way (F1, F2), and when the picture beneath a pop-up is taken (F7).

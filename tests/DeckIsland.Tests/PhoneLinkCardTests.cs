@@ -1,4 +1,4 @@
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // The Phone Link Start card: the shapes it takes while the phone is connected, charging, away, and while the app has
 // nothing to say. No phone and no Phone Link are needed to check the parse.

@@ -5,7 +5,7 @@ using System.Text.Json;
 using System.Xml;
 using System.Xml.Linq;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Lyrics for the Apple Music desktop app, from the lyrics it downloads to its web cache as each song starts.
 public sealed partial class LyricsService
@@ -61,7 +61,7 @@ public sealed partial class LyricsService
             // The song's start is known to about a second.
             ?? entries.Where(e => e.Length is null ? e.Offset >= -3 : SameLength(e) && e.Offset >= -window).MinBy(e => Math.Abs(e.Offset));
         // Where the song was when its track was reported, not now: lookups repeated later in the song keep the start seen then.
-        // Seen midway, as when BrimDeck starts, the song may have started earlier than estimated after a pause. A file as long
+        // Seen midway, as when DeckIsland starts, the song may have started earlier than estimated after a pause. A file as long
         // as the song is then taken however long before, but not one matched to another song, and not when two such files
         // differ: the song played before keeps its own file in the cache beside the other song's of the same length.
         if (found is null && track.Position(track.PositionAt).TotalSeconds > window)

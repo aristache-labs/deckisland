@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Where the island's left edge and width are while the panel opens, closes or changes size, kept on whole device pixels.
 //

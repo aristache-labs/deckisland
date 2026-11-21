@@ -1,8 +1,8 @@
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // The small answers to the pointer (motion-review F4, F5, F6, F8, F10, F11, F12): how a press is timed, when a control counts as
 // hovered, whether animations may run at all, when a changed glyph grows into place, and the stretch a width change is drawn
-// with. The windows take these numbers and decisions from BrimDeck.Core (Soft, Feedback, the music page).
+// with. The windows take these numbers and decisions from DeckIsland.Core (Soft, Feedback, the music page).
 internal static class PointerMotionTests
 {
     public static void Run(Action<string, bool> check)

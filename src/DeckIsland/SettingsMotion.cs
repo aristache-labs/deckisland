@@ -2,9 +2,9 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // The settings window's slider knobs and switches move in code, on the app's one rule (Soft.Enabled): their storyboards in
 // SettingsResources.xaml played even with animations off or in high contrast (motion-review F5). A knob grows a little under

@@ -1,4 +1,4 @@
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // The controller brands (Flydigi, GameSir, 8BitDo, NVIDIA SHIELD) and the XInput levels of the Xbox 360 wireless receiver:
 // which collections each takes and which it leaves, the requests, and the answers from the sources.
@@ -77,15 +77,15 @@ static class BrandsControllerTests
         // #191: the Vader 5 Pro on 37d7:2401 and the Vader 4 Pro on 045e:028e, both 'Xbox 360 Controller for Windows' to
         // Windows.Gaming.Input; the Vader 4's HID gamepad collection is 'Controller (Flydigi VADER4)'.
         check("Flydigi: Windows.Gaming.Input's 1000 of 1000 is a placeholder for Flydigi's pads only, the Vader 4 Pro known by its HID name",
-            BrimDeck.Core.Flydigi.WindowsPlaceholder(0x37D7, 0x2401, null, 1000, 1000)
-            && BrimDeck.Core.Flydigi.WindowsPlaceholder(0x045E, 0x028E, "Controller (Flydigi VADER4)", 1000, 1000)
-            && !BrimDeck.Core.Flydigi.WindowsPlaceholder(0x045E, 0x028E, "Controller (XBOX 360 For Windows)", 1000, 1000)
-            && !BrimDeck.Core.Flydigi.WindowsPlaceholder(0x045E, 0x028E, null, 1000, 1000)
-            && !BrimDeck.Core.Flydigi.WindowsPlaceholder(0x045E, 0x0B13, null, 1000, 1000)
-            && !BrimDeck.Core.Flydigi.WindowsPlaceholder(0x37D7, 0x2401, null, 640, 1000));
+            DeckIsland.Core.Flydigi.WindowsPlaceholder(0x37D7, 0x2401, null, 1000, 1000)
+            && DeckIsland.Core.Flydigi.WindowsPlaceholder(0x045E, 0x028E, "Controller (Flydigi VADER4)", 1000, 1000)
+            && !DeckIsland.Core.Flydigi.WindowsPlaceholder(0x045E, 0x028E, "Controller (XBOX 360 For Windows)", 1000, 1000)
+            && !DeckIsland.Core.Flydigi.WindowsPlaceholder(0x045E, 0x028E, null, 1000, 1000)
+            && !DeckIsland.Core.Flydigi.WindowsPlaceholder(0x045E, 0x0B13, null, 1000, 1000)
+            && !DeckIsland.Core.Flydigi.WindowsPlaceholder(0x37D7, 0x2401, null, 640, 1000));
         check("Flydigi: only the pads read over HID are left out of Windows.Gaming.Input's list",
-            BrimDeck.Core.Flydigi.ReadOverHid(0x37D7, 0x2401) && BrimDeck.Core.Flydigi.ReadOverHid(0x37D7, 0x2502)
-            && !BrimDeck.Core.Flydigi.ReadOverHid(0x37D7, 0x6001) && !BrimDeck.Core.Flydigi.ReadOverHid(0x045E, 0x028E));
+            DeckIsland.Core.Flydigi.ReadOverHid(0x37D7, 0x2401) && DeckIsland.Core.Flydigi.ReadOverHid(0x37D7, 0x2502)
+            && !DeckIsland.Core.Flydigi.ReadOverHid(0x37D7, 0x6001) && !DeckIsland.Core.Flydigi.ReadOverHid(0x045E, 0x028E));
     }
 
     private static void GameSir(Action<string, bool> check)
@@ -112,11 +112,11 @@ static class BrandsControllerTests
         var cable = (byte[])readme.Clone(); cable[19] = 0xFF;
         var empty = (byte[])readme.Clone(); empty[19] = 0x00;
         check("GameSir: the status answer's percent, FF on the cable charging without one; the request read back, a MAC of zeros, 0 and over 100 are none",
-            BrimDeck.Core.GameSir.Status(readme) == new BatteryRead(73) && BrimDeck.Core.GameSir.Status(cable) == new BatteryRead(null, true)
-            && BrimDeck.Core.GameSir.Status(BrandFamilies.Frame(65, 0x00, 0x01, 0x01, 0x00)) is null
-            && BrimDeck.Core.GameSir.Status(Frame(65, (19, 0x49))) is null && BrimDeck.Core.GameSir.Status(Frame(65, (1, 0x01), (19, 0x65))) is null
-            && BrimDeck.Core.GameSir.Status(Frame(65, (19, 0xFF))) is null && BrimDeck.Core.GameSir.Status(empty) is null
-            && BrimDeck.Core.GameSir.Status([0x01, .. readme[1..]]) is null && BrimDeck.Core.GameSir.Status(readme[..19]) is null);
+            DeckIsland.Core.GameSir.Status(readme) == new BatteryRead(73) && DeckIsland.Core.GameSir.Status(cable) == new BatteryRead(null, true)
+            && DeckIsland.Core.GameSir.Status(BrandFamilies.Frame(65, 0x00, 0x01, 0x01, 0x00)) is null
+            && DeckIsland.Core.GameSir.Status(Frame(65, (19, 0x49))) is null && DeckIsland.Core.GameSir.Status(Frame(65, (1, 0x01), (19, 0x65))) is null
+            && DeckIsland.Core.GameSir.Status(Frame(65, (19, 0xFF))) is null && DeckIsland.Core.GameSir.Status(empty) is null
+            && DeckIsland.Core.GameSir.Status([0x01, .. readme[1..]]) is null && DeckIsland.Core.GameSir.Status(readme[..19]) is null);
         // agnostos-t's G7 Pro 8K: 81 % off the dock, 87 % charging; the Tarantula CE's bytes are 27 and 28.
         var g7Way = g7!.Value.Ways[0];
         var tarantula = BrandFamilies.Find(Shape(0x3537, 0x103D, 0xFFF0, 0x40, input: 64, outputIds: [0x0F]))!.Value.Ways[0];
@@ -146,10 +146,10 @@ static class BrandsControllerTests
         // HaloBattery's Pro 3 report, read on hardware: 20 %.
         byte[] real = [0x04, 0x0F, 0x80, 0x7F, 0x7F, 0x80, 0, 0, 0, 0, 0, 0, 0x09, 0x60, 0x14, 0xD7, 0xFB, 0xF6, 0xFF, 0xAA, 0x0F, 0x09, 0, 0x05, 0, 0x10, 0, 0xD0, 0x8E, 0x75, 0x01, 0x66];
         check("8BitDo: report 0x04's byte 14, bit 7 charging; 0 is padding; other reports are none",
-            BrimDeck.Core.EightBitDo.Battery(real) == new BatteryRead(20) && BrimDeck.Core.EightBitDo.Battery([.. real[..14], 0x80 | 90]) == new BatteryRead(90, true)
-            && BrimDeck.Core.EightBitDo.Battery([.. real[..14], 0x00]) is null && BrimDeck.Core.EightBitDo.Battery([.. real[..14], 0x80]) is null
-            && BrimDeck.Core.EightBitDo.Battery([.. real[..14], 0x7F]) is null && BrimDeck.Core.EightBitDo.Battery([0x01, .. real[1..]]) is null
-            && BrimDeck.Core.EightBitDo.Battery([0x03, .. real[1..]]) is null && BrimDeck.Core.EightBitDo.Battery(real[..14]) is null);
+            DeckIsland.Core.EightBitDo.Battery(real) == new BatteryRead(20) && DeckIsland.Core.EightBitDo.Battery([.. real[..14], 0x80 | 90]) == new BatteryRead(90, true)
+            && DeckIsland.Core.EightBitDo.Battery([.. real[..14], 0x00]) is null && DeckIsland.Core.EightBitDo.Battery([.. real[..14], 0x80]) is null
+            && DeckIsland.Core.EightBitDo.Battery([.. real[..14], 0x7F]) is null && DeckIsland.Core.EightBitDo.Battery([0x01, .. real[1..]]) is null
+            && DeckIsland.Core.EightBitDo.Battery([0x03, .. real[1..]]) is null && DeckIsland.Core.EightBitDo.Battery(real[..14]) is null);
     }
 
     private static void Shield(Action<string, bool> check)
@@ -165,11 +165,11 @@ static class BrandsControllerTests
         // 03 07 00, voltages (average, thermistor, minimum, boot, present), then the percent at 14.
         var reply = Frame(65, (0, 0x03), (1, 0x07), (3, 0x0E), (4, 0x10), (6, 0x40), (7, 0x02), (8, 0xC4), (9, 0x0E), (10, 0x22), (11, 0x10), (12, 0x0E), (13, 0x10), (14, 73));
         check("SHIELD: the answer's percent at byte 14; another command's or another transaction's answer, the request read back, zeros and over 100 are none",
-            BrimDeck.Core.NvidiaShield.Battery(reply) == new BatteryRead(73) && BrimDeck.Core.NvidiaShield.Battery(reply[..33]) == new BatteryRead(73)
-            && BrimDeck.Core.NvidiaShield.Battery([0x03, 0x07, 0x05, .. reply[3..]]) is null
-            && BrimDeck.Core.NvidiaShield.Battery([0x03, 0x3A, .. reply[2..]]) is null && BrimDeck.Core.NvidiaShield.Battery(BrandFamilies.Frame(33, 0x04, 0x07, 0x00)) is null
-            && BrimDeck.Core.NvidiaShield.Battery(Frame(65, (0, 0x03), (1, 0x07))) is null && BrimDeck.Core.NvidiaShield.Battery([.. reply[..14], 101]) is null
-            && BrimDeck.Core.NvidiaShield.Battery(reply[..14]) is null);
+            DeckIsland.Core.NvidiaShield.Battery(reply) == new BatteryRead(73) && DeckIsland.Core.NvidiaShield.Battery(reply[..33]) == new BatteryRead(73)
+            && DeckIsland.Core.NvidiaShield.Battery([0x03, 0x07, 0x05, .. reply[3..]]) is null
+            && DeckIsland.Core.NvidiaShield.Battery([0x03, 0x3A, .. reply[2..]]) is null && DeckIsland.Core.NvidiaShield.Battery(BrandFamilies.Frame(33, 0x04, 0x07, 0x00)) is null
+            && DeckIsland.Core.NvidiaShield.Battery(Frame(65, (0, 0x03), (1, 0x07))) is null && DeckIsland.Core.NvidiaShield.Battery([.. reply[..14], 101]) is null
+            && DeckIsland.Core.NvidiaShield.Battery(reply[..14]) is null);
     }
 
     private static void XInput(Action<string, bool> check)

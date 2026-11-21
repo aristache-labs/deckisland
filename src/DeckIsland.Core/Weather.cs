@@ -2,7 +2,7 @@ using System.Globalization;
 using System.Net.Http.Json;
 using System.Text.Json;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 public sealed record WeatherCity(string Name, string? Region, string? Country, double Latitude, double Longitude)
 {

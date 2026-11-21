@@ -2,9 +2,9 @@ using System.IO;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Effects;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // The panel themes (see PanelThemes in the core library). A look (PanelLook) is a theme as drawn for one profile's settings: the
 // main look (PanelTheme.Main) is the current profile's, and every panel that shows another profile has a look of its own
@@ -13,7 +13,7 @@ namespace BrimDeck;
 // the settings window and anything not on a panel; a panel's code asks its own look.
 internal static class PanelTheme
 {
-    public static string Folder { get; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "BrimDeck", "themes");
+    public static string Folder { get; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "DeckIsland", "themes");
     // Every look's Generation is drawn from this one count, so a cache keyed on a generation never mistakes one look for another.
     // Declared before Main, which takes the first.
     private static int _generations;
@@ -27,13 +27,13 @@ internal static class PanelTheme
     internal static bool Loaded { get; private set; }
 
     // Changes made on the theme page and not yet saved, by theme id. They take effect only once saved: until then neither the
-    // panel nor the theme cards show them, and they last as long as BrimDeck runs. Each draft's palette, which the theme page
+    // panel nor the theme cards show them, and they last as long as DeckIsland runs. Each draft's palette, which the theme page
     // shows, is kept until the draft or the theme's file changes.
     private static readonly Dictionary<string, PanelThemeDraft> _drafts = new(StringComparer.Ordinal);
     private static readonly Dictionary<string, (PanelThemeFile File, int Version, PanelPalette Palette)> _draftPalettes = new(StringComparer.Ordinal);
 
     // Reads the folder again: at start, and from the settings page when it is built, on request and when a file changes.
-    // A folder that cannot be read leaves only the built-in themes; it must never keep BrimDeck from starting.
+    // A folder that cannot be read leaves only the built-in themes; it must never keep DeckIsland from starting.
     public static void Reload()
     {
         try { UserThemes = PanelThemes.LoadFolder(Folder); }

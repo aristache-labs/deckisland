@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // XIBERIA (西伯利亚) headsets on their 2.4 GHz receivers, vendor 0x36F9 (the receivers' own id; XIBERIA HUB binds any
 // receiver whose descriptor declares reports 0x55 and 0x41, not a product list, so every 36F9 vendor collection that declares

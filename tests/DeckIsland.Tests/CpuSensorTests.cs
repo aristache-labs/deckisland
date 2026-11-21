@@ -1,6 +1,6 @@
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-// The processor's own sensors as the sensor service decodes them, the reply it sends BrimDeck, and the hardware monitors read
+// The processor's own sensors as the sensor service decodes them, the reply it sends DeckIsland, and the hardware monitors read
 // when enhanced sensors are not set up.
 internal static class CpuSensorTests
 {

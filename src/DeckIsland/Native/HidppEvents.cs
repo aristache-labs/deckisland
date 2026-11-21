@@ -1,6 +1,6 @@
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 // Keeps the HID++ collections of the Logitech receivers and cabled devices open while the battery readers run, and hands on
 // every report a receiver or device sends unasked: a battery event (0x1004 or 0x1000 event 0, sent when the level or the
@@ -30,7 +30,7 @@ internal sealed class HidppEvents(Action<string, byte[]> received) : IDisposable
             if (!same) { _wanted = groups; _dirty = true; }
             if (_thread is null)
             {
-                _thread = new Thread(Run) { IsBackground = true, Priority = ThreadPriority.BelowNormal, Name = "BrimDeck HID++ events" };
+                _thread = new Thread(Run) { IsBackground = true, Priority = ThreadPriority.BelowNormal, Name = "DeckIsland HID++ events" };
                 _thread.Start();
             }
         }

@@ -1,8 +1,8 @@
 using System.Windows;
 using System.Windows.Media;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // The colors and shapes of the power and battery readings on the panel theme in use: the theme's look (PowerLooks) resolved against
 // the monitor's color scheme and the theme's tokens. Made once per theme and scheme.

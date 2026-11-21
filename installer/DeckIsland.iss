@@ -1,8 +1,8 @@
-﻿; BrimDeck installer. Build it with scripts/Publish-Release.ps1, which passes AppVersion and SourceDir.
+﻿; DeckIsland installer. Build it with scripts/Publish-Release.ps1, which passes AppVersion and SourceDir.
 ; The other defines exist so scripts/Test-AppUpdate.ps1 can install an isolated copy under its own identity.
 ;
 ; Install:   install mode (current user / all users) -> folder -> Install -> finished page with
-;            "create desktop shortcut" and "run BrimDeck". The Start menu shortcut is always created.
+;            "create desktop shortcut" and "run DeckIsland". The Start menu shortcut is always created.
 ; Update:    the installed version is saved and uninstalled (keeping data), then the new one is installed. When the
 ;            new one cannot be installed, the saved version is put back and, after an in-app update, started again.
 ; Uninstall: one dialog with an unchecked "delete user data" box -> uninstall -> "uninstalled" message.
@@ -24,25 +24,25 @@
   #define AppId "9D9AD6ED-CF62-4527-A587-6DBE94A74B9E"
 #endif
 #ifndef AppName
-  #define AppName "BrimDeck"
+  #define AppName "DeckIsland"
 #endif
 #ifndef MainExe
-  #define MainExe "BrimDeck.exe"
+  #define MainExe "DeckIsland.exe"
 #endif
 ; Settings, secrets and caches. Installing and updating never touch this folder; uninstalling deletes it on request.
 #ifndef DataDir
-  #define DataDir "{localappdata}\BrimDeck"
+  #define DataDir "{localappdata}\DeckIsland"
 #endif
-; The app holds Local\BrimDeck.Instance.<user name> while it runs (App.OnStartup).
+; The app holds Local\DeckIsland.Instance.<user name> while it runs (App.OnStartup).
 #ifndef MutexPrefix
-  #define MutexPrefix "BrimDeck.Instance."
+  #define MutexPrefix "DeckIsland.Instance."
 #endif
 ; Value the app writes under HKCU\...\Run for launch at startup (StartupRegistration).
 #ifndef RunValue
-  #define RunValue "BrimDeck"
+  #define RunValue "DeckIsland"
 #endif
 #ifndef AppUserModelId
-  #define AppUserModelId "BrimDeck.Desktop"
+  #define AppUserModelId "DeckIsland.Desktop"
 #endif
 #ifndef Compression
   #define Compression "lzma2/max"
@@ -57,11 +57,11 @@ AppId={{{#AppId}}
 AppName={#AppName}
 AppVersion={#AppVersion}
 AppVerName={#AppName} {#AppVersion}
-AppPublisher=MoFeng2223
-AppPublisherURL=https://github.com/MoFeng2223/BrimDeck
-AppSupportURL=https://github.com/MoFeng2223/BrimDeck/issues
-AppUpdatesURL=https://github.com/MoFeng2223/BrimDeck/releases
-AppCopyright=Copyright (C) MoFeng2223
+AppPublisher=aristache-labs
+AppPublisherURL=https://github.com/aristache-labs/deckisland
+AppSupportURL=https://github.com/aristache-labs/deckisland/issues
+AppUpdatesURL=https://github.com/aristache-labs/deckisland/releases
+AppCopyright=Copyright (C) aristache-labs
 VersionInfoVersion={#FileVersion}
 UninstallDisplayName={#AppName}
 UninstallDisplayIcon={app}\{#MainExe}
@@ -75,13 +75,13 @@ DefaultDirName={autopf}\{#AppName}
 DisableDirPage=no
 DisableReadyPage=yes
 DisableProgramGroupPage=yes
-; Match the Windows API target in BrimDeck.csproj (Windows 10 version 2004).
+; Match the Windows API target in DeckIsland.csproj (Windows 10 version 2004).
 MinVersion=10.0.19041
 SetupArchitecture=x64
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 WizardStyle=modern dynamic
-SetupIconFile=..\src\BrimDeck\Assets\BrimDeck.ico
+SetupIconFile=..\src\DeckIsland\Assets\DeckIsland.ico
 RestartApplications=no
 ; Writes "Setup Log <date> #nnn.txt" to %TEMP% for diagnosing failed installs and updates.
 SetupLogging=yes
@@ -142,7 +142,7 @@ Name: "{autodesktop}\{#AppName}"; Filename: "{app}\{#MainExe}"; AppUserModelID: 
 Name: "{autoprograms}\{#AppName}"; Filename: "{app}\{#MainExe}"; AppUserModelID: "{#AppUserModelId}"
 
 [Run]
-; An in-app update runs Setup silently with /RELAUNCH after BrimDeck has exited.
+; An in-app update runs Setup silently with /RELAUNCH after DeckIsland has exited.
 Filename: "{app}\{#MainExe}"; Flags: nowait runasoriginaluser; Check: RelaunchRequested
 
 [Code]
@@ -181,7 +181,7 @@ begin
 end;
 
 // Silent runs come from an in-app update, which starts Setup and then exits, so they wait for that exit.
-// Interactive runs ask the user to quit BrimDeck from the tray menu.
+// Interactive runs ask the user to quit DeckIsland from the tray menu.
 function EnsureAppClosed(Silent: Boolean): Boolean;
 var
   Waited: Integer;
@@ -248,7 +248,7 @@ begin
   end;
 end;
 
-// A typed or browsed folder always ends in \BrimDeck, whether or not it was written with a trailing / or \.
+// A typed or browsed folder always ends in \DeckIsland, whether or not it was written with a trailing / or \.
 function NormalizeAppDir(Dir: String): String;
 begin
   Result := Trim(Dir);
@@ -275,7 +275,7 @@ begin
 end;
 
 // Program Files and the user's profile (the default %LOCALAPPDATA%\Programs) already keep other users from changing the
-// program. A folder chosen elsewhere, such as D:\BrimDeck, inherits the rights of the drive's root, which on a second
+// program. A folder chosen elsewhere, such as D:\DeckIsland, inherits the rights of the drive's root, which on a second
 // drive let every signed-in user change files: anyone could replace the program that runs as this user at sign-in.
 function NeedsOwnRights(const Dir: String): Boolean;
 begin
@@ -313,8 +313,8 @@ function CanWrite(const Dir: String): Boolean;
 var
   Probe: String;
 begin
-  Probe := AddBackslash(Dir) + '.brimdeck-write-test';
-  Result := SaveStringToFile(Probe, 'BrimDeck', False) and DeleteFile(Probe);
+  Probe := AddBackslash(Dir) + '.deckisland-write-test';
+  Result := SaveStringToFile(Probe, 'DeckIsland', False) and DeleteFile(Probe);
 end;
 
 // Gives such a folder the rights of Program Files: it stops inheriting from its parent; SYSTEM and Administrators have full
@@ -377,7 +377,7 @@ end;
 // ----- Installed version -----
 
 // An update removes the installed version before the new files are copied. If the installation then fails or is
-// cancelled, Setup rolls back its own files and nothing of BrimDeck would be left. So the installed version is saved
+// cancelled, Setup rolls back its own files and nothing of DeckIsland would be left. So the installed version is saved
 // first: its folder is copied into BackupDir, a folder inside it that its uninstaller leaves alone, together with both
 // shortcuts; the values of its uninstall entry are kept in memory.
 
@@ -436,7 +436,7 @@ var
   Number: Cardinal;
   I: Integer;
 begin
-  BackupDir := AddBackslash(Dir) + '.brimdeck-previous';
+  BackupDir := AddBackslash(Dir) + '.deckisland-previous';
   // A copy left by a Setup that was ended before it finished.
   DelTree(BackupDir, True, True, True);
   Log('Saving the installed version to ' + BackupDir);
@@ -485,7 +485,7 @@ begin
 end;
 
 // Called on every exit. After an update that did not install the new version, the saved version is put back. An in-app
-// update ended BrimDeck to run Setup, so it is started again, and the note left beside the downloaded installer has it
+// update ended DeckIsland to run Setup, so it is started again, and the note left beside the downloaded installer has it
 // say that the update failed (AppUpdates).
 procedure DeinitializeSetup;
 var
@@ -553,7 +553,7 @@ begin
   end;
 end;
 
-// Keeps the desktop shortcut when checked and starts BrimDeck when requested. The Start menu shortcut always stays.
+// Keeps the desktop shortcut when checked and starts DeckIsland when requested. The Start menu shortcut always stays.
 // Silent installs (in-app updates) keep the desktop shortcut only if it existed before the update.
 procedure FinishShortcuts;
 var
@@ -678,13 +678,13 @@ begin
     RegDeleteValue(HKCU, 'Software\Microsoft\Windows\CurrentVersion\Run', '{#RunValue}');
 end;
 
-// Enhanced sensors set up a service in Program Files (BrimDeck's SensorSetup); it goes with BrimDeck, removed by BrimDeck itself
+// Enhanced sensors set up a service in Program Files (DeckIsland's SensorSetup); it goes with DeckIsland, removed by DeckIsland itself
 // with one administrator prompt. PawnIO is the user's own install and stays.
 procedure RemoveSensorService;
 var
   Code: Integer;
 begin
-  if RegKeyExists(HKLM, 'SYSTEM\CurrentControlSet\Services\BrimDeckSensors') and FileExists(ExpandConstant('{app}\{#MainExe}')) then
+  if RegKeyExists(HKLM, 'SYSTEM\CurrentControlSet\Services\DeckIslandSensors') and FileExists(ExpandConstant('{app}\{#MainExe}')) then
     ShellExec('runas', ExpandConstant('{app}\{#MainExe}'), '--sensor-service remove', '', SW_HIDE, ewWaitUntilTerminated, Code);
 end;
 

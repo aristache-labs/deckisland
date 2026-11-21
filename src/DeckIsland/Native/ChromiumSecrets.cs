@@ -1,8 +1,8 @@
 using System.IO;
 using System.Security.Cryptography;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 // Electron desktop apps (Claude, Grok Bot, Cursor) store secrets with Chromium's os_crypt: the AES key sits in the profile's
 // Local State, wrapped with DPAPI for the current user, and each value is "v10", a 12-byte nonce, the AES-256-GCM

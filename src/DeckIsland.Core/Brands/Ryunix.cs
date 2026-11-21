@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Ryunix Kyu Pro MX1, the Amkette XS series and the EWEADN X23 Pro, one OEM firmware on Elan's shared vendor id 0x04F3, so
 // only its products: 026F the receiver, 026E the cable (026D is the XS's Bluetooth id, whose collections are not opened).

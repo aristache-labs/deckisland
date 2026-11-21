@@ -1,21 +1,21 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using BrimDeck.Core;
-using BrimDeck.Native;
+using DeckIsland.Core;
+using DeckIsland.Native;
 
 // The frame rate of the program in front, from Windows' frame events: where the user may read them (Performance Log Users, or
 // elevated) the session starts and a reading after the first names a program; elsewhere the session is refused and there is no
 // reading. Either way the first reading only starts the count, and nothing is read once not wanted. Where the events are read,
-// the session is this process's own, a session left by a BrimDeck that has ended is stopped, and a session stopped from outside
+// the session is this process's own, a session left by a DeckIsland that has ended is stopped, and a session stopped from outside
 // is started again.
 internal static class FrameRateChecks
 {
-    private const string Prefix = "BrimDeck Frames";
+    private const string Prefix = "DeckIsland Frames";
 
     public static void Run(Action<string, bool> check)
     {
         static double Now() => Stopwatch.GetTimestamp() / (double)Stopwatch.Frequency;
-        // A session as a BrimDeck that ended without stopping it leaves one (no process has this number).
+        // A session as a DeckIsland that ended without stopping it leaves one (no process has this number).
         string left = $"{Prefix} {int.MaxValue}";
         bool leftStarted = Start(left);
         using var rates = new FrameRates();
@@ -23,7 +23,7 @@ internal static class FrameRateChecks
         bool traced = rates.State == SensorState.Found;
         Console.WriteLine(traced ? "  frame events: read" : "  frame events: refused here (not in Performance Log Users and not elevated)");
         check("frame rates: the events are read, or refused", traced || rates.State == SensorState.None);
-        if (leftStarted) check("frame rates: a session left by a BrimDeck that has ended is stopped", !Exists(left));
+        if (leftStarted) check("frame rates: a session left by a DeckIsland that has ended is stopped", !Exists(left));
         else Stop(left);
         string own = $"{Prefix} {Environment.ProcessId}";
         if (traced) check("frame rates: the session is named for this process", Exists(own));

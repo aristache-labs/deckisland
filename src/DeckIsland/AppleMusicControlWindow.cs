@@ -1,6 +1,6 @@
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // Explains Apple Music's full control before it is enabled: what it adds, how it works, and what it does to the
 // Apple Music window (ControlDialog).
@@ -8,8 +8,8 @@ internal sealed class AppleMusicControlWindow : ControlDialog
 {
     public AppleMusicControlWindow(SettingsTheme theme) : base(theme, Loc.T("启用 Apple Music 完整控制", "Enable full control of Apple Music"))
     {
-        Add(Loc.T("Apple Music 只向 Windows 提供播放、暂停和切换歌曲的控制。启用完整控制后，BrimDeck 会通过 Windows 的界面自动化功能，直接操作 Apple Music 窗口中的按钮和进度条，在面板中增加以下三项功能：",
-            "Apple Music only lets Windows play, pause and change songs. With full control, BrimDeck uses the UI Automation feature of Windows to operate the buttons and the progress bar in the Apple Music window directly, and adds three functions to the panel:"), 10);
+        Add(Loc.T("Apple Music 只向 Windows 提供播放、暂停和切换歌曲的控制。启用完整控制后，DeckIsland 会通过 Windows 的界面自动化功能，直接操作 Apple Music 窗口中的按钮和进度条，在面板中增加以下三项功能：",
+            "Apple Music only lets Windows play, pause and change songs. With full control, DeckIsland uses the UI Automation feature of Windows to operate the buttons and the progress bar in the Apple Music window directly, and adds three functions to the panel:"), 10);
         Add(Loc.T("•  拖动播放进度\n•  开启或关闭随机播放\n•  切换重复模式：关闭、全部重复、单曲重复",
             "•  Drag the playback position\n•  Turn shuffle on or off\n•  Switch the repeat mode: off, repeat all, repeat one"), 8, color: Palette.Primary);
 

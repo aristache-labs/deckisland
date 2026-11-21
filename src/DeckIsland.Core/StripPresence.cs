@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // How present each reading of the collapsed row is, 0 to 1, easing as readings come and go. Owned by the panel, so that it
 // outlives the row, which is built again whenever its width changes.

@@ -1,7 +1,7 @@
 using System.Text;
 using System.Text.Json;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // One reading of the Grok Bot weekly allowance. UsedPercent is null when the account draws on a pooled enterprise
 // allowance, which has no share of its own to show. ReadAt is when the desktop app took a cached reading.

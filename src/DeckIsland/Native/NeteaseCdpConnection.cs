@@ -7,16 +7,16 @@ using System.Net.WebSockets;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 internal sealed partial class NeteaseCdpConnection(NeteaseProcess process) : IMediaPlayerConnection
 {
     private readonly CancellationTokenSource _stop = new();
     private readonly SemaphoreSlim _send = new(1, 1);
     private readonly ConcurrentDictionary<int, TaskCompletionSource<JsonElement>> _requests = new();
-    private readonly string _binding = "__brimDeckMediaPush_" + Guid.NewGuid().ToString("N");
+    private readonly string _binding = "__deckIslandMediaPush_" + Guid.NewGuid().ToString("N");
     private ClientWebSocket? _socket;
     private Task? _worker;
     private DesktopMediaSnapshot? _snapshot;
@@ -88,7 +88,7 @@ internal sealed partial class NeteaseCdpConnection(NeteaseProcess process) : IMe
             {
                 await RequestAsync("Runtime.enable", new { }, token).ConfigureAwait(false);
                 await RequestAsync("Runtime.addBinding", new { name = _binding }, token).ConfigureAwait(false);
-                var reply = await EvaluateAsync(BridgeScript.Replace("const binding = '__brimDeckMediaPush';", $"const binding = '{_binding}';", StringComparison.Ordinal), token).ConfigureAwait(false);
+                var reply = await EvaluateAsync(BridgeScript.Replace("const binding = '__deckIslandMediaPush';", $"const binding = '{_binding}';", StringComparison.Ordinal), token).ConfigureAwait(false);
                 if (!Result(reply, out var result) || !Boolean(result, "ready")) continue;
                 if (result.TryGetProperty("snapshot", out var snapshot)) Accept(snapshot);
                 _ready = true; Error = null; Notify();

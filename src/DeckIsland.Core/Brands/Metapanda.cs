@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Metaphyuni's (玄派) Metapanda (玄熊猫) P1 on its NearLink receiver 369B:00B3 (product string "MPMouseNearLink"), usage page
 // 0xFFA0 usage 2, 64-byte input and output reports: the collection, report ids and vendor of Thunderobot's ML903
@@ -16,7 +16,7 @@ namespace BrimDeck.Core;
 // output report is asked both commands, this one (once a pass) and the ML903's device info, and keeps the one it answers
 // (DeviceReadBook). Neither is measured on such a product, and what it is comes from its product string alone. There the
 // zeros are no answer rather than a mouse asleep, so a product that sends them without speaking this command is not held
-// to it; one whose mouse is off at every try stays unread until it is plugged in again or BrimDeck starts again.
+// to it; one whose mouse is off at every try stays unread until it is plugged in again or DeckIsland starts again.
 [BrandFamilies]
 public static class MetapandaMice
 {

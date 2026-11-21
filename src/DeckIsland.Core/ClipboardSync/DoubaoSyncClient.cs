@@ -3,11 +3,11 @@ using System.Text;
 using System.Text.Json;
 using ZstdSharp;
 
-namespace BrimDeck.Core.ClipboardSync;
+namespace DeckIsland.Core.ClipboardSync;
 
 public sealed class DoubaoIdentity
 {
-    public string DeviceName { get; set; } = "BrimDeck " + Environment.MachineName;
+    public string DeviceName { get; set; } = "DeckIsland " + Environment.MachineName;
     public string DeviceId { get; set; } = "";
     public Dictionary<string, string> Cookies { get; set; } = [];
 }

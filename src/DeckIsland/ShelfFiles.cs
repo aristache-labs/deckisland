@@ -6,7 +6,7 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // What the file transfer shows about a file: the icon and type name the Explorer shows (SHGetFileInfo, as the monitor page's
 // process list does), whether the file is still there, its size, and for a folder the items in it and, counted in the background,
@@ -43,7 +43,7 @@ internal static class ShelfFiles
                     Interlocked.Decrement(ref _pending);
                     Raise();
                 }
-            }) { IsBackground = true, Name = "BrimDeck file icons" };
+            }) { IsBackground = true, Name = "DeckIsland file icons" };
             thread.SetApartmentState(ApartmentState.STA);
             thread.Start();
         }

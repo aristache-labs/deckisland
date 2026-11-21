@@ -1,8 +1,8 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // The brands whose battery query is two steps, a feature report written and then its reply read back, and the vendor programs
 // that talk to the same devices. Nothing makes the two steps atomic: while the vendor's own program runs, it can write its
-// request between ours and the reply, and each side reads the other's answer. So BrimDeck stands aside from such a brand while
+// request between ours and the reply, and each side reads the other's answer. So DeckIsland stands aside from such a brand while
 // its software runs, and reads it again once that has closed. Whether it runs is looked up in one process snapshot per pass,
 // and only when a device of such a brand is plugged in (HidBatteries.Scan).
 // Razer is not among them: Synapse 4's background parts run whenever it is installed, so standing aside left no Razer device

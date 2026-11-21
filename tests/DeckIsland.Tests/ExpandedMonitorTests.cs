@@ -1,6 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // The expanded page's table of items and its layout (ExpandedMonitor, ExpandedLayout): the table's migration from the four old
 // switches, the layout against the page as it was (MonitorLayout) when everything it showed is chosen, and properties of the layout

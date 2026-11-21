@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Keeps a ranked list from reshuffling on every sample. Ported from ftop's SteadyRanking by Nongfsq
 // (https://github.com/Nongfsq/ftop, MIT License; see ThirdPartyNotices.txt).

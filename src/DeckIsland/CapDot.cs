@@ -4,7 +4,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // A dot before a line of text, centered on the text's capitals as the screen draws them. Layout and glyphs both snap to
 // device pixels, by amounts that change with the monitor's scale and the panel's, so no fixed offset centers the dot at

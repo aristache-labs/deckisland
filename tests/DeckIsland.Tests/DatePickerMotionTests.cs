@@ -1,4 +1,4 @@
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // The date range picker's motion (DatePickerMotion): where days lie in a month's grid, how the markers reach a new day, the
 // range band, the validation message, the month change's direction and hand-over, and the durations from settings.

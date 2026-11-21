@@ -1,6 +1,6 @@
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // What confirming does: restart a player in normal mode, start one that is not running,
 // restart one that already has full control so the connection is made again, or switch on
@@ -10,8 +10,8 @@ internal enum NeteaseControlAction { Restart, Start, Reconnect, Auto }
 // Asks before NetEase Cloud Music is restarted with its debugging port (ControlDialog).
 internal sealed class NeteaseControlWindow : ControlDialog
 {
-    internal static string SecurityNotice => Loc.T("完整控制依赖网易云的调试端口。端口打开期间，这台电脑上的其他程序和浏览器网页有可能借此操控网易云，读取它显示的内容和登录状态。端口会一直开到网易云以普通方式重新启动为止，退出 BrimDeck 或连接失败都不会关闭它。",
-        "Full control relies on the debugging port of NetEase Cloud Music. While the port is open, other programs and web pages on this PC could use it to control NetEase Cloud Music and read what it shows and its sign-in state. The port stays open until NetEase Cloud Music is started again the normal way; quitting BrimDeck or a failed connection does not close it.");
+    internal static string SecurityNotice => Loc.T("完整控制依赖网易云的调试端口。端口打开期间，这台电脑上的其他程序和浏览器网页有可能借此操控网易云，读取它显示的内容和登录状态。端口会一直开到网易云以普通方式重新启动为止，退出 DeckIsland 或连接失败都不会关闭它。",
+        "Full control relies on the debugging port of NetEase Cloud Music. While the port is open, other programs and web pages on this PC could use it to control NetEase Cloud Music and read what it shows and its sign-in state. The port stays open until NetEase Cloud Music is started again the normal way; quitting DeckIsland or a failed connection does not close it.");
 
     public NeteaseControlWindow(SettingsTheme theme, NeteaseControlAction action = NeteaseControlAction.Restart)
         : base(theme, action == NeteaseControlAction.Auto ? Loc.T("自动启用网易云完整控制", "Enable full control of NetEase Cloud Music automatically") : Loc.T("启用网易云完整控制", "Enable full control of NetEase Cloud Music"))
@@ -21,12 +21,12 @@ internal sealed class NeteaseControlWindow : ControlDialog
         {
             NeteaseControlAction.Start => Loc.T("启用完整控制后，可以在面板里拖动网易云音乐的进度、切换随机与循环播放，进度也会实时同步。",
                 "With full control, you can drag the playback position of NetEase Cloud Music in the panel and switch shuffle and repeat, and the position stays in sync."),
-            NeteaseControlAction.Auto => Loc.T("打开后，每当网易云音乐以普通方式启动，BrimDeck 会自动将它重启为完整控制。完整控制下，可以在面板里拖动进度、切换随机与循环播放，进度也会实时同步。",
-                "Once this is on, whenever NetEase Cloud Music is started the normal way, BrimDeck restarts it with full control. With full control, you can drag the playback position in the panel and switch shuffle and repeat, and the position stays in sync."),
+            NeteaseControlAction.Auto => Loc.T("打开后，每当网易云音乐以普通方式启动，DeckIsland 会自动将它重启为完整控制。完整控制下，可以在面板里拖动进度、切换随机与循环播放，进度也会实时同步。",
+                "Once this is on, whenever NetEase Cloud Music is started the normal way, DeckIsland restarts it with full control. With full control, you can drag the playback position in the panel and switch shuffle and repeat, and the position stays in sync."),
             NeteaseControlAction.Reconnect => Loc.T("网易云音乐已处于完整控制。继续操作会重新启动网易云音乐，并重新建立连接。",
                 "NetEase Cloud Music already has full control. Continuing restarts NetEase Cloud Music and connects to it again."),
-            _ => Loc.T("BrimDeck 现在只能读取网易云正在播放的内容。启用完整控制后，可以在面板里拖动进度、切换随机与循环播放，进度也会实时同步。",
-                "BrimDeck can now only read what NetEase Cloud Music is playing. With full control, you can drag the playback position in the panel and switch shuffle and repeat, and the position stays in sync.")
+            _ => Loc.T("DeckIsland 现在只能读取网易云正在播放的内容。启用完整控制后，可以在面板里拖动进度、切换随机与循环播放，进度也会实时同步。",
+                "DeckIsland can now only read what NetEase Cloud Music is playing. With full control, you can drag the playback position in the panel and switch shuffle and repeat, and the position stays in sync.")
         }, 10);
 
         Add(auto ? Loc.T("网易云每次启动后会重启一次", "NetEase Cloud Music restarts once each time it starts")

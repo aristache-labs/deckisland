@@ -2,13 +2,13 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 // Whether this user may read the frame events FrameRates reads, and the grant. Windows lets the members of its Performance Log
 // Users group (S-1-5-32-559) and elevated processes start an event tracing session; adding the user to the group takes
-// administrator rights, so BrimDeck starts itself elevated for that alone (a UAC prompt). The user's own SID is passed on the
+// administrator rights, so DeckIsland starts itself elevated for that alone (a UAC prompt). The user's own SID is passed on the
 // command line: a standard user's prompt asks for an administrator's password, and the elevated copy then runs as that account.
 // Windows reads a user's groups at sign-in, so a user added reads frame rates from the next sign-in (SignInAgain until then).
 internal enum FrameAccess { Allowed, SignInAgain, Missing }
@@ -22,7 +22,7 @@ internal static class FramePermission
     {
         using var identity = WindowsIdentity.GetCurrent();
         var principal = new WindowsPrincipal(identity);
-        // An administrator's group is for denying only until elevated, so it counts only in an elevated BrimDeck.
+        // An administrator's group is for denying only until elevated, so it counts only in an elevated DeckIsland.
         if (principal.IsInRole(WindowsBuiltInRole.Administrator) || principal.IsInRole(Group)) return FrameAccess.Allowed;
         return identity.User is { } user && Members().Contains(user) ? FrameAccess.SignInAgain : FrameAccess.Missing;
     }

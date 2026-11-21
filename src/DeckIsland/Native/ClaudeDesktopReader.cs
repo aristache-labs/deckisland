@@ -1,9 +1,9 @@
 using System.IO;
 using System.Security.Cryptography;
 using System.Text.Json;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 internal static class ClaudeDesktopReader
 {
@@ -17,7 +17,7 @@ internal static class ClaudeDesktopReader
             {
                 var configPath = Path.Combine(profile, "config.json");
                 if (!File.Exists(configPath)) continue;
-                using var config = BrimDeck.Core.SharedFile.Parse(configPath);
+                using var config = DeckIsland.Core.SharedFile.Parse(configPath);
                 var root = config.RootElement;
                 // V2 is authoritative, including cleared entries after sign-out.
                 var encrypted = root.TryGetProperty("oauth:tokenCacheV2", out var v2)

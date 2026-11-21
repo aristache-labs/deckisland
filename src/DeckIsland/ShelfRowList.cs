@@ -1,7 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // A list of the clipboard and file transfer page that builds and lays out only the rows on screen and a few either side
 // (VirtualizingStackPanel), and builds the others as they scroll into view. A page with many entries laid out every row again at

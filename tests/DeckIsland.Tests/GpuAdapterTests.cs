@@ -1,4 +1,4 @@
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // Every graphics adapter read on its own, and the one the monitor shows (issue #80). The instance names and ids are those of a
 // laptop with an Intel integrated GPU and an NVIDIA RTX 4060 Laptop GPU.

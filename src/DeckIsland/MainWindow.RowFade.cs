@@ -3,9 +3,9 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // A reading switched on or off in the settings changes how many readings the collapsed row holds, and the row built for the new
 // choice appeared at once, readings and all, over a surface that was still moving to its new width. The row as it was is kept as a

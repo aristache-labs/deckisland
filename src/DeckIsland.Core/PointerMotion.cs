@@ -1,7 +1,7 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // The numbers and decisions behind the small answers to the pointer (motion-review F4, F10, F11, F12): how a press is timed,
-// when something counts as hovered, when a changed glyph grows into place. The windows (BrimDeck.Soft, Feedback, the music
+// when something counts as hovered, when a changed glyph grows into place. The windows (DeckIsland.Soft, Feedback, the music
 // page) take them from here so they can be checked without WPF.
 public static class PressFeedback
 {
@@ -21,7 +21,7 @@ public static class PressFeedback
     public static int ScaleLength(bool pressed) => pressed ? Down : Up;
 }
 
-// Whether animations may run at all: BrimDeck's own setting, Windows' "animation effects", and never in high contrast. The one
+// Whether animations may run at all: DeckIsland's own setting, Windows' "animation effects", and never in high contrast. The one
 // rule for every animation in the app (motion-review F5, F6).
 public static class MotionConditions
 {

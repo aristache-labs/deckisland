@@ -2,13 +2,13 @@ using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Media;
-using BrimDeck.Native;
+using DeckIsland.Native;
 
 internal static class CaptureChecks
 {
     public static void Run(Action<string, bool> check)
     {
-        var window = new Window { Title = "BrimDeck capture test", Width = 160, Height = 80,
+        var window = new Window { Title = "DeckIsland capture test", Width = 160, Height = 80,
             WindowStyle = WindowStyle.None, AllowsTransparency = true, Background = Brushes.Black,
             ShowInTaskbar = false, ShowActivated = false, Topmost = true };
         window.SourceInitialized += (_, _) => WindowsHost.ConfigureOverlay(window, false);

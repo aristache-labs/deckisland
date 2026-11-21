@@ -1,5 +1,5 @@
 using System.Text.Json;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // The background transparency setting (DeckSettings.SurfaceTransparency): opaque by default and in files saved before it existed,
 // and held to 0 to MaxSurfaceTransparency percent whatever a hand-edited file says.

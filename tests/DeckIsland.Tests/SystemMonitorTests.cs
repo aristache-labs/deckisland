@@ -1,7 +1,7 @@
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // The system monitor's pure logic. The SteadyRanking cases are ported from ftop's tests by Nongfsq
-// (https://github.com/Nongfsq/ftop, MIT License; see src/BrimDeck/ThirdPartyNotices.txt).
+// (https://github.com/Nongfsq/ftop, MIT License; see src/DeckIsland/ThirdPartyNotices.txt).
 static class SystemMonitorTests
 {
     public static void Run(Action<string, bool> check)

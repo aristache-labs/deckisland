@@ -1,7 +1,7 @@
 using System.Buffers.Binary;
 using System.Text;
 
-namespace BrimDeck.Core.ClipboardSync;
+namespace DeckIsland.Core.ClipboardSync;
 
 // Only the protobuf wire types used by the WeType control protocol. Unknown fields are retained,
 // lengths are bounded before slicing, and absent status fields are never treated as success.

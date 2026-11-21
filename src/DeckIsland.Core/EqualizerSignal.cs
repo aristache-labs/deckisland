@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Turns a player's audio into the levels of the level bars, in one of two ways (EqualizerMode, asked for by Fill):
 //

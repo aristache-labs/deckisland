@@ -1,9 +1,9 @@
 using System.Windows;
 using System.Windows.Media;
 using Microsoft.Win32;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // Settings own their palette; the floating usage panel deliberately keeps its existing visual design.
 internal sealed record SettingsPalette(bool Dark)

@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\BrimDeck.Core\BrimDeck.Core.csproj" />
+    <ProjectReference Include="..\DeckIsland.Core\DeckIsland.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -19,13 +19,13 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <StartupObject>BrimDeck.Program</StartupObject>
+    <StartupObject>DeckIsland.Program</StartupObject>
     <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <ApplicationIcon>Assets\BrimDeck.ico</ApplicationIcon>
+    <ApplicationIcon>Assets\DeckIsland.ico</ApplicationIcon>
     <Platforms>x64</Platforms>
     <PlatformTarget>x64</PlatformTarget>
     <!-- A panel that mostly sits idle: no background collection thread, and a collector that compacts and returns memory rather
@@ -45,7 +45,7 @@
   <Import Project="ReleaseVersion.targets" />
 
   <!-- The release build publishes the sensor service first and passes its SHA-256 here: the copy downloaded when the user turns
-       enhanced sensors on must match it (Native.SensorSetup). A build without it uses BrimDeck.Sensors.exe beside BrimDeck.exe. -->
+       enhanced sensors on must match it (Native.SensorSetup). A build without it uses DeckIsland.Sensors.exe beside DeckIsland.exe. -->
   <ItemGroup Condition="'$(SensorsSha256)' != ''">
     <AssemblyMetadata Include="SensorsSha256" Value="$(SensorsSha256)" />
   </ItemGroup>

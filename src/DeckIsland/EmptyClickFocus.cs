@@ -3,7 +3,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // Clicking anything that is not a control takes focus off a text field, as elsewhere in Windows. WPF leaves the
 // field focused otherwise, since panels and scroll areas do not take focus. The holder is a focusable frame that

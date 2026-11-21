@@ -1,4 +1,4 @@
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // How the dot boots and powers off (MainWindow.Lifecycle.cs).
 internal static class DotMotionTests

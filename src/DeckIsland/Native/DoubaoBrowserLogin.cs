@@ -3,10 +3,10 @@ using System.IO;
 using System.Net.WebSockets;
 using System.Security.Cryptography;
 using System.Text.Json;
-using BrimDeck.Core;
-using BrimDeck.Core.ClipboardSync;
+using DeckIsland.Core;
+using DeckIsland.Core.ClipboardSync;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 internal sealed class DoubaoSignInWindowClosedException()
     : IOException(Loc.T("登录窗口已关闭。", "The sign-in window was closed."));

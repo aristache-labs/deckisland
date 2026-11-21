@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // The pages of the open panel, in one place: their order in the page switch, whether each is shown, the size each asks for,
 // and which page the panel falls back to. The panel and the settings window ask here instead of comparing pages themselves.
@@ -80,7 +80,7 @@ public static class DeckPages
     }
 }
 
-// The scale BrimDeck is drawn at (DeckSettings.PanelScale), in percent: one of Choices; any other value is the default.
+// The scale DeckIsland is drawn at (DeckSettings.PanelScale), in percent: one of Choices; any other value is the default.
 public static class PanelScales
 {
     public const int Default = 100;

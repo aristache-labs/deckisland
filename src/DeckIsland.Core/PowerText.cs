@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // The power tooltip as a table: its column names, its rows (a label and a cell per column), whether the first row is a sum (the whole
 // machine ≈ the parts added up), and notes under it.

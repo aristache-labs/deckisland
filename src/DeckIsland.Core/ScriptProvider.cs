@@ -5,7 +5,7 @@ using System.Text;
 using System.Text.Json;
 using Jint;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 public interface IProviderSecrets
 {
@@ -232,7 +232,7 @@ internal sealed class ScriptSession(HttpClient http, AppEntry entry, string secr
     private async Task<ProviderResult> RunOpenCodeGoAsync()
     {
         string t(string zh, string en) => Loc.T(zh, en);
-        var headers = new Dictionary<string, string> { ["Authorization"] = "Bearer " + secret, ["Accept"] = "application/json", ["User-Agent"] = "BrimDeck/0.1" };
+        var headers = new Dictionary<string, string> { ["Authorization"] = "Bearer " + secret, ["Accept"] = "application/json", ["User-Agent"] = "DeckIsland/0.1" };
         var url = OpenCodeUsage.UsageAddress(OpenCodeUsage.DefaultServer)!.AbsoluteUri;
         using var reply = JsonDocument.Parse(await SendAsync("GET", JsonSerializer.Serialize(new { url, options = new { headers } })));
         if (reply.RootElement.Get("error").Text() is { Length: > 0 } error) throw new InvalidDataException(error);
@@ -257,7 +257,7 @@ internal sealed class ScriptSession(HttpClient http, AppEntry entry, string secr
     {
         async Task<(int Status, string Body)> Get(string path)
         {
-            var headers = new Dictionary<string, string> { ["Authorization"] = "Bearer " + secret, ["Accept"] = "application/json", ["User-Agent"] = "BrimDeck/0.1" };
+            var headers = new Dictionary<string, string> { ["Authorization"] = "Bearer " + secret, ["Accept"] = "application/json", ["User-Agent"] = "DeckIsland/0.1" };
             using var reply = JsonDocument.Parse(await SendAsync("GET", JsonSerializer.Serialize(new { url = CommandCodeUsage.Api + path, options = new { headers } })));
             if (reply.RootElement.Get("error").Text() is { Length: > 0 } error) throw new InvalidDataException(error);
             return ((int)(reply.RootElement.Get("status").Number() ?? 0), reply.RootElement.Get("body").Text());

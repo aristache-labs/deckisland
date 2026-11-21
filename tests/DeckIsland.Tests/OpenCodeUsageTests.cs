@@ -1,7 +1,7 @@
 using System.Net;
 using System.Text;
 using System.Text.Json;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 static class OpenCodeUsageTests
 {
@@ -189,7 +189,7 @@ static class OpenCodeUsageTests
         snapshot = await Refresh();
         var call = handler.Calls.Single();
         check("The Go allowance is read with the Console sign-in, its workspace and a user agent Cloudflare accepts",
-            call.Uri == "https://opencode.ai/zen/go/v1/usage" && call.Authorization == "Bearer fixture-access" && call.Workspace == "org_fixture" && call.UserAgent.StartsWith("BrimDeck/", StringComparison.Ordinal));
+            call.Uri == "https://opencode.ai/zen/go/v1/usage" && call.Authorization == "Bearer fixture-access" && call.Workspace == "org_fixture" && call.UserAgent.StartsWith("DeckIsland/", StringComparison.Ordinal));
         check("The Go allowance shows as three windows from the account", snapshot.LiveQuota && snapshot.Scope == "account" && snapshot.Source == "OpenCode Go" &&
             snapshot.Quotas.Select(q => q.Minutes).SequenceEqual(new int?[] { 300, 10080, null }) && snapshot.StatusLabel == Loc.T("已连接", "Connected"));
         check("The token is not written to the snapshot", new[] { snapshot.Status, snapshot.StatusLabel, snapshot.Source, snapshot.Plan, snapshot.UsageNote }.All(text => !text.Contains("fixture")));

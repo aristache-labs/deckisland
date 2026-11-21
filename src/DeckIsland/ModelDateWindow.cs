@@ -1,8 +1,8 @@
 using System.Windows;
 using System.Windows.Media;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // An owned window lets the calendar extend past a short island without clipping,
 // and accepts keyboard input while the overlay itself stays non-activating.

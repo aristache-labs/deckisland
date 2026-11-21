@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // The last readings of each usage source, kept on disk so that a start shows them at once (marked as the previous run's) instead
 // of an empty page, until each source's own reading of this run replaces its own.

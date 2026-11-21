@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // One SMTC session can stand for several media sources of its app. Chrome publishes a single session and
 // fills it with whichever tab it considers active, so while a playing tab moves to its next song the session

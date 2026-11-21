@@ -1,6 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
-using BrimDeck;
+using DeckIsland;
 
 // The settings window's keyboard focus rules that need real WPF elements: a radio group's one Tab stop, and the row whose focused
 // control folds away. Nothing is shown on the screen (the window is off it, unactivated) and no keyboard input is sent.

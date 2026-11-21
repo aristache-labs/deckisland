@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // A file of a release that the app downloads: its plain name, size and SHA-256.
 public sealed record UpdatePackage(
@@ -59,7 +59,7 @@ public enum UpdateMode { None, Installer, Portable }
 public enum RestartFailure { Declined, Failed, Installer }
 
 // Downloads the package of a newer release, verifies its size and SHA-256, and applies it after the app exits.
-// Installer: runs it silently; it waits for the running instance, installs into the existing folder and starts BrimDeck again.
+// Installer: runs it silently; it waits for the running instance, installs into the existing folder and starts DeckIsland again.
 // Portable: extracts the zip and starts its own executable as the helper in PortableUpdate, which replaces the files.
 public sealed class InstallerUpdateBackend : IAppUpdateBackend
 {

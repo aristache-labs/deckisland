@@ -3,7 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // The clipboard and file transfer page: what it keeps and the rules for keeping it. The clipboard column holds copied text and
 // pictures and the phrases the user writes; the file transfer column holds the places of files, never copies of them.
@@ -78,7 +78,7 @@ public sealed class ShelfData
     public IEnumerable<ShelfCategory> OwnCategories(ShelfSide side) => Categories(side).Where(category => category.Id != Favorites);
 
     // A phrase, and an entry in "常用" or in a category set to keep, stays until the user deletes it; the rest is history, cleared
-    // when BrimDeck exits (and when it starts, after an exit that did not clear it), or kept for a time (Shelf.Expired).
+    // when DeckIsland exits (and when it starts, after an exit that did not clear it), or kept for a time (Shelf.Expired).
     public bool Kept(ClipEntry clip) => clip.Manual || clip.Categories.Any(id => id == Favorites || ClipCategories.FirstOrDefault(c => c.Id == id)?.Keep == true);
 
     private static readonly JsonSerializerOptions Options = new() { Converters = { new JsonStringEnumConverter() } };
@@ -300,7 +300,7 @@ public static class Shelf
         data.Clips.Insert(0, entry);
     }
 
-    // The history, without what is kept (ShelfData.Kept): cleared when BrimDeck exits.
+    // The history, without what is kept (ShelfData.Kept): cleared when DeckIsland exits.
     public static List<ClipEntry> History(ShelfData data) => data.Clips.Where(clip => !data.Kept(clip)).ToList();
 
     // The rich forms a history saved before held in its entries, each entry's taken out of it to be kept in its own files.

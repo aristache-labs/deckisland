@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // GameSir (盖世小鸡) controllers on their 2.4 GHz receivers and cables, vendor 0x3537 (GameSir's own), read by the collection
 // they answer on rather than by model; both pages are as measured on Windows (HidP_GetCaps), the byte-swapped order is taken

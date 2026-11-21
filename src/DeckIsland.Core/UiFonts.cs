@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // What a piece of text is for. Each role has its own default family chain (the one the app has always used there), and the
 // user's own font, when one is chosen, goes in front of that chain, so that anything it lacks (Chinese, symbols, emoji) is drawn
@@ -17,7 +17,7 @@ public enum UiFontRole
     Label
 }
 
-// The one place that knows which font families BrimDeck draws text in. The app side (Fonts) turns these chains into WPF
+// The one place that knows which font families DeckIsland draws text in. The app side (Fonts) turns these chains into WPF
 // families and publishes them as resources; nothing else names a font. The default chains are exactly the strings that used to
 // be written at every use, so with no font chosen the text is drawn as it always was.
 public static class UiFonts

@@ -1,15 +1,15 @@
 using System.Diagnostics;
-using BrimDeck.Core;
+using DeckIsland.Core;
 using NAudio.CoreAudioApi;
 using NAudio.CoreAudioApi.Interfaces;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 // Audio is a visualization input, never a discoverable media source. Every COM
 // object is created, read, and released on this single worker thread.
 // The level bars prefer the player's captured audio; when process capture is not
 // available they fall back to the session peak meter. Bars shown at all times read the
-// whole system's sound (every process but BrimDeck) and fall back to the devices' peak meters.
+// whole system's sound (every process but DeckIsland) and fall back to the devices' peak meters.
 internal sealed class AudioLevelMeter : IDisposable
 {
     private readonly AutoResetEvent _wake = new(false);
@@ -47,7 +47,7 @@ internal sealed class AudioLevelMeter : IDisposable
             _requested = target; _revision++;
             if (_thread is null)
             {
-                _thread = new Thread(Run) { IsBackground = true, Name = "BrimDeck audio level" };
+                _thread = new Thread(Run) { IsBackground = true, Name = "DeckIsland audio level" };
                 _thread.SetApartmentState(ApartmentState.MTA); _thread.Start();
             }
             _wake.Set();

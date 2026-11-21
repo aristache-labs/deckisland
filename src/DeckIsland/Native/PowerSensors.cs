@@ -2,11 +2,11 @@ using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
-using BrimDeck.Core;
+using DeckIsland.Core;
 using Windows.Devices.Enumeration;
 using Windows.Devices.Power;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 // What Windows reports about power to a normal user: nothing here needs administrator rights or installs a driver. Processor power
 // comes from the Energy Meter counters (Windows exposes the processor's RAPL registers through its own Energy Meter Interface

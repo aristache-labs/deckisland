@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Renaming a theme file from settings: only the theme's own name changes, in both languages, and everything else in the file,
 // its comments and layout included, stays as it was. The id stays too, so the theme keeps what was saved for it (ThemeChoices).

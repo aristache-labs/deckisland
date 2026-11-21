@@ -6,11 +6,11 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
-using BrimDeck.Core;
-using BrimDeck.Native;
+using DeckIsland.Core;
+using DeckIsland.Native;
 using Path = System.Windows.Shapes.Path;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // The clipboard page's full-content view, its header (back, position, previous and next; or the search box), typing (the search,
 // editing a text entry) and its menus. Typing needs the keyboard, so the panel takes the focus while the user types and gives it

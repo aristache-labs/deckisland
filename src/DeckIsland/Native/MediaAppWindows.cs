@@ -1,8 +1,8 @@
 using System.Runtime.InteropServices;
 using System.Text;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 // Finds and activates the playing application's top-level window. Activate must run inside the click handler: the
 // non-activating island may only hand the foreground to another window while it holds the input that was just clicked.

@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Turns the horizontal wheel into single swipes. A precision touchpad reports a two-finger swipe as many small parts and keeps
 // sending them while the swipe coasts; a tilting mouse wheel repeats whole notches while it is held. Either way one gesture acts

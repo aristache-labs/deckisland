@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 public sealed record ClaudeUsageSample(DateTimeOffset Time, double FiveHour, double SevenDay, string Organization = "");
 

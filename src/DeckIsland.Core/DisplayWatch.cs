@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Whether the session's display is off while the session itself is not locked: many power plans turn the screen off after a
 // few minutes and never lock, and nothing the panel draws can then be seen. The window pauses what runs only to be looked at

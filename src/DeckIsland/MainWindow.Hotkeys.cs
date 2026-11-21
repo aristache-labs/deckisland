@@ -1,10 +1,10 @@
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
-using BrimDeck.Core;
-using BrimDeck.Native;
+using DeckIsland.Core;
+using DeckIsland.Native;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // How a panel follows the global hotkeys (see App.Hotkeys.cs).
 // Opened by the expand hotkey, the panel stays open until the pointer has been inside it once; after that the usual leave

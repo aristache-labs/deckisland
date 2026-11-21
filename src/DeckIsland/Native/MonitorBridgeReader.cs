@@ -4,9 +4,9 @@ using System.IO.MemoryMappedFiles;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 // Reads the hardware monitors MonitorBridges picks from, from the sampling thread, and only while the processor's temperature
 // or power is wanted and no better source gives it. HWiNFO's shared memory (Global\HWiNFO_SENS_SM2, its layout as HWiNFO's

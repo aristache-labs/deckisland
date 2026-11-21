@@ -1,6 +1,6 @@
 using System.Net;
 using System.Text;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // A catalog entry carries the cheapest host's price; a model that records were priced with takes its maker's own endpoint price.
 static class OfficialPriceTests

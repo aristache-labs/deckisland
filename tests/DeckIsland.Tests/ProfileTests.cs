@@ -1,5 +1,5 @@
 using System.Text.Json.Nodes;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 internal static class ProfileTests
 {
@@ -16,7 +16,7 @@ internal static class ProfileTests
     {
         // Without a settings file, and with one that cannot be read, the settings start with one current profile: the start keeps
         // the settings in it at once (Profiles.Keep), which failed on an empty list and left the app running without a panel.
-        var folder = Path.Combine(Path.GetTempPath(), "BrimDeck-Profiles-" + Guid.NewGuid().ToString("N"));
+        var folder = Path.Combine(Path.GetTempPath(), "DeckIsland-Profiles-" + Guid.NewGuid().ToString("N"));
         try
         {
             foreach (var (name, broken) in new[] { ("no settings file", false), ("an unreadable settings file", true) })
@@ -150,7 +150,7 @@ internal static class ProfileTests
         check("A rule's display that is not connected changes nothing", plan.Main == "main" && !plan.Hidden);
 
         // Saving and loading.
-        var store = new SettingsStore(Path.Combine(Path.GetTempPath(), "BrimDeck-Profiles-" + Guid.NewGuid().ToString("N")), "1.3.1");
+        var store = new SettingsStore(Path.Combine(Path.GetTempPath(), "DeckIsland-Profiles-" + Guid.NewGuid().ToString("N")), "1.3.1");
         try
         {
             var saved = Profiles.Switch(back, focus.Id);

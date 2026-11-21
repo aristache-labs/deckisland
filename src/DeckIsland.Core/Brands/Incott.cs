@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // Incott 8K wireless (PixArt's shared vendor id 0x093A, so only its two products: 522C on the receiver, 622C on its cable).
 // Nothing is sent: while the mouse is moved or clicked it sends input report 0x09 on its vendor collection (usage page

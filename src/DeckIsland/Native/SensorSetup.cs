@@ -7,32 +7,32 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.ServiceProcess;
-using BrimDeck.Core;
+using DeckIsland.Core;
 using Microsoft.Win32;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 // Enhanced sensors (the settings page "增强传感器"): the processor's temperature and power read through the PawnIO driver, which
-// opens only for SYSTEM and administrators. The user installs PawnIO itself (winget, or its own installer); BrimDeck then sets up
+// opens only for SYSTEM and administrators. The user installs PawnIO itself (winget, or its own installer); DeckIsland then sets up
 // its sensor service once, with one administrator prompt, and stays a normal process that asks the service for readings
-// (SensorClient). Neither is in BrimDeck's installer: the service is downloaded from this version's GitHub release and must match
-// the SHA-256 the release build wrote into BrimDeck (SensorsSha256); PawnIO's two modules come from PawnIO's own signed release,
-// pinned by its SHA-256 here. The service and its modules go to Program Files, which only administrators may change: BrimDeck
+// (SensorClient). Neither is in DeckIsland's installer: the service is downloaded from this version's GitHub release and must match
+// the SHA-256 the release build wrote into DeckIsland (SensorsSha256); PawnIO's two modules come from PawnIO's own signed release,
+// pinned by its SHA-256 here. The service and its modules go to Program Files, which only administrators may change: DeckIsland
 // itself sits in the user's own folders, and a SYSTEM service run from there could be replaced by anything the user runs.
 internal enum SensorSetupState { NoPawnIo, NotEnabled, Enabled }
 
 internal static class SensorSetup
 {
     internal const string ElevatedSwitch = "--sensor-service";
-    public const string ServiceName = "BrimDeckSensors", ExeName = "BrimDeck.Sensors.exe";
+    public const string ServiceName = "DeckIslandSensors", ExeName = "DeckIsland.Sensors.exe";
     private const string ModulesUrl = "https://github.com/namazso/PawnIO.Modules/releases/download/0.2.11/release_0_2_11.zip";
     private const string ModulesSha256 = "43608cb89bc84247fef1368a139013f7d043e17db6d6c8dfc9b46bf0905a81f4";
     private static readonly string[] Modules = ["IntelMSR.bin", "AMDFamily17.bin", "COPYING"];
     // Interactive users may start the service and read its state (RP, LC); only administrators and SYSTEM may change or stop it.
     private const string ServiceSecurity = "D:(A;;CCLCSWRPWPDTLOCRRC;;;SY)(A;;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;BA)(A;;CCLCSWRPLOCRRC;;;IU)";
-    private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromMinutes(2), DefaultRequestHeaders = { { "User-Agent", "BrimDeck" } } };
+    private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromMinutes(2), DefaultRequestHeaders = { { "User-Agent", "DeckIsland" } } };
 
-    public static string Folder => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "BrimDeck Sensors");
+    public static string Folder => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "DeckIsland Sensors");
     public static string ServiceExe => Path.Combine(Folder, ExeName);
     private static string? ExpectedSha256 => typeof(SensorSetup).Assembly.GetCustomAttributes<AssemblyMetadataAttribute>()
         .FirstOrDefault(attribute => attribute.Key == "SensorsSha256")?.Value is { Length: 64 } hash ? hash.ToLowerInvariant() : null;
@@ -90,11 +90,11 @@ internal static class SensorSetup
     }
     public const string PawnIoDownload = "https://github.com/namazso/PawnIO.Setup/releases/latest";
 
-    // Downloads the service and the modules into a folder of the user's own, then starts BrimDeck elevated to put them in place and
+    // Downloads the service and the modules into a folder of the user's own, then starts DeckIsland elevated to put them in place and
     // register the service; the elevated copy checks both files again where only administrators can change them.
     public static async Task EnableAsync(CancellationToken cancel)
     {
-        string staging = Path.Combine(Path.GetTempPath(), "BrimDeck-sensors-" + Guid.NewGuid().ToString("N"));
+        string staging = Path.Combine(Path.GetTempPath(), "DeckIsland-sensors-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(staging);
         try
         {
@@ -103,8 +103,8 @@ internal static class SensorSetup
             {
                 // A build without a release's hash (a developer's): the service built beside it.
                 string beside = Path.Combine(AppContext.BaseDirectory, ExeName);
-                if (!File.Exists(beside)) throw new InvalidOperationException(Loc.T("本地编译的版本需要把 BrimDeck.Sensors.exe 放在 BrimDeck.exe 旁边",
-                    "A local build needs BrimDeck.Sensors.exe beside BrimDeck.exe"));
+                if (!File.Exists(beside)) throw new InvalidOperationException(Loc.T("本地编译的版本需要把 DeckIsland.Sensors.exe 放在 DeckIsland.exe 旁边",
+                    "A local build needs DeckIsland.Sensors.exe beside DeckIsland.exe"));
                 File.Copy(beside, exe);
             }
             else await DownloadAsync(new Uri($"{Updates.GitHubUpdates.RepositoryUrl}/releases/download/v{ApplicationVersion.Current}/{ExeName}"), exe, ExpectedSha256, cancel);
@@ -247,8 +247,8 @@ internal static class SensorSetup
             string command = "\"" + ServiceExe + "\"";
             IntPtr service = OpenServiceW(manager, ServiceName, ServiceAll);
             if (service == IntPtr.Zero)
-                service = CreateServiceW(manager, ServiceName, "BrimDeck Sensors", ServiceAll, OwnProcess, DemandStart, ErrorNormal, command, null, IntPtr.Zero, null, null, null);
-            else if (!ChangeServiceConfigW(service, OwnProcess, DemandStart, ErrorNormal, command, null, IntPtr.Zero, null, null, null, "BrimDeck Sensors"))
+                service = CreateServiceW(manager, ServiceName, "DeckIsland Sensors", ServiceAll, OwnProcess, DemandStart, ErrorNormal, command, null, IntPtr.Zero, null, null, null);
+            else if (!ChangeServiceConfigW(service, OwnProcess, DemandStart, ErrorNormal, command, null, IntPtr.Zero, null, null, null, "DeckIsland Sensors"))
                 throw new Win32Exception();
             if (service == IntPtr.Zero) throw new Win32Exception();
             try

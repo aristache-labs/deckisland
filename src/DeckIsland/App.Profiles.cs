@@ -1,9 +1,9 @@
 using System.Runtime.InteropServices;
 using System.Windows.Threading;
-using BrimDeck.Core;
-using BrimDeck.Native;
+using DeckIsland.Core;
+using DeckIsland.Native;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // Profiles (DeckProfile): the current one's settings are Settings (kept in the profile with every change); a panel whose display shows another profile reads that
 // profile's settings (SettingsFor), kept here until the settings change. The settings window changes the profile in use.
@@ -110,7 +110,7 @@ public partial class App
         ChooseProfile(list[(at + 1) % list.Count].Id);
     }
 
-    // At start, a rule that held when BrimDeck last ended no longer does: the profile it replaced comes back before anything shows.
+    // At start, a rule that held when DeckIsland last ended no longer does: the profile it replaced comes back before anything shows.
     private void ReturnFromRule()
     {
         if (Settings.ReturnProfile is not { } back || Profiles.Find(Settings, back) is null) return;

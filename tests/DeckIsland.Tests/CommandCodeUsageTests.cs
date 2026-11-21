@@ -1,6 +1,6 @@
 using System.Net;
 using System.Text.Json;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // Command Code keeps its sign-in (auth.json, apiKey) and session records (projects\<project>\<session>.jsonl) in
 // %USERPROFILE%\.commandcode for both its CLI and desktop app. The fixtures follow the files and replies Command Code 1.88 wrote and
@@ -75,7 +75,7 @@ static class CommandCodeUsageTests
         });
         var user = JsonSerializer.Serialize(new { type = "message", id = "u1", timestamp = time, message = new { role = "user", content = new[] { new { type = "text", text = "usage" } }, meta = new { source = "user", messageId = "m-user" } } });
         File.WriteAllText(Path.Combine(project, "s1.jsonl"),
-            JsonSerializer.Serialize(new { type = "session", version = 3, id = "s1", timestamp = time, cwd = "D:\\Projects\\BrimDeck" }) + "\n" + user + "\n" +
+            JsonSerializer.Serialize(new { type = "session", version = 3, id = "s1", timestamp = time, cwd = "D:\\Projects\\DeckIsland" }) + "\n" + user + "\n" +
             Reply("a1", "m1", 21204, 28, 4096, 0, 0, 0.002595288) + "\n" + Reply("a2", "m2", 10000, 100, 2000, 3000, 1000, null) + "\n");
         // A forked session copies the earlier messages with their message ids.
         File.WriteAllText(Path.Combine(project, "s2.jsonl"), Reply("b1", "m1", 21204, 28, 4096, 0, 0, 0.002595288) + "\n");

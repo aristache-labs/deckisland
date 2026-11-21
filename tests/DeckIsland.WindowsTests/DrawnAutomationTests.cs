@@ -2,7 +2,7 @@ using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Automation.Peers;
 using System.Windows.Automation.Provider;
-using BrimDeck;
+using DeckIsland;
 
 // How the drawn parts read to UI Automation (DrawnPeer). The peers are the real ones WPF creates for an element; nothing is shown and
 // no client is attached.

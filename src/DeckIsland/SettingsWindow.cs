@@ -9,9 +9,9 @@ using System.Windows.Media;
 using System.Windows.Shapes;
 using System.Windows.Shell;
 using Microsoft.Win32;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 public sealed partial class SettingsWindow : Window, IKeepsAppFonts
 {
@@ -29,7 +29,7 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
     private readonly TextBlock _status = new() { Visibility = Visibility.Collapsed, TextWrapping = TextWrapping.Wrap };
     private ScrollViewer _scroll = null!;
     private static string[] _pages => [Loc.T("常规", "General"), Loc.T("收起外观", "Collapsed view"), Loc.T("展开外观", "Expanded view"),
-        Loc.T("配额与统计", "Quotas and usage"), Loc.T("模型价格", "Model prices"), Loc.T("样式", "Style"), Loc.T("播放器", "Players"), Loc.T("关于 BrimDeck", "About BrimDeck"), Loc.T("面板主题", "Panel theme"), Loc.T("显示与读数", "Display and readings"), Loc.T("增强传感器", "Enhanced sensors"), Loc.T("快捷键", "Shortcuts"), Loc.T("显示与设备", "Display and devices"),
+        Loc.T("配额与统计", "Quotas and usage"), Loc.T("模型价格", "Model prices"), Loc.T("样式", "Style"), Loc.T("播放器", "Players"), Loc.T("关于 DeckIsland", "About DeckIsland"), Loc.T("面板主题", "Panel theme"), Loc.T("显示与读数", "Display and readings"), Loc.T("增强传感器", "Enhanced sensors"), Loc.T("快捷键", "Shortcuts"), Loc.T("显示与设备", "Display and devices"),
         Loc.T("剪贴板", "Clipboard"), Loc.T("文件中转", "File transfer"), Loc.T("快捷操作", "Quick actions"), Loc.T("显示器与配置", "Displays and profiles"), Loc.T("页面布局", "Page layout"), Loc.T("剪贴板同步", "Clipboard sync"), Loc.T("天气", "Weather"), Loc.T("专注计时器", "Focus timer"), Loc.T("提醒", "Reminders"), WidgetLayout.Title, Loc.T("通知与状态提示", "Notifications and HUDs")];
     // The order of the pages in the navigation; the theme page (ThemePage) and the shortcuts (HotkeysPage) are listed with the
     // basic pages, and the system monitor's page (MonitorSettingsPage) has its own group after music, then the clipboard's
@@ -67,7 +67,7 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
     public SettingsWindow(App app)
     {
         _app = app;
-        Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("/BrimDeck;component/SettingsResources.xaml", UriKind.Relative) });
+        Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("/DeckIsland;component/SettingsResources.xaml", UriKind.Relative) });
         using (OwnFonts()) Fonts.Publish(Resources);
         Style =(Style)FindResource(typeof(Window));
         // Sizes are DIPs, so the window looks the same at any scale factor. The default fits the page layout (the content
@@ -155,7 +155,7 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
         EndAppDrag(false, false);
         _keptOffset = _scroll?.VerticalOffset ?? 0;
         // A language change rebuilds the window the same way.
-        Title = Loc.T("BrimDeck 设置", "BrimDeck Settings");
+        Title = Loc.T("DeckIsland 设置", "DeckIsland Settings");
         _palette = new(SettingsPalette.IsDark(S.Theme)); _palette.Apply(Resources);
         Background = UI.Brush(Surface); Foreground = UI.Brush(TextPrimary); FontFamily = SettingsFont(UiFontRole.Panel);
         // Detach reused panels before rebuilding the window's theme-specific surfaces.
@@ -217,13 +217,13 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
             Background = new LinearGradientBrush((Color)ColorConverter.ConvertFromString(TextTertiary), Colors.Transparent, 0) });
         return brand;
     }
-    // The product name on one line: a heavier "Brim" followed by a light "Deck".
+    // The product name on one line: a heavier "Deck" followed by a light "Island".
     private TextBlock Wordmark(double size)
     {
         var name = new TextBlock { FontFamily = SettingsFont(UiFontRole.Text), FontSize = size, Foreground = UI.Brush(TextPrimary) };
-        name.Inlines.Add(new Run("Brim") { FontWeight = FontWeights.SemiBold });
-        name.Inlines.Add(new Run("Deck") { FontWeight = FontWeights.Light, Foreground = UI.Brush(_palette.Dark ? "#C5C5CB" : "#565661") });
-        AutomationProperties.SetName(name, "BrimDeck"); return name;
+        name.Inlines.Add(new Run("Deck") { FontWeight = FontWeights.SemiBold });
+        name.Inlines.Add(new Run("Island") { FontWeight = FontWeights.Light, Foreground = UI.Brush(_palette.Dark ? "#C5C5CB" : "#565661") });
+        AutomationProperties.SetName(name, "DeckIsland"); return name;
     }
     private TextBlock TextLine(string text, double size = 13, string color = "#F1F1F4", FontWeight? weight = null)
     {
@@ -340,7 +340,7 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
             int target=i; bool selected=page==i;
             var row = new StackPanel { Orientation = Orientation.Horizontal };
             var icon = NavigationIcon(i, selected ? TextPrimary : TextSecondary); icon.Margin = new Thickness(0,0,10,0); row.Children.Add(icon);
-            row.Children.Add(TextLine(i == 7 ? "BrimDeck" : _pages[i],12.5,selected ? TextPrimary : TextSecondary,selected ? FontWeights.Medium : FontWeights.Normal));
+            row.Children.Add(TextLine(i == 7 ? "DeckIsland" : _pages[i],12.5,selected ? TextPrimary : TextSecondary,selected ? FontWeights.Medium : FontWeights.Normal));
             if (i == 7) { _updateBadge = UpdateBadge(); row.Children.Add(_updateBadge); }
             var button=new Button { Style=(Style)FindResource("SettingsNav"),Content=row,Margin=new Thickness(0,0,0,4),Tag=selected ? "Selected" : null };
             button.Click+=(_,_)=>ShowPage(target); AutomationProperties.SetName(button,_pages[i]); _navigation.Children.Add(button);
@@ -400,12 +400,12 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
             { SaveStatus(Loc.T("无法设置自启动：", "Could not change the startup setting: ")+ex.Message,true); ShowPage(0); }
         }),
             Toggle(Loc.T("显示托盘图标", "Show tray icon"), S.ShowTrayIcon, value => Change(s => s.ShowTrayIcon = value),
-                help: Loc.T("关闭后，再次打开 BrimDeck 即可显示隐藏的面板并打开设置。",
-                    "When off, open BrimDeck again to show hidden panels and open the settings.")),
+                help: Loc.T("关闭后，再次打开 DeckIsland 即可显示隐藏的面板并打开设置。",
+                    "When off, open DeckIsland again to show hidden panels and open the settings.")),
             Row(Loc.T("资源占用", "Resource use"), SegmentBorder(MemoryModes()), help: () => Loc.T(
                 "省资源：收起后很快回收暂时不用的内存，并在空闲期间持续回收，占用最少；再次使用时需要重新读取，部分操作可能稍有卡顿。\n平衡：几分钟没有使用后回收不用的内存，兼顾占用与流畅。\n流畅：收起后不回收内存，常用的数据保留更久，展开和切换页面更流畅，占用较多。\n在设置中关闭的页面，其占用的资源会在一段时间后释放。",
                 "Saver: frees memory not in use soon after the panel closes and keeps freeing it while idle, using the least. It is read again when needed, so some actions may stutter slightly.\nBalanced: frees unused memory after a few minutes without use, balancing resource use and smoothness.\nSmooth: frees no memory after the panel closes and keeps frequently used data longer, so opening the panel and switching pages feel smoother, using more resources.\nThe resources of a page switched off in the settings are released a while later.")),
-            Row(Loc.T("退出 BrimDeck", "Exit BrimDeck"), ActionButton(Loc.T("退出", "Exit"), _app.ExitApplication)));
+            Row(Loc.T("退出 DeckIsland", "Exit DeckIsland"), ActionButton(Loc.T("退出", "Exit"), _app.ExitApplication)));
         SectionTitle(Loc.T("外观与语言", "Appearance and language"));
         var themes = new UniformGrid { Columns=3,Width=292 };
         foreach(var theme in Enum.GetValues<SettingsTheme>())
@@ -424,7 +424,7 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
             if(language.SelectedIndex<0||languages[language.SelectedIndex].Value==S.Language) return;
             var value=languages[language.SelectedIndex].Value; Change(s=>s.Language=value); RebuildTheme();
         };
-        // The scale BrimDeck is drawn at, collapsed and expanded alike (PanelScales); sizes set elsewhere are before it.
+        // The scale DeckIsland is drawn at, collapsed and expanded alike (PanelScales); sizes set elsewhere are before it.
         var scales = PanelScales.Choices;
         var scale = new ComboBox { Width=150,Style=(Style)FindResource("SettingsCombo"),ItemsSource=scales.Select(value=>value+"%").ToList(),
             SelectedIndex=Math.Max(0,scales.ToList().IndexOf(PanelScales.Fit(S.PanelScale))) };
@@ -731,8 +731,8 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
             Loc.T("展开、收起以及收起时外形变化的时长。",
                 "How long expanding, collapsing and changes of the collapsed shape take."));
         var openDelay = SliderRow(Loc.T("展开延迟", "Expand delay"), S.OpenDelay, 0, 2000, 50, Loc.T("毫秒", "ms"), value => Change(s => s.OpenDelay = (int)value),
-            Loc.T("鼠标悬停在 BrimDeck 的收起面板或指示条上多久后，开始展开。0 毫秒表示立即开始展开。",
-                "How long the pointer rests on BrimDeck's collapsed panel or indicator before it starts to expand. 0 ms expands immediately."));
+            Loc.T("鼠标悬停在 DeckIsland 的收起面板或指示条上多久后，开始展开。0 毫秒表示立即开始展开。",
+                "How long the pointer rests on DeckIsland's collapsed panel or indicator before it starts to expand. 0 ms expands immediately."));
         static void Enable(Grid row, bool enabled)
         {
             foreach (var control in row.Children.OfType<FrameworkElement>().Where(control => Grid.GetColumn(control) > 0)) control.IsEnabled = enabled;
@@ -743,8 +743,8 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
         Enable(openDelay, !S.ClickToExpand);
         Group(ExpandWayRow(click => Enable(openDelay, !click)), openDelay,
             SliderRow(Loc.T("收起延迟", "Collapse delay"), S.CloseDelay, 0, 2000, 50, Loc.T("毫秒", "ms"), value => Change(s => s.CloseDelay = (int)value),
-                Loc.T("鼠标离开 BrimDeck 的展开面板范围多久后，开始收起。0 毫秒表示立即开始收起。",
-                    "How long after the pointer leaves BrimDeck's expanded panel it starts to collapse. 0 ms collapses immediately.")),
+                Loc.T("鼠标离开 DeckIsland 的展开面板范围多久后，开始收起。0 毫秒表示立即开始收起。",
+                    "How long after the pointer leaves DeckIsland's expanded panel it starts to collapse. 0 ms collapses immediately.")),
             Toggle(Loc.T("启用动画", "Animations"), S.Animations, value => { Change(s => s.Animations = value); Enable(duration, value); }, help:
                 Loc.T("控制面板展开收起、页面切换、悬停与按压反馈等全部动画。关闭，或 Windows 关闭了动画效果、使用高对比度时，界面不再有动画。",
                     "Switches all animation on or off: the panel expanding and collapsing, page changes, hover and press feedback. With it off, or when Windows has animation effects off or uses high contrast, nothing animates.")), duration);
@@ -761,12 +761,12 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
             BehaviorRow(Loc.T("有窗口最大化时", "When a window is maximized"), S.Maximized, value => Change(s => s.Maximized = value)),
             BehaviorRow(Loc.T("有应用处于无边框全屏时", "When an app is in borderless full screen"), S.Borderless, value => Change(s => s.Borderless = value)),
             BehaviorRow(Loc.T("有应用处于独占全屏时", "When an app is in exclusive full screen"), S.Exclusive, value => Change(s => s.Exclusive = value)),
-            BehaviorRow(Loc.T("有窗口与 BrimDeck 重叠时", "When a window overlaps BrimDeck"), S.Occupied, value => Change(s => s.Occupied = value),
-                Loc.T("BrimDeck 收起时，有窗口移到它所在的位置就生效，移开后恢复。最大化和全屏窗口按上面的规则处理。",
-                    "Applies when a window is moved onto the collapsed BrimDeck, and ends when it is moved away. Maximized and full-screen windows follow the rules above.")),
+            BehaviorRow(Loc.T("有窗口与 DeckIsland 重叠时", "When a window overlaps DeckIsland"), S.Occupied, value => Change(s => s.Occupied = value),
+                Loc.T("DeckIsland 收起时，有窗口移到它所在的位置就生效，移开后恢复。最大化和全屏窗口按上面的规则处理。",
+                    "Applies when a window is moved onto the collapsed DeckIsland, and ends when it is moved away. Maximized and full-screen windows follow the rules above.")),
             Toggle(Loc.T("同时检测后方窗口", "Also check windows behind"), S.BackgroundWindows, value => Change(s => s.BackgroundWindows = value),
-                help: Loc.T("开启后，正在使用的窗口后方有窗口最大化、无边框全屏或与收起的 BrimDeck 重叠时，也按上面对应的规则处理。关闭后只检测正在使用的窗口。",
-                    "When on, a window behind the window you are using that is maximized, in borderless full screen or overlapping the collapsed BrimDeck also follows the matching rule above. When off, only the window you are using is checked.")),
+                help: Loc.T("开启后，正在使用的窗口后方有窗口最大化、无边框全屏或与收起的 DeckIsland 重叠时，也按上面对应的规则处理。关闭后只检测正在使用的窗口。",
+                    "When on, a window behind the window you are using that is maximized, in borderless full screen or overlapping the collapsed DeckIsland also follows the matching rule above. When off, only the window you are using is checked.")),
             ExceptionsRow()
         })
         {
@@ -1212,12 +1212,12 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
         version.Children.Add(notes);
         Group(Row(Loc.T("当前版本", "Current version"),version),
             Row(Loc.T("开源许可证", "License"),TextLine("Apache License 2.0",12,TextSecondary)),
-            Row(Loc.T("项目主页", "Homepage"),Link("GitHub ↗","https://github.com/MoFeng2223/BrimDeck")),
-            Row(Loc.T("问题与建议", "Issues and suggestions"),Link(Loc.T("提交反馈 ↗", "Send feedback ↗"),"https://github.com/MoFeng2223/BrimDeck/issues")),
+            Row(Loc.T("项目主页", "Homepage"),Link("GitHub ↗","https://github.com/aristache-labs/deckisland")),
+            Row(Loc.T("问题与建议", "Issues and suggestions"),Link(Loc.T("提交反馈 ↗", "Send feedback ↗"),"https://github.com/aristache-labs/deckisland/issues")),
             // The README's community section in the interface language, so the ways to reach us can change without a new version.
             Row(Loc.T("交流", "Community"),Link(Loc.T("查看交流方式 ↗", "Join the community ↗"),Loc.T(
-                "https://github.com/MoFeng2223/BrimDeck/blob/main/README.zh-CN.md#%E4%BA%A4%E6%B5%81",
-                "https://github.com/MoFeng2223/BrimDeck/blob/main/README.md#community"))));
+                "https://github.com/aristache-labs/deckisland/blob/main/README.zh-CN.md#%E4%BA%A4%E6%B5%81",
+                "https://github.com/aristache-labs/deckisland/blob/main/README.md#community"))));
     }
 
     // External links are plain text, so their right edge lines up with the values in the rows above.

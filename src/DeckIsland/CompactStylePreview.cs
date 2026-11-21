@@ -1,9 +1,9 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
-namespace BrimDeck;
+namespace DeckIsland;
 
 // A miniature of the collapsed surface on a desktop, for the collapsed view's style cards, and the collapsed capsule with a corner
 // of the open panel behind it for the panel theme cards (Theme). The content is fixed (four quota rings, and the clock when asked), so it reads as a style or a

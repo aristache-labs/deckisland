@@ -1,4 +1,4 @@
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // The brand families (BrandFamilies): every brand's matching and reads, and the rules all of them keep.
 static class BrandFamilyTests
@@ -20,12 +20,12 @@ static class BrandFamilyTests
         var reply = Bytes("13 4A 01 00 02 64 01 00 00 00 00 00 00 00 00 00 00 00 00 C5");
         var charging = Bytes("13 4A 01 00 02 32 10 00 00 00 00 00 00 00 00 00 00 00 00 A2");
         check("VGN V108: the request with its sum, the captured 100 % answer, a charging state, a wrong sum and a level over 100 are none",
-            BrimDeck.Core.VgnV108.Request().SequenceEqual(Bytes("13 4A 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 5E"))
-            && BrimDeck.Core.VgnV108.Battery(reply) == new BatteryRead(100) && BrimDeck.Core.VgnV108.Battery(charging) == new BatteryRead(50, true)
-            && BrimDeck.Core.VgnV108.Battery([.. reply[..^1], 0]) is null
-            && BrimDeck.Core.VgnV108.Battery(Bytes("13 4A 01 00 02 65 01 00 00 00 00 00 00 00 00 00 00 00 00 C6")) is null
-            && BrimDeck.Core.VgnV108.Battery(Bytes("13 4A 01 00 02 00 01 00 00 00 00 00 00 00 00 00 00 00 00 61")) is null
-            && BrimDeck.Core.VgnV108.Battery(BrimDeck.Core.VgnV108.Request()) is null);
+            DeckIsland.Core.VgnV108.Request().SequenceEqual(Bytes("13 4A 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 5E"))
+            && DeckIsland.Core.VgnV108.Battery(reply) == new BatteryRead(100) && DeckIsland.Core.VgnV108.Battery(charging) == new BatteryRead(50, true)
+            && DeckIsland.Core.VgnV108.Battery([.. reply[..^1], 0]) is null
+            && DeckIsland.Core.VgnV108.Battery(Bytes("13 4A 01 00 02 65 01 00 00 00 00 00 00 00 00 00 00 00 00 C6")) is null
+            && DeckIsland.Core.VgnV108.Battery(Bytes("13 4A 01 00 02 00 01 00 00 00 00 00 00 00 00 00 00 00 00 61")) is null
+            && DeckIsland.Core.VgnV108.Battery(DeckIsland.Core.VgnV108.Request()) is null);
         check("VGN V108: only interface 1 of 391D:2A02, with 20-byte reports and report 0x13 declared, never a standard collection",
             BrandFamilies.Find(Shape(0x391D, 0x2A02, 0xFF02, 0x0002, 1, 25, 20, outputIds: [0x13])) is { Family.Brand: "VGN V108", Ways.Count: 1 }
             && BrandFamilies.Find(Shape(0x391D, 0x2A02, 0x0001, 0x0000, 1, 25, 20, outputIds: [0x13])) is { Family.Brand: "VGN V108", Ways.Count: 1 }
@@ -70,12 +70,12 @@ static class BrandFamilyTests
         check("BETOP: not sent where the collection declares no report 0x02",
             BrandFamilies.Find(Shape(0x20BC, 0x5191, 0x00FF, 3, outputIds: [0x01])) is { Ways.Count: 0 });
         check("BETOP: the request, a reading on battery and one charging (the Kunpeng 20's capture, vigil-watt's 93 %), and the request read back and a level of 0 are none",
-            BrimDeck.Core.Betop.Request().SequenceEqual(new byte[] { 0x02, 0x15 })
-            && BrimDeck.Core.Betop.Battery([0x02, 0x15, 0x64, 0x00, 0x51, 0x01, 0x01, 0x00]) == new BatteryRead(100, true)
-            && BrimDeck.Core.Betop.Battery([0x02, 0x15, 0x5D, 0x00, 0x50]) == new BatteryRead(93)
-            && BrimDeck.Core.Betop.Battery([0x02, 0x15, 0x37, 0x00, 0x50]) == new BatteryRead(55)
-            && BrimDeck.Core.Betop.Battery([0x02, 0x15, 0x00, 0x00, 0x50]) is null
-            && BrimDeck.Core.Betop.Battery([0x02, 0x15, 0x00, 0x00, 0x00]) is null && BrimDeck.Core.Betop.Battery([0x02, 0x15, 0x99, 0x00, 0x50]) is null
-            && BrimDeck.Core.Betop.Battery([0x02, 0x12, 0x40, 0x00, 0x50]) is null);
+            DeckIsland.Core.Betop.Request().SequenceEqual(new byte[] { 0x02, 0x15 })
+            && DeckIsland.Core.Betop.Battery([0x02, 0x15, 0x64, 0x00, 0x51, 0x01, 0x01, 0x00]) == new BatteryRead(100, true)
+            && DeckIsland.Core.Betop.Battery([0x02, 0x15, 0x5D, 0x00, 0x50]) == new BatteryRead(93)
+            && DeckIsland.Core.Betop.Battery([0x02, 0x15, 0x37, 0x00, 0x50]) == new BatteryRead(55)
+            && DeckIsland.Core.Betop.Battery([0x02, 0x15, 0x00, 0x00, 0x50]) is null
+            && DeckIsland.Core.Betop.Battery([0x02, 0x15, 0x00, 0x00, 0x00]) is null && DeckIsland.Core.Betop.Battery([0x02, 0x15, 0x99, 0x00, 0x50]) is null
+            && DeckIsland.Core.Betop.Battery([0x02, 0x12, 0x40, 0x00, 0x50]) is null);
     }
 }

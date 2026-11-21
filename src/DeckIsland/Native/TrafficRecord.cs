@@ -1,10 +1,10 @@
-using BrimDeck.Core;
+using DeckIsland.Core;
 using Windows.Networking.Connectivity;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 // Windows' own record of the traffic over each network, the one the Data usage page in Windows Settings shows, summed over the
-// period chosen (TrafficPeriods). It covers the time BrimDeck was not running and needs nothing saved. Only the Wi-Fi, Ethernet and
+// period chosen (TrafficPeriods). It covers the time DeckIsland was not running and needs nothing saved. Only the Wi-Fi, Ethernet and
 // cellular networks count, as on that page: a VPN or another virtual network carries traffic the network under it counts as well.
 // Windows writes its record down about once a minute, so it is read every RefreshSeconds on a pool thread, never on the sampler's.
 internal sealed class TrafficRecord

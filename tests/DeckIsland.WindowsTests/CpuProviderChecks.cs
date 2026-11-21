@@ -1,5 +1,5 @@
-using BrimDeck.Core;
-using BrimDeck.Native;
+using DeckIsland.Core;
+using DeckIsland.Native;
 
 // The processor's readings before and after the performance counters join (CpuProvider.Attach), with counters and kernel times that are
 // given, so each state is the same on every run: the kernel's times give the first figures alone, the counters take over after Attach, and

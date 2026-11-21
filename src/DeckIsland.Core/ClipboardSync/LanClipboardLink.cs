@@ -8,7 +8,7 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 
-namespace BrimDeck.Core.ClipboardSync;
+namespace DeckIsland.Core.ClipboardSync;
 
 public sealed record LanClipboardPeer(string Address, int Port, byte[] Fingerprint, byte[] Key, byte[]? HostCertificate)
 {
@@ -36,7 +36,7 @@ public static partial class LanClipboardLink
 
     // Names a pair of computers to each other when one asks where the other is now. Derived from the pair's secret, it
     // tells nothing about it.
-    internal static Guid LinkId(byte[] key) => new(HMACSHA256.HashData(key, "BrimDeck LAN link"u8)[..16]);
+    internal static Guid LinkId(byte[] key) => new(HMACSHA256.HashData(key, "DeckIsland LAN link"u8)[..16]);
 
     public static async Task RunAsync(LanClipboardPeer config, Func<SslStream, CancellationToken, Task> session,
         CancellationToken cancellation)
@@ -153,7 +153,7 @@ public static partial class LanClipboardLink
     // program only costs the search.
     private static async Task AnswerAsync(IReadOnlyList<(LanInterface Adapter, int Port)> listeners, Guid link, CancellationToken cancellation)
     {
-        try { await LanDiscovery.ReplyAsync(listeners, link, "BrimDeck", cancellation, link: true); }
+        try { await LanDiscovery.ReplyAsync(listeners, link, "DeckIsland", cancellation, link: true); }
         catch (Exception ex) when (ex is OperationCanceledException or SocketException or ObjectDisposedException) { }
     }
 
@@ -274,7 +274,7 @@ public static partial class LanClipboardLink
         {
             await stream.AuthenticateAsClientAsync(new SslClientAuthenticationOptions
             {
-                TargetHost = "BrimDeck LAN",
+                TargetHost = "DeckIsland LAN",
                 EnabledSslProtocols = SslProtocols.Tls12 | SslProtocols.Tls13
             }, ct);
             return stream;

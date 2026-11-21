@@ -1,6 +1,6 @@
 using System.Net;
 using System.Text.Json;
-using BrimDeck.Core;
+using DeckIsland.Core;
 
 // Xiaomi MiMo API and Xiaomi MiMo Token Plan: Open Platform keys entered by hand. The fixtures are what api.xiaomimimo.com answered for
 // a pay-as-you-go key, and token-plan-cn.xiaomimimo.com for a Token Plan key, on 2026-11-13.

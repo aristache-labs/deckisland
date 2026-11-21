@@ -2,7 +2,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using ZstdSharp;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // DeepSeek Harness writes each session to sessions\<project>\<session>\session.v<N>.jsonl.zstd (or .jsonl when compression
 // is off): one JSON event per line, appended in batches, each batch one Zstandard frame. Older format generations stay

@@ -4,7 +4,7 @@ using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // The Kimi Code sign-in: the OAuth access token, when it expires, and the account it names (the user_id claim of the token,
 // used only to tell accounts apart through a one-way hash). The token is held in memory only and never shown.

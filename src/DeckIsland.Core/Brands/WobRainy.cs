@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // WOBKEY and PMO wireless keyboards (VID 0x36B0, from WOB HUB Driver 2.0 at wobwxe.com and WOB Legacy):
 // 1. 0xBE .. 0xED 257-byte protocol (wob.be): Rainy75 V2 (3071 rx / 3075 cable) and Rainy98 (3091 rx / 3098 cable) on

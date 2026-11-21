@@ -1,5 +1,5 @@
 {
-  // The original BrimDeck look: a pure black surface with white text in three opacities. Every other theme starts from it,
+  // The original DeckIsland look: a pure black surface with white text in three opacities. Every other theme starts from it,
   // so it sets every color and effect.
   "formatVersion": 1,
   "id": "dark",
@@ -7,7 +7,7 @@
   "nameEn": "Dark",
   "description": "纯黑表面，与屏幕顶部的硬件刘海融为一体。",
   "descriptionEn": "A pure black surface that blends in with a hardware notch.",
-  "author": "BrimDeck",
+  "author": "DeckIsland",
   "license": "Apache-2.0",
   "colors": {
     "surface": "#000000",

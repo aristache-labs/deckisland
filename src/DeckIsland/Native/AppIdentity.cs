@@ -3,10 +3,10 @@ using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
-using BrimDeck.Core;
+using DeckIsland.Core;
 using Microsoft.Win32;
 
-namespace BrimDeck.Native;
+namespace DeckIsland.Native;
 
 // What Windows knows processes and applications by. A media session names its application by an AppUserModelID the
 // application may choose freely, so a process is matched by the id Windows resolves for it (MediaAppTarget.Plays) and the

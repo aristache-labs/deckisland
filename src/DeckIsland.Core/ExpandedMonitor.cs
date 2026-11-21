@@ -1,4 +1,4 @@
-namespace BrimDeck.Core;
+namespace DeckIsland.Core;
 
 // The readings the expanded system monitor page can show, one table of them (ExpandedReading) in the order the page stacks them.
 // Saved as numbers, so new members go at the end. Cpu and Gpu are the gauges with their columns (the one chosen in MonitorMain is
