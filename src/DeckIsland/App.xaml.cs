@@ -97,7 +97,9 @@ public partial class App : Application
             try { using var existing = EventWaitHandle.OpenExisting(eventName); existing.Set(); } catch (WaitHandleCannotBeOpenedException) { }
             Shutdown(); return;
         }
-        SetCurrentProcessExplicitAppUserModelID("DeckIsland.Desktop");
+        // With the sparse package (scripts/notifications) the process already has the package's id, which the taskbar resolves to
+        // the package's logo; an id of our own there named no app, and the settings window showed as a blank grey tile.
+        if (!HasPackageIdentity()) SetCurrentProcessExplicitAppUserModelID("DeckIsland.Desktop");
         RecordCrashes();
         var folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "DeckIsland");
         Store = new SettingsStore(folder); Settings = Store.Load();
