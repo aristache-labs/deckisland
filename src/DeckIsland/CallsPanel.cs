@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using System.Windows.Threading;
@@ -28,6 +29,7 @@ public partial class MainWindow
     private Button? _callMuteChip, _callCameraButton;
     private TextBlock? _callMuteLabel, _callCameraLabel, _callSay;
     private Image? _callPreview;
+    private Path? _callMuteGlyph, _callRowMic;
     private TextBlock? _callTitle, _callHint, _callTimer, _callWhere;
     private StackPanel? _callLiveBlock;
     private bool _callHearing, _callTesting;
@@ -91,11 +93,11 @@ public partial class MainWindow
 
         _callPreview = new Image { Stretch = Stretch.UniformToFill, RenderTransformOrigin = new Point(.5, .5), RenderTransform = new ScaleTransform(-1, 1) };
         var previewBox = new Border { Width = 176, Height = 99, CornerRadius = new CornerRadius(12), ClipToBounds = true, Background = UI.Brush(Look.Hex("fill")), Child = _callPreview, HorizontalAlignment = HorizontalAlignment.Center };
-        var muteGlyph = new Path { Data = Geometry.Parse(MicPath), Stroke = UI.Brush(Look.Primary), StrokeThickness = 1.5, Stretch = Stretch.Uniform, Width = 13, Height = 13, Margin = new Thickness(0, 0, 6, 0) };
+        var muteGlyph = _callMuteGlyph = new Path { Data = Geometry.Parse(MicPath), Stroke = UI.Brush(Look.Primary), StrokeThickness = 1.5, Stretch = Stretch.Uniform, Width = 13, Height = 13, Margin = new Thickness(0, 0, 6, 0) };
         _callMuteLabel = WeatherText("", 13);
         _callMuteChip = new Button
         {
-            Style = (Style)FindResource("WidgetSurfaceButton"), Background = UI.Brush(Look.Hex("fill")), Padding = new Thickness(16, 7, 16, 7), HorizontalAlignment = HorizontalAlignment.Center,
+            Template = FlatPill(), Cursor = Cursors.Hand, Background = UI.Brush(Look.Hex("fill")), Padding = new Thickness(16, 7, 16, 7), HorizontalAlignment = HorizontalAlignment.Center,
             Margin = new Thickness(0, 10, 0, 0), Content = new StackPanel { Orientation = Orientation.Horizontal, Children = { muteGlyph, _callMuteLabel } }
         };
         _callMuteChip.Click += (_, _) => _app.ToggleMicMute();
@@ -179,7 +181,11 @@ public partial class MainWindow
         _callMicGlyph.Stroke = muted ? Brushes.White : UI.Brush(Look.Primary);
         _callMicRing.Stroke = hearing ? new SolidColorBrush(green) : Brushes.Transparent;
         _callMicGlyph.Data = Geometry.Parse(muted ? MicPath + " M3,3 L17,17" : MicPath);
-        _callMuteLabel.Text = muted ? Loc.T("取消静音", "Unmute") : Loc.T("静音", "Mute");
+        _callMuteLabel.Text = muted ? Loc.T("已静音", "Muted") : Loc.T("静音", "Mute");
+        _callMuteLabel.Foreground = muted ? Brushes.White : UI.Brush(Look.Primary);
+        if (_callMuteChip is not null) _callMuteChip.Background = muted ? UI.Brush(Look.Hex("danger")) : UI.Brush(Look.Hex("fill"));
+        if (_callMuteGlyph is not null) { _callMuteGlyph.Stroke = muted ? Brushes.White : UI.Brush(Look.Primary); _callMuteGlyph.Data = Geometry.Parse(muted ? MicPath + " M3,3 L17,17" : MicPath); }
+        if (_callRowMic is not null) _callRowMic.Data = Geometry.Parse(muted ? MicPath + " M3,3 L17,17" : MicPath);
         _callCameraLabel.Text = camera ? Loc.T("摄像头已开启", "Camera on") : Loc.T("检查摄像头", "Check camera");
         _callCameraButton.Background = camera ? UI.Brush(Look.Primary) : UI.Brush(Look.Hex("fill"));
         _callCameraLabel.Foreground = camera ? UI.Brush(Look.Hex("surface")) : UI.Brush(Look.Primary);
@@ -188,6 +194,24 @@ public partial class MainWindow
         string name = $"{_callMicState.Text}. {_callMicHint.Text}";
         AutomationProperties.SetName(_callMic, name);
         _callMic.ToolTip = name;
+    }
+
+    // A pill with no hover layer of its own, so its colour (red while muted) is the same hovered or not; hovering only dims it a little.
+    private static ControlTemplate FlatPill()
+    {
+        var border = new FrameworkElementFactory(typeof(Border), "Chrome");
+        border.SetValue(Border.CornerRadiusProperty, new CornerRadius(15));
+        border.SetValue(Border.BackgroundProperty, new TemplateBindingExtension(Control.BackgroundProperty));
+        border.SetValue(Border.PaddingProperty, new TemplateBindingExtension(Control.PaddingProperty));
+        var presenter = new FrameworkElementFactory(typeof(ContentPresenter));
+        presenter.SetValue(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Center);
+        presenter.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
+        border.AppendChild(presenter);
+        var template = new ControlTemplate(typeof(Button)) { VisualTree = border };
+        var hover = new Trigger { Property = UIElement.IsMouseOverProperty, Value = true };
+        hover.Setters.Add(new Setter(UIElement.OpacityProperty, .85));
+        template.Triggers.Add(hover);
+        return template;
     }
 
     // The camera, shown mirrored as in a call. Nothing is recorded or kept: frames go straight to the picture, and the camera is released as
@@ -291,6 +315,7 @@ public partial class MainWindow
             Stretch = Stretch.Uniform, Width = 15, Height = 15, Margin = new Thickness(0, 0, 8, 0), VerticalAlignment = VerticalAlignment.Center,
             StrokeLineJoin = PenLineJoin.Round, StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round
         };
+        if (!speaker) _callRowMic = icon;
         choose.Content = new StackPanel { Orientation = Orientation.Horizontal, Children = { icon, name, chevron } };
         string Chosen() => (speaker ? _callSpeaker : _callMicrophone) ?? "";
         void Show()
