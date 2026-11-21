@@ -1,6 +1,6 @@
 namespace BrimDeck.Core;
 
-public enum WidgetKind { Empty, Weather, Monitor, Focus, Devices, Quotas }
+public enum WidgetKind { Empty, Weather, Monitor, Focus, Devices, Quotas, Today }
 
 public static class WidgetLayout
 {
@@ -29,6 +29,7 @@ public static class WidgetLayout
         WidgetKind.Monitor => Loc.T("系统监控", "System monitoring"),
         WidgetKind.Focus => Loc.T("专注计时器", "Focus timer"),
         WidgetKind.Devices => Loc.T("显示器与设备", "Display and devices"),
+        WidgetKind.Today => Loc.T("今日", "Today"),
         WidgetKind.Quotas => Loc.T("配额与用量", "Quotas and usage"),
         _ => Loc.T("空", "Empty")
     };

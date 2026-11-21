@@ -45,7 +45,15 @@ public partial class MainWindow
             _widgetUpdates.Clear();
             WidgetsContent.Children.Clear();
             var grid = new UniformGrid { Columns = 2, Rows = 2 };
-            foreach (var kind in slots) grid.Children.Add(WidgetCard(kind));
+            const double Bell = 44, Outer = 5, Inner = 4;
+            for (int i = 0; i < slots.Length; i++)
+            {
+                var card = WidgetCard(slots[i]);
+                // A tight gap; the round centre button overlaps only the inner corners.
+                if (Settings.RemindersPage)
+                    card.Margin = new Thickness(i % 2 == 0 ? Outer : Inner, i < 2 ? Outer : Inner, i % 2 == 0 ? Inner : Outer, i < 2 ? Inner : Outer);
+                grid.Children.Add(card);
+            }
             WidgetsContent.Children.Add(grid);
             if (Settings.RemindersPage)
             {
@@ -61,11 +69,11 @@ public partial class MainWindow
                 string label = Loc.T("提醒", "Reminders");
                 var bell = WidgetSurface(face, label, () => SelectPage(DeckPage.Reminders));
                 bell.ToolTip = label;
-                bell.Height = bell.Width = 38;
+                bell.Height = bell.Width = Bell;
                 bell.Background = UI.Brush(Look.Hex("popup"));
                 bell.HorizontalAlignment = HorizontalAlignment.Center;
                 bell.VerticalAlignment = VerticalAlignment.Center;
-                bell.Clip = new EllipseGeometry(new Point(19, 19), 19, 19);
+                bell.Clip = new EllipseGeometry(new Point(Bell / 2, Bell / 2), Bell / 2, Bell / 2);
                 WidgetsContent.Children.Add(bell);
             }
         }
@@ -112,6 +120,8 @@ public partial class MainWindow
         bool setup = kind == WidgetKind.Weather && !Settings.WeatherEnabled || kind == WidgetKind.Focus && !Settings.FocusPage ||
             kind == WidgetKind.Quotas && Settings.ConfiguredApps.Count == 0;
         if (kind == WidgetKind.Monitor) return MonitorWidget(frame, detailed);
+        if (kind == WidgetKind.Today) return TodayWidget(frame);
+        if (kind == WidgetKind.Devices) return DevicesWidget(frame, detailed);
         if (!setup && kind == WidgetKind.Quotas) return QuotasWidget(frame, detailed);
         if (!setup && kind == WidgetKind.Weather) return WeatherWidget(frame, detailed);
         if (!setup && kind == WidgetKind.Focus) return FocusWidget(frame, detailed);
@@ -130,15 +140,6 @@ public partial class MainWindow
         detail.Foreground = UI.Brush(Look.Secondary);
         body.Children.Add(value);
         body.Children.Add(detail);
-        if (kind == WidgetKind.Devices)
-        {
-            _widgetUpdates.Add(() =>
-            {
-                var devices = ShownDevices.Where(device => device.Percent is not null).Take(2).ToArray();
-                value.Text = devices.Length == 0 ? Loc.T("没有电量读数", "No battery readings") : $"{devices[0].Name} · {devices[0].Percent}%";
-                detail.Text = devices.Length < 2 ? "" : $"{devices[1].Name} · {devices[1].Percent}%";
-            });
-        }
         return frame;
     }
 
