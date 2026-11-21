@@ -358,6 +358,7 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
             var reset=ActionButton(Loc.T("恢复默认", "Restore defaults"),()=>{ if(Confirm(Loc.T("恢复默认", "Restore defaults"),ResetConfirmText(page),Loc.T("恢复默认", "Restore defaults")))ResetPage(); }); reset.FontSize=11; DockPanel.SetDock(reset,Dock.Right); head.Children.Add(reset);
         }
         head.Children.Add(page == 7 ? Wordmark(28) : TextLine(_pages[page],24,TextPrimary,FontWeights.SemiBold)); _content.Children.Add(head);
+        if (page == 0) GeneralHeader(head);
         switch(page) { case WidgetsSettingsPage: WidgetsSettings(); break; case NotificationsSettingsPage: NotificationsSettings(); break; case CallsSettingsPage: CallsSettings(); break; case 0: General(); break; case 1: Compact(); break; case 2: Expanded(); break; case 3: Pages(); break; case 4: ModelPrices(); break; case 5: MusicStyle(); break; case 6: Players(); break; case 7: About(); break; case ThemePage: ThemesPage(); break; case MonitorSettingsPage: MonitorSettings(); break; case SensorsPage: SensorsSettings(); break; case HotkeysPage: HotkeysSettings(); break; case DevicesSettingsPage: DevicesSettings(); break; case ClipboardSettingsPage: ClipboardSettings(); break; case TransferSettingsPage: TransferSettings(); break; case ClipboardSyncSettingsPage: ClipboardSyncSettings(); break; case ShelfLayoutSettingsPage: ShelfLayoutSettings(); break; case MusicGesturesPage: MusicGesturesSettings(); break; case ProfilesPage: ProfilesSettings(); break; }
         if (_content.Children[^1] is Border lastGroup) lastGroup.Margin = new Thickness(lastGroup.Margin.Left, lastGroup.Margin.Top, lastGroup.Margin.Right, 0);
         // Apply the offset before the frame is drawn, so the rebuilt page never shows its top for a frame.
@@ -399,30 +400,24 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
     },16,16,color);
     private void General()
     {
-        SectionTitle(Loc.T("启动与资源占用", "Startup and resources")); Group(Toggle(Loc.T("开机自启动", "Start with Windows"),S.LaunchAtStartup,value =>
+        var startup = Describe(Toggle(Loc.T("开机自启动", "Start with Windows"),S.LaunchAtStartup,value =>
         {
             try { Native.StartupRegistration.SetEnabled(value); Change(s=>s.LaunchAtStartup=value); }
             catch(Exception ex) when(ex is System.IO.IOException or UnauthorizedAccessException or System.Security.SecurityException)
             { SaveStatus(Loc.T("无法设置自启动：", "Could not change the startup setting: ")+ex.Message,true); ShowPage(0); }
-        }),
-            Toggle(Loc.T("显示托盘图标", "Show tray icon"), S.ShowTrayIcon, value => Change(s => s.ShowTrayIcon = value),
-                help: Loc.T("关闭后，再次打开 DeckIsland 即可显示隐藏的面板并打开设置。",
-                    "When off, open DeckIsland again to show hidden panels and open the settings.")),
-            Row(Loc.T("资源占用", "Resource use"), SegmentBorder(MemoryModes()), help: () => Loc.T(
-                "省资源：收起后很快回收暂时不用的内存，并在空闲期间持续回收，占用最少；再次使用时需要重新读取，部分操作可能稍有卡顿。\n平衡：几分钟没有使用后回收不用的内存，兼顾占用与流畅。\n流畅：收起后不回收内存，常用的数据保留更久，展开和切换页面更流畅，占用较多。\n在设置中关闭的页面，其占用的资源会在一段时间后释放。",
-                "Saver: frees memory not in use soon after the panel closes and keeps freeing it while idle, using the least. It is read again when needed, so some actions may stutter slightly.\nBalanced: frees unused memory after a few minutes without use, balancing resource use and smoothness.\nSmooth: frees no memory after the panel closes and keeps frequently used data longer, so opening the panel and switching pages feel smoother, using more resources.\nThe resources of a page switched off in the settings are released a while later.")),
-            Row(Loc.T("退出 DeckIsland", "Exit DeckIsland"), ActionButton(Loc.T("退出", "Exit"), _app.ExitApplication)));
-        SectionTitle(Loc.T("外观与语言", "Appearance and language"));
-        var themes = new UniformGrid { Columns=3,Width=292 };
-        foreach(var theme in Enum.GetValues<SettingsTheme>())
-        {
-            string name=theme switch { SettingsTheme.System=>Loc.T("跟随系统", "System"),SettingsTheme.Light=>Loc.T("浅色", "Light"),_=>Loc.T("深色", "Dark") };
-            var choice=new RadioButton { Style=(Style)FindResource("SettingsSegment"),Content=name,IsChecked=S.Theme==theme,GroupName="Theme" };
-            AutomationProperties.SetName(choice,name); choice.Checked+=(_,_)=> { Change(s=>s.Theme=theme); RebuildTheme(); }; themes.Children.Add(choice);
-        }
+        }), Loc.T("登录 Windows 时自动打开 DeckIsland。", "Open DeckIsland when you sign in."));
+        var tray = Describe(Toggle(Loc.T("显示托盘图标", "Show tray icon"), S.ShowTrayIcon, value => Change(s => s.ShowTrayIcon = value),
+            help: Loc.T("关闭后，再次打开 DeckIsland 即可显示隐藏的面板并打开设置。",
+                "When off, open DeckIsland again to show hidden panels and open the settings.")), Loc.T("在通知区域显示它的图标。", "Keep its icon in the notification area."));
+        var memory = Describe(Row(Loc.T("资源占用", "Resource use"), SegmentBorder(MemoryModes()), help: () => Loc.T(
+            "省资源：收起后很快回收暂时不用的内存，并在空闲期间持续回收，占用最少；再次使用时需要重新读取，部分操作可能稍有卡顿。\n平衡：几分钟没有使用后回收不用的内存，兼顾占用与流畅。\n流畅：收起后不回收内存，常用的数据保留更久，展开和切换页面更流畅，占用较多。\n在设置中关闭的页面，其占用的资源会在一段时间后释放。",
+            "Saver: frees memory not in use soon after the panel closes and keeps freeing it while idle, using the least. It is read again when needed, so some actions may stutter slightly.\nBalanced: frees unused memory after a few minutes without use, balancing resource use and smoothness.\nSmooth: frees no memory after the panel closes and keeps frequently used data longer, so opening the panel and switching pages feel smoother, using more resources.\nThe resources of a page switched off in the settings are released a while later.")),
+            Loc.T("在内存占用和流畅之间取舍。", "Trade memory for smoothness."));
+        GeneralCard(Loc.T("启动与资源占用", "Startup and resources"), Loc.T("DeckIsland 如何启动，以及保留多少内存。", "How DeckIsland starts and how much memory it keeps."), startup, tray, memory);
+
         // Each language is named in itself. Choosing one rebuilds the window in it, as a theme change does.
         (string Value, string Name)[] languages = [(Loc.Chinese, "简体中文"), (Loc.English, "English")];
-        var language = new ComboBox { Width=150,Style=(Style)FindResource("SettingsCombo"),ItemsSource=languages.Select(l=>l.Name).ToList(),
+        var language = new ComboBox { Width=GeneralCombo,Style=(Style)FindResource("SettingsCombo"),ItemsSource=languages.Select(l=>l.Name).ToList(),
             SelectedIndex=Math.Max(0,Array.FindIndex(languages,l=>l.Value==S.Language)) };
         AutomationProperties.SetName(language,Loc.T("语言", "Language")); AutomationProperties.SetAutomationId(language,"language"); PopupMotion.Attach(language);
         language.SelectionChanged+=(_,_)=>
@@ -432,13 +427,20 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
         };
         // The scale DeckIsland is drawn at, collapsed and expanded alike (PanelScales); sizes set elsewhere are before it.
         var scales = PanelScales.Choices;
-        var scale = new ComboBox { Width=150,Style=(Style)FindResource("SettingsCombo"),ItemsSource=scales.Select(value=>value+"%").ToList(),
+        var scale = new ComboBox { Width=GeneralCombo,Style=(Style)FindResource("SettingsCombo"),ItemsSource=scales.Select(value=>value+"%").ToList(),
             SelectedIndex=Math.Max(0,scales.ToList().IndexOf(PanelScales.Fit(S.PanelScale))) };
         AutomationProperties.SetName(scale,Loc.T("缩放", "Scale")); PopupMotion.Attach(scale);
         scale.SelectionChanged+=(_,_)=> { if(scale.SelectedIndex>=0) { var value=scales[scale.SelectedIndex]; Change(s=>s.PanelScale=value); } };
-        // The surface's transparency (DeckSettings.SurfaceTransparency).
-        var transparency = SliderRow(Loc.T("背景透明度", "Background transparency"), S.SurfaceTransparency, 0, DeckSettings.MaxSurfaceTransparency, 5, "%",
-            value => Change(s => s.SurfaceTransparency = (int)value));
+        GeneralCard(Loc.T("外观", "Appearance"), Loc.T("主题、语言、大小和形状。", "Theme, language, size and shape."),
+            Describe(Row(Loc.T("主题", "Theme"), ThemeCards()), Loc.T("跟随 Windows，或选择一种。", "Follow Windows or pick one.")),
+            Describe(Row(Loc.T("语言", "Language"), language), Loc.T("DeckIsland 各处使用的语言。", "Used everywhere in DeckIsland.")),
+            Describe(Row(Loc.T("缩放", "Scale"), scale), Loc.T("面板收起和展开时的大小。", "The island's size, collapsed and expanded.")),
+            Describe(InlineSlider(Loc.T("圆角", "Corner roundness"), S.CornerPercent, 0, 100, 5, "%", v => Change(s => s.CornerPercent = (int)v), keepPreview: true),
+                Loc.T("面板圆角的程度。", "How round the island's corners are.")),
+            // The surface's transparency (DeckSettings.SurfaceTransparency).
+            Describe(InlineSlider(Loc.T("背景透明度", "Background transparency"), S.SurfaceTransparency, 0, DeckSettings.MaxSurfaceTransparency, 5, "%",
+                value => Change(s => s.SurfaceTransparency = (int)value)), Loc.T("面板背后透出多少。", "How much shows through the panel.")));
+
         // The interface font (UiFonts, Fonts): "Default" keeps the app's own fonts. The installed families are listed when the list is
         // opened and not before, and the choice reaches every window at once (Fonts.Use) without a restart; this window is built again,
         // in the chosen font only when the switch below asks for it (DeckSettings.SettingsFollowsFont). The font row and the switch are
@@ -446,7 +448,7 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
         var fontDefault = Loc.T("默认", "Default");
         List<string> fontNames = S.UiFont.Length > 0 ? [fontDefault, S.UiFont] : [fontDefault];
         bool fontListed = false, fontFilling = false;
-        var font = new ComboBox { Width=150,Style=(Style)FindResource("SettingsCombo"),ItemsSource=fontNames,SelectedIndex=S.UiFont.Length > 0 ? 1 : 0,MaxDropDownHeight=320,IsTextSearchEnabled=true,
+        var font = new ComboBox { Width=GeneralCombo,Style=(Style)FindResource("SettingsCombo"),ItemsSource=fontNames,SelectedIndex=S.UiFont.Length > 0 ? 1 : 0,MaxDropDownHeight=320,IsTextSearchEnabled=true,
             FontFamily=Fonts.PlainOf(UiFontRole.Panel) };
         AutomationProperties.SetName(font,Loc.T("界面字体", "Interface font")); AutomationProperties.SetAutomationId(font,"interface-font"); PopupMotion.Attach(font);
         font.DropDownOpened+=(_,_)=>
@@ -465,20 +467,24 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
             var value=font.SelectedIndex==0?"":chosen; if(value==S.UiFont) return;
             Change(s=>s.UiFont=value); RebuildTheme();
         };
-        var fontSample = new TextBlock { Text=Loc.T("字体预览 Aa Bb 0123 中英文混排", "Font preview Aa Bb 0123 mixed text"),TextTrimming=TextTrimming.CharacterEllipsis,MaxWidth=260,
+        var fontSample = new TextBlock { Text=Loc.T("字体预览 Aa Bb 0123 中英文混排", "Font preview Aa Bb 0123 mixed text"),
             FontFamily=Fonts.Sample(S.UiFont),FontSize=13,Foreground=UI.Brush(TextPrimary),VerticalAlignment=VerticalAlignment.Center };
         FrameworkElement fontRow, followRow;
         using (Fonts.Plain())
         {
-            fontRow = Row(Loc.T("界面字体", "Interface font"),font,help: () => Loc.T("选择界面文字使用的字体，立即生效。图标、等宽的脚本编辑器和时钟的自带字体样式不受影响；字体缺失时会回到默认字体。",
-                "Choose the font the interface text is drawn in; it applies at once. Icons, the monospaced script editor and the clock styles that ship their own fonts are not affected; a missing font falls back to the default one."));
-            followRow = Toggle(Loc.T("字体应用到设置窗口", "Apply font to settings window"), S.SettingsFollowsFont,
-                on => { Change(s => s.SettingsFollowsFont = on); RebuildTheme(); });
+            fontRow = Describe(Row(Loc.T("界面字体", "Interface font"),font,help: () => Loc.T("选择界面文字使用的字体，立即生效。图标、等宽的脚本编辑器和时钟的自带字体样式不受影响；字体缺失时会回到默认字体。",
+                "Choose the font the interface text is drawn in; it applies at once. Icons, the monospaced script editor and the clock styles that ship their own fonts are not affected; a missing font falls back to the default one.")),
+                Loc.T("立即生效。", "Applies at once."));
+            followRow = Describe(Toggle(Loc.T("字体应用到设置窗口", "Apply font to settings window"), S.SettingsFollowsFont,
+                on => { Change(s => s.SettingsFollowsFont = on); RebuildTheme(); }), Loc.T("这个窗口也使用它。", "Use it in this window too."));
         }
-        Group(Row(Loc.T("主题", "Theme"),SegmentBorder(themes)),Row(Loc.T("语言", "Language"),language),
-            Row(Loc.T("缩放", "Scale"),scale),Dimension(Loc.T("圆角（%）", "Corners (%)"), S.CornerPercent, 0, 100, v => Change(s => s.CornerPercent = (int)v), "%", 5),transparency,
-            fontRow,followRow,Row(Loc.T("字体预览", "Font preview"),fontSample));
+        GeneralCard(Loc.T("字体", "Typography"), Loc.T("DeckIsland 文字使用的字体。", "The font DeckIsland's text is drawn in."), fontRow, followRow, FontPreview(fontSample));
+
         Interaction(); WindowRules();
+
+        // Quitting is an action, not a setting: last, on its own, as a quiet outline button.
+        var exit = ActionButton(Loc.T("退出", "Exit"), _app.ExitApplication); exit.Style = (Style)FindResource("SettingsOutlineButton"); exit.MinWidth = 84;
+        GeneralCard(Loc.T("应用", "App"), "", Describe(Row(Loc.T("退出 DeckIsland", "Exit DeckIsland"), exit), Loc.T("关闭 DeckIsland 和它的托盘图标。", "Close DeckIsland and its tray icon.")));
     }
     // Monitors were connected, removed or rearranged; the list of displays is built again.
     // A taskbar that appeared, moved or went away also shows or hides the collapsed group's anchor row.
@@ -720,35 +726,32 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
 
     private void Interaction()
     {
-        SectionTitle(Loc.T("悬停与动画", "Hover and animation"));
         // motion-review F20: the length covers the panel's changes of shape: expanding and collapsing, and the collapsed surface's
         // width, style and edge, the swell on start and the shrink on exit. Page switches, hover and press feedback keep their own pace.
-        var duration = SliderRow(Loc.T("动画时长", "Animation duration"), S.AnimationDuration, 100, 1000, 20, Loc.T("毫秒", "ms"), value => Change(s => s.AnimationDuration = (int)value),
+        var duration = InlineSlider(Loc.T("动画时长", "Animation duration"), S.AnimationDuration, 100, 1000, 20, Loc.T("毫秒", "ms"), value => Change(s => s.AnimationDuration = (int)value),
             Loc.T("展开、收起以及收起时外形变化的时长。",
                 "How long expanding, collapsing and changes of the collapsed shape take."));
-        var openDelay = SliderRow(Loc.T("展开延迟", "Expand delay"), S.OpenDelay, 0, 2000, 50, Loc.T("毫秒", "ms"), value => Change(s => s.OpenDelay = (int)value),
+        var openDelay = InlineSlider(Loc.T("展开延迟", "Expand delay"), S.OpenDelay, 0, 2000, 50, Loc.T("毫秒", "ms"), value => Change(s => s.OpenDelay = (int)value),
             Loc.T("鼠标悬停在 DeckIsland 的收起面板或指示条上多久后，开始展开。0 毫秒表示立即开始展开。",
                 "How long the pointer rests on DeckIsland's collapsed panel or indicator before it starts to expand. 0 ms expands immediately."));
-        static void Enable(Grid row, bool enabled)
-        {
-            foreach (var control in row.Children.OfType<FrameworkElement>().Where(control => Grid.GetColumn(control) > 0)) control.IsEnabled = enabled;
-            // The whole row reads as off (SW-12): the title and the number box fade as the slider does (its own 0.35).
-            foreach (var part in row.Children.OfType<FrameworkElement>().Where(control => control is not Slider)) part.Opacity = enabled ? 1 : .4;
-        }
-        Enable(duration, S.Animations);
-        Enable(openDelay, !S.ClickToExpand);
-        Group(ExpandWayRow(click => Enable(openDelay, !click)), openDelay,
-            SliderRow(Loc.T("收起延迟", "Collapse delay"), S.CloseDelay, 0, 2000, 50, Loc.T("毫秒", "ms"), value => Change(s => s.CloseDelay = (int)value),
+        EnableRow(duration, S.Animations);
+        EnableRow(openDelay, !S.ClickToExpand);
+        Describe(duration, Loc.T("展开和收起所用的时间。", "How long opening and closing take."));
+        Describe(openDelay, Loc.T("悬停多久后展开。", "Wait before opening on hover."));
+        GeneralCard(Loc.T("悬停与动画", "Hover and animation"), Loc.T("面板何时展开和收起，以及如何移动。", "When the island opens and closes, and how it moves."),
+            Describe(ExpandWayRow(click => EnableRow(openDelay, !click)), Loc.T("悬停展开，或只在点击时展开。", "Open on hover or only on click.")), openDelay,
+            Describe(InlineSlider(Loc.T("收起延迟", "Collapse delay"), S.CloseDelay, 0, 2000, 50, Loc.T("毫秒", "ms"), value => Change(s => s.CloseDelay = (int)value),
                 Loc.T("鼠标离开 DeckIsland 的展开面板范围多久后，开始收起。0 毫秒表示立即开始收起。",
                     "How long after the pointer leaves DeckIsland's expanded panel it starts to collapse. 0 ms collapses immediately.")),
-            Toggle(Loc.T("启用动画", "Animations"), S.Animations, value => { Change(s => s.Animations = value); Enable(duration, value); }, help:
+                Loc.T("鼠标离开后多久收起。", "Wait before closing once the pointer leaves.")),
+            Describe(Toggle(Loc.T("启用动画", "Animations"), S.Animations, value => { Change(s => s.Animations = value); EnableRow(duration, value); }, help:
                 Loc.T("控制面板展开收起、页面切换、悬停与按压反馈等全部动画。关闭，或 Windows 关闭了动画效果、使用高对比度时，界面不再有动画。",
-                    "Switches all animation on or off: the panel expanding and collapsing, page changes, hover and press feedback. With it off, or when Windows has animation effects off or uses high contrast, nothing animates.")), duration);
+                    "Switches all animation on or off: the panel expanding and collapsing, page changes, hover and press feedback. With it off, or when Windows has animation effects off or uses high contrast, nothing animates.")),
+                Loc.T("DeckIsland 中的全部动画。", "All motion in DeckIsland.")), duration);
     }
 
     private void WindowRules()
     {
-        SectionTitle(Loc.T("窗口行为", "Window behavior"));
         // The window rules apply whether or not the panel is kept above other windows; Keep on top only concerns a panel above
         // them, so it leaves with the switch.
         var rules = new StackPanel();
@@ -760,9 +763,10 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
             BehaviorRow(Loc.T("有窗口与 DeckIsland 重叠时", "When a window overlaps DeckIsland"), S.Occupied, value => Change(s => s.Occupied = value),
                 Loc.T("DeckIsland 收起时，有窗口移到它所在的位置就生效，移开后恢复。最大化和全屏窗口按上面的规则处理。",
                     "Applies when a window is moved onto the collapsed DeckIsland, and ends when it is moved away. Maximized and full-screen windows follow the rules above.")),
-            Toggle(Loc.T("同时检测后方窗口", "Also check windows behind"), S.BackgroundWindows, value => Change(s => s.BackgroundWindows = value),
+            Describe(Toggle(Loc.T("同时检测后方窗口", "Also check windows behind"), S.BackgroundWindows, value => Change(s => s.BackgroundWindows = value),
                 help: Loc.T("开启后，正在使用的窗口后方有窗口最大化、无边框全屏或与收起的 DeckIsland 重叠时，也按上面对应的规则处理。关闭后只检测正在使用的窗口。",
                     "When on, a window behind the window you are using that is maximized, in borderless full screen or overlapping the collapsed DeckIsland also follows the matching rule above. When off, only the window you are using is checked.")),
+                Loc.T("规则也用于当前窗口后方的窗口。", "Apply the rules to windows behind the active one.")),
             ExceptionsRow()
         })
         {
@@ -770,16 +774,16 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
             rules.Children.Add(row);
         }
         var keep = new StackPanel { Visibility = S.AlwaysOnTop ? Visibility.Visible : Visibility.Collapsed };
-        var onTop = Toggle(Loc.T("显示在其他窗口上方", "Keep above other windows"), S.AlwaysOnTop, value =>
+        var onTop = Describe(Toggle(Loc.T("显示在其他窗口上方", "Keep above other windows"), S.AlwaysOnTop, value =>
         {
             if (S.AlwaysOnTop != value) Change(s => s.AlwaysOnTop = value);
             keep.Visibility = value ? Visibility.Visible : Visibility.Collapsed;
         }, help: Loc.T("关闭后，面板像普通窗口一样会被其他窗口遮挡，展开时显示在最前面，显示桌面时仍然可见。下面的规则仍然生效：选择“保持原有样式”时面板被遮挡，选择“显示为指示条”时指示条显示在该窗口上方。",
-            "When off, other windows can cover the panel like any window. It comes to the front when it expands and stays visible when you show the desktop. The rules below still apply: with Keep style the panel is covered, with As indicator the indicator shows above that window."));
+            "When off, other windows can cover the panel like any window. It comes to the front when it expands and stays visible when you show the desktop. The rules below still apply: with Keep style the panel is covered, with As indicator the indicator shows above that window.")),
+            Loc.T("保持在其他窗口之上。", "Stay over other windows."));
         var behavior = new StackPanel();
         behavior.Children.Add(onTop); behavior.Children.Add(rules);
-        Group(behavior);
-        SectionTitle(Loc.T("兼容性", "Compatibility"));
+        GeneralCard(Loc.T("窗口行为", "Window behavior"), Loc.T("其他窗口需要屏幕时，面板如何处理。", "What the island does when other windows need the screen."), behavior);
         var raise = ActionButton(Loc.T("立即置顶", "Raise now"), () =>
         {
             foreach (var deck in _app.Decks.ToList()) Native.WindowsHost.RaiseOnce(deck, S.AlwaysOnTop);
@@ -792,13 +796,14 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
         keep.Children.Add(new Border { Height = 1, Background = UI.Brush(_palette.RowDivider) });
         var topRows = new StackPanel();
         topRows.Children.Add(keep);
-        topRows.Children.Add(Row(Loc.T("单次置顶", "Raise once"), raise, help: () => Loc.T("每次点击仅置顶一次。若面板再次被其他窗口遮挡，需要重新点击。",
-            "Each click raises the panel once. If another window covers it again, click again.")));
-        Group(topRows,
+        topRows.Children.Add(Describe(Row(Loc.T("单次置顶", "Raise once"), raise, help: () => Loc.T("每次点击仅置顶一次。若面板再次被其他窗口遮挡，需要重新点击。",
+            "Each click raises the panel once. If another window covers it again, click again.")), Loc.T("把面板置顶一次。", "Bring the panel up once.")));
+        GeneralCard(Loc.T("兼容性", "Compatibility"), Loc.T("适用于争抢屏幕最上层的应用。", "For apps that compete for the top of the screen."), topRows,
             ClickThroughRows(),
-            Toggle(Loc.T("允许录制软件捕获窗口", "Allow window capture"), S.WindowCapture, value => Change(s => s.WindowCapture = value), help:
+            Describe(Toggle(Loc.T("允许录制软件捕获窗口", "Allow window capture"), S.WindowCapture, value => Change(s => s.WindowCapture = value), help:
                 Loc.T("开启后，OBS 等录制软件可以用“窗口采集”单独捕获面板，同时面板会出现在 Alt + Tab 的窗口列表中。",
-                    "When on, OBS and other recording apps can capture the panel on its own with window capture. The panel also appears in the Alt+Tab list.")));
+                    "When on, OBS and other recording apps can capture the panel on its own with window capture. The panel also appears in the Alt+Tab list.")),
+                Loc.T("让录制软件可以捕获面板。", "Let recording apps capture the panel.")));
     }
 
     // Each row independently chooses its quota source, statistics source and dashboard name.
@@ -1324,7 +1329,7 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
     private FrameworkElement ExpandWayRow(Action<bool> chosen)
     {
         var title = Loc.T("展开方式", "Expand on");
-        var options = new UniformGrid { Columns = 2, Width = 216 };
+        var options = new UniformGrid { Columns = 2, Width = 240 };
         foreach (var (click, label) in new[] { (false, Loc.T("悬停展开", "Hover")), (true, Loc.T("点击展开", "Click")) })
         {
             var option = new RadioButton { Content = label, Style = (Style)FindResource("SettingsSegment"), GroupName = "ExpandWay", IsChecked = S.ClickToExpand == click };
@@ -1350,7 +1355,8 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
 
     private FrameworkElement BehaviorRow(string title, WindowBehavior selected, Action<WindowBehavior> changed, string? help = null)
     {
-        var options = new UniformGrid { Columns = 3, Width = 324 };
+        // 270 leaves the long rule names room in the General card at the window's narrowest.
+        var options = new UniformGrid { Columns = 3, Width = 270 };
         foreach (var behavior in Enum.GetValues<WindowBehavior>())
         {
             var option = new RadioButton { Content = BehaviorName(behavior), Style = (Style)FindResource("SettingsSegment"), GroupName = "Behavior" + title, IsChecked = selected == behavior };

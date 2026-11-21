@@ -182,6 +182,13 @@ internal sealed class Renderer(App app, string output, string language, string[]
             // The To do widget, its card in the gallery and its window, with a few invented items; for checking.
             // Sun and moon and Progress in their gallery cards, and the eight phases of the drawn moon; for checking.
             // The weather card at rest and with its hover layer fully on, for checking the hover.
+            // The General settings page: dark and light at the default width, and dark at the window's narrowest; for checking.
+            if (scenes.Contains("general"))
+            {
+                await SettingsPage("general-dark", 0, height: 2900);
+                await SettingsPage("general-light", 0, height: 2900, theme: SettingsTheme.Light);
+                await SettingsPage("general-narrow", 0, height: 2900, width: 840);
+            }
             if (scenes.Contains("hover-weather"))
             {
                 _settings.ColourfulWeatherCard = true; _settings.WeatherEnabled = true;
@@ -1646,10 +1653,10 @@ internal sealed class Renderer(App app, string output, string language, string[]
         Console.WriteLine("moons");
     }
 
-    private async Task SettingsPage(string name, int page, double height = 640, bool tips = false)
+    private async Task SettingsPage(string name, int page, double height = 640, bool tips = false, SettingsTheme theme = SettingsTheme.Dark, double width = 960)
     {
-        const double scale = 1.5, width = 960;
-        _settings.Theme = SettingsTheme.Dark;
+        const double scale = 1.5;
+        _settings.Theme = theme;
         var window = new SettingsWindow(app);
         window.ShowPage(page);
         var root = window.RootVisual;

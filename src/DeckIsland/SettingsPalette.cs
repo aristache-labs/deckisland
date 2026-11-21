@@ -18,6 +18,8 @@ internal sealed record SettingsPalette(bool Dark)
     public string RowDivider => Dark ? "#242429" : "#EDEDF1";
     public string Inset => Dark ? "#25252B" : "#EFF0F4";
     public string Input => Dark ? "#202026" : "#FFFFFF";
+    // The filled card a settings section sits in: one step above the surface, below the input fields it holds.
+    public string Card => Dark ? "#1A1A1E" : "#FFFFFF";
     public string Popup => Dark ? "#222227" : "#FCFCFD";
     public string Border => Dark ? "#42424B" : "#CED1DA";
     // The edge of what takes input (text and number fields, drop-downs, a switch's off track): at least 3:1 against the surface,
