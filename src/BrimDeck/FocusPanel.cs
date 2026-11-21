@@ -1,5 +1,4 @@
 using System.Windows;
-using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Media;
@@ -13,7 +12,8 @@ public partial class MainWindow
     private FocusDial? _focusBadgeDial;
     private TextBlock? _focusHeading, _focusDetail, _focusReading;
     private FocusDial? _focusDial;
-    private Button? _focusToggle, _focusReset, _focusShorter, _focusLonger;
+    private Action<FocusTimer>? _updateFocusControls;
+
     private (int Theme, string Language) _focusAppearance;
 
     private void InitializeFocus()
@@ -56,9 +56,11 @@ public partial class MainWindow
     {
         if (_app.FocusNotice != FocusPhase.Idle) return FocusNoticeLabel();
         var session = _app.FocusSession;
-        var label = session.Running ? FocusPhaseLabel() : Loc.T("已暂停", "Paused");
+        var label = session.Running ? FocusPhaseLabel() : FocusPausedLabel();
         return $"{FocusTime(session.Remaining(DateTimeOffset.UtcNow))}  {label}";
     }
+
+    private static string FocusPausedLabel() => Loc.T("已暂停", "Paused");
 
     private FrameworkElement? CompactFocus(double scale)
     {
@@ -67,6 +69,20 @@ public partial class MainWindow
             return null;
         var badge = WeatherText(FocusBadgeLabel(), CompactMusicLayout.CollapsedTextSize(Settings.QuotaRingStyle, scale, 11));
         Typography.SetNumeralAlignment(badge, FontNumeralAlignment.Tabular);
+        if (_app.FocusNotice == FocusPhase.Idle)
+        {
+            string actual = badge.Text;
+            string time = FocusTime(_app.FocusSession.Duration);
+            double width = 0;
+            foreach (string label in new[] { FocusPhaseLabel(), FocusPausedLabel() })
+            {
+                badge.Text = $"{time}  {label}";
+                badge.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+                width = Math.Max(width, badge.DesiredSize.Width);
+            }
+            badge.Text = actual;
+            badge.MinWidth = Math.Ceiling(width) + 1;
+        }
         double size = CompactMusicLayout.StatusRingSize(Settings.QuotaRingStyle, scale);
         _focusBadge = badge;
         _focusBadgeDial = new FocusDial { Width = size, Height = size, Margin = new Thickness(0, 0, 4 * scale, 0) };
@@ -112,23 +128,12 @@ public partial class MainWindow
         Typography.SetNumeralAlignment(_focusReading, FontNumeralAlignment.Tabular);
         face.Children.Add(_focusReading);
 
-        Button Control(string text, Action action, string? label = null)
-        {
-            var control = new Button { Content = text, Style = (Style)FindResource("PanelOutlineButton"), Margin = new Thickness(0, 0, 6, 0) };
-            if (label is not null) AutomationProperties.SetName(control, label);
-            control.Click += (_, _) => action();
-            return control;
-        }
         _focusHeading = WeatherText("", 16);
         _focusHeading.FontWeight = FontWeights.SemiBold;
         _focusDetail = WeatherText("", 12);
-        _focusToggle = Control("", () => _app.ToggleFocus(Profile));
-        _focusReset = Control(Loc.T("重置", "Reset"), _app.ResetFocus);
-        _focusShorter = Control("−", () => AdjustFocus(-1), Loc.T("减少一分钟", "Decrease focus by one minute"));
-        _focusLonger = Control("+", () => AdjustFocus(1), Loc.T("增加一分钟", "Increase focus by one minute"));
-        var controls = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 6, 0, 0),
-            Children = { _focusToggle, _focusReset, _focusShorter, _focusLonger } };
-        var settings = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Children = { _focusHeading, _focusDetail, controls } };
+        var controls = BuildFocusControls();
+        _updateFocusControls = controls.Update;
+        var settings = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Children = { _focusHeading, _focusDetail, controls.View } };
         var body = new DockPanel { Children = { face, settings } };
         FocusContent.Children.Add(new Border
         {
@@ -161,10 +166,7 @@ public partial class MainWindow
         _focusDetail!.Text = notice.Length > 0 ? notice : idle
             ? Loc.T($"{Settings.FocusMinutes} + {Settings.BreakMinutes} 分钟", $"{Settings.FocusMinutes} + {Settings.BreakMinutes} min")
             : timer.Running ? Loc.T("进行中", "In progress") : Loc.T("已暂停", "Paused");
-        _focusToggle!.Content = idle ? Loc.T("开始", "Start") : timer.Running ? Loc.T("暂停", "Pause") : Loc.T("继续", "Resume");
-        _focusReset!.IsEnabled = !idle;
-        _focusShorter!.IsEnabled = idle && Settings.FocusMinutes > FocusTimer.MinimumMinutes;
-        _focusLonger!.IsEnabled = idle && Settings.FocusMinutes < FocusTimer.MaximumMinutes;
+        _updateFocusControls?.Invoke(timer);
         _focusDial!.Update(timer, Animates);
     }
 

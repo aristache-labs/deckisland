@@ -266,7 +266,6 @@ public partial class MainWindow
     {
         frame.CornerRadius = new CornerRadius(16);
         frame.Padding = new Thickness(12, 6, 10, 6);
-        var primary = UI.Brush(Look.Primary);
         var face = new Grid { Width = 62, Height = 62, Margin = new Thickness(0, 0, 8, 0), VerticalAlignment = VerticalAlignment.Center };
         var dial = new FocusDial { IsHitTestVisible = false };
         var reading = WeatherText("", 14);
@@ -280,6 +279,35 @@ public partial class MainWindow
         heading.FontWeight = FontWeights.SemiBold;
         var detail = WeatherText("", 11);
         detail.Foreground = UI.Brush(Look.Secondary);
+        var controls = BuildFocusControls();
+        var content = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+        if (detailed)
+        {
+            var headingLink = WidgetSurface(heading, Loc.T("打开专注计时器", "Open Focus timer"), () => SelectPage(DeckPage.Focus));
+            headingLink.HorizontalAlignment = HorizontalAlignment.Left;
+            content.Children.Add(headingLink);
+        }
+        else content.Children.Add(heading);
+        content.Children.Add(detail);
+        content.Children.Add(controls.View);
+        frame.Child = new DockPanel { Children = { face, content } };
+        _widgetUpdates.Add(() =>
+        {
+            var session = _app.FocusSession;
+            bool idle = session.Phase == FocusPhase.Idle;
+            reading.Text = FocusTime(idle ? TimeSpan.FromMinutes(Settings.FocusMinutes) : session.Remaining(DateTimeOffset.UtcNow));
+            heading.Text = FocusPhaseLabel();
+            detail.Text = idle ? Loc.T($"{Settings.FocusMinutes} + {Settings.BreakMinutes} 分钟", $"{Settings.FocusMinutes} + {Settings.BreakMinutes} min")
+                : session.Running ? Loc.T("进行中", "In progress") : Loc.T("已暂停", "Paused");
+            dial.Update(session, Animates);
+            controls.Update(session);
+        });
+        return frame;
+    }
+
+    private (StackPanel View, Action<FocusTimer> Update) BuildFocusControls()
+    {
+        var primary = UI.Brush(Look.Primary);
         var play = WidgetGlyph("M5,2.5 L13,8 L5,13.5 Z", UI.Brush(Look.Hex("surface")));
         var pause = WidgetGlyph("M4,3 H6.5 V13 H4 Z M9.5,3 H12 V13 H9.5 Z", UI.Brush(Look.Hex("surface")));
         var toggle = RoundAction(play, () => _app.ToggleFocus(Profile), true);
@@ -292,26 +320,9 @@ public partial class MainWindow
         reset.ToolTip = AutomationProperties.GetName(reset);
         var actions = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 4, 0, 0),
             Children = { toggle, less, more, reset } };
-        var content = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
-        if (detailed)
+        return (actions, session =>
         {
-            var headingLink = WidgetSurface(heading, Loc.T("打开专注计时器", "Open Focus timer"), () => SelectPage(DeckPage.Focus));
-            headingLink.HorizontalAlignment = HorizontalAlignment.Left;
-            content.Children.Add(headingLink);
-        }
-        else content.Children.Add(heading);
-        content.Children.Add(detail);
-        content.Children.Add(actions);
-        frame.Child = new DockPanel { Children = { face, content } };
-        _widgetUpdates.Add(() =>
-        {
-            var session = _app.FocusSession;
             bool idle = session.Phase == FocusPhase.Idle;
-            reading.Text = FocusTime(idle ? TimeSpan.FromMinutes(Settings.FocusMinutes) : session.Remaining(DateTimeOffset.UtcNow));
-            heading.Text = FocusPhaseLabel();
-            detail.Text = idle ? Loc.T($"{Settings.FocusMinutes} + {Settings.BreakMinutes} 分钟", $"{Settings.FocusMinutes} + {Settings.BreakMinutes} min")
-                : session.Running ? Loc.T("进行中", "In progress") : Loc.T("已暂停", "Paused");
-            dial.Update(session, Animates);
             toggle.Content = session.Running ? pause : play;
             string action = idle ? Loc.T("开始", "Start") : session.Running ? Loc.T("暂停", "Pause") : Loc.T("继续", "Resume");
             AutomationProperties.SetName(toggle, action);
@@ -321,7 +332,6 @@ public partial class MainWindow
             less.IsEnabled = Settings.FocusMinutes > FocusTimer.MinimumMinutes;
             more.IsEnabled = Settings.FocusMinutes < FocusTimer.MaximumMinutes;
         });
-        return frame;
 
         Button RoundAction(object glyph, Action action, bool main = false)
         {
