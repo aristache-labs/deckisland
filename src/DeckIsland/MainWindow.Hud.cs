@@ -13,12 +13,15 @@ namespace DeckIsland;
 public partial class MainWindow
 {
     private HudMessage? _hudMessage;
+    // The length of the island along its edge when a readout started: one without text on a side edge is 80 % of it.
+    private double _normalSurface = double.NaN;
     private DispatcherTimer? _hudEnd;
 
     // False when this panel cannot show it in place (open, hidden, or a line); the caller then floats it.
     internal bool ShowHudInline(HudMessage message)
     {
         if (_expanded || !IsVisible || IsSuppressed || DisplayPower.Off || _poweringOff || EffectiveStyle == CompactStyle.Line) return false;
+        if (_hudMessage is null) _normalSurface = Collapsed.Surface.Width;
         _hudMessage = message;
         _hudEnd ??= new DispatcherTimer();
         _hudEnd.Stop();
@@ -77,8 +80,9 @@ public partial class MainWindow
         System.Windows.Automation.AutomationProperties.SetName(parts, hud.Label ?? hud.Text);
         if (hud.Level is { } level)
         {
-            double width = Math.Round(56 * scale), height = Math.Max(2, Math.Round(4 * scale));
-            var bar = new Grid { Width = width, Height = height, Margin = new Thickness(gap, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
+            // Without text the bar is the readout: long enough to read the level, as on a phone.
+            double width = Math.Round((hud.Text.Length > 0 ? 56 : 180) * scale), height = Math.Max(2, Math.Round(4 * scale));
+            var bar = new Grid { Width = width, Height = height, Margin = new Thickness(hud.Text.Length > 0 ? Math.Round(18 * scale) : gap, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
             bar.Children.Add(new Border { CornerRadius = new CornerRadius(height / 2), Background = UI.Brush(Look.Hex("track")) });
             bar.Children.Add(new Border { CornerRadius = new CornerRadius(height / 2), Background = UI.Brush(Look.Hex("accent")), HorizontalAlignment = HorizontalAlignment.Left,
                 Width = Math.Round(width * Math.Clamp(level, 0, 1)) });
@@ -87,13 +91,14 @@ public partial class MainWindow
         if (hud.Figure is { } figure)
         {
             var value = UI.Fixed(figure, font, line, Look.Secondary);
-            value.Margin = new Thickness(gap, 0, 0, 0);
+            // Room after the text, so the figure does not crowd it.
+            value.Margin = new Thickness(hud.Text.Length > 0 ? Math.Round(22 * scale) : gap, 0, 0, 0);
             parts.Children.Add(value);
         }
         if (hud.On is { } on)
         {
             double size = Math.Max(5, Math.Round(7 * scale));
-            parts.Children.Add(new Ellipse { Width = size, Height = size, Margin = new Thickness(gap, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center,
+            parts.Children.Add(new Ellipse { Width = size, Height = size, Margin = new Thickness(hud.Text.Length > 0 ? Math.Round(22 * scale) : gap, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center,
                 Fill = on ? UI.Brush(Look.Hex("accent")) : System.Windows.Media.Brushes.Transparent, StrokeThickness = 1.3,
                 Stroke = on ? UI.Brush(Look.Hex("accent")) : UI.Brush(Look.Secondary) });
         }
@@ -136,16 +141,18 @@ public partial class MainWindow
     // the one line, instead of the 60 DIP the shoulders ask of a long row.
     private CollapsedShape HudThin(CollapsedShape shape)
     {
-        if (_hudMessage is not { Text.Length: > 0 } || shape.Style != CompactStyle.Notch || !ColumnFor(CompactStyle.Notch)) return shape;
+        if (_hudMessage is not { Text.Length: > 0 } || !ColumnFor(shape.Style)) return shape;
         // The content box is the row's own (26 DIP at the notch's scale, which the height setting gives), with small ends.
         double line = Math.Max(1, CompactMusicLayout.Whole(26 * shape.Scale));
         // The ends flare like the notch's shoulders do at the top: the end at the screen edge melts into it with concave curves, which
         // take the inset, while the far end keeps the corner radius the Corners setting gives.
-        double inset = Math.Max(2, Math.Round(11 * shape.Scale));
+        bool capsule = shape.Style == CompactStyle.Capsule;
+        // A capsule has no shoulders to flare: just a small rounded end each side of the one line.
+        double inset = Math.Max(2, Math.Round((capsule ? 7 : 19) * shape.Scale));
         double length = line + 2 * inset;
         double x = Math.Max(0, shape.Surface.X + (shape.Surface.Width - length) / 2);
         return shape with { Surface = shape.Surface with { X = x, Width = length }, Inset = inset, ContentWidth = Math.Max(0, length - 2 * inset),
-            BottomRadius = Math.Min(shape.BottomRadius, length / 2), Shoulder = Math.Min(shape.Shoulder, inset) };
+            BottomRadius = Math.Min(shape.BottomRadius, length / 2), TopRadius = Math.Min(shape.TopRadius, length / 2), Shoulder = Math.Min(shape.Shoulder, inset) };
     }
 
     // A notch on a side edge: the readout stays one horizontal row, as at the top; the notch's depth grows to its width and its
@@ -179,7 +186,10 @@ public partial class MainWindow
     // bottom. Text is never turned, so a readout with text keeps its row (RenderHudColumn).
     private void RenderHudVertical(HudMessage hud, double scale, double dpi, double column, double room)
     {
-        double icon = Math.Round(14 * scale), gap = Math.Round(8 * scale), thickness = Math.Max(2, Math.Round(4 * scale)), length = Math.Round(56 * scale);
+        double icon = Math.Round(14 * scale), gap = Math.Round(8 * scale), thickness = Math.Max(2, Math.Round(4 * scale));
+        // The readout is 80 % as long as the island was, its bar taking what the icon leaves.
+        double shown = double.IsNaN(_normalSurface) ? 0 : Math.Round(_normalSurface * .8) - 2 * Collapsed.Inset;
+        double length = Math.Max(Math.Round(56 * scale), shown - icon - gap - Math.Round(8 * scale));
         var mark = new Path
         {
             Data = HudWindow.IconGeometry(hud.Icon), Stroke = UI.Brush(hud.Lit ? Look.Hex("accent") : Look.Primary), StrokeThickness = Math.Max(1, 1.4 * scale),

@@ -58,11 +58,11 @@ internal sealed class HudWindow : Window
         _icon.Margin = new Thickness(0, 0, 11, 0);
         DockPanel.SetDock(_icon, Dock.Left);
         row.Children.Add(_icon);
-        _figure.Margin = _dot.Margin = new Thickness(12, 0, 0, 0);
+        _figure.Margin = _dot.Margin = new Thickness(26, 0, 0, 0);
         DockPanel.SetDock(_figure, Dock.Right);
         DockPanel.SetDock(_dot, Dock.Right);
         DockPanel.SetDock(_bar, Dock.Right);
-        _bar.Margin = new Thickness(14, 0, 0, 0);
+        _bar.Margin = new Thickness(20, 0, 0, 0);
         _bar.Children.Add(_track); _bar.Children.Add(_fill);
         row.Children.Add(_figure); row.Children.Add(_dot); row.Children.Add(_bar); row.Children.Add(_text);
         _pill.Child = row;
