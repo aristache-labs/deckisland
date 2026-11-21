@@ -34,7 +34,7 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
     // The order of the pages in the navigation; the theme page (ThemePage) and the shortcuts (HotkeysPage) are listed with the
     // basic pages, and the system monitor's page (MonitorSettingsPage) has its own group after music, then the clipboard's
     // pages (the layout first), before About. The profiles page (ProfilesPage) closes the basic pages.
-    private static readonly int[] PageOrder = [0, 1, 2, WidgetsSettingsPage, NotificationsSettingsPage, CallsSettingsPage, ThemePage, HotkeysPage, ProfilesPage, 3, 4, 5, 6, MusicGesturesPage, MonitorSettingsPage, SensorsPage, ShelfLayoutSettingsPage, ClipboardSettingsPage, TransferSettingsPage, ClipboardSyncSettingsPage, DevicesSettingsPage, WeatherSettingsPage, RemindersSettingsPage, FocusSettingsPage, 7];
+    private static readonly int[] PageOrder = [0, 1, 2, WidgetsSettingsPage, NotificationsSettingsPage, CallsSettingsPage, ThemePage, HotkeysPage, ProfilesPage, 3, 4, 5, 6, MusicGesturesPage, MonitorSettingsPage, SensorsPage, ShelfLayoutSettingsPage, ClipboardSettingsPage, TransferSettingsPage, ClipboardSyncSettingsPage, DevicesSettingsPage, 7];
     private int _page;
     private bool _preview;
     private StackPanel? _appRows;
@@ -313,6 +313,9 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
     private void ShowPageCore(int page)
     {
         if (page < 0 || page >= _pages.Length) return;
+        // Weather, Focus timer and Reminders are cards on the Widgets page now; a link to one of them opens that card.
+        int? card = page is WeatherSettingsPage or FocusSettingsPage or RemindersSettingsPage ? page : null;
+        if (card is not null) page = WidgetsSettingsPage;
         RememberFocus();
         if (page != _page) { _expandedSource = null; _openSizes.Clear(); _phraseEdit = null; }
         if (page != ThemePage) WatchThemeFolder(false);
@@ -329,10 +332,10 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
         _ignoredOpen = false; _ignoredHost = null;
         _scroll.ScrollChanged -= ExceptionsScrollChanged;
         _refreshSensors = null;
-        _page = page; _navigation.Children.Clear(); _content.Children.Clear(); _aboutUpdateView = null; _scroll.ScrollToTop();
+        _page = page; _navigation.Children.Clear(); _content.Children.Clear(); _optionCards.Clear(); _aboutUpdateView = null; _scroll.ScrollToTop();
         foreach (int i in PageOrder)
         {
-            if (i is 0 or 3 or 5 or 7 or MonitorSettingsPage or ShelfLayoutSettingsPage or DevicesSettingsPage or WeatherSettingsPage or RemindersSettingsPage)
+            if (i is 0 or 3 or 5 or 7 or MonitorSettingsPage or ShelfLayoutSettingsPage or DevicesSettingsPage)
             {
                 var group = TextLine(i switch { 0 => Loc.T("基础设置", "Basics"), 3 => Loc.T("AI 用量", "AI usage"), MonitorSettingsPage => Loc.T("系统监控", "System monitor"), ShelfLayoutSettingsPage => Loc.T("中转站", "Shelf"), DevicesSettingsPage => Loc.T("设备电量", "Device batteries"), WeatherSettingsPage => Loc.T("天气", "Weather"), RemindersSettingsPage => Loc.T("效率工具", "Productivity"), 5 => Loc.T("音乐", "Music"), _ => Loc.T("关于", "About") },10.5,TextTertiary);
                 group.Margin = new Thickness(12, i == 0 ? 0 : 24, 0, 8); _navigation.Children.Add(group);
@@ -355,10 +358,12 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
             var reset=ActionButton(Loc.T("恢复默认", "Restore defaults"),()=>{ if(Confirm(Loc.T("恢复默认", "Restore defaults"),ResetConfirmText(page),Loc.T("恢复默认", "Restore defaults")))ResetPage(); }); reset.FontSize=11; DockPanel.SetDock(reset,Dock.Right); head.Children.Add(reset);
         }
         head.Children.Add(page == 7 ? Wordmark(28) : TextLine(_pages[page],24,TextPrimary,FontWeights.SemiBold)); _content.Children.Add(head);
-        switch(page) { case WidgetsSettingsPage: WidgetsSettings(); break; case NotificationsSettingsPage: NotificationsSettings(); break; case CallsSettingsPage: CallsSettings(); break; case 0: General(); break; case 1: Compact(); break; case 2: Expanded(); break; case 3: Pages(); break; case 4: ModelPrices(); break; case 5: MusicStyle(); break; case 6: Players(); break; case 7: About(); break; case ThemePage: ThemesPage(); break; case MonitorSettingsPage: MonitorSettings(); break; case SensorsPage: SensorsSettings(); break; case HotkeysPage: HotkeysSettings(); break; case DevicesSettingsPage: DevicesSettings(); break; case WeatherSettingsPage: WeatherSettings(); break; case FocusSettingsPage: FocusSettings(); break; case RemindersSettingsPage: RemindersSettings(); break; case ClipboardSettingsPage: ClipboardSettings(); break; case TransferSettingsPage: TransferSettings(); break; case ClipboardSyncSettingsPage: ClipboardSyncSettings(); break; case ShelfLayoutSettingsPage: ShelfLayoutSettings(); break; case MusicGesturesPage: MusicGesturesSettings(); break; case ProfilesPage: ProfilesSettings(); break; }
+        switch(page) { case WidgetsSettingsPage: WidgetsSettings(); break; case NotificationsSettingsPage: NotificationsSettings(); break; case CallsSettingsPage: CallsSettings(); break; case 0: General(); break; case 1: Compact(); break; case 2: Expanded(); break; case 3: Pages(); break; case 4: ModelPrices(); break; case 5: MusicStyle(); break; case 6: Players(); break; case 7: About(); break; case ThemePage: ThemesPage(); break; case MonitorSettingsPage: MonitorSettings(); break; case SensorsPage: SensorsSettings(); break; case HotkeysPage: HotkeysSettings(); break; case DevicesSettingsPage: DevicesSettings(); break; case ClipboardSettingsPage: ClipboardSettings(); break; case TransferSettingsPage: TransferSettings(); break; case ClipboardSyncSettingsPage: ClipboardSyncSettings(); break; case ShelfLayoutSettingsPage: ShelfLayoutSettings(); break; case MusicGesturesPage: MusicGesturesSettings(); break; case ProfilesPage: ProfilesSettings(); break; }
         if (_content.Children[^1] is Border lastGroup) lastGroup.Margin = new Thickness(lastGroup.Margin.Left, lastGroup.Margin.Top, lastGroup.Margin.Right, 0);
         // Apply the offset before the frame is drawn, so the rebuilt page never shows its top for a frame.
         if (keep > 0) { _scroll.UpdateLayout(); _scroll.ScrollToVerticalOffset(keep); _scroll.UpdateLayout(); }
+        if (card is { } asked && _optionCards.TryGetValue(asked, out var opened))
+            Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, () => { if (opened.IsLoaded) opened.BringIntoView(new Rect(0, 0, opened.ActualWidth, 1)); });
         RestoreFocus();
     }
     // The scroll position of the page being rebuilt by a theme change, whose scroll viewer is replaced.

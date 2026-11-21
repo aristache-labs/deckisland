@@ -146,6 +146,7 @@ public sealed partial class SettingsWindow
         WidgetKind.Today => Loc.T("今天的日期和所在的这一周。", "Today's date and the week around it."),
         WidgetKind.Clock => Loc.T("你的时间，外加最多三个城市。", "Your time, plus up to three cities."),
         WidgetKind.Countdown => Loc.T("距离你设定的日期还有几天。", "Days left until a date you set."),
+        WidgetKind.Todo => Loc.T("一个可以勾选、排序的简短清单。", "A short list you tick off and put in order."),
         _ => ""
     };
 }

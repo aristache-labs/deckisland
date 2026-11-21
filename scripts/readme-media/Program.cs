@@ -179,7 +179,16 @@ internal sealed class Renderer(App app, string output, string language, string[]
             if (scenes.Contains("shelf-notice")) await ShelfNotice();
             // The file transfer's settings, and the word beside the pointer while files are dragged out; for checking.
             // The widget gallery with its live previews and the Clock and Countdown options; for checking, not for the README.
-            if (scenes.Contains("widgets-settings")) await SettingsPage("widgets-settings", 22, height: 2100);
+            // The To do widget, its card in the gallery and its window, with a few invented items; for checking.
+            if (scenes.Contains("todo"))
+            {
+                _settings.WidgetSlots = [WidgetKind.Todo, WidgetKind.Clock, WidgetKind.Today, WidgetKind.Empty];
+                _settings.TodoItems = [new(Guid.NewGuid(), "Book the flights", false), new(Guid.NewGuid(), "Call the bank about the card", false),
+                    new(Guid.NewGuid(), "Buy a birthday present", false), new(Guid.NewGuid(), "Renew the passport", true)];
+                await SettingsPage("todo-settings", 22, height: 1750);
+                await TodoDialogScene();
+            }
+            if (scenes.Contains("widgets-settings")) await SettingsPage("widgets-settings", 22, height: 3800);
             if (scenes.Contains("transfer-settings")) { await DragHints(); await SettingsPage("transfer-settings", 14, tips: true); }
         }
         finally { Directory.Delete(folder, true); }
@@ -1543,6 +1552,27 @@ internal sealed class Renderer(App app, string output, string language, string[]
             if (child is T match) yield return match;
             foreach (var deeper in Descendants<T>(child)) yield return deeper;
         }
+    }
+
+    private async Task TodoDialogScene()
+    {
+        const double scale = 1.5, width = 480;
+        var assembly = typeof(App).Assembly;
+        var palette = assembly.GetType("DeckIsland.PanelTheme")!.GetProperty("Current", Program.Any)!.GetValue(null);
+        var dialog = (Window)Activator.CreateInstance(assembly.GetType("DeckIsland.TodoDialog")!, Program.Any, null, [app, SettingsTheme.Dark, palette], null)!;
+        var content = (FrameworkElement)dialog.Content;
+        dialog.Content = null;
+        var root = new System.Windows.Controls.Border { Background = dialog.Background, Child = content, Resources = dialog.Resources, Width = width };
+        TextOptions.SetTextFormattingMode(root, TextFormattingMode.Ideal);
+        root.Measure(new Size(width, double.PositiveInfinity)); root.Arrange(new Rect(root.DesiredSize));
+        await Settle();
+        root.UpdateLayout();
+        var size = root.DesiredSize;
+        var bitmap = new RenderTargetBitmap((int)(size.Width * scale), (int)(size.Height * scale), 96 * scale, 96 * scale, PixelFormats.Pbgra32);
+        bitmap.Render(root); bitmap.Freeze();
+        Write(bitmap, Path.Combine(output, "todo-dialog.png"));
+        Console.WriteLine("todo-dialog");
+        try { dialog.Close(); } catch (InvalidOperationException) { }
     }
 
     private async Task SettingsPage(string name, int page, double height = 640, bool tips = false)

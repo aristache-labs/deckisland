@@ -516,6 +516,7 @@ public sealed class DeckSettings
     public List<string> WorldClocks { get; set; } = [];
     public string CountdownTitle { get; set; } = "";
     public string CountdownDate { get; set; } = "";
+    public List<TodoItem> TodoItems { get; set; } = [];
     public ClockTimeFormat TimeFormat { get; set; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public bool? Clock24Hour { get; set; }
     [JsonIgnore] public string TimePattern => TimeFormat switch
@@ -771,7 +772,7 @@ public sealed class DeckSettings
     public bool FocusPage { get; set; }
     public bool FocusHideOtherWidgets { get; set; } = true;
     public FocusSound FocusEndSound { get; set; } = FocusSound.Asterisk;
-    public FocusSound BreakEndSound { get; set; } = FocusSound.Exclamation;
+    public FocusSound BreakEndSound { get; set; } = FocusSound.Hand;
     public bool FocusSimplifiesCompact(CompactStyle style) => FocusPage && FocusHideOtherWidgets && style != CompactStyle.Line;
     public bool NotchFocus { get; set; } = true;
     public bool CapsuleFocus { get; set; } = true;
@@ -969,6 +970,7 @@ public sealed class DeckSettings
         copy.SensorIgnoredApps = [.. SensorIgnoredApps ?? []];
         copy.ClockGradient = [.. ClockGradient ?? [.. ClockColors.Sunset]];
         copy.WorldClocks = [.. WorldClocks ?? []];
+        copy.TodoItems = [.. TodoItems ?? []];
         copy.DisplayMonitors = [.. DisplayMonitors ?? []];
         copy.ThemeChoices = (ThemeChoices ?? []).ToDictionary(pair => pair.Key, pair => pair.Value.Copy());
         copy.FullscreenRules = FullscreenRules.Select(rule => rule with { }).ToList();
@@ -1025,8 +1027,9 @@ public sealed class DeckSettings
         RemindersHeight = double.IsFinite(RemindersHeight) ? Math.Clamp(RemindersHeight, DeckPages.MinHeight, DeckPages.MaxHeight) : 280;
         FocusMinutes = FocusTimer.ClampMinutes(FocusMinutes);
         BreakMinutes = FocusTimer.ClampMinutes(BreakMinutes);
-        if (!Enum.IsDefined(FocusEndSound)) FocusEndSound = FocusSound.Asterisk;
-        if (!Enum.IsDefined(BreakEndSound)) BreakEndSound = FocusSound.Exclamation;
+        // The sounds are not a choice any more: Information when a Focus ends, Critical stop when a Break does.
+        FocusEndSound = FocusSound.Asterisk;
+        BreakEndSound = FocusSound.Hand;
         FocusWidth = double.IsFinite(FocusWidth) ? Math.Clamp(FocusWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : 440;
         FocusHeight = double.IsFinite(FocusHeight) ? Math.Clamp(FocusHeight, DeckPages.MinHeight, DeckPages.MaxHeight) : 180;
         WeatherWidth = double.IsFinite(WeatherWidth) ? Math.Clamp(WeatherWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : 460;
@@ -1102,6 +1105,7 @@ public sealed class DeckSettings
         WorldClocks = Core.WorldClocks.Normalize(WorldClocks);
         CountdownTitle = (CountdownTitle ?? "").Trim();
         CountdownDate = Countdown.Normalize(CountdownDate);
+        TodoItems = Todos.Normalize(TodoItems);
         if (!Enum.IsDefined(DefaultPage)) DefaultPage = DefaultDeckPage.Last;
         if (!Enum.IsDefined(LastPage)) LastPage = DeckPage.Usage;
         OpenDelay = Math.Clamp(OpenDelay, 0, 2000);

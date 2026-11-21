@@ -855,7 +855,7 @@ internal sealed class StorageBlock : FrameworkElement
         var (used, total, unit) = Storage.Sizes(drive.Used, drive.Total);
         string text = drive.Letters + (drive.Model.Length > 0 ? " · " + drive.Model : "") + $" · {used} / {total} {unit}";
         if (drive.Temperature is { } heat)
-            text += " · " + Temperatures.Detail(heat.Celsius) + (heat.Warning is { } warning ? Loc.T($"（警告 {Temperatures.Format(warning)} °C）", $" (warning at {Temperatures.Format(warning)} °C)") : "");
+            text += " · " + Temperatures.Detail(heat.Celsius) + (heat.Warning is { } warning ? Loc.T($"（警告 {Temperatures.Format(warning)} {Temperatures.Unit}）", $" (warning at {Temperatures.Format(warning)} {Temperatures.Unit})") : "");
         if (drive.Volumes.Count > 1)
             foreach (var volume in drive.Volumes)
             {
@@ -882,8 +882,8 @@ internal sealed class StorageBlock : FrameworkElement
                 Size: MonitorDraw.Text($" / {total} {unit}", _caption, Look.Tertiary, ppd), Widest: MonitorDraw.Text(total, _body + 1, Look.Primary, ppd, strong: true));
         }).ToList();
         double labels = texts.Max(t => t.Label.WidthIncludingTrailingWhitespace), figures = texts.Max(t => t.Widest.WidthIncludingTrailingWhitespace + t.Size.WidthIncludingTrailingWhitespace);
-        var unitText = MonitorDraw.Text("°C", _caption, Look.Tertiary, ppd);
-        double heatWidth = (MonitorDraw.Text("100", _body, Look.Primary, ppd, strong: true).WidthIncludingTrailingWhitespace + 2 + unitText.WidthIncludingTrailingWhitespace + space)
+        var unitText = MonitorDraw.Text(Temperatures.Unit, _caption, Look.Tertiary, ppd);
+        double heatWidth = (MonitorDraw.Text(Temperatures.Fahrenheit ? "212" : "100", _body, Look.Primary, ppd, strong: true).WidthIncludingTrailingWhitespace + 2 + unitText.WidthIncludingTrailingWhitespace + space)
             * Math.Clamp(_heat.At(now), 0, 1);
         double glyph = Math.Round(badge * 9 / 16), labelX = badge + Math.Round(_body * .5), figureX = labelX + labels + space, barX = figureX + figures + space;
         double cell = Math.Floor((w - ColumnGap * (_columns - 1)) / _columns);

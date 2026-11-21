@@ -19,7 +19,14 @@ public sealed partial class SettingsWindow
         SectionTitle(Loc.T("小组件选项", "Widget options"));
         Target.Children.Add(ClockOptionsCard());
         Target.Children.Add(CountdownOptionsCard());
+        // These three were pages of their own; a link to one of them opens its card (ShowPage).
+        Target.Children.Add(_optionCards[WeatherSettingsPage] = WeatherOptionsCard());
+        Target.Children.Add(_optionCards[FocusSettingsPage] = FocusOptionsCard());
+        Target.Children.Add(_optionCards[RemindersSettingsPage] = RemindersOptionsCard());
     }
+
+    // The card a former page opens on: ShowPage brings it into view when that page is asked for.
+    private readonly Dictionary<int, FrameworkElement> _optionCards = [];
 
     private FrameworkElement ClockOptionsCard()
     {
@@ -67,7 +74,7 @@ public sealed partial class SettingsWindow
             cities.Children.Add(new StackPanel { Margin = new Thickness(0, 0, 10, 0), Children = { caption, city } });
         }
 
-        return OptionsCard(WidgetKind.Clock, Loc.T("你的时间，外加最多三个城市。", "Your time, plus up to three cities."),
+        return OptionsCard(WidgetLayout.Name(WidgetKind.Clock), Loc.T("你的时间，外加最多三个城市。", "Your time, plus up to three cities."), null,
             Field(Loc.T("时间格式", "Time format"), timeFormat, Loc.T("这是整个 DeckIsland 的设置，不只是这个小组件：收起时的时钟、提醒、活动时间和所有其他页面都会使用它。“跟随系统”沿用 Windows 的设置。",
                 "This applies to all of DeckIsland, not only this widget: the collapsed clock, reminders, event times and every other page use it. System follows Windows."), Loc.T("全局", "All of DeckIsland")),
             Field(Loc.T("世界时钟", "World clock"), cities, Loc.T("按顺序列在你的时间下方；选“无”可跳过。", "Listed under your own time in this order. Choose None to leave one out.")));
@@ -119,23 +126,22 @@ public sealed partial class SettingsWindow
         DockPanel.SetDock(clear, Dock.Right);
         dateRow.Children.Add(clear); dateRow.Children.Add(pick);
 
-        var pair = new Grid();
-        pair.ColumnDefinitions.Add(new ColumnDefinition());
-        pair.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(16) });
-        pair.ColumnDefinitions.Add(new ColumnDefinition());
-        var titleField = Field(Loc.T("名称", "Title"), title, Loc.T("显示在小组件右上角。", "Shown at the widget's top right."));
-        var dateField = Field(Loc.T("日期", "Date"), dateRow, Loc.T("没有日期时，小组件会提示你来这里设置。", "Without a date the widget asks you to set one."));
-        Grid.SetColumn(dateField, 2);
-        pair.Children.Add(titleField); pair.Children.Add(dateField);
-        return OptionsCard(WidgetKind.Countdown, Loc.T("距离你设定的日期还有几天。", "Days left until a date you set."), pair);
+        return OptionsCard(WidgetLayout.Name(WidgetKind.Countdown), Loc.T("距离你设定的日期还有几天。", "Days left until a date you set."), null,
+            Columns(
+                Field(Loc.T("名称", "Title"), title, Loc.T("显示在小组件右上角。", "Shown at the widget's top right.")),
+                Field(Loc.T("日期", "Date"), dateRow, Loc.T("没有日期时，小组件会提示你来这里设置。", "Without a date the widget asks you to set one."))));
     }
 
-    private Border OptionsCard(WidgetKind kind, string note, params FrameworkElement[] fields)
+    // The card every widget's options sit in: name and note on top, with the widget's on/off switch at the right when it has one.
+    private Border OptionsCard(string title, string note, FrameworkElement? action, params FrameworkElement[] fields)
     {
-        var name = TextLine(WidgetLayout.Name(kind), 15, TextPrimary, FontWeights.SemiBold);
+        var name = TextLine(title, 15, TextPrimary, FontWeights.SemiBold);
         var about = TextLine(note, 12.5, TextSecondary);
         about.Margin = new Thickness(0, 3, 0, 0);
-        var body = new StackPanel { Children = { name, about, new Border { Height = 1, Background = UI.Brush(_palette.RowDivider), Margin = new Thickness(0, 16, 0, 18) } } };
+        var head = new DockPanel();
+        if (action is not null) { DockPanel.SetDock(action, Dock.Right); action.VerticalAlignment = VerticalAlignment.Center; action.Margin = new Thickness(16, 0, 0, 0); head.Children.Add(action); }
+        head.Children.Add(new StackPanel { Children = { name, about } });
+        var body = new StackPanel { Children = { head, new Border { Height = 1, Background = UI.Brush(_palette.RowDivider), Margin = new Thickness(0, 16, 0, 18) } } };
         foreach (var field in fields) body.Children.Add(field);
         return new Border
         {
@@ -155,10 +161,85 @@ public sealed partial class SettingsWindow
             heading.Children.Add(new Border { Margin = new Thickness(8, 0, 0, 0), Padding = new Thickness(8, 2, 8, 2), CornerRadius = new CornerRadius(10),
                 VerticalAlignment = VerticalAlignment.Center, Background = (Brush)FindResource("SettingsAccentTint"),
                 Child = TextLine(badge, 11, _palette.Accent, FontWeights.SemiBold) });
+        var field = new StackPanel { Margin = new Thickness(0, 0, 0, 20), Children = { heading, control } };
+        if (help.Length == 0) return field;
         var hint = TextLine(help, 12, TextTertiary);
         hint.TextWrapping = TextWrapping.Wrap;
         hint.Margin = new Thickness(0, 8, 0, 0);
-        return new StackPanel { Margin = new Thickness(0, 0, 0, 20), Children = { heading, control, hint } };
+        field.Children.Add(hint);
+        return field;
+    }
+
+    // The switch at the right of a card's title that turns the widget on or off.
+    private CheckBox HeaderSwitch(string name, bool value, Action<bool> changed)
+    {
+        var toggle = new CheckBox { Style = (Style)FindResource("SettingsToggle"), IsChecked = value, Padding = new Thickness(0) };
+        AutomationProperties.SetName(toggle, name);
+        toggle.ToolTip = name;
+        toggle.Checked += (_, _) => changed(true); toggle.Unchecked += (_, _) => changed(false);
+        return toggle;
+    }
+
+    // A thin line between rows that are not fields, such as a switch and a choice.
+    private FrameworkElement Rule() => new Border { Height = 1, Background = UI.Brush(_palette.RowDivider), Margin = new Thickness(0, 0, 0, 16) };
+
+    // A choice with its name and explanation at the left and its control at the right, like a switch row.
+    private FrameworkElement ChoiceRow(string title, string help, FrameworkElement control)
+    {
+        control.VerticalAlignment = VerticalAlignment.Center;
+        control.Margin = new Thickness(16, 0, 0, 0);
+        var name = TextLine(title, 13, TextPrimary, FontWeights.SemiBold);
+        var hint = TextLine(help, 12, TextTertiary);
+        hint.TextWrapping = TextWrapping.Wrap;
+        hint.Margin = new Thickness(0, 4, 0, 0);
+        var row = new DockPanel { Margin = new Thickness(0, 0, 0, 16) };
+        DockPanel.SetDock(control, Dock.Right);
+        row.Children.Add(control);
+        row.Children.Add(new StackPanel { VerticalAlignment = VerticalAlignment.Center, Children = { name, hint } });
+        return row;
+    }
+
+    // A yes-or-no option: its name and explanation at the left, the switch at the right.
+    private FrameworkElement SwitchRow(string title, string help, bool value, Action<bool> changed)
+    {
+        var toggle = HeaderSwitch(title, value, changed);
+        toggle.VerticalAlignment = VerticalAlignment.Center;
+        toggle.Margin = new Thickness(16, 0, 0, 0);
+        var name = TextLine(title, 13, TextPrimary, FontWeights.SemiBold);
+        var hint = TextLine(help, 12, TextTertiary);
+        hint.TextWrapping = TextWrapping.Wrap;
+        hint.Margin = new Thickness(0, 4, 0, 0);
+        var row = new DockPanel { Margin = new Thickness(0, 0, 0, 16) };
+        DockPanel.SetDock(toggle, Dock.Right);
+        row.Children.Add(toggle);
+        row.Children.Add(new StackPanel { Children = { name, hint } });
+        return row;
+    }
+
+    // Fields side by side in equal columns, 16 apart.
+    private static Grid Columns(params FrameworkElement[] fields)
+    {
+        var grid = new Grid();
+        for (int i = 0; i < fields.Length; i++)
+        {
+            if (i > 0) grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(16) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition());
+            Grid.SetColumn(fields[i], i * 2);
+            grid.Children.Add(fields[i]);
+        }
+        return grid;
+    }
+
+    // A slider with its value box, filling the field's width; minutes for the Focus timer.
+    private FrameworkElement FormSlider(string title, double value, string unit, Action<double> changed)
+    {
+        var (slider, number) = NumericControls(title, value, FocusTimer.MinimumMinutes, FocusTimer.MaximumMinutes, 1, unit, changed);
+        slider.Margin = new Thickness(2, 0, 14, 0);
+        number.VerticalAlignment = VerticalAlignment.Center;
+        var row = new DockPanel { Height = 36 };
+        DockPanel.SetDock(number, Dock.Right);
+        row.Children.Add(number); row.Children.Add(slider);
+        return row;
     }
 
     private FrameworkElement CalendarMark()

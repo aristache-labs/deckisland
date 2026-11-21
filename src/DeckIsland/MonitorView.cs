@@ -330,7 +330,7 @@ internal sealed class MonitorView : Grid
             string frequency = cpu.FrequencyMhz.TryGet(out var mhz) ? MonitorFormat.Gigahertz(mhz) + " GHz" : "";
             // The zone is the firmware's, which may be the board near the processor rather than the processor itself.
             double? heat = _temperatures ? cpu.Temperature : null;
-            string temperature = heat is { } celsius ? Temperatures.Format(celsius) + " °C" : "";
+            string temperature = heat is { } celsius ? Temperatures.Detail(celsius) : "";
             _cpuGauge.Set(cpu.Usage, MonitorFormat.Percent(cpu.Usage), "%", temperature,
                 "CPU " + MonitorFormat.Percent(cpu.Usage) + "%" + (frequency.Length > 0 ? " · " + frequency : "") + Loc.T($" · {cpu.Cores.Count} 个逻辑处理器", $" · {cpu.Cores.Count} logical processors")
                 + (temperature.Length > 0 ? "\n" + TemperatureLine(cpu, temperature) : ""),
@@ -349,7 +349,7 @@ internal sealed class MonitorView : Grid
             bool several = snapshot.Gpus.Count > 1;
             _nextGpu = several && !cpuMain ? GpuChoice.Next(snapshot.Gpus, gpu) : null;
             double? heat = _temperatures ? gpu.Temperature : null;
-            string temperature = heat is { } celsius ? Temperatures.Format(celsius) + " °C" : "";
+            string temperature = heat is { } celsius ? Temperatures.Detail(celsius) : "";
             // An adapter without engine readings at the moment (NoReadings) shows a dash and says so; it can still be switched from.
             bool idle = gpu.NoReadings;
             // The usage says where it was read when its driver gave it; the engines' columns are always Windows' own.
@@ -410,8 +410,8 @@ internal sealed class MonitorView : Grid
     private static string TemperatureLine(CpuSample cpu, string temperature)
     {
         string cores = cpu.CoreTemperatures.Count == 0 ? ""
-            : cpu.CoreTemperaturesAreCcds ? " · CCD " + string.Join(" / ", cpu.CoreTemperatures.Select(Temperatures.Format)) + " °C"
-            : Loc.T(" · 各核心 ", " · cores ") + Temperatures.Format(cpu.CoreTemperatures.Min()) + "–" + Temperatures.Format(cpu.CoreTemperatures.Max()) + " °C";
+            : cpu.CoreTemperaturesAreCcds ? " · CCD " + string.Join(" / ", cpu.CoreTemperatures.Select(Temperatures.Format)) + " " + Temperatures.Unit
+            : Loc.T(" · 各核心 ", " · cores ") + Temperatures.Format(cpu.CoreTemperatures.Min()) + "–" + Temperatures.Format(cpu.CoreTemperatures.Max()) + " " + Temperatures.Unit;
         return cpu.TemperatureSource switch
         {
             CpuTemperatureSource.Processor => Loc.T($"温度 {temperature}（处理器传感器）", $"Temperature {temperature} (processor sensors)") + cores,

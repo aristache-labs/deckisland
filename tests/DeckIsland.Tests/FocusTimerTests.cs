@@ -38,8 +38,8 @@ internal static class FocusTimerTests
         var saved = System.Text.Json.JsonSerializer.Serialize(settings);
         var restored = System.Text.Json.JsonSerializer.Deserialize<DeckSettings>(saved)!;
         restored.Normalize();
-        check("Focus and break save independent system sounds", restored.FocusEndSound == FocusSound.None &&
-            restored.BreakEndSound == FocusSound.Question);
+        check("Focus ends with Information and a break with Critical stop, whatever a saved file holds", restored.FocusEndSound == FocusSound.Asterisk &&
+            restored.BreakEndSound == FocusSound.Hand);
         check("Focus and break theme colors differ and meet contrast in both base themes",
             new[] { PanelThemes.Dark, PanelThemes.Light }.All(id =>
             {

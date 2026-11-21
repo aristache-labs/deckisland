@@ -73,15 +73,25 @@ public static class Temperatures
         return Level(disk.Celsius, warning, critical);
     }
 
-    // A gauge's temperature after its figure, "62 °C", or nothing, so a missing sensor leaves no gap or dash.
-    public static string Detail(double? celsius) => celsius is { } value ? Format(value) + " °C" : "";
+    // The unit every temperature is shown in: Fahrenheit when the weather is (DeckSettings.WeatherFahrenheit), so one switch
+    // sets the weather and the CPU, GPU and drive temperatures alike. Readings and their levels stay in Celsius inside.
+    public static bool Fahrenheit { get; set; }
+    public static string Unit => Fahrenheit ? "°F" : "°C";
+    // The widest whole figure a reading can have in the unit shown (125 °C is 257 °F), for room that is measured before drawing.
+    public static string Widest => Format(Highest);
+    public static double Display(double celsius, bool fahrenheit) => fahrenheit ? celsius * 9 / 5 + 32 : celsius;
+    public static double Display(double celsius) => Display(celsius, Fahrenheit);
+
+    // A gauge's temperature after its figure, "62 °C" (or "144 °F"), or nothing, so a missing sensor leaves no gap or dash.
+    public static string Detail(double? celsius) => celsius is { } value ? Format(value) + " " + Unit : "";
 
     // An adapter's kind by its dedicated memory, as Task Manager tells them apart: integrated adapters have little or none of
     // their own. Shown before a temperature read from an adapter other than the one shown.
     public static string AdapterKind(ulong dedicated) => dedicated >= 512UL << 20 ? Loc.T("独显", "dGPU") : Loc.T("核显", "iGPU");
 
-    // Whole degrees: "47".
-    public static string Format(double celsius) => ((int)Math.Round(celsius, MidpointRounding.AwayFromZero)).ToString(CultureInfo.InvariantCulture);
+    // Whole degrees in the unit shown: "47".
+    public static string Format(double celsius) => Format(celsius, Fahrenheit);
+    public static string Format(double celsius, bool fahrenheit) => ((int)Math.Round(Display(celsius, fahrenheit), MidpointRounding.AwayFromZero)).ToString(CultureInfo.InvariantCulture);
 }
 
 // Whether a kind of sensor (the processor's zones, the graphics adapters, the drives) has given a reading since the sampler

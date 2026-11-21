@@ -130,7 +130,8 @@ internal sealed class MonitorStrip : FrameworkElement
             : widths(item) : widths;
     }
 
-    private const string WidestDegrees = "125°", WidestPercent = "100%";
+    private static string WidestDegrees => Temperatures.Widest + "°";
+    private const string WidestPercent = "100%";
     // Monitors run up to 500 Hz and more, so three digits; the unit follows in the smaller type.
     private const string WidestFrames = "999", FramesUnit = "FPS";
     private double FramesSlot => _framesIcon ? Math.Round(14 * _scale) : Glyph;
@@ -281,8 +282,10 @@ internal sealed class MonitorStrip : FrameworkElement
         return q.Number + q.Unit;
     }
     // Whole degrees with the degree sign, the unit left out for room: "62°". Made once for every degree a reading can have.
-    private static readonly string[] Degrees = [.. Enumerable.Range(0, (int)Temperatures.Highest + 1).Select(degrees => Temperatures.Format(degrees) + "°")];
-    private static string TemperatureFigure(double? celsius) => celsius is { } c ? Degrees[(int)Math.Clamp(Math.Round(c, MidpointRounding.AwayFromZero), 0, Temperatures.Highest)] : "—";
+    private static readonly string[] DegreesCelsius = Figures(false), DegreesFahrenheit = Figures(true);
+    private static string[] Figures(bool fahrenheit) => [.. Enumerable.Range(0, (int)Temperatures.Highest + 1).Select(degrees => Temperatures.Format(degrees, fahrenheit) + "°")];
+    private static string TemperatureFigure(double? celsius) => celsius is { } c
+        ? (Temperatures.Fahrenheit ? DegreesFahrenheit : DegreesCelsius)[(int)Math.Clamp(Math.Round(c, MidpointRounding.AwayFromZero), 0, Temperatures.Highest)] : "—";
 
     // The readings that fit the width the row gives; a change starts their transitions. A row built again in the middle of one
     // carries it on, as the old row no longer draws.

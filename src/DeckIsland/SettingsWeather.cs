@@ -3,7 +3,9 @@ using System.Text.Json;
 using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
+using System.Windows.Threading;
 using DeckIsland.Core;
 
 namespace DeckIsland;
@@ -11,143 +13,180 @@ namespace DeckIsland;
 public partial class SettingsWindow
 {
     internal const int WeatherSettingsPage = 19;
+    private const int MinimumSearchLength = 2;
+    private static readonly TimeSpan SearchDelay = TimeSpan.FromMilliseconds(350);
 
-    private void WeatherSettings()
+    private static string PlaceLabel(WeatherCity city) => string.Join(", ", new[] { city.Name, city.Region, city.Country }.Where(part => !string.IsNullOrWhiteSpace(part)).Distinct());
+
+    // One field decides the whole thing. A place you pick from the results turns the weather on for that place; "Use my location"
+    // follows the PC's location; an emptied field, saved, turns the weather off. The unit and the look sit under it.
+    private Border WeatherOptionsCard()
     {
-        var mode = new ComboBox
-        {
-            Style = (Style)FindResource("SettingsCombo"), MinWidth = 144,
-            ItemsSource = new[] { Loc.T("自动", "Automatic"), Loc.T("手动", "Manual") },
-            SelectedIndex = S.ManualWeatherLocation ? 1 : 0
-        };
-        AutomationProperties.SetName(mode, Loc.T("天气位置", "Weather location"));
-        PopupMotion.Attach(mode);
-        var units = new ComboBox
-        {
-            Style = (Style)FindResource("SettingsCombo"), MinWidth = 144,
-            ItemsSource = new[] { "°C", "°F" }, SelectedIndex = S.WeatherFahrenheit ? 1 : 0
-        };
-        AutomationProperties.SetName(units, Loc.T("温度单位", "Temperature unit"));
-        PopupMotion.Attach(units);
-        var cardStyle = new ComboBox
-        {
-            Style = (Style)FindResource("SettingsCombo"), MinWidth = 144,
-            ItemsSource = new[] { Loc.T("简约", "Minimal"), Loc.T("多彩", "Colourful") },
-            SelectedIndex = S.ColourfulWeatherCard ? 1 : 0
-        };
-        AutomationProperties.SetName(cardStyle, Loc.T("展开卡片样式", "Expanded card style"));
-        PopupMotion.Attach(cardStyle);
-        cardStyle.SelectionChanged += (_, _) => Change(s => s.ColourfulWeatherCard = cardStyle.SelectedIndex == 1);
-        var options = new StackPanel();
-        options.Children.Add(Row(Loc.T("天气位置", "Weather location"), mode));
-        options.Children.Add(Row(Loc.T("温度单位", "Temperature unit"), units));
-        options.Children.Add(Row(Loc.T("展开卡片样式", "Expanded card style"), cardStyle));
-        var disclosure = TextLine(Loc.T("自动定位将近似坐标发送给 Open-Meteo 获取预报，并发送给 BigDataCloud 查询城市和地区。",
-            "Automatic location sends approximate coordinates to Open-Meteo for the forecast and to BigDataCloud for the city and region."), 12, TextSecondary);
-        disclosure.TextWrapping = TextWrapping.Wrap;
-        options.Children.Add(disclosure);
-        var actions = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 4, 0, 12) };
-        var retry = ActionButton(Loc.T("重试自动定位", "Retry automatic location"), async () => await _app.RequestWeatherLocation());
-        actions.Children.Add(retry);
-        actions.Children.Add(Link(Loc.T("Windows 位置隐私设置", "Windows location privacy settings"), "ms-settings:privacy-location"));
-        options.Children.Add(actions);
+        string here = Loc.T("我的位置", "My location");
+        string shown() => !S.WeatherEnabled ? "" : S.ManualWeatherLocation && S.WeatherCity is { } city ? PlaceLabel(city) : S.ManualWeatherLocation ? "" : here;
 
-        var query = new TextBox { Style = (Style)FindResource("SettingsNumber"), MinWidth = 200, MaxLength = 100, TextAlignment = TextAlignment.Left };
-        AutomationProperties.SetName(query, Loc.T("城市名称", "City name"));
-        var results = new ComboBox { Style = (Style)FindResource("SettingsCombo"), MinWidth = 210, Visibility = Visibility.Collapsed };
-        AutomationProperties.SetName(results, Loc.T("城市搜索结果", "City search results"));
-        PopupMotion.Attach(results);
-        var status = TextLine("", 12, TextSecondary);
+        var place = new TextBox { Style = (Style)FindResource("FormInput"), MaxLength = 100, Text = shown(), Tag = Loc.T("搜索城市", "Search for a city") };
+        AutomationProperties.SetName(place, Loc.T("天气地点", "Weather place"));
+        var save = new Button { Style = (Style)FindResource("FormButton"), Content = Loc.T("保存", "Save"), Width = 84, Margin = new Thickness(8, 0, 0, 0),
+            HorizontalContentAlignment = HorizontalAlignment.Center, IsEnabled = false };
+        var status = TextLine("", 12, TextTertiary);
         status.TextWrapping = TextWrapping.Wrap;
+        status.Margin = new Thickness(0, 8, 0, 0);
         AutomationProperties.SetLiveSetting(status, AutomationLiveSetting.Polite);
-        void ShowCity() => status.Text = S.WeatherCity is { } city
-            ? (S.ManualWeatherLocation ? Loc.T("所选城市", "Selected city") : Loc.T("备用城市", "Fallback city")) + $" · {city}"
-            : Loc.T("搜索并选择一个城市。", "Search for and choose a city.");
-        ShowCity();
-        units.SelectionChanged += (_, _) => Change(s => s.WeatherFahrenheit = units.SelectedIndex == 1);
-        CancellationTokenSource? search = null;
-        void CancelSearch()
+
+        WeatherCity? chosen = null;
+        string committed = place.Text;
+        bool programmatic = false, cleared = false;
+        void SetText(string text) { programmatic = true; place.Text = text; place.CaretIndex = text.Length; programmatic = false; committed = text; }
+        void Describe()
         {
-            search?.Cancel();
-            search?.Dispose();
-            search = null;
+            status.Text = !S.WeatherEnabled ? Loc.T("天气已关闭。搜索一个城市，或使用你的位置。", "Weather is off. Search for a city, or use your location.")
+                : S.ManualWeatherLocation ? Loc.T("天气显示的是这个城市。", "The weather shows this city.")
+                : Loc.T("天气跟随这台电脑的位置。", "The weather follows this PC's location.");
+        }
+        void UpdateSave() => save.IsEnabled = chosen is not null || cleared;
+        Describe();
+
+        // The results: a list under the field, filled as you type.
+        var list = new StackPanel();
+        var results = new Popup { PlacementTarget = place, Placement = PlacementMode.Bottom, VerticalOffset = 6, StaysOpen = false, AllowsTransparency = true, Focusable = false };
+        var resultsBox = new Border
+        {
+            Background = (System.Windows.Media.Brush)FindResource("SettingsPopup"), BorderBrush = UI.Brush(_palette.Border), BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(10), Padding = new Thickness(4),
+            Child = new ScrollViewer { Content = list, MaxHeight = 260, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Focusable = false }
+        };
+        results.Child = resultsBox;
+        place.SizeChanged += (_, _) => resultsBox.MinWidth = place.ActualWidth;
+
+        CancellationTokenSource? search = null;
+        var wait = new DispatcherTimer { Interval = SearchDelay };
+        void CancelSearch() { wait.Stop(); search?.Cancel(); search?.Dispose(); search = null; }
+        void ShowMessage(string text)
+        {
+            list.Children.Clear();
+            list.Children.Add(new TextBlock { Text = text, Foreground = UI.Brush(TextTertiary), FontSize = 13, Margin = new Thickness(10, 8, 10, 8), TextWrapping = TextWrapping.Wrap });
+            results.IsOpen = true;
+        }
+        void Pick(WeatherCity city)
+        {
+            chosen = city; cleared = false;
+            SetText(PlaceLabel(city)); committed = "";
+            results.IsOpen = false;
+            UpdateSave();
+            status.Text = Loc.T("点保存后，天气会显示这个城市。", "Press Save to show the weather for this city.");
         }
         async Task Search()
         {
+            string name = place.Text.Trim();
             CancelSearch();
-            results.ItemsSource = null;
-            results.Visibility = Visibility.Collapsed;
-            string name = query.Text.Trim();
-            if (name.Length < 2)
-            {
-                status.Text = Loc.T("请输入至少两个字符。", "Enter at least two characters.");
-                return;
-            }
             search = new();
             var token = search.Token;
-            status.Text = Loc.T("正在查找城市…", "Searching for cities…");
+            ShowMessage(Loc.T("正在查找城市…", "Searching for cities…"));
             try
             {
                 var cities = await Weather.Search(name, Loc.Language == Loc.Chinese, token);
                 if (token.IsCancellationRequested) return;
-                results.ItemsSource = cities;
-                results.Visibility = cities.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
-                status.Text = cities.Count > 0 ? Loc.T("请选择城市。", "Choose a city from the results.")
-                    : Loc.T("未找到城市。", "No cities found.");
+                if (cities.Count == 0) { ShowMessage(Loc.T("未找到城市。", "No cities found.")); return; }
+                list.Children.Clear();
+                foreach (var city in cities)
+                {
+                    var option = new Button { Style = (Style)FindResource("SettingsButton"), Content = PlaceLabel(city), HorizontalContentAlignment = HorizontalAlignment.Left,
+                        Padding = new Thickness(10, 7, 10, 7), FontSize = 13, Foreground = UI.Brush(TextPrimary) };
+                    AutomationProperties.SetName(option, city.ToString());
+                    option.Click += (_, _) => Pick(city);
+                    list.Children.Add(option);
+                }
+                results.IsOpen = true;
             }
             catch (Exception ex) when (ex is HttpRequestException or JsonException or OperationCanceledException)
             {
-                if (!token.IsCancellationRequested)
-                    status.Text = Loc.T("无法搜索城市。请重试。", "City search failed. Try again.");
+                if (!token.IsCancellationRequested) ShowMessage(Loc.T("无法搜索城市，请重试。", "Could not search for cities. Try again."));
             }
         }
-        var searchButton = ActionButton(Loc.T("搜索城市", "Search cities"), async () => await Search());
-        void UpdateWeatherControls()
+        wait.Tick += async (_, _) => { wait.Stop(); await Search(); };
+        place.TextChanged += (_, _) =>
         {
-            retry.IsEnabled = S.WeatherEnabled && !S.ManualWeatherLocation;
-            query.IsEnabled = searchButton.IsEnabled = results.IsEnabled = S.WeatherEnabled;
-            if (!S.WeatherEnabled) CancelSearch();
+            if (programmatic) return;
+            string text = place.Text.Trim();
+            chosen = null;
+            cleared = text.Length == 0 && committed.Length > 0;
+            UpdateSave();
+            CancelSearch();
+            results.IsOpen = false;
+            if (text.Length >= MinimumSearchLength && text != committed.Trim()) wait.Start();
+            if (cleared) status.Text = Loc.T("保存后，天气会关闭。", "Press Save to turn the weather off.");
+            else if (text.Length > 0 && text.Length < MinimumSearchLength) status.Text = Loc.T("再输入一个字符。", "Keep typing…");
+            else if (text.Length == 0) Describe();
+        };
+        place.KeyDown += (_, e) => { if (e.Key == Key.Enter && save.IsEnabled) { e.Handled = true; save.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent)); } };
+        place.Unloaded += (_, _) => { CancelSearch(); results.IsOpen = false; };
+
+        save.Click += (_, _) =>
+        {
+            if (chosen is { } city)
+            {
+                Change(s => { s.WeatherCity = city; s.ManualWeatherLocation = true; s.WeatherEnabled = true; });
+                SetText(PlaceLabel(city));
+            }
+            else if (cleared)
+            {
+                Change(s => s.WeatherEnabled = false);
+                SetText("");
+            }
+            chosen = null; cleared = false;
+            UpdateSave(); Describe();
+        };
+
+        var locate = new Button { Style = (Style)FindResource("FormButton"), Content = Loc.T("使用我的位置", "Use my location"), HorizontalAlignment = HorizontalAlignment.Left,
+            Margin = new Thickness(0, 10, 0, 0), Padding = new Thickness(14, 0, 14, 0), HorizontalContentAlignment = HorizontalAlignment.Center };
+        locate.Click += async (_, _) =>
+        {
+            CancelSearch(); results.IsOpen = false; chosen = null; cleared = false;
+            Change(s => { s.ManualWeatherLocation = false; s.WeatherEnabled = true; });
+            SetText(here); UpdateSave(); Describe();
+            await _app.RequestWeatherLocation();
+        };
+
+        var searchRow = new DockPanel { Children = { results } };
+        DockPanel.SetDock(save, Dock.Right);
+        searchRow.Children.Add(save); searchRow.Children.Add(place);
+        var disclosure = TextLine(Loc.T("预报来自 Open-Meteo。只有地点会离开这台电脑；自动定位还会把大致坐标发给 BigDataCloud，用来查城市名称。",
+            "Forecasts come from Open-Meteo. Only the place leaves this PC; locating you also sends rough coordinates to BigDataCloud to name the city."), 12, TextTertiary);
+        disclosure.TextWrapping = TextWrapping.Wrap;
+        disclosure.Margin = new Thickness(0, 10, 0, 0);
+        var placeField = Field(Loc.T("地点", "Place"), new StackPanel { Children = { searchRow, status, locate, disclosure } }, "");
+
+        var looks = new UniformGrid { Columns = 2, Width = 210, HorizontalAlignment = HorizontalAlignment.Left };
+        foreach (var (colourful, name) in new[] { (false, Loc.T("简约", "Minimal")), (true, Loc.T("多彩", "Colourful")) })
+        {
+            var choice = new RadioButton { Style = (Style)FindResource("SettingsSegment"), Content = name, IsChecked = S.ColourfulWeatherCard == colourful, GroupName = "WeatherLook",
+                FontSize = 13, Padding = new Thickness(8, 7, 8, 7) };
+            AutomationProperties.SetName(choice, Loc.T("天气外观 ", "Weather look ") + name);
+            choice.Checked += (_, _) => Change(s => s.ColourfulWeatherCard = colourful);
+            looks.Children.Add(choice);
         }
-        UpdateWeatherControls();
-        Group(Toggle(Loc.T("启用天气", "Enable weather"), S.WeatherEnabled, async enabled =>
+        var look = SegmentBorder(looks);
+
+        // Where the data comes from, on one quiet line.
+        var sources = new WrapPanel { Margin = new Thickness(0, 4, 0, 18) };
+        var from = TextLine(Loc.T("数据来源", "Data from"), 12, TextTertiary);
+        from.VerticalAlignment = VerticalAlignment.Center;
+        from.Margin = new Thickness(0, 0, 8, 0);
+        sources.Children.Add(from);
+        foreach (var (name, url) in new[] { ("Open-Meteo", Weather.Attribution), ("GeoNames", Weather.LocationAttribution), ("BigDataCloud", Weather.AutomaticLocationAttribution) })
         {
-            var permission = enabled && !S.ManualWeatherLocation ? _app.RequestWeatherLocation() : Task.CompletedTask;
-            Change(s => s.WeatherEnabled = enabled);
-            UpdateWeatherControls();
-            await permission;
-        }));
-        Target.Children.Add(options);
-        mode.SelectionChanged += async (_, _) =>
-        {
-            var permission = mode.SelectedIndex == 0 && S.WeatherEnabled ? _app.RequestWeatherLocation() : Task.CompletedTask;
-            Change(s => s.ManualWeatherLocation = mode.SelectedIndex == 1);
-            UpdateWeatherControls();
-            ShowCity();
-            await permission;
-        };
-        query.KeyDown += async (_, e) => { if (e.Key == Key.Enter) { e.Handled = true; await Search(); } };
-        query.TextChanged += (_, _) => { CancelSearch(); results.ItemsSource = null; results.Visibility = Visibility.Collapsed; ShowCity(); };
-        options.Unloaded += (_, _) => CancelSearch();
-        results.SelectionChanged += (_, _) =>
-        {
-            if (results.SelectedItem is not WeatherCity city) return;
-            Change(s => s.WeatherCity = city);
-            ShowCity();
-        };
-        var citySearch = new StackPanel { Orientation = Orientation.Horizontal };
-        citySearch.Children.Add(new Border
-        {
-            Child = query, Background = UI.Brush(Inset), BorderBrush = UI.Brush(Divider),
-            BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(6), Padding = new Thickness(8, 4, 8, 4)
-        });
-        searchButton.Margin = new Thickness(8, 0, 0, 0);
-        citySearch.Children.Add(searchButton);
-        options.Children.Add(Row(Loc.T("城市名称", "City name"), citySearch));
-        options.Children.Add(results);
-        options.Children.Add(status);
-        Group(Row(Loc.T("天气数据", "Weather data"), Link("Open-Meteo ↗", Weather.Attribution)),
-            Row(Loc.T("地理数据", "Location data"), Link("GeoNames ↗", Weather.LocationAttribution)),
-            Row(Loc.T("自动位置名称", "Automatic location names"), Link("BigDataCloud ↗", Weather.AutomaticLocationAttribution)));
+            var link = Link(name + " ↗", url); link.FontSize = 12; link.Margin = new Thickness(0, 0, 14, 0);
+            sources.Children.Add(link);
+        }
+
+        return OptionsCard(WidgetLayout.Name(WidgetKind.Weather), Loc.T("当前天气，以及今天的最低和最高气温。", "Current conditions, with today's low and high."), null,
+            placeField,
+            Rule(),
+            SwitchRow(Loc.T("华氏度", "Fahrenheit"), Loc.T("用 °F 显示所有温度，而不是 °C：天气，以及系统监控里 CPU、GPU 和硬盘的温度。", "Show every temperature in °F instead of °C: the weather, and the CPU, GPU and drive temperatures in the system monitor."), S.WeatherFahrenheit, value => Change(s => s.WeatherFahrenheit = value)),
+            Rule(),
+            ChoiceRow(Loc.T("天气外观", "Weather look"), Loc.T("简约用线条图标和纯文字；多彩会按天空给卡片着色。", "Minimal uses line icons and plain type; Colourful tints the card with the sky."), look),
+            sources);
     }
 
     private void WeatherSizeControls()

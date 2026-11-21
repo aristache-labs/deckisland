@@ -173,9 +173,9 @@ public sealed partial class SettingsWindow
             SensorStatus.Failed => (Loc.T("读取失败", "Could not read"), false),
             _ => string.Join(" · ", new[]
             {
-                report.Package is { } celsius ? "CPU " + Temperatures.Format(celsius) + " °C" : null,
+                report.Package is { } celsius ? "CPU " + Temperatures.Detail(celsius) : null,
                 report.PackageWatts is { } watts ? PowerFormat.Watts(watts) + " W" : null,
-                report.Cores.Count > 0 ? (report.CoresAreCcds ? "CCD " : Loc.T("核心 ", "cores ")) + Temperatures.Format(report.Cores.Min()) + "–" + Temperatures.Format(report.Cores.Max()) + " °C" : null
+                report.Cores.Count > 0 ? (report.CoresAreCcds ? "CCD " : Loc.T("核心 ", "cores ")) + Temperatures.Format(report.Cores.Min()) + "–" + Temperatures.Format(report.Cores.Max()) + " " + Temperatures.Unit : null
             }.Where(part => part is not null)) is { Length: > 0 } text ? (text, true) : (Loc.T("处理器没有给出读数", "The processor gave no reading"), false)
         };
     }

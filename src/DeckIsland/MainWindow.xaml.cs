@@ -392,6 +392,7 @@ public partial class MainWindow : Window
         bool wasVisible = IsVisible;
         var shapeBefore = Collapsed; double dipBefore = _pixelsPerDip;
         ApplyLanguage();
+        Temperatures.Fahrenheit = Settings.WeatherFahrenheit;
         ApplyTheme();
         ApplySurface();
         // A panel holding the keyboard stays one that can be active, whatever the setting (PanelKeyboard).
