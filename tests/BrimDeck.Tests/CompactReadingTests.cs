@@ -299,6 +299,10 @@ internal static class CompactReadingTests
             WidgetLayout.MinimalParts(true, true, true, CompactPart.Clock, CompactPart.Weather).SequenceEqual([CompactPart.Focus, CompactPart.Transfer])
             && WidgetLayout.MinimalParts(false, false, false, CompactPart.Clock, CompactPart.Weather).SequenceEqual([CompactPart.Clock, CompactPart.Weather])
             && !Read("{}").Minimal(CompactStyle.Notch) && !Read("{}").Minimal(CompactStyle.Capsule));
+        check("Quota agents: a native executable and a custom app name match only running processes",
+            QuotaAgentProcesses.IsRunning(new AppEntry { QuotaSource = ProviderId.Codex }, name => name == "codex-x86_64-pc-windows-msvc.exe")
+            && QuotaAgentProcesses.IsRunning(new AppEntry { QuotaSource = ProviderId.Custom, DisplayName = "Hermes" }, name => name == "Hermes.exe")
+            && !QuotaAgentProcesses.IsRunning(new AppEntry { QuotaSource = ProviderId.Claude }, _ => false));
         CompactPart[] standard = [CompactPart.Rings, CompactPart.Music, CompactPart.Monitor, CompactPart.Transfer, CompactPart.Devices, CompactPart.Equalizer, CompactPart.Clock, CompactPart.Weather, CompactPart.Focus];
         check("Compact order: the default order appends Weather after the clock", new DeckSettings().NotchOrder.SequenceEqual(standard)
             && CompactParts.Default.SequenceEqual(standard));

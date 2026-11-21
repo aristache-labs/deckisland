@@ -161,6 +161,7 @@ public partial class MainWindow : Window
         InitializeDevices();
         InitializeWeather();
         InitializeFocus();
+        InitializeQuotaAgentPresence();
         InitializeReminders();
         InitializeResize();
         InitializeScale();

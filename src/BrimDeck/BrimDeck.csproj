@@ -12,6 +12,7 @@
     <PackageReference Include="System.ServiceProcess.ServiceController" Version="10.0.0" />
     <Resource Include="Assets\Fonts\*.ttf" />
     <Resource Include="Assets\Weather\*.png" />
+    <Resource Include="Assets\QuotaAgents\*.png" />
     <Content Include="ThirdPartyNotices.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Content Include="..\..\LICENSE" Link="LICENSE" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>

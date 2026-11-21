@@ -1191,8 +1191,10 @@ public partial class MainWindow
                 text = CompactLyricText(_mediaTrack!, _compactLyric);
             }
         }
-        var apps = !FocusCompactOnly && Show(CompactPart.Rings) && Settings.ShowsSummary(EffectiveStyle) && !notice ? Settings.EnabledApps : [];
-        var steadyItems = !FocusCompactOnly && Show(CompactPart.Rings) && Settings.ShowsSummary(EffectiveStyle) ? QuotaRings(Settings.EnabledApps) : [];
+        var liveApps = !FocusCompactOnly && Show(CompactPart.Rings) && Settings.ShowsSummary(EffectiveStyle) ? RunningQuotaApps() : [];
+        _visibleQuotaAgentIds = liveApps.Select(entry => entry.InstanceId).ToArray();
+        var apps = notice ? [] : liveApps;
+        var steadyItems = QuotaRings(liveApps);
         // The clock keeps its own width; shown alone, it is centred.
         var clock = Show(CompactPart.Clock) && Settings.ShowsClock(EffectiveStyle) ? new ClockFace(Settings.ClockStyle, Settings.Uses24HourClock, Settings.ClockSeconds, ClockFace.Palette(Settings, CoverColor, Look), DateTime.Now, scale, Look) : null;
         // The file transfer's count keeps one width, as the clock does; with both, they are counted as one fixed part with a gap between.
@@ -1218,7 +1220,7 @@ public partial class MainWindow
         // An auto-width surface takes the width of what the row shows; the new shape builds the row again. The track notice
         // and the lyric's changing length are left out, so the width changes only when the content itself does, unless the
         // middle text follows its length (below).
-        int steadyRings = !FocusCompactOnly && Show(CompactPart.Rings) && Settings.ShowsSummary(EffectiveStyle) ? Settings.EnabledApps.Count : 0;
+        int steadyRings = liveApps.Count;
         bool steadyText = media && !hideText && Settings.MusicText != CompactMusicText.None;
         double wanted = CompactMusicLayout.NaturalWidth(scale, media, steadyRings, steadyText, fixedFace, strip?.PreferredWidth ?? 0, dpi, equalizer, Settings.EqualizerBars, showCover, ringDiameter, partSpacing: spacing);
         // Middle text that follows its length (TextFollowsLength) asks for the room of what it shows instead of the fixed slot:
