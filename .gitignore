@@ -40,6 +40,15 @@ TokenEconomizer/
 # Local development notes: architecture, design decisions, plans, release steps
 dev-docs/
 TokenEconomizer
-TokenEconomizer/
+TokenEconomizer/**
+TokenEconomizer/bin/**
+TokenEconomizer/obj/**
+TokenEconomizer/Properties/**
+TokenEconomizer/Resources/**
+TokenEconomizer/Settings.settings
+TokenEconomizer/Settings.settings.user
+TokenEconomizer/Settings.settings.user.props
+TokenEconomizer/Settings.settings.user.targets
+TokenEconomizer/Settings.settings.user.props
 # WPF build temp projects
 *_wpftmp.csproj
