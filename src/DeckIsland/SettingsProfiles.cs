@@ -62,7 +62,7 @@ public sealed partial class SettingsWindow
             pair.Children.Add(button);
         }
         create.Child = pair;
-        SectionTitle(Loc.T("配置", "Profiles"), create);
+        SectionTitle(Loc.T("配置", "Profiles"), create, description: Loc.T("每个配置是一整套设置，点击即可切换。", "Each profile is a whole set of settings; click one to switch."));
         Group([.. shared.Profiles.Select(profile => ProfileRow(shared, profile))]);
         DisplayProfiles(shared);
         ProfileRules(shared);
@@ -203,7 +203,7 @@ public sealed partial class SettingsWindow
         bool chosenMode = shared.Display == DisplayPlacement.Chosen;
         var missing = chosenMode ? shared.DisplayMonitors.Where(c => displays.All(d => d.Id != c.Id)).ToList() : [];
         if (displays.Count < 2 && missing.Count == 0) return;
-        SectionTitle(Loc.T("显示器", "Displays"));
+        SectionTitle(Loc.T("显示器", "Displays"), description: Loc.T("灵动岛显示在哪些显示器上，以及各自使用的配置。", "Which displays show the island, and the profile each one uses."));
         var modes = new UniformGrid { Columns = 2, Width = 240 };
         foreach (var (placement, name) in new[] { (DisplayPlacement.Primary, Loc.T("仅主显示器", "Primary only")), (DisplayPlacement.Chosen, Loc.T("自选显示器", "Choose displays")) })
         {
@@ -271,8 +271,8 @@ public sealed partial class SettingsWindow
     // collapsed content's parts do (OptionsPartRow).
     private void ProfileRules(DeckSettings shared)
     {
-        SectionTitle(Loc.T("自动切换", "Switch automatically"));
-        PlayerNote(Loc.T("指定的应用运行或在前台时，自动切换到所选的配置；也可以为每台显示器单独指定配置或不显示面板。条件结束后恢复原样。多条规则同时满足时，排在上面的生效，拖动左侧的手柄可以调整顺序。规则对所有配置都有效。",
+        // The explanation is the card's description (Card).
+        SectionTitle(Loc.T("自动切换", "Switch automatically"), description: Loc.T("指定的应用运行或在前台时，自动切换到所选的配置；也可以为每台显示器单独指定配置或不显示面板。条件结束后恢复原样。多条规则同时满足时，排在上面的生效，拖动左侧的手柄可以调整顺序。规则对所有配置都有效。",
             "While the app runs or is in front, switches to the chosen profile; each display can also be given its own profile or no panel. When that ends, everything goes back. When several rules hold, the one higher up applies; drag the handle at the left to reorder. The rules apply whatever profile is in use."));
         var head = new Grid { MinHeight = 44 };
         head.ColumnDefinitions.Add(new ColumnDefinition()); head.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });

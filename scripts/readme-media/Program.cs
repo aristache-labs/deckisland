@@ -222,6 +222,22 @@ internal sealed class Renderer(App app, string output, string language, string[]
                 await SettingsPage("widgets-light", 22, height: 4300, theme: SettingsTheme.Light);
                 await SettingsPage("widgets-narrow", 22, height: 4300, width: 840);
             }
+            // The Notifications settings page in the same cards: dark and light, and the narrowest window; for checking.
+            if (scenes.Contains("notifications"))
+            {
+                await SettingsPage("notifications-dark", 23, height: 2600);
+                await SettingsPage("notifications-light", 23, height: 2600, theme: SettingsTheme.Light);
+                await SettingsPage("notifications-narrow", 23, height: 2600, width: 840);
+            }
+            // Calls, Panel theme, Shortcuts and Displays and profiles in the same cards; for checking.
+            if (scenes.Contains("cards-more"))
+            {
+                foreach (var (name, page) in new[] { ("calls", 24), ("theme", 8), ("shortcuts", 11), ("profiles", 16) })
+                {
+                    await SettingsPage(name + "-dark", page, height: 3600);
+                    await SettingsPage(name + "-narrow", page, height: 3600, width: 840, theme: SettingsTheme.Light);
+                }
+            }
             if (scenes.Contains("hover-weather"))
             {
                 _settings.ColourfulWeatherCard = true; _settings.WeatherEnabled = true;

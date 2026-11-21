@@ -18,7 +18,7 @@ public partial class SettingsWindow
     private const double LabelColumnMax = 240, SliderColumn = 280, GeneralCombo = 200, ThemeCardWidth = 88;
 
     // Marks a card part that follows the row above it without a line between them, such as the font preview.
-    private const string NoDivider = "no-divider";
+    private const string NoDivider = "no-divider", StretchControl = "stretch-control";
 
     // A row's short description: kept as the row's automation help text, which a screen reader announces as well, and drawn
     // under the setting's name when the card lays the row out.
@@ -102,7 +102,8 @@ public partial class SettingsWindow
                 {
                     if (Grid.GetColumn(child) == 1)
                     {
-                        child.HorizontalAlignment = HorizontalAlignment.Left;
+                        // A control marked to fill its column (a hotkey box with its message after it) keeps the column's width.
+                        if (child.Tag as string != StretchControl) child.HorizontalAlignment = HorizontalAlignment.Left;
                         // A wide control (the double-click choices) narrows its row's label column instead of being cut off at the
                         // narrowest window.
                         child.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));

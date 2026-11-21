@@ -29,14 +29,14 @@ public sealed partial class SettingsWindow
 
     private void HotkeysSettings()
     {
-        SectionTitle(Loc.T("展开与显示", "Expand and show"));
+        SectionTitle(Loc.T("展开与显示", "Expand and show"), description: Loc.T("隐藏、展开灵动岛，或切换它的样式。", "Hide or open the island, or change its style."));
         Group([.. new[] { HotkeyKind.Hide, HotkeyKind.Expand, HotkeyKind.CycleStyle, HotkeyKind.LineStyle }.Select(HotkeyRow)]);
         // Counted in the order of the page switch; a page that is not shown has no place, so its shortcut does nothing.
-        SectionTitle(Loc.T("切换页面", "Switch pages"));
+        SectionTitle(Loc.T("切换页面", "Switch pages"), description: Loc.T("按页面开关中的顺序计数；未显示的页面没有位置。", "Counted in the order of the pages shown; a hidden page has no place."));
         Group([.. Enumerable.Range(0, 10).Select(place => HotkeyRow(HotkeyKind.Page1 + place))]);
-        SectionTitle(Loc.T("位置与大小", "Position and size"));
+        SectionTitle(Loc.T("位置与大小", "Position and size"), description: Loc.T("用键盘移动灵动岛或调整它的大小。", "Move or resize the island from the keyboard."));
         Group([.. new[] { HotkeyKind.Move, HotkeyKind.Resize }.Select(HotkeyRow)]);
-        SectionTitle(Loc.T("其他", "Other"));
+        SectionTitle(Loc.T("其他", "Other"), description: Loc.T("其余的快捷操作。", "The remaining actions."));
         Group([.. new[] { HotkeyKind.ClickThrough, HotkeyKind.OpenSettings, HotkeyKind.Refresh, HotkeyKind.NextProfile }.Select(HotkeyRow)]);
     }
 
@@ -260,11 +260,24 @@ public sealed partial class SettingsWindow
             control = parts;
         }
         // Like Row, but the message takes the middle column, so a narrow window shrinks the message instead of pushing into the label.
-        var row = new Grid { MinHeight = 44 };
-        row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto }); row.ColumnDefinitions.Add(new ColumnDefinition()); row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        var label = SettingLabel(title, help); label.Margin = new Thickness(0, 0, 12, 0); row.Children.Add(label);
-        Grid.SetColumn(note, 1); row.Children.Add(note);
-        Grid.SetColumn(control, 2); row.Children.Add(control);
+        Grid row;
+        if (CardPage)
+        {
+            // In a card (Card): a plain Row, the box starting on the control column and the message after it in what is left.
+            var controls = new Grid { Tag = StretchControl };
+            controls.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto }); controls.ColumnDefinitions.Add(new ColumnDefinition());
+            note.HorizontalAlignment = HorizontalAlignment.Left; note.TextAlignment = TextAlignment.Left; note.Margin = new Thickness(12, 0, 0, 0);
+            controls.Children.Add(control); Grid.SetColumn(note, 1); controls.Children.Add(note);
+            row = Row(title, controls, help: help);
+        }
+        else
+        {
+            row = new Grid { MinHeight = 44 };
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto }); row.ColumnDefinitions.Add(new ColumnDefinition()); row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            var label = SettingLabel(title, help); label.Margin = new Thickness(0, 0, 12, 0); row.Children.Add(label);
+            Grid.SetColumn(note, 1); row.Children.Add(note);
+            Grid.SetColumn(control, 2); row.Children.Add(control);
+        }
         Action refresh = () => { if (!recording) Show(); };
         row.Loaded += (_, _) => { if (_hotkeyRows.Add(refresh) && _hotkeyRows.Count == 1) WatchAppHotkeys(true); Show(); };
         row.Unloaded += (_, _) => { stop(); if (_hotkeyRows.Remove(refresh) && _hotkeyRows.Count == 0) WatchAppHotkeys(false); };

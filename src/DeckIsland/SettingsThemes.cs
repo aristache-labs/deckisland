@@ -40,10 +40,10 @@ public sealed partial class SettingsWindow
         _themesFresh = false;
         var chosen = PanelThemes.NormalizeId(S.PanelTheme);
         var users = PanelTheme.UserThemes;
-        ThemeSection(Loc.T("基础", "Basics"));
+        ThemeSection(Loc.T("基础", "Basics"), Loc.T("深色、浅色，或跟随 Windows。", "Dark, light, or follow Windows."));
         ThemeCards([(PanelThemes.SystemId, Loc.T("跟随系统", "System"), PanelTheme.Find(PanelThemes.SystemId)),
             .. PanelThemes.BuiltIns.Where(t => t.Kind == PanelThemeKind.Basic).Select(Card)], chosen);
-        ThemeSection(Loc.T("更多主题", "More themes"));
+        ThemeSection(Loc.T("更多主题", "More themes"), Loc.T("带有自己配色和效果的主题。", "Themes with colors and effects of their own."));
         ThemeCards([.. PanelThemes.BuiltIns.Where(t => t.Kind == PanelThemeKind.Extension).Select(Card)], chosen);
         CustomSection(users, chosen);
         _themeDetails = Collect(() => ThemeDetails(chosen, users)); _content.Children.Add(_themeDetails);
@@ -54,11 +54,7 @@ public sealed partial class SettingsWindow
     }
 
     // A section title with a divider under it, as the other pages' groups start.
-    private void ThemeSection(string title)
-    {
-        SectionTitle(title);
-        Target.Children.Add(new Border { Height = 1, Background = UI.Brush(Divider), Margin = new Thickness(0, 0, 0, 12) });
-    }
+    private void ThemeSection(string title, string description) => SectionTitle(title, description: description);
 
     private void Note(string text, double size, string color, Thickness margin)
     {
@@ -70,7 +66,7 @@ public sealed partial class SettingsWindow
     // carries a delete button on its preview (OwnThemeCard), and the custom section ends with the new-theme card (tile).
     private void ThemeCards(IReadOnlyList<(string Id, string Name, PanelThemeInfo Theme)> themes, string chosen, FrameworkElement? tile = null)
     {
-        var grid = new UniformGrid { Columns = 3, Margin = new Thickness(-6, 0, -6, 18) };
+        var grid = new UniformGrid { Columns = 3, Margin = new Thickness(-6, 12, -6, 10) };
         foreach (var (id, name, theme) in themes)
         {
             bool own = theme.Path is not null;
@@ -96,7 +92,8 @@ public sealed partial class SettingsWindow
             grid.Children.Add(own ? OwnThemeCard(card, theme) : card);
         }
         if (tile is not null) grid.Children.Add(tile);
-        _content.Children.Add(grid);
+        // Into the card the section title above opened (Group, Card).
+        Group(grid);
     }
 
     // A theme and what goes with it: what the user changed under the theme being left is kept for it, and the theme chosen brings
@@ -126,7 +123,7 @@ public sealed partial class SettingsWindow
         bool kept = PanelTheme.KeptLastGood;
         var theme = kept ? PanelTheme.ShownTheme : PanelTheme.Find(chosen);
         bool missing = !kept && chosen != PanelThemes.SystemId && !PanelThemes.IsBuiltIn(chosen) && users.All(t => !t.Usable || t.Id != chosen);
-        SectionTitle(Loc.T("当前主题", "Current theme"));
+        SectionTitle(Loc.T("当前主题", "Current theme"), description: Loc.T("所选主题的详细信息。", "About the chosen theme."));
         var rows = new List<FrameworkElement>();
         string title = chosen == PanelThemes.SystemId ? Loc.T("跟随系统（当前：", "System (now: ") + theme.DisplayName + Loc.T("）", ")") : theme.DisplayName;
         rows.Add(Row(Loc.T("名称", "Name"), TextLine(title, 12, TextSecondary)));
@@ -239,7 +236,7 @@ public sealed partial class SettingsWindow
     private TextBlock Wrapped(string text, bool error)
     {
         var block = TextLine(text, 11.5, error ? (_palette.Dark ? "#F0A6AA" : "#B12E3A") : TextSecondary);
-        block.TextWrapping = TextWrapping.Wrap; block.TextTrimming = TextTrimming.None; block.MaxWidth = 460; block.TextAlignment = TextAlignment.Right;
+        block.TextWrapping = TextWrapping.Wrap; block.TextTrimming = TextTrimming.None; block.MaxWidth = 460; block.TextAlignment = CardPage ? TextAlignment.Left : TextAlignment.Right;
         return block;
     }
 
@@ -248,9 +245,10 @@ public sealed partial class SettingsWindow
     // theme from the current one. Files that cannot be used are listed under it with their errors.
     private void CustomSection(IReadOnlyList<PanelThemeInfo> users, string chosen)
     {
-        var head = new DockPanel { Margin = new Thickness(0, 0, 0, 8) };
+        // The guide, the folder and the reload button head the custom card at its right (Card).
+        var head = new StackPanel { Orientation = Orientation.Horizontal };
         var guide = Link(Loc.T("主题制作指南 ↗", "Theme guide ↗"), Updates.GitHubUpdates.RepositoryUrl + Loc.T("/blob/main/docs/zh-CN/themes.md", "/blob/main/docs/en-US/themes.md"));
-        guide.VerticalAlignment = VerticalAlignment.Center; DockPanel.SetDock(guide, Dock.Right); head.Children.Add(guide);
+        guide.VerticalAlignment = VerticalAlignment.Center;
         // The folder holds the theme files, so it is opened from the section's title row, beside the guide to writing them.
         var folder = ActionButton(Loc.T("打开主题文件夹", "Open themes folder"), () =>
         {
@@ -260,16 +258,12 @@ public sealed partial class SettingsWindow
         folder.Style = (Style)FindResource("SettingsLink");
         folder.ToolTip = Loc.T("主题文件放在这里：*.json，或子文件夹中的 theme.json。", "Theme files live here: *.json, or theme.json in a subfolder.");
         folder.VerticalAlignment = VerticalAlignment.Center; folder.Margin = new Thickness(0, 0, 16, 0);
-        DockPanel.SetDock(folder, Dock.Right); head.Children.Add(folder);
-        var title = TextLine(Loc.T("自定义", "Custom"), 11, TextSecondary); title.VerticalAlignment = VerticalAlignment.Center; head.Children.Add(title);
+
         var reload = GlyphButton("M 12.5,4.5 A 5.5,5.5 0 1 0 13,9 M 12.5,1.5 V 4.5 H 9.5", 14, 14, Loc.T("重新加载主题文件", "Reload theme files"), () => ShowPage(ThemePage));
         reload.Width = 22; reload.Height = 22; reload.Margin = new Thickness(4, 0, 0, 0); reload.VerticalAlignment = VerticalAlignment.Center;
-        reload.HorizontalAlignment = HorizontalAlignment.Left; // the last child fills the rest of the row; the icon stays beside the title
-        // Measured on the rendered row in both settings themes, the arrow's ink centre sat 1 DIP above the title's.
-        reload.RenderTransform = new System.Windows.Media.TranslateTransform(0, 1);
-        head.Children.Add(reload);
-        Target.Children.Add(head);
-        Target.Children.Add(new Border { Height = 1, Background = UI.Brush(Divider), Margin = new Thickness(0, 0, 0, 12) });
+        reload.Margin = new Thickness(0, 0, 12, 0);
+        head.Children.Add(reload); head.Children.Add(folder); head.Children.Add(guide);
+        SectionTitle(Loc.T("自定义", "Custom"), head, description: Loc.T("你自己的主题文件。点击名称可重命名。", "Your own theme files. Click a name to rename it."));
         // In the order they were added, so a new theme takes the place of the card that made it, at the end.
         var own = PanelThemes.InAddedOrder(users.Where(t => t.Usable)).ToList();
         ThemeCards([.. own.Select(t => (t.Id, t.DisplayName, t))], chosen, CustomTile());
