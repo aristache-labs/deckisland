@@ -176,13 +176,11 @@ public partial class MainWindow
         // A capsule's ends take less of the width than a notch's (16 against 30 DIP at the base height), so it asks for the difference
         // to be as wide as the notch.
         if (EffectiveStyle == CompactStyle.Capsule) pad += 2 * Math.Round((CollapsedLimits.NotchInset - CollapsedLimits.CapsuleInset) * scale);
-        // The readout never grows past the width set for this style (Collapsed view's width, at the panel's scale), so a longer text
-        // is cut. Its height, scale and horizontal offset are the surface's own.
-        // A capsule is capped at the notch's width when that is the larger, so its notification is as long as the notch's.
-        double saved = (EffectiveStyle == CompactStyle.Capsule ? Math.Max(Settings.CapsuleWidth, Settings.NotchWidth) : Settings.NotchWidth) * _scale;
-        double cap = Math.Max(0, saved - 2 * Collapsed.Inset);
-        var (parts, natural) = BuildHudRow(hud, scale, dpi, cap > pad ? cap - pad : double.PositiveInfinity);
-        double asked = Math.Min(natural + pad, cap > 0 ? cap : natural + pad);
+        // Every readout has one width, the notch's and the capsule's alike (the capsule's shorter ends are made up in pad), within the
+        // screen. Its height, scale and horizontal offset are the surface's own.
+        double room = Math.Max(0, MonitorBoundsDip.Width - 2 * Math.Round(24 * scale) - pad);
+        var (parts, natural) = BuildHudRow(hud, scale, dpi, room);
+        double asked = natural + pad;
         // The surface takes the readout's width, even narrower than the row it replaces.
         if (double.IsNaN(_compactWanted) || Math.Abs(asked - _compactWanted) > .5 || Math.Abs(natural - _compactRequired) > .5)
         {
