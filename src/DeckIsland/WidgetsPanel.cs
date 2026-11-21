@@ -126,6 +126,19 @@ public partial class MainWindow
         return button;
     }
 
+    // The settings gallery shows each widget as the island draws it: built once, filled once, and not kept on the tick.
+    internal (FrameworkElement Card, string Surface) WidgetPreview(WidgetKind kind)
+    {
+        int start = _widgetUpdates.Count;
+        var card = WidgetCard(kind);
+        var added = _widgetUpdates.GetRange(start, _widgetUpdates.Count - start);
+        _widgetUpdates.RemoveRange(start, added.Count);
+        foreach (var update in added) update();
+        card.Width = 290; card.Height = 132;
+        card.IsHitTestVisible = false; card.Focusable = false;
+        return (card, Look.Hex("surface"));
+    }
+
     private FrameworkElement WidgetCard(WidgetKind kind)
     {
         var frame = new Border { Margin = new Thickness(5), Padding = new Thickness(WidgetSide, 7, WidgetSide, 7), CornerRadius = new CornerRadius(Corner(12)),

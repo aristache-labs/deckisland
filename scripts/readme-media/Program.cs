@@ -178,6 +178,8 @@ internal sealed class Renderer(App app, string output, string language, string[]
             // The line at the foot of the clipboard page that says why a click only copied, at the smallest panel and a usual one.
             if (scenes.Contains("shelf-notice")) await ShelfNotice();
             // The file transfer's settings, and the word beside the pointer while files are dragged out; for checking.
+            // The widget gallery with its live previews and the Clock and Countdown options; for checking, not for the README.
+            if (scenes.Contains("widgets-settings")) await SettingsPage("widgets-settings", 22, height: 2100);
             if (scenes.Contains("transfer-settings")) { await DragHints(); await SettingsPage("transfer-settings", 14, tips: true); }
         }
         finally { Directory.Delete(folder, true); }

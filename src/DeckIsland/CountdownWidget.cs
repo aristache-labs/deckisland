@@ -2,6 +2,8 @@ using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Documents;
+using System.Windows.Media;
+using System.Windows.Shapes;
 using DeckIsland.Core;
 
 namespace DeckIsland;
@@ -17,11 +19,7 @@ public partial class MainWindow
         string title = Settings.CountdownTitle;
         if (target is null)
         {
-            var link = WidgetAction($"{WidgetLayout.Name(WidgetKind.Countdown)} · {Loc.T("设置", "Configure")}",
-                () => _app.OpenSettingsPage(SettingsWindow.WidgetsSettingsPage));
-            link.HorizontalAlignment = HorizontalAlignment.Left;
-            link.VerticalAlignment = VerticalAlignment.Center;
-            frame.Child = link;
+            frame.Child = CountdownEmpty();
             return frame;
         }
         DateOnly shown = default;
@@ -33,6 +31,27 @@ public partial class MainWindow
             frame.Child = CountdownContent(today, target.Value, title);
         });
         return frame;
+    }
+
+    // No date yet: a calendar mark over a note, and the whole card opens the settings.
+    private Button CountdownEmpty()
+    {
+        var ink = UI.Brush(Look.Secondary);
+        var calendar = new Path
+        {
+            Data = Geometry.Parse("M 5,5 H 19 A 1,1 0 0 1 20,6 V 19 A 1,1 0 0 1 19,20 H 5 A 1,1 0 0 1 4,19 V 6 A 1,1 0 0 1 5,5 Z M 4,10 H 20 M 8,3 V 7 M 16,3 V 7"),
+            Stroke = ink, StrokeThickness = 1.6, StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round, StrokeLineJoin = PenLineJoin.Round
+        };
+        var mark = new Viewbox { Width = 26, Height = 26, Child = new Canvas { Width = 24, Height = 24, Children = { calendar } }, HorizontalAlignment = HorizontalAlignment.Center };
+        var note = WeatherText(Loc.T("在设置中设置日期", "Set a date in Settings"), 13);
+        note.Foreground = ink;
+        note.FontWeight = FontWeights.SemiBold;
+        note.Margin = new Thickness(0, 8, 0, 0);
+        note.HorizontalAlignment = HorizontalAlignment.Center;
+        var body = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Children = { mark, note } };
+        var button = WidgetSurface(body, $"{WidgetLayout.Name(WidgetKind.Countdown)} · {note.Text}", () => _app.OpenSettingsPage(SettingsWindow.WidgetsSettingsPage));
+        button.HorizontalContentAlignment = HorizontalAlignment.Center;
+        return button;
     }
 
     private FrameworkElement CountdownContent(DateOnly today, DateOnly target, string title)
