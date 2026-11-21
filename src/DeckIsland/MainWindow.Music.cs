@@ -232,7 +232,8 @@ public partial class MainWindow
         foreach (var control in new FrameworkElement[] { AIUsageButton, MonitorPageButton, MusicPageButton, ShelfPageButton, DevicesPageButton, WeatherPageButton, FocusPageButton, WidgetsPageButton, RemindersPageButton, NotificationsPageButton, CallsPageButton, MediaSourceButton })
             ToolTipService.SetIsEnabled(control, !IsMusicPage);
         PageSwitch.Visibility = _details && IsUsagePage || IsShelfPage && ShelfHidesSwitch ? Visibility.Collapsed : Visibility.Visible;
-        PageSwitch.HorizontalAlignment = IsMusicPage || IsUsagePage && ApplicationPages.Visibility == Visibility.Visible || IsShelfPage
+        // The music and clipboard pages keep their menu in the middle; the usage page, with its application tabs, keeps it at the left.
+        PageSwitch.HorizontalAlignment = IsUsagePage && ApplicationPages.Visibility == Visibility.Visible
             ? HorizontalAlignment.Left : HorizontalAlignment.Center;
         OrderPageButtons();
         if (!IsShelfPage) { ShelfToolbar.Visibility = Visibility.Collapsed; ShelfSearchButton.Visibility = Visibility.Collapsed; }
@@ -475,9 +476,19 @@ public partial class MainWindow
         var modes = track is null ? [] : MusicPlaybackModes.Supported(track);
         // While the timeline is held (MusicTimelineHold) the bar stays in its place, empty and without times.
         bool timeline = track?.HasTimeline == true || track is not null && _timelineHold.Holds(DateTimeOffset.UtcNow);
+        // The one-column page (Stacked) puts the transport at the right of the titles; the column page puts it at the left, small, with the volume.
+        bool columnPage = Settings.MusicLyricsLayout == MusicLyricsLayout.Columns && (Settings.MusicPageCover || Settings.LyricsEnabled);
         var layout = MusicLayout.Calculate(w, h, hasLyrics, timeline, message.Length > 0, logMode || appleEntry || kugouEntry, transport: !showSmtcHint,
-            lyricsExpected: Settings.LyricsEnabled);
+            lyricsExpected: Settings.LyricsEnabled, controlsAside: !columnPage);
         var c = layout.Metrics;
+        if (columnPage && !showSmtcHint)
+        {
+            // Smaller buttons close together at the left end of the bottom row; the volume takes the rest of that row (below).
+            double oldPlay = c.Play;
+            c = c with { Play = Math.Round(c.Play * .82), Skip = Math.Round(c.Skip * .84), Mode = Math.Round(c.Mode * .9) };
+            double gap = Math.Round(c.Play * .55), triplet = c.Skip * 2 + c.Play + 2 * gap;
+            layout = layout with { Metrics = c, ControlGap = gap, TripletWidth = triplet, ModeX = 0, TripletX = c.Mode + gap, ControlsY = layout.ControlsY + Math.Round((oldPlay - c.Play) / 2) };
+        }
         // With the usage page on, the controls are the usage page's, as it would lay them out now; see PanelHeader.WithControlsOf.
         // Fitting the usage page for them is kept until its size, data or settings change (CachedUsageHeader): this runs on every
         // update of the song and many times a second during a drag.
@@ -558,10 +569,11 @@ public partial class MainWindow
             // instead of its top; a message, when one shows, has its line under them. With the lyrics on the titles keep the top
             // whether or not a song has lyrics, so they do not move when the lyrics arrive. The equalizer keeps the top right
             // corner either way, and the title the room left of it.
-            bool alone = !Settings.LyricsEnabled;
+            // The titles keep the top whether or not the lyrics are shown, so switching them off does not move the title.
+            bool alone = false;
             right.RowDefinitions.Add(new RowDefinition { Height = alone ? new GridLength(1, GridUnitType.Star) : new GridLength(layout.HeaderHeight) });
             right.RowDefinitions.Add(new RowDefinition { Height = alone ? GridLength.Auto : new GridLength(1, GridUnitType.Star) });
-            double equalizerWidth = MusicEqualizerWidth(c);
+            double equalizerWidth = layout.ControlsAside ? layout.AsideRoom : MusicEqualizerWidth(c);
             var header = new Grid();
             // Centred, the titles take the page's whole width, so their centre is the page's, and the equalizer stands over the
             // end of the title's line. The title keeps clear of it and leaves as much room free at its left (MusicTitleFit
@@ -600,7 +612,7 @@ public partial class MainWindow
                 // All lines share one size; only its color (MusicLyricColor) marks the current one.
                 if (lyricLines == 3) { _lyricPrevious = UI.Fixed("", c.Lyric, c.LyricLine, Look.Tertiary); _lyricPrevious.TextAlignment = centered ? TextAlignment.Center : TextAlignment.Left; lyrics.Children.Add(_lyricPrevious); }
                 _lyricCurrent = new MusicMarquee { FontSize = c.Lyric, Height = c.LyricLine, CenterWhenFits = centered, Foreground = LyricInk,
-                    Backdrop = Look.MarqueeBackdrop, InkFade = Look.InkFade };
+                    Backdrop = MusicStreaks ? null : Look.MarqueeBackdrop, InkFade = MusicStreaks || Look.InkFade };
                 lyrics.Children.Add(_lyricCurrent); UpdateLyricScrolling();
                 if (lyricLines >= 2) { _lyricNext = UI.Fixed("", c.Lyric, c.LyricLine, Look.Tertiary); _lyricNext.TextAlignment = centered ? TextAlignment.Center : TextAlignment.Left; lyrics.Children.Add(_lyricNext); }
                 lyrics.Visibility = layout.ShowMessage ? Visibility.Collapsed : Visibility.Visible; middle.Children.Add(lyrics);
@@ -643,7 +655,14 @@ public partial class MainWindow
                 bar.Available = level is not null; bar.Level = level ?? 0;
                 bar.Changed += value => PlayerVolume.Set(source, (float)value);
                 _musicVolume = bar; _volumeRead = Environment.TickCount64;
-                times.Children.Add(bar); times.IsHitTestVisible = true;
+                if (columnPage && !showSmtcHint)
+                {
+                    // On the transport's line, after the heart's place.
+                    bar.HorizontalAlignment = HorizontalAlignment.Left; bar.VerticalAlignment = VerticalAlignment.Top; bar.Width = 140;
+                    bar.Margin = new Thickness(layout.TripletX + layout.TripletWidth + layout.ControlGap + c.Mode + 26, layout.ControlsY + (c.Play - bar.Height) / 2, 0, 0);
+                    body.Children.Add(bar);
+                }
+                else { times.Children.Add(bar); times.IsHitTestVisible = true; }
             }
             body.Children.Add(times);
             // Every style but Simple draws the bar itself (MusicProgress), behind the slider, whose own bar is then not drawn.
@@ -674,7 +693,7 @@ public partial class MainWindow
             {
                 _musicProgress = new MusicProgress(_musicSeek, Settings.MusicProgressLook, ((SolidColorBrush)_musicAccent).Color, ((SolidColorBrush)UI.Brush(Look.Hex("track"))).Color,
                     track.State == MediaState.Playing && animate, track.SongKey)
-                { Height = c.SeekRow, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, layout.ProgressY, 0, 0) };
+                { Height = c.SeekRow * 1.6, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, layout.ProgressY - c.SeekRow * .3, 0, 0) };
                 body.Children.Add(_musicProgress);
             }
             else _musicProgress = null;
@@ -839,13 +858,15 @@ public partial class MainWindow
     }
     // The equalizer that stood at the top right of the card gave way to the progress bar styles (MusicProgress).
     private double MusicEqualizerWidth(MusicMetrics c) => 0;
+    // Over the cover's coloured streaks the title and the lyrics fade their own ink at the ends: a block of the island's surface colour would show as a dark patch.
+    private bool MusicStreaks => Settings.MusicBackground == MusicCardBackground.AlbumColours;
     // The open page's title: one MusicMarquee, the collapsed row's, so a title that does not fit its room scrolls the same way. Its
     // name for screen readers is the whole title; a tooltip shows it whole while it overhangs.
     private MusicMarquee PageTitle(MediaTrack track, MusicMetrics c, bool center, bool merge)
     {
         string tail = merge && track.Artist.Length > 0 ? " · " + track.Artist : "";
         var title = new MusicMarquee { Text = track.Title, Tail = tail, AccessibleName = MusicTitleFit.ReadAs(track.Title, tail), TailFontSize = c.Artist, TailForeground = UI.Brush(Look.Secondary), FontSize = c.Title,
-            FontWeight = FontWeights.SemiBold, Height = c.TitleLine, CenterWhenFits = center, EdgeWidth = Math.Max(MusicMarquee.Edge, Math.Round(c.Title * .6)), Backdrop = Look.MarqueeBackdrop, InkFade = Look.InkFade };
+            FontWeight = FontWeights.SemiBold, Height = c.TitleLine, CenterWhenFits = center, EdgeWidth = Math.Max(MusicMarquee.Edge, Math.Round(c.Title * .6)), Backdrop = MusicStreaks ? null : Look.MarqueeBackdrop, InkFade = MusicStreaks || Look.InkFade };
         AutomationProperties.SetName(title, MusicTitleFit.ReadAs(track.Title, tail));
         ShowCutText(title, track.Title + tail);
         _musicTitle = title; UpdateLyricScrolling();
@@ -954,7 +975,7 @@ public partial class MainWindow
             TextBlock Dim() { var line = UI.Fixed("", c.Lyric, c.LyricLine, Look.Tertiary); lyrics.Children.Add(line); return line; }
             _lyricsAbove = [.. Enumerable.Range(0, above).Select(_ => Dim())];
             _lyricCurrent = new MusicMarquee { FontSize = columns.CurrentLyric, Height = columns.CurrentLine, CenterWhenFits = false, Foreground = LyricInk,
-                Backdrop = Look.MarqueeBackdrop, InkFade = Look.InkFade };
+                Backdrop = MusicStreaks ? null : Look.MarqueeBackdrop, InkFade = MusicStreaks || Look.InkFade };
             lyrics.Children.Add(_lyricCurrent); UpdateLyricScrolling();
             _lyricsBelow = [.. Enumerable.Range(0, below).Select(_ => Dim())];
             double lineTop = (columns.Height - columns.CurrentLine - (above + below) * c.LyricLine) / 2;
@@ -1196,7 +1217,7 @@ public partial class MainWindow
     private MusicMarquee CompactTitle(string text, double width, CompactMusicLayout layout)
     {
         var title = new MusicMarquee { Text = text, Width = width, Height = layout.TextHeight, FontSize = CompactTitleFont(layout), EdgeWidth = layout.TextEdge,
-            ScrollAllowed = layout.TextScrolls, Backdrop = Look.MarqueeBackdrop, InkFade = Look.InkFade,
+            ScrollAllowed = layout.TextScrolls, Backdrop = MusicStreaks ? null : Look.MarqueeBackdrop, InkFade = MusicStreaks || Look.InkFade,
             Laps = true, Rested = text.Length > 0 && text == _compactTitleRested };
         title.Finished += () => { if (ReferenceEquals(_compactMarquee, title)) _compactTitleRested = title.Text; };
         title.Gliding += gliding => { if (ReferenceEquals(_compactMarquee, title)) MusicGliding(gliding); };

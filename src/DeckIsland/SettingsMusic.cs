@@ -25,6 +25,41 @@ public sealed partial class SettingsWindow
         var segments = SegmentBorder(strip); segments.IsEnabled = enabled;
         return Row(title, segments, help: help is null ? null : () => help);
     }
+    // A choice drawn as a slim pill with the chosen option filled in the theme's text colour: compact, fitted to its labels, one line each.
+    private const string PillTemplate = """
+        <ControlTemplate xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" TargetType="RadioButton">
+          <Border x:Name="Pill" CornerRadius="13" Padding="14,0" Height="26" Background="Transparent" Cursor="Hand">
+            <TextBlock x:Name="Label" Text="{TemplateBinding Content}" FontSize="12.5" FontWeight="Medium" VerticalAlignment="Center" TextWrapping="NoWrap"
+                       Foreground="{DynamicResource SettingsTextSecondary}"/>
+          </Border>
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Label" Property="Foreground" Value="{DynamicResource SettingsTextPrimary}"/></Trigger>
+            <Trigger Property="IsChecked" Value="True">
+              <Setter TargetName="Pill" Property="Background" Value="{DynamicResource SettingsTextPrimary}"/>
+              <Setter TargetName="Label" Property="Foreground" Value="{DynamicResource SettingsSurface}"/>
+              <Setter TargetName="Label" Property="FontWeight" Value="SemiBold"/>
+            </Trigger>
+            <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Pill" Property="BorderBrush" Value="{DynamicResource SettingsAccent}"/><Setter TargetName="Pill" Property="BorderThickness" Value="1.5"/></Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+        """;
+
+    private FrameworkElement PillChoice<T>(string title, T selected, (T Value, string Label)[] options, Action<T> change, string? help = null) where T : notnull
+    {
+        var template = (ControlTemplate)System.Windows.Markup.XamlReader.Parse(PillTemplate);
+        var strip = new StackPanel { Orientation = Orientation.Horizontal };
+        foreach (var option in options)
+        {
+            var choice = new RadioButton { Template = template, Content = option.Label, GroupName = title, IsChecked = EqualityComparer<T>.Default.Equals(option.Value, selected), Margin = new Thickness(0, 0, 2, 0) };
+            AutomationProperties.SetName(choice, title + " " + option.Label);
+            choice.Checked += (_, _) => change(option.Value);
+            strip.Children.Add(choice);
+        }
+        var frame = new Border { Child = strip, Background = UI.Brush(Inset), BorderBrush = UI.Brush(_palette.InputBorder), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(16),
+            Padding = new Thickness(3, 2, 1, 2), HorizontalAlignment = HorizontalAlignment.Right };
+        return Row(title, frame, help: help is null ? null : () => help);
+    }
+
     // The options under the style cards belong to the chosen style. Choosing another card slides the current options
     // out and the chosen style's options in, moving the way the chosen card lies from the previous one.
     private Grid? _styleOptions;
@@ -241,9 +276,9 @@ public sealed partial class SettingsWindow
         Group(MusicChoice(Loc.T("背景", "Background"), S.MusicBackground, [(MusicCardBackground.AlbumColours, Loc.T("专辑配色", "Album colours")), (MusicCardBackground.Plain, Loc.T("纯色", "Plain"))],
                 v => Change(s => s.MusicBackground = v), help: Loc.T("音乐卡片的背景：封面的颜色化作柔和的光带，或灵动岛的纯色表面。卡片角落的调色板按钮也可以切换。",
                     "Behind the music card: the cover's colours in soft streaks, or the island's plain surface. The palette button in the card's corner switches it too.")),
-            MusicChoice(Loc.T("进度条", "Progress bar"), S.MusicProgressLook, [(MusicProgressStyle.Wave, Loc.T("波浪", "Wave")), (MusicProgressStyle.Pixels, Loc.T("像素", "Pixels")),
+            PillChoice(Loc.T("进度条", "Progress bar"), S.MusicProgressLook, [(MusicProgressStyle.Wave, Loc.T("波浪", "Wave")), (MusicProgressStyle.Pixels, Loc.T("像素", "Pixels")),
                 (MusicProgressStyle.Comet, Loc.T("彗星", "Comet")), (MusicProgressStyle.SongShape, Loc.T("歌曲形状", "Song shape")), (MusicProgressStyle.Simple, Loc.T("简洁", "Simple")),
-                (MusicProgressStyle.Hearts, Loc.T("爱心", "Hearts"))], v => Change(s => s.MusicProgressLook = v), width: 452,
+                (MusicProgressStyle.Hearts, Loc.T("爱心", "Hearts"))], v => Change(s => s.MusicProgressLook = v),
                 help: Loc.T("卡片显示歌曲已播放的进度。波浪：播放时起伏，暂停时变平；像素：发光的光点后闪烁的像素；彗星：脉动并散出火花；歌曲形状：把歌曲画成条形；简洁：一条细线；爱心：逐个填满。",
                     "How the card shows how far the song has played. Wave ripples while it plays and lies flat when paused; Pixels shimmer behind a glowing head; Comet pulses and sheds sparks; Song shape draws the song as bars; Simple is a plain line; Hearts fill one by one.")),
             Toggle(Loc.T("播放器音量", "Player volume"), S.MusicPlayerVolume, v => Change(s => s.MusicPlayerVolume = v),

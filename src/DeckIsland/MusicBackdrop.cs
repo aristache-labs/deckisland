@@ -24,26 +24,34 @@ internal sealed class MusicBackdrop : FrameworkElement
     {
         double w = ActualWidth, h = ActualHeight;
         if (_colors.Length == 0 || w < 20 || h < 20) return;
-        // Three washes, one at each end and one over the top; their colours are the cover's strongest, repeated when it gave fewer.
-        (double X, double Y, double Reach, double Strength)[] washes = [(.08, .95, .75, .55), (.92, .85, .7, .5), (.6, .0, .65, .38)];
-        for (int i = 0; i < washes.Length; i++)
+        // Washes of the cover's colours: the strongest two over the upper part, behind the titles, and the cover's average, muted, low down.
+        // They are kept soft, and a scrim darkens the lower part, so the transport and the progress bar stay easy to read over them.
+        Color vivid = _colors[0], second = _colors.Length > 2 ? _colors[1] : vivid, average = _colors[^1];
+        (Color Color, double X, double Y, double Reach, double Strength)[] washes =
+            [(vivid, .12, .12, .8, .42), (second, .95, .1, .7, .3), (average, .5, .95, .85, .26)];
+        foreach (var wash in washes)
         {
-            var color = _colors[i % _colors.Length];
-            var wash = washes[i];
             var brush = new RadialGradientBrush
             {
                 Center = new Point(.5, .5), GradientOrigin = new Point(.5, .5), RadiusX = .5, RadiusY = .5,
                 GradientStops =
                 {
-                    new GradientStop(Color.FromArgb((byte)(255 * wash.Strength), color.R, color.G, color.B), 0),
-                    new GradientStop(Color.FromArgb((byte)(255 * wash.Strength * .45), color.R, color.G, color.B), .55),
-                    new GradientStop(Color.FromArgb(0, color.R, color.G, color.B), 1)
+                    new GradientStop(Color.FromArgb((byte)(255 * wash.Strength), wash.Color.R, wash.Color.G, wash.Color.B), 0),
+                    new GradientStop(Color.FromArgb((byte)(255 * wash.Strength * .4), wash.Color.R, wash.Color.G, wash.Color.B), .55),
+                    new GradientStop(Color.FromArgb(0, wash.Color.R, wash.Color.G, wash.Color.B), 1)
                 }
             };
             brush.Freeze();
-            double rx = w * wash.Reach, ry = h * wash.Reach * 1.25;
-            dc.DrawEllipse(brush, null, new Point(w * wash.X, h * wash.Y), rx, ry);
+            dc.DrawEllipse(brush, null, new Point(w * wash.X, h * wash.Y), w * wash.Reach, h * wash.Reach * 1.2);
         }
+        var surface = (Color)ColorConverter.ConvertFromString(PanelLook.Of(this).Hex("surface"));
+        var scrim = new LinearGradientBrush(Color.FromArgb(0, surface.R, surface.G, surface.B), Color.FromArgb(150, surface.R, surface.G, surface.B), 90)
+        {
+            GradientStops = { new GradientStop(Color.FromArgb(0, surface.R, surface.G, surface.B), 0), new GradientStop(Color.FromArgb(0, surface.R, surface.G, surface.B), .3),
+                new GradientStop(Color.FromArgb(150, surface.R, surface.G, surface.B), 1) }
+        };
+        scrim.Freeze();
+        dc.DrawRectangle(scrim, null, new Rect(0, 0, w, h));
     }
 
     // The cover's strongest colours, most prominent first: its pixels, scaled down, are grouped by hue, and each group weighs by how many
@@ -60,10 +68,12 @@ internal sealed class MusicBackdrop : FrameworkElement
             var pixels = new byte[stride * height];
             converted.CopyPixels(pixels, stride, 0);
             var groups = new (double Weight, double R, double G, double B)[12];
+            double sumR = 0, sumG = 0, sumB = 0, seen = 0;
             for (int i = 0; i < pixels.Length; i += 4)
             {
                 double b = pixels[i] / 255d, g = pixels[i + 1] / 255d, r = pixels[i + 2] / 255d, a = pixels[i + 3] / 255d;
                 double max = Math.Max(r, Math.Max(g, b)), min = Math.Min(r, Math.Min(g, b)), chroma = max - min;
+                if (a >= .5) { sumR += r; sumG += g; sumB += b; seen++; }
                 if (a < .5 || max < .12 || chroma < .08) continue;
                 double hue = max == r ? ((g - b) / chroma + 6) % 6 : max == g ? (b - r) / chroma + 2 : (r - g) / chroma + 4;
                 int bucket = (int)(hue * 2) % 12;
@@ -71,8 +81,11 @@ internal sealed class MusicBackdrop : FrameworkElement
                 var group = groups[bucket];
                 groups[bucket] = (group.Weight + weight, group.R + r * weight, group.G + g * weight, group.B + b * weight);
             }
-            return [.. groups.Where(group => group.Weight > 0).OrderByDescending(group => group.Weight).Take(count)
-                .Select(group => Color.FromRgb((byte)Math.Round(group.R / group.Weight * 255), (byte)Math.Round(group.G / group.Weight * 255), (byte)Math.Round(group.B / group.Weight * 255)))];
+            // The vivid colours first, the average of the whole cover last (the washes at the lower part take that one).
+            var vivid = groups.Where(group => group.Weight > 0).OrderByDescending(group => group.Weight).Take(2)
+                .Select(group => Color.FromRgb((byte)Math.Round(group.R / group.Weight * 255), (byte)Math.Round(group.G / group.Weight * 255), (byte)Math.Round(group.B / group.Weight * 255))).ToList();
+            if (seen > 0) vivid.Add(Color.FromRgb((byte)Math.Round(sumR / seen * 255), (byte)Math.Round(sumG / seen * 255), (byte)Math.Round(sumB / seen * 255)));
+            return [.. vivid];
         }
         catch (Exception error) when (error is ArgumentException or InvalidOperationException or NotSupportedException) { return []; }
     }

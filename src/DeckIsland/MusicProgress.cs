@@ -93,7 +93,7 @@ internal sealed class MusicProgress : FrameworkElement
 
     private void Plain(DrawingContext dc, double w, double h)
     {
-        double y = h / 2, thickness = 3, head = Fraction * w;
+        double y = h / 2, thickness = 4, head = Fraction * w;
         dc.DrawRoundedRectangle(Solid(Track), null, new Rect(0, y - thickness / 2, w, thickness), thickness / 2, thickness / 2);
         if (head > 0) dc.DrawRoundedRectangle(Solid(Accent), null, new Rect(0, y - thickness / 2, head, thickness), thickness / 2, thickness / 2);
     }
@@ -101,8 +101,8 @@ internal sealed class MusicProgress : FrameworkElement
     // A sine that ripples from the head backwards; its height follows how much the song is playing, so a pause lays it flat.
     private void Wave(DrawingContext dc, double w, double h)
     {
-        double y = h / 2, head = Fraction * w, amplitude = Math.Min(h * .2, 3) * _calm, phase = Seconds * 2.2;
-        var rest = new Pen(Solid(Track), 2.2) { StartLineCap = PenLineCap.Round, EndLineCap = PenLineCap.Round };
+        double y = h / 2, head = Fraction * w, amplitude = Math.Min(h * .2, 3.8) * _calm, phase = Seconds * 4.4;
+        var rest = new Pen(Solid(Track), 3) { StartLineCap = PenLineCap.Round, EndLineCap = PenLineCap.Round };
         dc.DrawLine(rest, new Point(Math.Min(w, head + 3), y), new Point(w, y));
         if (head > 1)
         {
@@ -111,18 +111,18 @@ internal sealed class MusicProgress : FrameworkElement
             {
                 context.BeginFigure(new Point(0, y + Math.Sin(-phase) * amplitude), false, false);
                 for (double x = 2; x <= head; x += 2)
-                    context.LineTo(new Point(x, y + Math.Sin(x / 6.2 - phase) * amplitude), true, true);
+                    context.LineTo(new Point(x, y + Math.Sin(x / 5 - phase) * amplitude), true, true);
             }
             geometry.Freeze();
-            dc.DrawGeometry(null, new Pen(Solid(Accent), 2.4) { LineJoin = PenLineJoin.Round, StartLineCap = PenLineCap.Round, EndLineCap = PenLineCap.Round }, geometry);
+            dc.DrawGeometry(null, new Pen(Solid(Accent), 3.2) { LineJoin = PenLineJoin.Round, StartLineCap = PenLineCap.Round, EndLineCap = PenLineCap.Round }, geometry);
         }
-        dc.DrawRoundedRectangle(Solid(Accent), null, new Rect(head - 1.5, y - 6, 3, 12), 1.5, 1.5);
+        dc.DrawRoundedRectangle(Solid(Accent), null, new Rect(head - 2, y - 8, 4, 16), 2, 2);
     }
 
     // Small squares along the line: the played ones shimmer, the rest are dim, and the head is a brighter, larger square with a glow.
     private void Pixels(DrawingContext dc, double w, double h)
     {
-        const double cell = 3, gap = 2.2;
+        const double cell = 4, gap = 2.8;
         double step = cell + gap, head = Fraction * w, y = Math.Round(h / 2 - cell / 2);
         int count = (int)(w / step);
         for (int i = 0; i < count; i++)
@@ -137,16 +137,16 @@ internal sealed class MusicProgress : FrameworkElement
             dc.DrawRectangle(Solid(Accent, shimmer), null, new Rect(x, y, cell, cell));
         }
         double pulse = 1 + .25 * Math.Sin(Seconds * 6) * _calm;
-        dc.DrawEllipse(Solid(Accent, .25), null, new Point(head, h / 2), 7 * pulse, 7 * pulse);
-        dc.DrawRectangle(Solid(Accent), null, new Rect(head - 2.5, h / 2 - 4.5, 5, 9));
+        dc.DrawEllipse(Solid(Accent, .25), null, new Point(head, h / 2), 9 * pulse, 9 * pulse);
+        dc.DrawRectangle(Solid(Accent), null, new Rect(head - 3, h / 2 - 6, 6, 12));
     }
 
     // A thin line with a head that pulses and sheds sparks behind it, which fade as they drift back along the line.
     private void Comet(DrawingContext dc, double w, double h)
     {
         double y = h / 2, head = Fraction * w, pulse = 1 + .3 * Math.Sin(Seconds * 5) * _calm;
-        dc.DrawRoundedRectangle(Solid(Track), null, new Rect(0, y - 1, w, 2), 1, 1);
-        if (head > 0) dc.DrawRoundedRectangle(Solid(Accent, .7), null, new Rect(0, y - 1, head, 2), 1, 1);
+        dc.DrawRoundedRectangle(Solid(Track), null, new Rect(0, y - 1.5, w, 3), 1.5, 1.5);
+        if (head > 0) dc.DrawRoundedRectangle(Solid(Accent, .7), null, new Rect(0, y - 1.5, head, 3), 1.5, 1.5);
         if (_calm > .05)
             for (int i = 0; i < 9; i++)
             {
@@ -155,15 +155,15 @@ internal sealed class MusicProgress : FrameworkElement
                 if (x < 0) continue;
                 dc.DrawEllipse(Solid(Accent, (1 - life) * .85 * _calm), null, new Point(x, y + lift), 1.1 + (1 - life), 1.1 + (1 - life));
             }
-        dc.DrawEllipse(Solid(Accent, .22), null, new Point(head, y), 8 * pulse, 8 * pulse);
-        dc.DrawEllipse(Solid(Accent), null, new Point(head, y), 3.2 * pulse, 3.2 * pulse);
+        dc.DrawEllipse(Solid(Accent, .22), null, new Point(head, y), 11 * pulse, 11 * pulse);
+        dc.DrawEllipse(Solid(Accent), null, new Point(head, y), 4.4 * pulse, 4.4 * pulse);
     }
 
     // The song as fine bars (no real waveform is read: a shape drawn from the song's name, the same each time), the played ones in the accent.
     // While it plays the bars near the head rise and fall, and the movement fades out along the played part.
     private void SongShape(DrawingContext dc, double w, double h)
     {
-        const double bar = 1.7, gap = 1.4;
+        const double bar = 2.2, gap = 1.8;
         double step = bar + gap, head = Fraction * w;
         int count = (int)(w / step);
         for (int i = 0; i < count; i++)
@@ -181,11 +181,11 @@ internal sealed class MusicProgress : FrameworkElement
     // only outlined. The beat is gentle and stops, with the others' movement, when the song is paused.
     private void Hearts(DrawingContext dc, double w, double h)
     {
-        double size = Math.Min(h - 2, 9), step = size + 3.6;
-        int count = Math.Max(1, (int)((w + 3.6) / step));
-        double filled = Fraction * count, left = (w - (count * step - 3.6)) / 2;
+        double size = Math.Min(h - 2, 13), step = size + 4.4;
+        int count = Math.Max(1, (int)((w + 4.4) / step));
+        double filled = Fraction * count, left = (w - (count * step - 4.4)) / 2;
         int current = (int)Math.Min(count - 1, Math.Floor(filled));
-        var outline = new Pen(Solid(Track, .95), 1);
+        var outline = new Pen(Solid(Track, .95), 1.2);
         var light = Color.FromRgb((byte)(Accent.R + (255 - Accent.R) * .75), (byte)(Accent.G + (255 - Accent.G) * .75), (byte)(Accent.B + (255 - Accent.B) * .75));
         for (int i = 0; i < count; i++)
         {
