@@ -82,32 +82,26 @@ public partial class MainWindow
         bool currency = s.ConverterMode == ConverterMode.Currency;
         var (from, to) = ConverterPair();
 
-        var title = WeatherText(Loc.T("换算", "Converter"), 14);
-        title.FontWeight = FontWeights.SemiBold;
-        var right = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
-        if (!currency)
+        // The page switch names the tab, so there is no title row: the two sides fill the top, and the mode, the unit category and
+        // the rates' date share one line under them, clear of the header.
+        _converterAmount = new TextBox
         {
-            var category = PickerChip(UnitConversion.Name(s.ConverterUnitCategory), PickUnitCategory);
-            category.Margin = new Thickness(0, 0, 8, 0);
-            right.Children.Add(category);
-        }
-        right.Children.Add(ModeSwitch(currency));
-        var top = new Grid { Margin = new Thickness(0, 0, 0, 8), Children = { title, right } };
-
-        _converterAmount = new TextBox { Style = (Style)FindResource("ShelfTextBox"), Text = s.ConverterAmount, FontSize = 24, FontWeight = FontWeights.SemiBold,
-            Background = Brushes.Transparent, BorderThickness = new Thickness(0), Padding = new Thickness(0), VerticalContentAlignment = VerticalAlignment.Center };
+            Text = s.ConverterAmount, FontSize = 22, FontWeight = FontWeights.SemiBold, Foreground = UI.Brush(Look.Primary), CaretBrush = UI.Brush(Look.Primary),
+            SelectionBrush = UI.Brush(Look.Accent), Background = Brushes.Transparent, BorderThickness = new Thickness(0), Padding = new Thickness(0), Margin = new Thickness(-2, 0, 0, 0),
+            VerticalContentAlignment = VerticalAlignment.Center, FocusVisualStyle = null, Height = ConverterValueHeight
+        };
         AutomationProperties.SetName(_converterAmount, Loc.T("数量", "Amount"));
         TakeKeyboardOnClick(_converterAmount);
         _converterAmount.TextChanged += (_, _) => { _app.ChangeShared(settings => settings.ConverterAmount = _converterAmount.Text.Length <= 40 ? _converterAmount.Text : settings.ConverterAmount); UpdateConversion(); };
-        _converterResult = WeatherText("", 24);
+        _converterResult = WeatherText("", 22);
         _converterResult.FontWeight = FontWeights.SemiBold;
+        _converterResult.Height = ConverterValueHeight;
+        _converterResult.LineHeight = ConverterValueHeight; _converterResult.LineStackingStrategy = LineStackingStrategy.BlockLineHeight;
 
-        var fromChip = PickerChip(SideLabel(currency, from), () => PickConverterSide(fromSide: true));
-        var toChip = PickerChip(SideLabel(currency, to), () => PickConverterSide(fromSide: false));
-        var swap = new Button { Style = (Style)FindResource("WidgetSurfaceButton"), Template = FlatPill(), Background = UI.Brush(Look.Hex("fill")), Width = 34, Height = 34,
-            Margin = new Thickness(10, 0, 10, 0), VerticalAlignment = VerticalAlignment.Center,
+        var swap = new Button { Style = (Style)FindResource("WidgetSurfaceButton"), Template = FlatPill(), Background = UI.Brush(Look.Hex("fill")), Width = 30, Height = 30,
+            Margin = new Thickness(8, 0, 8, 0), VerticalAlignment = VerticalAlignment.Center,
             Content = new Path { Data = Geometry.Parse("M 4,8 H 19 M 15,4 L 19,8 L 15,12 M 20,16 H 5 M 9,12 L 5,16 L 9,20"), Stroke = UI.Brush(Look.Primary), StrokeThickness = 1.6,
-                Width = 14, Height = 14, Stretch = Stretch.Uniform, StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round, StrokeLineJoin = PenLineJoin.Round } };
+                Width = 13, Height = 13, Stretch = Stretch.Uniform, StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round, StrokeLineJoin = PenLineJoin.Round } };
         AutomationProperties.SetName(swap, Loc.T("交换", "Swap"));
         swap.Click += (_, _) => SwapConverterSides();
 
@@ -115,39 +109,83 @@ public partial class MainWindow
         cards.ColumnDefinitions.Add(new ColumnDefinition());
         cards.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         cards.ColumnDefinitions.Add(new ColumnDefinition());
-        var leftCard = ConverterCard(_converterAmount, fromChip);
-        var rightCard = ConverterCard(_converterResult, toChip);
+        var leftCard = ConverterCard(_converterAmount, SideLabel(currency, from), () => PickConverterSide(fromSide: true));
+        var rightCard = ConverterCard(_converterResult, SideLabel(currency, to), () => PickConverterSide(fromSide: false));
         Grid.SetColumn(swap, 1); Grid.SetColumn(rightCard, 2);
         cards.Children.Add(leftCard); cards.Children.Add(swap); cards.Children.Add(rightCard);
 
+        var controls = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+        controls.Children.Add(ModeSwitch(currency));
+        if (!currency)
+        {
+            var category = PickerChip(UnitConversion.Name(s.ConverterUnitCategory), PickUnitCategory);
+            category.Height = 24; category.Margin = new Thickness(8, 0, 0, 0);
+            controls.Children.Add(category);
+        }
         _converterNote = WeatherText("", 11.5);
         _converterNote.Foreground = UI.Brush(Look.Secondary);
-        _converterNote.Margin = new Thickness(2, 8, 0, 0);
+        _converterNote.Margin = new Thickness(12, 0, 2, 0);
+        _converterNote.TextAlignment = TextAlignment.Right;
+        var footer = new DockPanel { Margin = new Thickness(0, 10, 0, 0), LastChildFill = true };
+        var pin = ToolPinButton();
+        pin.Width = pin.Height = 24; pin.Margin = new Thickness(8, 0, 0, 0);
+        DockPanel.SetDock(controls, System.Windows.Controls.Dock.Left);
+        DockPanel.SetDock(pin, System.Windows.Controls.Dock.Right);
+        footer.Children.Add(controls); footer.Children.Add(pin); footer.Children.Add(_converterNote);
 
-        var body = new Grid();
+        var body = new Grid { Margin = new Thickness(0, 8, 0, 0) };
         body.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         body.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        body.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        Grid.SetRow(cards, 1); Grid.SetRow(_converterNote, 2);
-        body.Children.Add(top); body.Children.Add(cards); body.Children.Add(_converterNote);
+        Grid.SetRow(footer, 1);
+        body.Children.Add(cards); body.Children.Add(footer);
         _converterBody = body;
         ConverterContent.Children.Add(new Viewbox { Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, VerticalAlignment = VerticalAlignment.Top,
             Child = new Border { Width = Math.Max(300, ContentCanvas.Width - PanelHeader.For(30, 18).Side * 2), Child = body } });
         UpdateConversion();
     }
 
-    private Border ConverterCard(FrameworkElement value, Button chip)
+    private const double ConverterValueHeight = 32;
+
+    // A side: its value on top and, under it, the full-width picker of its unit or currency, the name at the left and the chevron at the right.
+    private Border ConverterCard(FrameworkElement value, string label, Action open)
     {
-        chip.HorizontalAlignment = HorizontalAlignment.Stretch; chip.HorizontalContentAlignment = HorizontalAlignment.Left; chip.Margin = new Thickness(0, 8, 0, 0);
-        return new Border { CornerRadius = new CornerRadius(12), Background = UI.Brush(Look.Hex("fill")), Padding = new Thickness(12, 10, 12, 10),
-            Child = new StackPanel { Children = { value, chip } } };
+        var text = PickerRowText(label, Look.Primary);
+        text.FontSize = 12;
+        var chevron = new Path { Data = Geometry.Parse("M0,0 L3.5,3.5 L7,0"), Stroke = UI.Brush(Look.Secondary), StrokeThickness = 1.4, Margin = new Thickness(8, 1, 0, 0),
+            VerticalAlignment = VerticalAlignment.Center, StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round };
+        var row = new DockPanel { LastChildFill = true };
+        DockPanel.SetDock(chevron, System.Windows.Controls.Dock.Right);
+        row.Children.Add(chevron); row.Children.Add(text);
+        var picker = new Button { Style = (Style)FindResource("WidgetSurfaceButton"), Template = StretchPill(), Background = UI.Brush(Look.Hex("fillSelected")), Height = 26,
+            Padding = new Thickness(10, 0, 10, 0), Margin = new Thickness(0, 6, 0, 0), Content = row };
+        AutomationProperties.SetName(picker, label);
+        picker.Click += (_, _) => open();
+        return new Border { CornerRadius = new CornerRadius(12), Background = UI.Brush(Look.Hex("fill")), Padding = new Thickness(12, 8, 10, 10),
+            Child = new StackPanel { Children = { value, picker } } };
+    }
+
+    // FlatPill with its content stretched across, for a picker whose name sits at the left.
+    private static ControlTemplate StretchPill()
+    {
+        var border = new FrameworkElementFactory(typeof(Border), "Chrome");
+        border.SetValue(Border.CornerRadiusProperty, new CornerRadius(8));
+        border.SetValue(Border.BackgroundProperty, new TemplateBindingExtension(Control.BackgroundProperty));
+        border.SetValue(Border.PaddingProperty, new TemplateBindingExtension(Control.PaddingProperty));
+        var presenter = new FrameworkElementFactory(typeof(ContentPresenter));
+        presenter.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
+        border.AppendChild(presenter);
+        var template = new ControlTemplate(typeof(Button)) { VisualTree = border };
+        var hover = new Trigger { Property = UIElement.IsMouseOverProperty, Value = true };
+        hover.Setters.Add(new Setter(UIElement.OpacityProperty, .85));
+        template.Triggers.Add(hover);
+        return template;
     }
 
     private Border ModeSwitch(bool currency)
     {
         Button Segment(string label, bool on, ConverterMode mode)
         {
-            var button = new Button { Style = (Style)FindResource("WidgetSurfaceButton"), Template = FlatPill(), Height = 22, Padding = new Thickness(10, 0, 10, 0),
+            var button = new Button { Style = (Style)FindResource("WidgetSurfaceButton"), Template = FlatPill(), Height = 20, Padding = new Thickness(9, 0, 9, 0),
                 Background = on ? UI.Brush(Look.Hex("fillSelected")) : Brushes.Transparent, Content = PickerRowText(label, on ? Look.Primary : Look.Secondary) };
             AutomationProperties.SetName(button, label);
             button.Click += (_, _) => { if (!on) { _app.ChangeShared(settings => settings.ConverterMode = mode); RenderConverter(); } };

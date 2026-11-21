@@ -104,6 +104,12 @@ internal sealed class Renderer(App app, string output, string language, string[]
         Program.SetProperty(app, "Settings", _settings);
         Program.SetProperty(app, "Store", new SettingsStore(folder));
         Program.SetProperty(app, "Prices", new Pricing(folder, offline));
+        // Invented rates in the cache the Converter reads at start, so its currency view shows names and a date offline.
+        File.WriteAllText(Path.Combine(folder, "exchange-rates.json"), """
+            {"Base":"EUR","UpdatedAt":"2026-11-21T09:00:00+00:00",
+             "Rates":[{"Code":"RON","Rate":4.9735,"Date":"2026-11-21"},{"Code":"USD","Rate":1.0214,"Date":"2026-11-21"},{"Code":"GBP","Rate":0.8337,"Date":"2026-11-20"}],
+             "Names":{"EUR":"Euro","RON":"Romanian Leu","USD":"United States Dollar","GBP":"British Pound"}}
+            """);
         Program.SetProperty(app, "Rates", new ExchangeRates(folder, offline));
         Program.SetProperty(app, "Secrets", new ProviderSecrets(folder));
         Program.SetProperty(app, "Usage", new UsageService(new NoDesktop(), DataLocations.Resolve(folder, folder, folder, folder, folder, folder), offline));
@@ -616,18 +622,20 @@ internal sealed class Renderer(App app, string output, string language, string[]
         _settings.ConverterMode = ConverterMode.Units; _settings.ConverterUnitCategory = UnitCategory.Temperature; _settings.ConverterAmount = "21.5";
         SelectPage(DeckPage.Converter);
         await Save("tools-converter-units", scale);
-        _settings.ConverterMode = ConverterMode.Currency; _settings.ConverterCurrencyFrom = "GBP"; _settings.ConverterCurrencyTo = "EUR"; _settings.ConverterAmount = "100";
+        _settings.ConverterMode = ConverterMode.Currency; _settings.ConverterCurrencyFrom = "RON"; _settings.ConverterCurrencyTo = "USD"; _settings.ConverterAmount = "250";
         SelectPage(DeckPage.Usage); SelectPage(DeckPage.Converter);
         await Save("tools-converter-currency-offline", scale);
+        DeckPages.SetSize(_settings, DeckPage.Converter, 440, 170); _deck.ApplySettings();
+        SelectPage(DeckPage.Usage); SelectPage(DeckPage.Converter);
+        await Save("tools-converter-compact", scale);
+        DeckPages.SetSize(_settings, DeckPage.Converter, 520, 200); _deck.ApplySettings();
         SelectPage(DeckPage.Terminal);
         await Save("tools-terminal-frame", scale);
         Program.Call(_deck, "CloseTerminal", []);
         SelectPage(DeckPage.Usage);
         _deck.SetExpanded(false, true);
         _settings.Animations = true;
-        await SettingsPage("tools-settings-scratchpad", 25, height: 500);
-        await SettingsPage("tools-settings-converter", 26, height: 600);
-        await SettingsPage("tools-settings-terminal", 27, height: 700);
+        await SettingsPage("tools-settings-widgets-tabs", 22, height: 3200);
     }
 
     private async Task Stills()

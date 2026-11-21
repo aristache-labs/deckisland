@@ -17,6 +17,10 @@ public sealed partial class SettingsWindow
             Loc.T("在展开面板中加入小组件页。", "Add the widget page to the open island.")));
         WidgetGallery();
         WidgetOptions();
+        // The tool tabs share this page instead of each having one in the navigation.
+        ScratchpadSettings();
+        ConverterSettings();
+        TerminalSettings();
     }
 
     private void WidgetSizeControls() => PageSizeControls(DeckPage.Widgets, WidgetLayout.Title);
