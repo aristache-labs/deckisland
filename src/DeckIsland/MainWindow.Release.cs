@@ -38,6 +38,9 @@ public partial class MainWindow
                 case DeckPage.Reminders:
                     RemindersContent.Children.Clear();
                     break;
+                case DeckPage.Notifications:
+                    NotificationsContent.Children.Clear();
+                    break;
                 case DeckPage.Focus:
                     FocusContent.Children.Clear();
                     break;

@@ -15,6 +15,9 @@ public enum NotificationAccess { Starting, Ready, NeedsPackage, Denied, Unavaila
 public partial class App
 {
     internal NoticeLog Notices { get; } = new();
+    internal event Action? NoticesChanged;
+    internal void ClearNotices() { Notices.Clear(); NoticesChanged?.Invoke(); }
+    private void AddNotice(NoticeItem item) { Notices.Add(item); NoticesChanged?.Invoke(); }
     internal NotificationAccess NotificationAccess { get; private set; } = NotificationAccess.Starting;
     private readonly HashSet<uint> _toastsSeen = [];
     private readonly Dictionary<string, byte[]?> _toastLogos = [];
@@ -90,10 +93,11 @@ public partial class App
             var texts = toast.Notification?.Visual?.Bindings.FirstOrDefault()?.GetTextElements().Select(item => item.Text).Where(text => text.Length > 0).ToArray() ?? [];
             if (texts.Length == 0) continue;
             string title = texts[0], body = string.Join(" ", texts.Skip(1));
-            Notices.Add(new NoticeItem(app, title, body, DateTimeOffset.Now));
             double seconds = Settings.NotificationSeconds * (Settings.KeepNoticesLonger ? 2 : 1);
+            var picture = await LogoOf(toast);
+            AddNotice(new NoticeItem(app, title, body, DateTimeOffset.Now, picture, toast.AppInfo?.AppUserModelId));
             ShowHud(new($"notice:{toast.Id}", HudIcon.Notice, title, Hold: TimeSpan.FromSeconds(seconds), Lit: true, Label: $"{app}: {title} {body}".Trim(),
-                Body: body.Length > 0 ? body : app, Picture: await LogoOf(toast)));
+                Body: body.Length > 0 ? body : app, Picture: picture));
         }
     }
 }

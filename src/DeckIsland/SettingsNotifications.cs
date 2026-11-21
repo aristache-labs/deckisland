@@ -27,6 +27,10 @@ public sealed partial class SettingsWindow
             Toggle(Loc.T("镜像通知", "Mirror notifications"), S.MirrorNotifications, value => Change(s => s.MirrorNotifications = value),
                 help: Loc.T("新通知会显示在灵动岛中。点击即可打开对应应用。", "New notifications appear in the island. Click one to open the app.")),
             Dimension(Loc.T("通知时长（秒）", "Notification time (seconds)"), S.NotificationSeconds, 2, 15, value => Change(s => s.NotificationSeconds = (int)value), "s", 1),
+            Toggle(Loc.T("通知标签页", "Notifications tab"), S.NotificationsPage, value => Change(s => s.NotificationsPage = value),
+                help: Loc.T("展开页中保留最近 24 条灵动岛提示的标签页。", "A tab that keeps the last 24 things the island said. Click one to open it.")),
+            Toggle(Loc.T("显示具体时间", "Clock times"), S.NotificationClockTimes, value => Change(s => s.NotificationClockTimes = value),
+                help: Loc.T("显示通知到达的时刻（如 14:32），而不是已过去的时间（如 22m）。", "Show when each notification came, like 14:32, instead of how long ago, like 22m.")),
             Toggle(Loc.T("提示停留更久", "Keep notices longer"), S.KeepNoticesLonger, value => Change(s => s.KeepNoticesLonger = value),
                 help: Loc.T("提示、提醒等消息在灵动岛上停留两倍时间。", "Notices, reminders and other messages stay on the island twice as long, so there is time to read them.")),
             Row(Loc.T("仅在灵动岛显示", "Only in the island"),
@@ -78,5 +82,13 @@ public sealed partial class SettingsWindow
                 TextLine(Loc.T("在后台一直占用麦克风的应用可以加在这里，这样只有真正使用时才亮点。应用名即进程名，例如 zoom。",
                     "Apps that keep the microphone open in the background can be added here, so only real use lights the dot. Use the program name, like zoom."), 11, TextSecondary)),
             ignored);
+    }
+
+    private void NotificationSizeControls()
+    {
+        Target.Children.Add(Dimension(Loc.T("宽度", "Width"), S.NotificationsWidth, DeckPages.MinWidth, DeckPages.MaxWidth,
+            value => Resize(s => s.NotificationsWidth = value, DeckPage.Notifications)));
+        Target.Children.Add(Dimension(Loc.T("高度", "Height"), S.NotificationsHeight, DeckPages.MinHeight, DeckPages.MaxHeight,
+            value => Resize(s => s.NotificationsHeight = value, DeckPage.Notifications)));
     }
 }

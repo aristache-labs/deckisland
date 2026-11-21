@@ -57,8 +57,8 @@ public sealed record IgnoredMediaApp(string AppId = "", string Name = "", string
 public enum ProviderId { Claude, Codex, Antigravity, Cursor, GlmChina, NewApi, Sub2Api, Custom, ZCode = 10, GlmGlobal = 11, Dsh = 12, DeepSeek = 13, GrokBot = 14, Kimi = 15, KimiApi = 16, OpenCode = 17, OpenCodeGo = 18, OpenRouter = 19, Pi = 20, CodeAgent = 21, CommandCode = 22, CommandCodeApi = 23, WorkBuddy = 24, WorkBuddyAi = 25, MiMo = 26, MiMoApi = 27, MiMoTokenPlan = 28, MiMoLinked = 29, KimiPlatform = 30 }
 public enum SettingsTheme { System, Light, Dark }
 // Pages are saved as numbers, so new members go at the end; their order in the page switch is DeckSettings.PageOrder.
-public enum DeckPage { Usage, Music, Monitor, Clipboard, Devices, Weather, Focus, Reminders, Widgets }
-public enum DefaultDeckPage { Last, Usage, Music, Monitor, Clipboard, Devices, Weather, Focus, Reminders, Widgets }
+public enum DeckPage { Usage, Music, Monitor, Clipboard, Devices, Weather, Focus, Reminders, Widgets, Notifications }
+public enum DefaultDeckPage { Last, Usage, Music, Monitor, Clipboard, Devices, Weather, Focus, Reminders, Widgets, Notifications }
 // What the mouse wheel does over the expanded panel. Saved as numbers, so new members go at the end.
 public enum MouseWheelAction { None, Pages, Volume }
 // What a double click on an end of the collapsed notch or capsule does: turn its auto width on or off, or start moving it
@@ -727,6 +727,11 @@ public sealed class DeckSettings
     // How round the island, the open panel and the cards are, in percent: 0 is square, 50 the shapes as drawn before the setting
     // existed, 100 as round as the shape allows.
     public int CornerPercent { get; set; } = 50;
+    // The Notifications tab of the open panel (the last 24 things the island said) and how it dates them: the time of day or the time since.
+    public bool NotificationsPage { get; set; } = true;
+    public double NotificationsWidth { get; set; } = 490;
+    public double NotificationsHeight { get; set; } = 280;
+    public bool NotificationClockTimes { get; set; }
     public bool MirrorNotifications { get; set; } = true;
     public int NotificationSeconds { get; set; } = 5;
     public bool KeepNoticesLonger { get; set; }
@@ -984,6 +989,8 @@ public sealed class DeckSettings
         WidgetsWidth = double.IsFinite(WidgetsWidth) ? Math.Clamp(WidgetsWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : 540;
         WidgetsHeight = double.IsFinite(WidgetsHeight) ? Math.Clamp(WidgetsHeight, 220, DeckPages.MaxHeight) : 292;
         CornerPercent = Math.Clamp(CornerPercent, 0, 100);
+        NotificationsWidth = double.IsFinite(NotificationsWidth) ? Math.Clamp(NotificationsWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : 490;
+        NotificationsHeight = double.IsFinite(NotificationsHeight) ? Math.Clamp(NotificationsHeight, DeckPages.MinHeight, DeckPages.MaxHeight) : 280;
         NotificationSeconds = Math.Clamp(NotificationSeconds, 2, 15);
         SensorIgnoredApps = [.. (SensorIgnoredApps ?? []).Where(name => !string.IsNullOrWhiteSpace(name)).Select(name => name.Trim()).Distinct(StringComparer.OrdinalIgnoreCase)];
         Reminders = Reminder.Normalize(Reminders);

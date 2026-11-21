@@ -34,7 +34,7 @@ public static class HudFormat
 }
 
 // The notices the island has shown: the last 24, newest first.
-public sealed record NoticeItem(string App, string Title, string Body, DateTimeOffset At);
+public sealed record NoticeItem(string App, string Title, string Body, DateTimeOffset At, byte[]? Picture = null, string? AppId = null);
 
 public sealed class NoticeLog
 {

@@ -71,6 +71,7 @@ public partial class App
             ?? Decks.FirstOrDefault(panel => panel.CanShowReminder);
         if (deck?.ShowReminderAlert(reminder) != true) return;
         _reminderSeen[reminder.Id] = (now, 0);
+        AddNotice(new NoticeItem(Loc.T("提醒", "Reminders"), reminder.Title, Loc.T("提醒到期", "Reminder due"), now));
         RemindersChanged?.Invoke();
         if (Settings.ReminderSound != ReminderSound.Off) PlayReminderAlarm();
     }

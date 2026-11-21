@@ -163,6 +163,7 @@ public partial class MainWindow : Window
         InitializeFocus();
         InitializeQuotaAgentPresence();
         InitializeReminders();
+        InitializeNotifications();
         InitializeResize();
         InitializeScale();
         InitializeShadow();
@@ -707,6 +708,7 @@ public partial class MainWindow : Window
         System.Windows.Automation.AutomationProperties.SetName(MonitorPageButton, Loc.T("系统监控", "System monitor"));
         UpdateShelfPageButton();
         System.Windows.Automation.AutomationProperties.SetName(WidgetsPageButton, WidgetLayout.Title);
+        System.Windows.Automation.AutomationProperties.SetName(NotificationsPageButton, Loc.T("通知", "Notifications"));
         System.Windows.Automation.AutomationProperties.SetName(RemindersPageButton, Loc.T("提醒", "Reminders"));
         System.Windows.Automation.AutomationProperties.SetName(FocusPageButton, Loc.T("专注计时器", "Focus timer"));
         System.Windows.Automation.AutomationProperties.SetName(WeatherPageButton, Loc.T("天气", "Weather"));

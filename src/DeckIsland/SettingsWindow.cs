@@ -537,6 +537,7 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
                     DeckPage.Clipboard => (DefaultDeckPage.Clipboard, Loc.T("剪贴板与文件中转", "Clipboard and file transfer")),
                     DeckPage.Widgets => (DefaultDeckPage.Widgets, WidgetLayout.Title),
                     DeckPage.Reminders => (DefaultDeckPage.Reminders, Loc.T("提醒", "Reminders")),
+                    DeckPage.Notifications => (DefaultDeckPage.Notifications, Loc.T("通知", "Notifications")),
                     DeckPage.Focus => (DefaultDeckPage.Focus, Loc.T("专注计时器", "Focus timer")),
                     DeckPage.Weather => (DefaultDeckPage.Weather, Loc.T("天气", "Weather")),
                     DeckPage.Devices => (DefaultDeckPage.Devices, Loc.T("设备电量", "Device batteries")),
@@ -562,6 +563,7 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
                 DeckPage.Clipboard => SizeRow(Loc.T("显示剪贴板与文件中转", "Show clipboard and file transfer"), Loc.T("剪贴板与文件中转", "clipboard and file transfer"), page, S.ClipboardPage, value => { Change(s => s.ClipboardPage = value); FillStarts(); }, Collect(ShelfSizeControls), pages, FillStarts),
                 DeckPage.Widgets => SizeRow(WidgetLayout.Title, WidgetLayout.Title, page, S.WidgetsPage, value => { Change(s => s.WidgetsPage = value); FillStarts(); }, Collect(WidgetSizeControls), pages, FillStarts),
                 DeckPage.Reminders => SizeRow(Loc.T("显示提醒", "Show Reminders"), Loc.T("提醒", "Reminders"), page, S.RemindersPage, value => { Change(s => s.RemindersPage = value); FillStarts(); }, Collect(ReminderSizeControls), pages, FillStarts),
+                DeckPage.Notifications => SizeRow(Loc.T("显示通知", "Show Notifications"), Loc.T("通知", "Notifications"), page, S.NotificationsPage, value => { Change(s => s.NotificationsPage = value); FillStarts(); }, Collect(NotificationSizeControls), pages, FillStarts),
                 DeckPage.Focus => SizeRow(Loc.T("显示专注计时器", "Show Focus timer"), Loc.T("专注计时器", "Focus timer"), page, S.FocusPage, value => { Change(s => s.FocusPage = value); FillStarts(); }, Collect(FocusSizeControls), pages, FillStarts),
                 DeckPage.Weather => SizeRow(Loc.T("显示天气", "Show weather"), Loc.T("天气", "weather"), page, S.WeatherPage, value => { Change(s => s.WeatherPage = value); FillStarts(); }, Collect(WeatherSizeControls), pages, FillStarts),
                 DeckPage.Devices => SizeRow(Loc.T("显示设备电量", "Show device batteries"), Loc.T("设备电量", "device batteries"), page, S.DevicesPage, value => { Change(s => s.DevicesPage = value); FillStarts(); }, Collect(DeviceSizeControls), pages, FillStarts),
@@ -689,7 +691,7 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
                 case 2:s.UsagePage=true;s.MusicPage=defaults.MusicPage;s.DefaultPage=defaults.DefaultPage;s.RightClickSettings=defaults.RightClickSettings;s.Width=defaults.Width;s.Height=defaults.Height;s.QuickSize=null;s.MusicWidth=defaults.MusicWidth;s.MusicHeight=defaults.MusicHeight;s.MouseWheel=defaults.MouseWheel;s.ExpandAtPointer=defaults.ExpandAtPointer;
                     s.MonitorPage=defaults.MonitorPage;s.MonitorWidth=defaults.MonitorWidth;s.MonitorHeight=defaults.MonitorHeight;s.PageOrder=defaults.PageOrder;
                     s.ClipboardPage=defaults.ClipboardPage;s.ClipboardWidth=defaults.ClipboardWidth;s.ClipboardHeight=defaults.ClipboardHeight;
-                    s.WidgetsPage=defaults.WidgetsPage;s.WidgetsWidth=defaults.WidgetsWidth;s.WidgetsHeight=defaults.WidgetsHeight;s.RemindersPage=defaults.RemindersPage;s.RemindersWidth=defaults.RemindersWidth;s.RemindersHeight=defaults.RemindersHeight;
+                    s.WidgetsPage=defaults.WidgetsPage;s.WidgetsWidth=defaults.WidgetsWidth;s.WidgetsHeight=defaults.WidgetsHeight;s.RemindersPage=defaults.RemindersPage;s.NotificationsPage=defaults.NotificationsPage;s.NotificationsWidth=defaults.NotificationsWidth;s.NotificationsHeight=defaults.NotificationsHeight;s.RemindersWidth=defaults.RemindersWidth;s.RemindersHeight=defaults.RemindersHeight;
                     s.FocusPage=defaults.FocusPage;s.FocusWidth=defaults.FocusWidth;s.FocusHeight=defaults.FocusHeight;
                     s.WeatherPage=defaults.WeatherPage;s.WeatherWidth=defaults.WeatherWidth;s.WeatherHeight=defaults.WeatherHeight;
                     s.DevicesPage=defaults.DevicesPage;s.DevicesWidth=defaults.DevicesWidth;s.DevicesHeight=defaults.DevicesHeight;break;
