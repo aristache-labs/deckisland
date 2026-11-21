@@ -135,11 +135,9 @@ public partial class MainWindow
         _updateFocusControls = controls.Update;
         var settings = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Children = { _focusHeading, _focusDetail, controls.View } };
         var body = new DockPanel { Children = { face, settings } };
-        FocusContent.Children.Add(new Border
-        {
-            Child = body, Padding = new Thickness(12, 6, 12, 6), CornerRadius = new CornerRadius(12),
-            BorderBrush = UI.Brush(Look.Hex("rim")), BorderThickness = new Thickness(1), Background = UI.Brush(Look.Hex("surface"))
-        });
+        // Straight on the page like the other tabs, no card around it.
+        body.VerticalAlignment = VerticalAlignment.Center;
+        FocusContent.Children.Add(body);
     }
 
     private void AdjustFocus(int change)

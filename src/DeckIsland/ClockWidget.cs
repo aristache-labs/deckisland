@@ -12,7 +12,7 @@ public partial class MainWindow
     private Border ClockWidget(Border frame)
     {
         frame.CornerRadius = new CornerRadius(Corner(16));
-        frame.Padding = new Thickness(22, 8, 22, 8);
+        frame.Padding = new Thickness(WidgetSide, 8, WidgetSide, 8);
         var zones = Settings.WorldClocks.Where(city => city.Length > 0).Distinct()
             .Select(city => (City: city, Zone: WorldClocks.Zone(city))).Where(item => item.Zone is not null).ToList();
         string pattern = Settings.TimePattern;

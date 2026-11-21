@@ -15,6 +15,8 @@ public partial class MainWindow
     private DispatcherTimer? _widgetTick;
     private string _widgetKey = "";
     private readonly List<Action> _widgetUpdates = [];
+    // Every widget card keeps this much room at its left and right edges.
+    private const double WidgetSide = 22;
 
     private void WidgetsPage_Click(object sender, RoutedEventArgs e) => SelectPage(DeckPage.Widgets);
 
@@ -126,7 +128,7 @@ public partial class MainWindow
 
     private FrameworkElement WidgetCard(WidgetKind kind)
     {
-        var frame = new Border { Margin = new Thickness(5), Padding = new Thickness(11, 7, 11, 7), CornerRadius = new CornerRadius(Corner(12)),
+        var frame = new Border { Margin = new Thickness(5), Padding = new Thickness(WidgetSide, 7, WidgetSide, 7), CornerRadius = new CornerRadius(Corner(12)),
             Background = UI.Brush(Look.Hex("fill")), BorderBrush = UI.Brush(Look.Hex("rim")), BorderThickness = new Thickness(1), ClipToBounds = true };
         if (kind == WidgetKind.Empty) return frame;
         var body = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
@@ -219,7 +221,7 @@ public partial class MainWindow
             else _app.OpenSettingsPage(SettingsWindow.WeatherSettingsPage);
         });
         frame.Padding = new Thickness(0);
-        trigger.Padding = new Thickness(14, 8, 14, 10);
+        trigger.Padding = new Thickness(WidgetSide, 8, WidgetSide, 10);
         frame.Child = trigger;
 
         (string Icon, bool Colourful, bool Motion)? drawn = null;
@@ -269,7 +271,7 @@ public partial class MainWindow
     private Border FocusWidget(Border frame, bool detailed)
     {
         frame.CornerRadius = new CornerRadius(Corner(16));
-        frame.Padding = new Thickness(12, 6, 10, 6);
+        frame.Padding = new Thickness(WidgetSide, 6, WidgetSide, 6);
         var face = new Grid { Width = 62, Height = 62, Margin = new Thickness(0, 0, 8, 0), VerticalAlignment = VerticalAlignment.Center };
         var dial = new FocusDial { IsHitTestVisible = false };
         var reading = WeatherText("", 14);

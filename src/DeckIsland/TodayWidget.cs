@@ -14,7 +14,7 @@ public partial class MainWindow
     private Border TodayWidget(Border frame)
     {
         frame.CornerRadius = new CornerRadius(Corner(16));
-        frame.Padding = new Thickness(14, 8, 14, 8);
+        frame.Padding = new Thickness(WidgetSide, 8, WidgetSide, 8);
         DateOnly shown = default;
         _widgetUpdates.Add(() =>
         {

@@ -33,7 +33,7 @@ public partial class MainWindow
     private Border DevicesWidget(Border frame, bool detailed)
     {
         frame.CornerRadius = new CornerRadius(Corner(16));
-        frame.Padding = new Thickness(10, 8, 10, 8);
+        frame.Padding = new Thickness(WidgetSide, 8, WidgetSide, 8);
         string title = WidgetLayout.Name(WidgetKind.Devices);
 
         var mark = new DeviceMark(Look, DeviceKind.Other, 38, true) { HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 0, 0, 7) };
