@@ -138,6 +138,7 @@ public partial class App : Application
         // used to skip every later one, which left a panel with no tray icon, no saving and no answer to a second start.
         Step(Deck.Show);
         Step(InitializeReminders);
+        Step(InitializeScreenTime);
         Step(InitializeHud);
         Step(InitializeHotkeys);
         Step(() => _dataKey = DataKey());

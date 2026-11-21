@@ -70,7 +70,7 @@ public static class Profiles
         nameof(DeckSettings.Display), nameof(DeckSettings.DisplayMonitors),
         nameof(DeckSettings.ClipboardRecord), nameof(DeckSettings.ClipboardExcluded), nameof(DeckSettings.ClipboardKeepHistory),
         nameof(DeckSettings.ClipboardKeepFor), nameof(DeckSettings.TransferDragOut), nameof(DeckSettings.TransferRemoveAfterCopyDrop),
-        nameof(DeckSettings.MonitorInterval), nameof(DeckSettings.MonitorTrafficPeriod), nameof(DeckSettings.MonitorGpu), nameof(DeckSettings.MonitorGpuName), nameof(DeckSettings.MonitorGpuUsage),
+        nameof(DeckSettings.MonitorInterval), nameof(DeckSettings.MonitorTrafficPeriod), nameof(DeckSettings.NetworkMegabits), nameof(DeckSettings.TodoItems), nameof(DeckSettings.NoteText), nameof(DeckSettings.ScreenTimeDate), nameof(DeckSettings.ScreenTimeApps), nameof(DeckSettings.MonitorGpu), nameof(DeckSettings.MonitorGpuName), nameof(DeckSettings.MonitorGpuUsage),
         nameof(DeckSettings.DeviceChoices), nameof(DeckSettings.MemoryMode), nameof(DeckSettings.TrimMemoryWhenIdle), nameof(DeckSettings.UsageAutoSync),
         nameof(DeckSettings.SettingsWindowWidth), nameof(DeckSettings.SettingsWindowHeight), nameof(DeckSettings.SettingsWindowMaximized),
         nameof(DeckSettings.IncludeWsl), nameof(DeckSettings.Apps),

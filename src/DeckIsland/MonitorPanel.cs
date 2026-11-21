@@ -159,7 +159,7 @@ public partial class MainWindow
     // that room change: when the volumes are first counted, a sensor turns out to have none or first shows, or a volume comes or
     // goes past the room.
     private string MonitorKey(ExpandedPlan plan, bool small) => string.Join("|", plan.Signature, Settings.MonitorPalette, Settings.MonitorPalette == MonitorPalette.Custom ? Settings.MonitorCustomColors.Key : "",
-        Settings.MonitorMain, Settings.MonitorProcessView, Loc.Language, Look.Generation, Settings.MonitorTemperatures, Settings.WeatherFahrenheit, small, Native.BatteryProvider.SystemHasBattery, Settings.CoreDisplay);
+        Settings.MonitorMain, Settings.MonitorProcessView, Loc.Language, Look.Generation, Settings.MonitorTemperatures, Settings.WeatherFahrenheit, Settings.NetworkMegabits, small, Native.BatteryProvider.SystemHasBattery, Settings.CoreDisplay);
     // What the shown page was built for: its volumes' places, the small gauge's room and the lines for power and the battery.
     private (int Lines, int Columns, bool Small, int Power) _monitorSensors;
     private static (int Lines, int Columns, bool Small, int Power) BuiltSensors(ExpandedPlan plan, bool small)

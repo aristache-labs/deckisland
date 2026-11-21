@@ -147,6 +147,8 @@ public sealed partial class SettingsWindow
         WidgetKind.Clock => Loc.T("你的时间，外加最多三个城市。", "Your time, plus up to three cities."),
         WidgetKind.Countdown => Loc.T("距离你设定的日期还有几天。", "Days left until a date you set."),
         WidgetKind.Todo => Loc.T("一个可以勾选、排序的简短清单。", "A short list you tick off and put in order."),
+        WidgetKind.Note => Loc.T("一张直接在岛上书写的便签。", "A sticky note you write on right there."),
+        WidgetKind.ScreenTime => Loc.T("今天每个应用在前台多久，只在这台电脑上统计和保存。", "How long each app was in front today, counted and kept on this PC only."),
         _ => ""
     };
 }

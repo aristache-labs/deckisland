@@ -14,4 +14,11 @@ public partial class App
     }
 
     internal event Action? TodosChanged;
+
+    // The note is kept as it is typed; the widget draws it again on its next tick.
+    internal void SetNote(string text)
+    {
+        Settings.NoteText = text.Length <= DeckSettings.MaxNoteLength ? text : text[..DeckSettings.MaxNoteLength];
+        QueueSave();
+    }
 }

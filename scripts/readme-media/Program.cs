@@ -180,6 +180,15 @@ internal sealed class Renderer(App app, string output, string language, string[]
             // The file transfer's settings, and the word beside the pointer while files are dragged out; for checking.
             // The widget gallery with its live previews and the Clock and Countdown options; for checking, not for the README.
             // The To do widget, its card in the gallery and its window, with a few invented items; for checking.
+            // The Note and Screen time widgets in their gallery cards and the note's window, with invented data; for checking.
+            if (scenes.Contains("note-screen"))
+            {
+                _settings.WidgetSlots = [WidgetKind.Note, WidgetKind.ScreenTime, WidgetKind.Clock, WidgetKind.Empty];
+                _settings.NoteText = "Call the dentist before noon\nPick up the parcel at 17:30\nPlan the weekend trip with Anna and book the train";
+                _settings.ScreenTimeDate = ScreenTime.DayKey(DateTime.Now);
+                _settings.ScreenTimeApps = new Dictionary<string, int> { ["Codex"] = 4 * 60 + 10, ["Chrome"] = 95, ["Explorer"] = 40 };
+                await SettingsPage("note-screen-settings", 22, height: 4300);
+            }
             if (scenes.Contains("todo"))
             {
                 _settings.WidgetSlots = [WidgetKind.Todo, WidgetKind.Clock, WidgetKind.Today, WidgetKind.Empty];

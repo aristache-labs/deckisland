@@ -23,6 +23,8 @@ public sealed partial class SettingsWindow
         Target.Children.Add(_optionCards[WeatherSettingsPage] = WeatherOptionsCard());
         Target.Children.Add(_optionCards[FocusSettingsPage] = FocusOptionsCard());
         Target.Children.Add(_optionCards[RemindersSettingsPage] = RemindersOptionsCard());
+        Target.Children.Add(MonitorOptionsCard());
+        Target.Children.Add(ScreenTimeOptionsCard());
     }
 
     // The card a former page opens on: ShowPage brings it into view when that page is asked for.

@@ -393,6 +393,7 @@ public partial class MainWindow : Window
         var shapeBefore = Collapsed; double dipBefore = _pixelsPerDip;
         ApplyLanguage();
         Temperatures.Fahrenheit = Settings.WeatherFahrenheit;
+        MonitorFormat.Megabits = Settings.NetworkMegabits;
         ApplyTheme();
         ApplySurface();
         // A panel holding the keyboard stays one that can be active, whatever the setting (PanelKeyboard).

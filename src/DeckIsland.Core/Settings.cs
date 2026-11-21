@@ -517,6 +517,11 @@ public sealed class DeckSettings
     public string CountdownTitle { get; set; } = "";
     public string CountdownDate { get; set; } = "";
     public List<TodoItem> TodoItems { get; set; } = [];
+    public const int MaxNoteLength = 2000;
+    public string NoteText { get; set; } = "";
+    // Today's time in each app (ScreenTime), counted only while the Screen time widget is on the island; ScreenTimeDate is its day.
+    public string ScreenTimeDate { get; set; } = "";
+    public Dictionary<string, int> ScreenTimeApps { get; set; } = [];
     public ClockTimeFormat TimeFormat { get; set; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public bool? Clock24Hour { get; set; }
     [JsonIgnore] public string TimePattern => TimeFormat switch
@@ -714,6 +719,8 @@ public sealed class DeckSettings
     // The expanded page shows the temperatures the system reports (Temperatures); off, none are read for it. Off by default: asking
     // a driver for a temperature froze one laptop (SensorStops), so a new user turns them on knowingly.
     public bool MonitorTemperatures { get; set; }
+    // Network speeds in megabits a second (Mbps) rather than megabytes (MB/s), in the system monitor, its widget and the strip.
+    public bool NetworkMegabits { get; set; }
     // The expanded page shows the internal drives' space, one line per physical drive (Storage); off, the drives are not read for it.
     public bool MonitorStorage { get; set; } = true;
     // The expanded page shows the whole machine's power draw with its curve, and the machine's own battery when it has one (PowerResolver,
@@ -971,6 +978,7 @@ public sealed class DeckSettings
         copy.ClockGradient = [.. ClockGradient ?? [.. ClockColors.Sunset]];
         copy.WorldClocks = [.. WorldClocks ?? []];
         copy.TodoItems = [.. TodoItems ?? []];
+        copy.ScreenTimeApps = new Dictionary<string, int>(ScreenTimeApps ?? [], StringComparer.OrdinalIgnoreCase);
         copy.DisplayMonitors = [.. DisplayMonitors ?? []];
         copy.ThemeChoices = (ThemeChoices ?? []).ToDictionary(pair => pair.Key, pair => pair.Value.Copy());
         copy.FullscreenRules = FullscreenRules.Select(rule => rule with { }).ToList();
@@ -1106,6 +1114,9 @@ public sealed class DeckSettings
         CountdownTitle = (CountdownTitle ?? "").Trim();
         CountdownDate = Countdown.Normalize(CountdownDate);
         TodoItems = Todos.Normalize(TodoItems);
+        NoteText = (NoteText ?? "").Length <= MaxNoteLength ? NoteText ?? "" : NoteText![..MaxNoteLength];
+        ScreenTimeApps = ScreenTime.Normalize(ScreenTimeDate, ScreenTimeApps);
+        if (ScreenTimeApps.Count == 0) ScreenTimeDate = "";
         if (!Enum.IsDefined(DefaultPage)) DefaultPage = DefaultDeckPage.Last;
         if (!Enum.IsDefined(LastPage)) LastPage = DeckPage.Usage;
         OpenDelay = Math.Clamp(OpenDelay, 0, 2000);

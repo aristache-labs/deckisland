@@ -65,3 +65,52 @@ internal static class TemperatureUnitTests
         check("Celsius widest figure is the highest reading", Temperatures.Widest == "125");
     }
 }
+
+internal static class NetworkUnitTests
+{
+    internal static void Run(Action<string, bool> check)
+    {
+        try
+        {
+            MonitorFormat.Megabits = false;
+            check("Rates read in bytes by default", MonitorFormat.Rate(8_000).Text == "8 KB/s" && MonitorFormat.Rate(2_500_000).Text == "2.5 MB/s");
+            MonitorFormat.Megabits = true;
+            check("Megabits multiply a byte rate by eight", MonitorFormat.Rate(8_000).Text == "64 Kbps" && MonitorFormat.Rate(2_500_000).Text == "20.0 Mbps");
+            check("Megabits roll over to Gbps", MonitorFormat.Rate(200_000_000).Text == "1.6 Gbps");
+            check("The collapsed strip's letter follows the bits", MonitorFormat.CompactRate(1_250_000) is { Unit: "M" } rate && rate.Number == "10.0");
+            check("A rate limit is worded in the unit shown", MonitorFormat.RateLimit(10) == "80 Mbps");
+            check("An unreadable rate is zero in either unit", MonitorFormat.Rate(double.NaN).Text == "0 Kbps");
+            MonitorFormat.Megabits = false;
+            check("A rate limit stays in bytes by default", MonitorFormat.RateLimit(10) == "10 MB/s");
+        }
+        finally { MonitorFormat.Megabits = false; }
+    }
+}
+
+internal static class ScreenTimeTests
+{
+    internal static void Run(Action<string, bool> check)
+    {
+        var noon = new DateTime(2026, 11, 21, 12, 0, 0);
+        var (date, apps) = ScreenTime.Add("", new Dictionary<string, int>(), noon, "codex", 120);
+        (date, apps) = ScreenTime.Add(date, apps, noon.AddMinutes(1), "Codex", 60);
+        (date, apps) = ScreenTime.Add(date, apps, noon.AddMinutes(2), "chrome", 30);
+        check("Screen time adds seconds to an app whatever its case", date == "2026-11-21" && apps.Count == 2 && apps["codex"] == 180);
+        var today = ScreenTime.Today(date, apps, noon.AddHours(1));
+        check("Screen time lists the longest app first and totals the day", today[0].Key == "codex" && ScreenTime.Total(today) == 210);
+        check("Screen time shows nothing of another day", ScreenTime.Today(date, apps, noon.AddDays(1)).Count == 0);
+        var (next, fresh) = ScreenTime.Add(date, apps, noon.AddDays(1), "chrome", 15);
+        check("Screen time starts a new day from nothing", next == "2026-11-22" && fresh.Count == 1 && fresh["chrome"] == 15);
+        check("Screen time ignores an empty app and a non-positive stretch", ScreenTime.Add(date, apps, noon, " ", 10).Apps.Count == 2 && ScreenTime.Add(date, apps, noon, "x", 0).Apps.Count == 2);
+        var many = Enumerable.Range(0, ScreenTime.MaxApps).ToDictionary(i => "app" + i, i => 100 + i);
+        var (_, capped) = ScreenTime.Add("2026-11-21", many, noon, "new", 50);
+        check("Screen time keeps at most sixty apps and drops a newcomer that is smaller than all", capped.Count == ScreenTime.MaxApps && !capped.ContainsKey("new"));
+        (_, capped) = ScreenTime.Add("2026-11-21", many, noon, "new", 500);
+        check("Screen time lets a bigger newcomer replace the smallest app", capped.Count == ScreenTime.MaxApps && capped.ContainsKey("new") && !capped.ContainsKey("app0"));
+        check("Screen time reads a saved count back, dropping what cannot be", ScreenTime.Normalize("2026-11-21", new Dictionary<string, int> { ["a"] = 5, [" "] = 9, ["b"] = -3 }).Count == 1
+            && ScreenTime.Normalize("yesterday", new Dictionary<string, int> { ["a"] = 5 }).Count == 0);
+        check("Screen time writes durations in minutes", ScreenTime.Duration(0) == "0m" && ScreenTime.Duration(30) == "<1m" && ScreenTime.Duration(360) == "6m"
+            && ScreenTime.Duration(4320) == "1h 12m" && ScreenTime.Duration(10800) == "3h");
+        check("Screen time capitalizes an app's name", ScreenTime.Display("codex") == "Codex" && ScreenTime.Display("") == "");
+    }
+}

@@ -25,14 +25,30 @@ public static class MonitorFormat
         return value < 9.95 ? Decimal(value) : ((int)Math.Round(value)).ToString(CultureInfo.InvariantCulture);
     }
 
-    // Bytes per second as KB/s below 1 MB/s, then MB/s, then GB/s (decimal units, as Task Manager's network speeds).
-    public static Quantity Rate(double bytesPerSecond)
+    // Network speeds in megabits a second (Mbps), as speed tests and internet plans give them, instead of megabytes a second
+    // (MB/s), as file downloads do (DeckSettings.NetworkMegabits). One switch for every rate the monitor shows.
+    public static bool Megabits { get; set; }
+
+    // A rate read in bytes a second, in the unit shown: a byte is eight bits.
+    private static double Shown(double bytesPerSecond)
     {
         double value = double.IsFinite(bytesPerSecond) ? Math.Max(0, bytesPerSecond) : 0;
-        if (value >= 999_500_000) return new(Decimal(value / 1_000_000_000), "GB/s");
-        if (value >= 999_500) return new(Decimal(value / 1_000_000), "MB/s");
-        return new(((int)Math.Round(value / 1000)).ToString(CultureInfo.InvariantCulture), "KB/s");
+        return Megabits ? value * 8 : value;
     }
+
+    // Bytes per second as KB/s below 1 MB/s, then MB/s, then GB/s (decimal units, as Task Manager's network speeds); in
+    // megabits, Kbps, Mbps and Gbps.
+    public static Quantity Rate(double bytesPerSecond)
+    {
+        double value = Shown(bytesPerSecond);
+        string[] units = Megabits ? ["Gbps", "Mbps", "Kbps"] : ["GB/s", "MB/s", "KB/s"];
+        if (value >= 999_500_000) return new(Decimal(value / 1_000_000_000), units[0]);
+        if (value >= 999_500) return new(Decimal(value / 1_000_000), units[1]);
+        return new(((int)Math.Round(value / 1000)).ToString(CultureInfo.InvariantCulture), units[2]);
+    }
+
+    // A rate limit given in megabytes a second, worded in the unit shown: "10 MB/s" or "80 Mbps".
+    public static string RateLimit(double megabytesPerSecond) => Megabits ? $"{megabytesPerSecond * 8:0} Mbps" : $"{megabytesPerSecond:0} MB/s";
 
     // Bytes moved, in three significant digits and decimal units: "512 B", "21.0 MB", "202 MB", "1.24 GB".
     public static Quantity Total(double bytes)
@@ -54,7 +70,7 @@ public static class MonitorFormat
     // Every figure is about as wide as the widest ("99.9M"), so a small rate leaves no wide gap after it.
     public static Quantity CompactRate(double bytesPerSecond)
     {
-        double value = double.IsFinite(bytesPerSecond) ? Math.Max(0, bytesPerSecond) : 0;
+        double value = Shown(bytesPerSecond);
         static string Short(double v) => v < 9.995 ? v.ToString("0.00", CultureInfo.InvariantCulture)
             : v < 99.95 ? Decimal(v) : ((int)Math.Round(v)).ToString(CultureInfo.InvariantCulture);
         if (value >= 999_500_000) return new(Short(value / 1_000_000_000), "G");

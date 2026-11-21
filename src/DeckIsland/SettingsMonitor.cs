@@ -387,8 +387,8 @@ public sealed partial class SettingsWindow
         // The memory commit charge is always named: by its own threshold where it differs from the shares', else as part of memory.
         bool apart = commit != share;
         double cpu = critical ? Temperatures.CpuCritical : Temperatures.CpuWarning, gpu = critical ? Temperatures.GpuCritical : Temperatures.GpuWarning;
-        return Loc.T($"占用达到 {share * 100:0}%{(apart ? $"（内存提交量为 {commit * 100:0}%）" : "（内存包括内存提交量）")}、网速达到 {rate:0} MB/s，或 CPU 温度达到 {Temperatures.Format(cpu)} {Temperatures.Unit}、GPU 温度达到 {Temperatures.Format(gpu)} {Temperatures.Unit} 时的颜色；硬盘按其自身报告的{(critical ? "临界" : "警告")}温度。",
-            $"The color when usage reaches {share * 100:0}%{(apart ? $" ({commit * 100:0}% for the memory commit charge)" : " (for memory, including the commit charge)")}, the network rate reaches {rate:0} MB/s, or the CPU temperature reaches {Temperatures.Format(cpu)} {Temperatures.Unit} and the GPU's {Temperatures.Format(gpu)} {Temperatures.Unit}; drives by the {(critical ? "critical" : "warning")} temperature they report.");
+        return Loc.T($"占用达到 {share * 100:0}%{(apart ? $"（内存提交量为 {commit * 100:0}%）" : "（内存包括内存提交量）")}、网速达到 {MonitorFormat.RateLimit(rate)}，或 CPU 温度达到 {Temperatures.Format(cpu)} {Temperatures.Unit}、GPU 温度达到 {Temperatures.Format(gpu)} {Temperatures.Unit} 时的颜色；硬盘按其自身报告的{(critical ? "临界" : "警告")}温度。",
+            $"The color when usage reaches {share * 100:0}%{(apart ? $" ({commit * 100:0}% for the memory commit charge)" : " (for memory, including the commit charge)")}, the network rate reaches {MonitorFormat.RateLimit(rate)}, or the CPU temperature reaches {Temperatures.Format(cpu)} {Temperatures.Unit} and the GPU's {Temperatures.Format(gpu)} {Temperatures.Unit}; drives by the {(critical ? "critical" : "warning")} temperature they report.");
     }
 
     private const double ReadingDot = 10;
