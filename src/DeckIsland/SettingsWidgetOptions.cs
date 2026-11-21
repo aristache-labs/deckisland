@@ -16,7 +16,11 @@ public sealed partial class SettingsWindow
     // and a line of help under it. The gallery above already shows how the widget looks.
     private void WidgetOptions()
     {
-        SectionTitle(Loc.T("小组件选项", "Widget options"));
+        // A heading over the option cards, as the cards above head themselves (Card).
+        var heading = TextLine(Loc.T("小组件选项", "Widget options"), 15, TextPrimary, FontWeights.SemiBold);
+        var about = TextLine(Loc.T("有选项的小组件，各占一张卡片。", "The widgets that have options, a card each."), 12.5, TextSecondary);
+        about.Margin = new Thickness(0, 3, 0, 0);
+        Target.Children.Add(new StackPanel { Margin = new Thickness(2, 8, 0, 14), Children = { heading, about } });
         Target.Children.Add(ClockOptionsCard());
         Target.Children.Add(CountdownOptionsCard());
         // These three were pages of their own; a link to one of them opens its card (ShowPage).
@@ -140,15 +144,16 @@ public sealed partial class SettingsWindow
         var name = TextLine(title, 15, TextPrimary, FontWeights.SemiBold);
         var about = TextLine(note, 12.5, TextSecondary);
         about.Margin = new Thickness(0, 3, 0, 0);
-        var head = new DockPanel();
+        var head = new DockPanel { Margin = new Thickness(20, 16, 20, 14) };
         if (action is not null) { DockPanel.SetDock(action, Dock.Right); action.VerticalAlignment = VerticalAlignment.Center; action.Margin = new Thickness(16, 0, 0, 0); head.Children.Add(action); }
         head.Children.Add(new StackPanel { Children = { name, about } });
-        var body = new StackPanel { Children = { head, new Border { Height = 1, Background = UI.Brush(_palette.RowDivider), Margin = new Thickness(0, 16, 0, 18) } } };
-        foreach (var field in fields) body.Children.Add(field);
+        // The same frame as the page's other cards (Card): a header, a line across, then the form.
+        var form = new StackPanel { Margin = new Thickness(20, 18, 20, 4) };
+        foreach (var field in fields) form.Children.Add(field);
         return new Border
         {
-            CornerRadius = new CornerRadius(14), BorderBrush = UI.Brush(_palette.Border), BorderThickness = new Thickness(1), Padding = new Thickness(22, 18, 22, 4),
-            Margin = new Thickness(0, 0, 0, 16), Child = body
+            Background = UI.Brush(_palette.Card), CornerRadius = new CornerRadius(12), BorderBrush = UI.Brush(_palette.Border), BorderThickness = new Thickness(1),
+            Margin = new Thickness(0, 0, 0, 20), Child = new StackPanel { Children = { head, new Border { Height = 1, Background = UI.Brush(Divider) }, form } }
         };
     }
 

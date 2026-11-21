@@ -334,7 +334,7 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
         _ignoredOpen = false; _ignoredHost = null;
         _scroll.ScrollChanged -= ExceptionsScrollChanged;
         _refreshSensors = null;
-        _page = page; _navigation.Children.Clear(); _content.Children.Clear(); _optionCards.Clear(); _aboutUpdateView = null; _scroll.ScrollToTop();
+        _page = page; _cardTitle = null; _cardBody = null; _navigation.Children.Clear(); _content.Children.Clear(); _optionCards.Clear(); _aboutUpdateView = null; _scroll.ScrollToTop();
         foreach (int i in PageOrder)
         {
             if (i is 0 or 3 or 5 or 7 or MonitorSettingsPage or ShelfLayoutSettingsPage or DevicesSettingsPage)
@@ -362,6 +362,7 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
         head.Children.Add(page == 7 ? Wordmark(28) : TextLine(_pages[page],24,TextPrimary,FontWeights.SemiBold)); _content.Children.Add(head);
         if (page == 0) PageHeader(head, Loc.T("启动、外观以及 DeckIsland 在桌面上的行为。", "Startup, appearance and how DeckIsland behaves on your desktop."));
         if (page == 1) PageHeader(head, Loc.T("面板收起时的样子、显示的内容和位置。", "How the island looks, what it shows and where it sits while closed."));
+        if (page == WidgetsSettingsPage) PageHeader(head, Loc.T("选择小组件页显示哪些小组件，并逐一设置。", "Choose what the widget page shows and set each widget up."));
         if (page == 2) PageHeader(head, Loc.T("展开面板显示哪些页面、它们的尺寸以及如何响应。", "Which pages the open island shows, how big they are and how it responds."));
         switch(page) { case WidgetsSettingsPage: WidgetsSettings(); break; case NotificationsSettingsPage: NotificationsSettings(); break; case CallsSettingsPage: CallsSettings(); break; case 0: General(); break; case 1: Compact(); break; case 2: Expanded(); break; case 3: Pages(); break; case 4: ModelPrices(); break; case 5: MusicStyle(); break; case 6: Players(); break; case 7: About(); break; case ThemePage: ThemesPage(); break; case MonitorSettingsPage: MonitorSettings(); break; case SensorsPage: SensorsSettings(); break; case HotkeysPage: HotkeysSettings(); break; case DevicesSettingsPage: DevicesSettings(); break; case ClipboardSettingsPage: ClipboardSettings(); break; case TransferSettingsPage: TransferSettings(); break; case ClipboardSyncSettingsPage: ClipboardSyncSettings(); break; case ShelfLayoutSettingsPage: ShelfLayoutSettings(); break; case MusicGesturesPage: MusicGesturesSettings(); break; case ProfilesPage: ProfilesSettings(); break; }
         if (_content.Children[^1] is Border lastGroup) lastGroup.Margin = new Thickness(lastGroup.Margin.Left, lastGroup.Margin.Top, lastGroup.Margin.Right, 0);
@@ -1269,7 +1270,7 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
 
     // The Collapsed view page is laid out in General's cards (Card): there a section title heads the card its next group
     // opens, and a group with no title of its own joins the card above it.
-    private bool CardPage => _page is 1 or 2;
+    private bool CardPage => _page is 1 or 2 or WidgetsSettingsPage;
     private (string Title, string Description, FrameworkElement? Action, Func<string>? Help)? _cardTitle;
     private StackPanel? _cardBody;
 

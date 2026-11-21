@@ -14,13 +14,12 @@ public sealed partial class SettingsWindow
     // The badge shows the position it holds, so the order follows the order the widgets were added in.
     private void WidgetGallery()
     {
-        SectionTitle(Loc.T("岛上的小组件", "On the island"));
+        SectionTitle(Loc.T("岛上的小组件", "On the island"), description: Loc.T("小组件页上的小组件，按添加的顺序排列。", "The widgets on the page, in the order they were added."));
         var count = TextLine("", 12, TextSecondary);
         count.TextWrapping = TextWrapping.Wrap;
-        count.Margin = new Thickness(0, -2, 0, 14);
-        Target.Children.Add(count);
+        count.Margin = new Thickness(0, 14, 0, 10);
 
-        var grid = new UniformGrid { Columns = 2, Margin = new Thickness(-6, 0, -6, 22) };
+        var grid = new UniformGrid { Columns = 2, Margin = new Thickness(-6, 0, -6, 14) };
         var cards = new List<(WidgetKind Kind, ToggleButton Card, Border Badge)>();
         void Refresh()
         {
@@ -52,7 +51,7 @@ public sealed partial class SettingsWindow
             cards.Add((kind, card, badge));
             grid.Children.Add(card);
         }
-        Target.Children.Add(grid);
+        Group(new StackPanel { Children = { count, grid } });
         Refresh();
     }
 

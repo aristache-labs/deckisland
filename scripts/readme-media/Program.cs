@@ -215,6 +215,13 @@ internal sealed class Renderer(App app, string output, string language, string[]
                     if (Program.Field(window, "_openSizes") is HashSet<DeckPage> open) foreach (var each in Enum.GetValues<DeckPage>()) open.Add(each);
                 });
             }
+            // The Widgets settings page in the same cards: dark and light, and the narrowest window; for checking.
+            if (scenes.Contains("widgets"))
+            {
+                await SettingsPage("widgets-dark", 22, height: 4300);
+                await SettingsPage("widgets-light", 22, height: 4300, theme: SettingsTheme.Light);
+                await SettingsPage("widgets-narrow", 22, height: 4300, width: 840);
+            }
             if (scenes.Contains("hover-weather"))
             {
                 _settings.ColourfulWeatherCard = true; _settings.WeatherEnabled = true;
