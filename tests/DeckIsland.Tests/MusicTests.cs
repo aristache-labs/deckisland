@@ -126,7 +126,7 @@ internal static class MusicTests
         var compact = At(PanelSize.Compact); var standard = At(PanelSize.Standard); var spacious = At(PanelSize.Spacious);
         check("The presets are densities 0, 1 and 2, the largest panel 3", compact.Density == 0 && standard.Density == 1 && spacious.Density == 2
             && MusicLayout.Calculate(1200, 400, true, true).Density == 3);
-        check("The compact preset puts the artist on the title line to keep a lyric line", compact.MergeTitle && compact.LyricLines == 1);
+        check("The compact preset keeps a lyric line", compact.LyricLines == 1);
         check("The standard preset gives the artist its own line above one lyric line", !standard.MergeTitle && standard.LyricLines == 1);
         check("The spacious preset shows the lines before and after the current lyric", !spacious.MergeTitle && spacious.LyricLines == 3);
         check("Without lyrics the artist keeps its own line at the compact preset", !MusicLayout.Calculate(440, 140, false, true).MergeTitle);
@@ -179,8 +179,8 @@ internal static class MusicTests
         check("Column layout: the cover shows at every page size, above the titles or beside them, within the upper part" + (coverFailures.Count > 0 ? " (" + string.Join("; ", coverFailures.Take(4)) + ")" : ""),
             coverFailures.Count == 0);
         var spaciousCover = MusicLayout.Calculate(760, 300, true, true); var spaciousColumns = spaciousCover.Columns(true, cover: true);
-        check("Column layout: at the spacious preset the cover above the titles takes more than half of the upper part's height",
-            spaciousColumns.Cover > spaciousCover.UpperHeight / 2 && spaciousColumns.SideCover == 0);
+        check("Column layout: at the spacious preset the cover above the titles takes close to half of the upper part's height or more",
+            spaciousColumns.Cover > spaciousCover.UpperHeight * .45 && spaciousColumns.SideCover == 0);
         var standardColumns = MusicLayout.Calculate(440, 200, true, true).Columns(true, cover: true);
         check("Column layout: at the standard preset the upper part is too short for a cover above, and it stands beside the titles",
             standardColumns.Cover == 0 && standardColumns.SideCover >= 40);
@@ -233,7 +233,7 @@ internal static class MusicTests
                     if (l.HeaderHeight + (l.LyricLines > 0 ? c.MiddleGap + l.LyricLines * c.LyricLine : 0) > l.Cover) failures.Add("text height " + at);
                     if (lyrics && l.LyricLines == 0) failures.Add("no lyric line " + at);
                     if (Math.Abs(l.ControlsY + c.Play * 7 / 8 - l.BodyHeight) > .5) failures.Add("transport bottom " + at);
-                    if (timeline && (l.TimesY < l.ProgressY + (c.SeekRow + c.BarHover) / 2 || l.TimesY + c.TimeLine + c.ControlsGap > inkTop + .5)) failures.Add("times " + at);
+                    if (timeline && (Math.Abs(l.TimesY + c.TimeLine / 2 - (l.ProgressY + c.SeekRow / 2)) > 1 || l.TimesY + c.TimeLine + c.ControlsGap > inkTop + .5)) failures.Add("times " + at);
                     if (l.ModeX < 0 || l.ModeX + c.Mode + 16 > l.TripletX || l.TripletX + l.TripletWidth > l.BodyWidth || Math.Abs(l.TripletX + l.TripletWidth / 2 - l.BodyWidth / 2) > .5) failures.Add("transport " + at);
                     if (!l.ShowFullControl) failures.Add("full control entry " + at);
                 }

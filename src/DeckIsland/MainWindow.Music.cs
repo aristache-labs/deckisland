@@ -599,7 +599,7 @@ public partial class MainWindow
             }
             header.Children.Add(titles);
             if (shown && songChanging) RiseIn(titles);
-            _musicEqualizer = new MusicEqualizer { Bars = Settings.MusicEqualizerBars, Width = equalizerWidth, Height = c.Equalizer, Color = EqualizerColor, HorizontalAlignment = HorizontalAlignment.Right,
+            _musicEqualizer = new MusicEqualizer { Bars = Settings.MusicEqualizerBars, Width = equalizerWidth, Height = c.Equalizer, Color = EqualizerColor, Visibility = equalizerWidth > 0 ? Visibility.Visible : Visibility.Collapsed, HorizontalAlignment = HorizontalAlignment.Right,
                 VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, (c.TitleLine - c.Equalizer) / 2, 0, 0) };
             if (header.ColumnDefinitions.Count > 0) Grid.SetColumn(_musicEqualizer, 1); else Panel.SetZIndex(_musicEqualizer, 1);
             header.Children.Add(_musicEqualizer); right.Children.Add(header);
@@ -920,7 +920,7 @@ public partial class MainWindow
             var line = UI.Fixed(text, c.Artist, c.ArtistLine, color); line.TextAlignment = beside ? TextAlignment.Left : TextAlignment.Center;
             ShowCutText(line, text); titles.Children.Add(line);
         }
-        _musicEqualizer = new MusicEqualizer { Bars = Settings.MusicEqualizerBars, Width = barsWidth, Height = c.Equalizer, Color = EqualizerColor };
+        _musicEqualizer = new MusicEqualizer { Bars = Settings.MusicEqualizerBars, Width = barsWidth, Height = c.Equalizer, Color = EqualizerColor, Visibility = barsWidth > 0 ? Visibility.Visible : Visibility.Collapsed };
         if (columns.EqualizerBelow)
         {
             _musicEqualizer.HorizontalAlignment = HorizontalAlignment.Center; _musicEqualizer.Margin = new Thickness(0, columns.EqualizerGap, 0, 0);
