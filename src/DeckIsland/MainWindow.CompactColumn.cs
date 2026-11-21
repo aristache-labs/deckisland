@@ -66,7 +66,7 @@ public partial class MainWindow
             _stripUnavailable = _stripAdmission.Hidden;
             void Line(CompactReading reading, MonitorStrip.DriveParts drives = MonitorStrip.DriveParts.All)
             {
-                var strip = new MonitorStrip([reading], colors, scale, true, _stripPresence, dpi, _stripUnavailable, _stripAdmission, drives, Settings.CoreDisplay, Settings.QuotaRingStyle);
+                var strip = new MonitorStrip([reading], colors, scale, true, _stripPresence, dpi, _stripUnavailable, _stripAdmission, drives, Settings.CoreDisplay, Settings.QuotaRingStyle, stacked: true);
                 if (strip.PreferredWidth > 0) strips.Add(strip);
             }
             foreach (var reading in CompactColumn.Readings(Settings.CompactReadings))

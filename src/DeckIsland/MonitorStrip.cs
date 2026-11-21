@@ -31,6 +31,9 @@ internal sealed class MonitorStrip : FrameworkElement
     private readonly bool _centered;
     private readonly StripColors _colors;
     private readonly double _scale, _font, _small, _dial, _gap, _row, _dpi;
+    // The collapsed column stands each ring over its figures instead of putting them beside it; the width of the reading being drawn.
+    private readonly bool _stacked;
+    private double _drawWidth;
     private readonly Func<CompactMonitorItems, double> _width;
     private MonitorSnapshot? _snapshot;
     // The look of the power and charge readings on the theme in use.
@@ -58,7 +61,7 @@ internal sealed class MonitorStrip : FrameworkElement
     // glyph, its letter shown even when it is the only one.
     public MonitorStrip(IReadOnlyList<CompactReading> readings, StripColors colors, double scale, bool centered, StripPresence presence, double dpi,
         CompactMonitorItems unavailable = CompactMonitorItems.None, StripAdmission? admission = null, DriveParts parts = DriveParts.All,
-        CoreDisplay coreDisplay = CoreDisplay.Auto, QuotaRingStyle quotaStyle = QuotaRingStyle.Single)
+        CoreDisplay coreDisplay = CoreDisplay.Auto, QuotaRingStyle quotaStyle = QuotaRingStyle.Single, bool stacked = false)
     {
         _driveParts = parts; _coreDisplay = coreDisplay;
         AddVisualChild(_moving);
@@ -100,7 +103,15 @@ internal sealed class MonitorStrip : FrameworkElement
         _dial = CompactMusicLayout.StatusRingSize(quotaStyle, _scale);
         // Readings with figures sit closer than the dials alone: a figure narrower than the widest it can show already leaves room after it.
         _gap = CompactMusicLayout.Whole((CompactMonitor.RingsOnly(_shown, _values) ? 7 : 6) * _scale);
+        _stacked = stacked;
         _row = Math.Max(1, CompactMusicLayout.Whole(24 * _scale));
+        if (stacked)
+        {
+            // Tall enough for the ring and the most figures any of the shown rings puts under it.
+            int figures = new[] { CompactMonitorItems.Cpu, CompactMonitorItems.Memory, CompactMonitorItems.Gpu }.Where(item => (_shown & item) != 0 && (_values & item) != 0)
+                .Select(item => ((_usage & item) != 0 ? 1 : 0) + ((_heat & item) != 0 ? 1 : 0) + ((_vram & item) != 0 ? 1 : 0)).DefaultIfEmpty(0).Max();
+            if (figures > 0) _row = _dial + Math.Round(2 * _scale) + figures * Math.Round(_font * 1.25) + Math.Round(2 * _scale);
+        }
         Height = _row;
         IsHitTestVisible = false;
         // A reading fading out of a narrow row stays within it, off the lyric or the rings beside it.
@@ -114,7 +125,9 @@ internal sealed class MonitorStrip : FrameworkElement
             FramesSlot + Math.Round(3 * _scale) + FigureWidth(WidestFrames) + Math.Round(2 * _scale) + SmallWidth(FramesUnit),
             // The traffic over a period at its widest figure ("999M", "999G", "99.9M", "99.9G", "999B"): a month runs to hundreds of gigabytes.
             Math.Round(9 * _scale) + Math.Round(3 * _scale) + Math.Ceiling(new[] { "999M", "999G", "99.9M", "99.9G", "999B" }.Max(text)));
-        _width = widths;
+        _width = stacked ? item => item is CompactMonitorItems.Cpu or CompactMonitorItems.Memory or CompactMonitorItems.Gpu && (_values & item) != 0
+            ? Math.Max(_dial, Math.Max(((_usage & item) != 0 || (_vram & item) != 0) ? FigureWidth(WidestPercent) : 0, (_heat & item) != 0 ? FigureWidth(WidestDegrees) : 0))
+            : widths(item) : widths;
     }
 
     private const string WidestDegrees = "125°", WidestPercent = "100%";
@@ -318,6 +331,7 @@ internal sealed class MonitorStrip : FrameworkElement
             bool moves = item is CompactMonitorItems.Columns or CompactMonitorItems.Cpu or CompactMonitorItems.Memory or CompactMonitorItems.Gpu;
             if (layer == Layer.Moving ? !moves : layer == Layer.Steady && item == CompactMonitorItems.Columns) continue;
             double x = _start + at;
+            _drawWidth = width;
             // A reading on its way in or out is drawn smaller and fainter, centred in the room it has.
             bool partial = presence < .999;
             double offset = (width * presence - width) / 2;
@@ -421,12 +435,31 @@ internal sealed class MonitorStrip : FrameworkElement
     private void Gauge(DrawingContext drawing, DialParts parts, double x, double center, CompactMonitorItems item, double? dial, double? share, string color, MemoryLevel level, string letter, MonitorSnapshot? s, double ppd)
     {
         // As thick as a quota ring and on the same track, so its whole outline shows even at a low share.
-        MonitorDraw.Dial(drawing, new Point(x + _dial / 2, center), _dial, Math.Max(1.2, CompactMusicLayout.Half(2 * _scale)), Math.Max(1, 7 * _scale), dial, color, letter, ppd, parts, look: Look);
+        double dialX = _stacked ? x + (_drawWidth - _dial) / 2 : x, dialY = _stacked ? _dial / 2 : center;
+        MonitorDraw.Dial(drawing, new Point(dialX + _dial / 2, dialY), _dial, Math.Max(1.2, CompactMusicLayout.Half(2 * _scale)), Math.Max(1, 7 * _scale), dial, color, letter, ppd, parts, look: Look);
         if ((_values & item) == 0 || (parts & DialParts.Face) == 0) return;
         var heat = (_heat & item) != 0 ? CompactFigures.Heat(item, s) : null;
         bool vram = (_vram & item) != 0;
+        if (_stacked) { StackedFigures(drawing, x, item, share, level, heat, vram ? CompactFigures.Memory(item, s) : null, ppd); return; }
         Figures(drawing, x + _dial + Math.Round(4 * _scale), center, item, (_usage & item) != 0 ? (share, level) : null, (_heat & item) != 0, heat, ppd,
             vram, vram ? CompactFigures.Memory(item, s) : null);
+    }
+
+    // The figures one under another, each centred under the ring: the share, the graphics memory's share, the temperature.
+    private void StackedFigures(DrawingContext drawing, double x, CompactMonitorItems item, double? share, MemoryLevel level, (double Celsius, MemoryLevel Level)? heat,
+        (double Share, MemoryLevel Level)? memory, double ppd)
+    {
+        var lines = new List<(string Text, string Color)>();
+        if ((_usage & item) != 0) lines.Add((GaugeFigure(share), FigureColor(level, _colors.At(item, level))));
+        if ((_vram & item) != 0) lines.Add((GaugeFigure(memory?.Share), FigureColor(memory?.Level ?? MemoryLevel.Normal, _colors.At(item, memory?.Level ?? MemoryLevel.Normal))));
+        if ((_heat & item) != 0) lines.Add((TemperatureFigure(heat?.Celsius), FigureColor(heat?.Level ?? MemoryLevel.Normal, _colors.At(item, heat?.Level ?? MemoryLevel.Normal))));
+        double top = _dial + Math.Round(2 * _scale), step = Math.Round(_font * 1.25);
+        for (int i = 0; i < lines.Count; i++)
+        {
+            var figure = MonitorDraw.Text(lines[i].Text, _font, lines[i].Color, ppd);
+            double left = Math.Round(x + (_drawWidth - FigureSpan(figure)) / 2);
+            MonitorDraw.BaselineKept(drawing, figure, left, Math.Round(top + i * step + _font * .9));
+        }
     }
 
     // The share in use, the graphics memory's share (memory, shown when vram) and the temperature at x: one in the row's type, or the
