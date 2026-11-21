@@ -27,6 +27,7 @@ public partial class MainWindow
     private readonly Button CallsPageButton = new() { Content = "Calls", Width = 60, Height = 24 };
     private readonly Button ScratchpadPageButton = new() { Content = "Scratchpad", Width = 60, Height = 24 };
     private readonly Button ConverterPageButton = new() { Content = "Converter", Width = 60, Height = 24 };
+    private readonly Button ColourPageButton = new() { Content = "Colour", Width = 60, Height = 24 };
     private readonly Button TerminalPageButton = new() { Content = "Terminal", Width = 60, Height = 24 };
     private readonly Button NotificationsPageButton = new() { Content = "Notifications", Width = 60, Height = 24 };
     private readonly Button WidgetsPageButton = new() { Content = "Widgets", Width = 60, Height = 24 };
@@ -73,8 +74,17 @@ public partial class MainWindow
             check("pending production placement uses the current page after reorder", !window._capsulePending &&
                 (double)window.PageCapsule.GetAnimationBaseValue(WidthProperty) == window.MonitorPageButton.ActualWidth && Math.Abs((double)window.PageCapsuleShift.GetAnimationBaseValue(TranslateTransform.XProperty) - at) < .5);
 
+            window.CurrentPage = DeckPage.Colour;
+            window.Settings.PageOrder = [DeckPage.Usage, DeckPage.Colour];
+            window.OrderPageButtons();
+            PumpCapsule(() => window.PlacePageCapsule(), check);
+            check("Colour has its own page button and capsule position",
+                buttons.Children[1] == window.ColourPageButton && buttons.Children.IndexOf(window.ShelfPageButton) == -1
+                && Math.Abs((double)window.PageCapsuleShift.GetAnimationBaseValue(TranslateTransform.XProperty)
+                    - window.ColourPageButton.TranslatePoint(new Point(), window.PageSwitch).X) < .5);
+
             // An invisible/retired panel must yield too, even though its controls keep their previous size.
-            window.Hide(); window.MonitorPageButton.Width = 95;
+            window.Hide(); window.ColourPageButton.Width = 95;
             PumpCapsule(() => window.PlacePageCapsule(), check);
             check("hidden production window does not spin while waiting for layout", window._capsulePending);
         }

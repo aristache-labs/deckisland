@@ -152,7 +152,7 @@ public partial class MainWindow
     }
     // The page chosen on another display's panel (App.PageChosen).
     internal void FollowPage(DeckPage page) { if (CurrentPage != page) SelectPage(page, remember: false); }
-    private FrameworkElement PageContent(DeckPage page) => page switch { DeckPage.Music => MusicContent, DeckPage.Monitor => MonitorContent, DeckPage.Clipboard => ShelfContent, DeckPage.Devices => DevicesContent, DeckPage.Weather => WeatherContent, DeckPage.Focus => FocusContent, DeckPage.Widgets => WidgetsContent, DeckPage.Reminders => RemindersContent, DeckPage.Notifications => NotificationsContent, DeckPage.Calls => CallsContent, DeckPage.Scratchpad => ScratchpadContent, DeckPage.Converter => ConverterContent, DeckPage.Terminal => TerminalContent, _ => UsageContent };
+    private FrameworkElement PageContent(DeckPage page) => page switch { DeckPage.Music => MusicContent, DeckPage.Monitor => MonitorContent, DeckPage.Clipboard => ShelfContent, DeckPage.Devices => DevicesContent, DeckPage.Weather => WeatherContent, DeckPage.Focus => FocusContent, DeckPage.Widgets => WidgetsContent, DeckPage.Reminders => RemindersContent, DeckPage.Notifications => NotificationsContent, DeckPage.Calls => CallsContent, DeckPage.Scratchpad => ScratchpadContent, DeckPage.Converter => ConverterContent, DeckPage.Terminal => TerminalContent, DeckPage.Colour => ColourContent, _ => UsageContent };
     private void ShowPage(DeckPage page, bool animatePage)
     {
         // The music page keeps what it built while another page shows (RenderMusic's key), so switching back does not build it again.
@@ -215,7 +215,7 @@ public partial class MainWindow
         Toolbar.Height = header.Height;
         PageSwitch.Margin = new Thickness(header.Side, 0, header.Side, 0);
         FitPageButtons(header);
-        foreach (var button in new[] { AIUsageButton, MonitorPageButton, MusicPageButton, ShelfPageButton, DevicesPageButton, WeatherPageButton, FocusPageButton, WidgetsPageButton, RemindersPageButton, NotificationsPageButton, CallsPageButton, ScratchpadPageButton, ConverterPageButton, TerminalPageButton })
+        foreach (var button in new[] { AIUsageButton, MonitorPageButton, MusicPageButton, ShelfPageButton, DevicesPageButton, WeatherPageButton, FocusPageButton, WidgetsPageButton, RemindersPageButton, NotificationsPageButton, CallsPageButton, ScratchpadPageButton, ConverterPageButton, TerminalPageButton, ColourPageButton })
         {
             // A local corner for these two buttons only; PanelIconButton keeps its 5 DIP corner elsewhere.
             button.ApplyTemplate();
@@ -229,7 +229,7 @@ public partial class MainWindow
     private void RenderPageSwitch()
     {
         SetValue(SuppressMusicToolTipsProperty, IsMusicPage);
-        foreach (var control in new FrameworkElement[] { AIUsageButton, MonitorPageButton, MusicPageButton, ShelfPageButton, DevicesPageButton, WeatherPageButton, FocusPageButton, WidgetsPageButton, RemindersPageButton, NotificationsPageButton, CallsPageButton, ScratchpadPageButton, ConverterPageButton, TerminalPageButton, MediaSourceButton })
+        foreach (var control in new FrameworkElement[] { AIUsageButton, MonitorPageButton, MusicPageButton, ShelfPageButton, DevicesPageButton, WeatherPageButton, FocusPageButton, WidgetsPageButton, RemindersPageButton, NotificationsPageButton, CallsPageButton, ScratchpadPageButton, ConverterPageButton, TerminalPageButton, ColourPageButton, MediaSourceButton })
             ToolTipService.SetIsEnabled(control, !IsMusicPage);
         PageSwitch.Visibility = _details && IsUsagePage || IsShelfPage && ShelfHidesSwitch ? Visibility.Collapsed : Visibility.Visible;
         // The music and clipboard pages keep their menu in the middle; the usage page, with its application tabs, keeps it at the left.
@@ -237,7 +237,7 @@ public partial class MainWindow
             ? HorizontalAlignment.Left : HorizontalAlignment.Center;
         OrderPageButtons();
         if (!IsShelfPage) { ShelfToolbar.Visibility = Visibility.Collapsed; ShelfSearchButton.Visibility = Visibility.Collapsed; }
-        foreach (var (button, page) in new[] { (AIUsageButton, DeckPage.Usage), (MusicPageButton, DeckPage.Music), (MonitorPageButton, DeckPage.Monitor), (ShelfPageButton, DeckPage.Clipboard), (DevicesPageButton, DeckPage.Devices), (WeatherPageButton, DeckPage.Weather), (FocusPageButton, DeckPage.Focus), (WidgetsPageButton, DeckPage.Widgets), (RemindersPageButton, DeckPage.Reminders), (NotificationsPageButton, DeckPage.Notifications), (CallsPageButton, DeckPage.Calls), (ScratchpadPageButton, DeckPage.Scratchpad), (ConverterPageButton, DeckPage.Converter), (TerminalPageButton, DeckPage.Terminal) })
+        foreach (var (button, page) in new[] { (AIUsageButton, DeckPage.Usage), (MusicPageButton, DeckPage.Music), (MonitorPageButton, DeckPage.Monitor), (ShelfPageButton, DeckPage.Clipboard), (DevicesPageButton, DeckPage.Devices), (WeatherPageButton, DeckPage.Weather), (FocusPageButton, DeckPage.Focus), (WidgetsPageButton, DeckPage.Widgets), (RemindersPageButton, DeckPage.Reminders), (NotificationsPageButton, DeckPage.Notifications), (CallsPageButton, DeckPage.Calls), (ScratchpadPageButton, DeckPage.Scratchpad), (ConverterPageButton, DeckPage.Converter), (TerminalPageButton, DeckPage.Terminal), (ColourPageButton, DeckPage.Colour) })
         {
             bool current = CurrentPage == page || page == DeckPage.Widgets && CurrentPage == DeckPage.Reminders;
             button.Visibility = DeckPages.Shown(Settings, page) && (page != DeckPage.Reminders || !Settings.WidgetsPage) ? Visibility.Visible : Visibility.Collapsed;

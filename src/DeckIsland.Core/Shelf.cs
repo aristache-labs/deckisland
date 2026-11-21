@@ -160,11 +160,16 @@ public static class Shelf
 
     private static readonly Regex Hex = new(@"^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$", RegexOptions.CultureInvariant);
     private static readonly Regex Rgb = new(@"^rgba?\(\s*(\d{1,3})\s*[, ]\s*(\d{1,3})\s*[, ]\s*(\d{1,3})\s*(?:[,/]\s*[\d.]+%?\s*)?\)$", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
+    // A three-digit issue reference stays text unless all three channels form a grey.
+    internal static bool IsIssueNumberHex(string value) => value is ['#', var r, var g, var b]
+        && char.IsAsciiDigit(r) && char.IsAsciiDigit(g) && char.IsAsciiDigit(b) && (r != g || g != b);
+
     // A color written as #RGB, #RRGGBB, #AARRGGBB or rgb(r, g, b); the color without its alpha.
     public static bool TryColor(string text, out (byte R, byte G, byte B) color)
     {
         color = default;
         text = text.Trim();
+        if (IsIssueNumberHex(text)) return false;
         if (Hex.Match(text) is { Success: true } hex)
         {
             string digits = hex.Groups[1].Value;

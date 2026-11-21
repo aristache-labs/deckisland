@@ -57,8 +57,8 @@ public sealed record IgnoredMediaApp(string AppId = "", string Name = "", string
 public enum ProviderId { Claude, Codex, Antigravity, Cursor, GlmChina, NewApi, Sub2Api, Custom, ZCode = 10, GlmGlobal = 11, Dsh = 12, DeepSeek = 13, GrokBot = 14, Kimi = 15, KimiApi = 16, OpenCode = 17, OpenCodeGo = 18, OpenRouter = 19, Pi = 20, CodeAgent = 21, CommandCode = 22, CommandCodeApi = 23, WorkBuddy = 24, WorkBuddyAi = 25, MiMo = 26, MiMoApi = 27, MiMoTokenPlan = 28, MiMoLinked = 29, KimiPlatform = 30 }
 public enum SettingsTheme { System, Light, Dark }
 // Pages are saved as numbers, so new members go at the end; their order in the page switch is DeckSettings.PageOrder.
-public enum DeckPage { Usage, Music, Monitor, Clipboard, Devices, Weather, Focus, Reminders, Widgets, Notifications, Calls, Scratchpad, Converter, Terminal }
-public enum DefaultDeckPage { Last, Usage, Music, Monitor, Clipboard, Devices, Weather, Focus, Reminders, Widgets, Notifications, Calls, Scratchpad, Converter, Terminal }
+public enum DeckPage { Usage, Music, Monitor, Clipboard, Devices, Weather, Focus, Reminders, Widgets, Notifications, Calls, Scratchpad, Converter, Terminal, Colour }
+public enum DefaultDeckPage { Last, Usage, Music, Monitor, Clipboard, Devices, Weather, Focus, Reminders, Widgets, Notifications, Calls, Scratchpad, Converter, Terminal, Colour }
 // What the mouse wheel does over the expanded panel. Saved as numbers, so new members go at the end.
 public enum MouseWheelAction { None, Pages, Volume }
 // What a double click on an end of the collapsed notch or capsule does: turn its auto width on or off, or start moving it
@@ -656,6 +656,9 @@ public sealed class DeckSettings
     public bool ClipboardPage { get; set; } = true;
     public double ClipboardWidth { get; set; } = ShelfSizes.Default.Width;
     public double ClipboardHeight { get; set; } = ShelfSizes.Default.Height;
+    public bool ClipboardDecode { get; set; } = true;
+    public bool ClipboardPresentationMode { get; set; }
+    public List<string> RecentColours { get; set; } = [];
     public bool ClipboardRecord { get; set; } = true;
     public bool WeTypeClipboardSync { get; set; }
     public bool DoubaoClipboardSync { get; set; }
@@ -780,6 +783,10 @@ public sealed class DeckSettings
     public string ConverterUnitTo { get; set; } = "";
     public string ConverterAmount { get; set; } = "100";
     // The Terminal tab: a shell inside the notch, kept running while the notch is closed.
+    public bool ColourTool { get; set; }
+    private const double DefaultColourWidth = 600, DefaultColourHeight = 310;
+    public double ColourWidth { get; set; } = DefaultColourWidth;
+    public double ColourHeight { get; set; } = DefaultColourHeight;
     public bool TerminalPage { get; set; } = true;
     private const double DefaultTerminalWidth = 620, DefaultTerminalHeight = 300;
     public double TerminalWidth { get; set; } = DefaultTerminalWidth;
@@ -1068,6 +1075,8 @@ public sealed class DeckSettings
         ConverterCurrencyTo = ExchangeRates.NormalizeCode(ConverterCurrencyTo) ?? "";
         ConverterUnitFrom ??= ""; ConverterUnitTo ??= "";
         ConverterAmount = (ConverterAmount ?? "").Length <= 40 ? ConverterAmount ?? "" : "100";
+        ColourWidth = double.IsFinite(ColourWidth) ? Math.Clamp(ColourWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : DefaultColourWidth;
+        ColourHeight = double.IsFinite(ColourHeight) ? Math.Clamp(ColourHeight, DeckPages.MinHeight, DeckPages.MaxHeight) : DefaultColourHeight;
         TerminalWidth = double.IsFinite(TerminalWidth) ? Math.Clamp(TerminalWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : DefaultTerminalWidth;
         TerminalHeight = double.IsFinite(TerminalHeight) ? Math.Clamp(TerminalHeight, DeckPages.MinHeight, DeckPages.MaxHeight) : DefaultTerminalHeight;
         if (!Enum.IsDefined(TerminalShell)) TerminalShell = TerminalShell.PowerShell7;
@@ -1107,6 +1116,7 @@ public sealed class DeckSettings
         DeviceWarningPercent = Devices.WarningChoices.Contains(DeviceWarningPercent) ? DeviceWarningPercent : Devices.DefaultWarningPercent;
         if (DeviceWarningPercent <= DeviceLowPercent) DeviceWarningPercent = Devices.WarningChoices.First(percent => percent > DeviceLowPercent);
         MonitorHeight = double.IsFinite(MonitorHeight) ? Math.Clamp(MonitorHeight, DeckPages.MinHeight, DeckPages.MaxHeight) : MonitorSizes.Default.Height;
+        RecentColours = [.. (RecentColours ?? []).Where(text => text is { Length: <= 9 } && CssColour.TryParse(text, out _)).Take(12)];
         ClipboardWidth = double.IsFinite(ClipboardWidth) ? Math.Clamp(ClipboardWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : ShelfSizes.Default.Width;
         ClipboardHeight = double.IsFinite(ClipboardHeight) ? Math.Clamp(ClipboardHeight, DeckPages.MinHeight, DeckPages.MaxHeight) : ShelfSizes.Default.Height;
         if (!Enum.IsDefined(TransferDragOut)) TransferDragOut = TransferDragOut.Copy;

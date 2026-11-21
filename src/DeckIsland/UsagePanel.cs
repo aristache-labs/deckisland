@@ -169,6 +169,8 @@ public partial class MainWindow
     public void RenderUsage()
     {
         if (UsageContent is null) return;
+        ColourContent.Visibility = CurrentPage == DeckPage.Colour ? Visibility.Visible : Visibility.Collapsed;
+        if (CurrentPage == DeckPage.Colour) { RenderColour(); return; }
         WidgetsContent.Visibility = CurrentPage == DeckPage.Widgets ? Visibility.Visible : Visibility.Collapsed;
         if (CurrentPage == DeckPage.Widgets) { RenderWidgets(); return; }
         ScratchpadContent.Visibility = CurrentPage == DeckPage.Scratchpad ? Visibility.Visible : Visibility.Collapsed;

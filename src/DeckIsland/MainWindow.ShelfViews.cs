@@ -24,7 +24,7 @@ public partial class MainWindow
     // ---- The lists ----
     private void ForgetRow(Guid id, FrameworkElement row)
     {
-        if (_shelfRows.TryGetValue(id, out var kept) && (kept.Row == row || kept.Row.Parent == row)) _shelfRows.Remove(id);
+        if (_shelfRows.TryGetValue(id, out var kept) && (kept.Row == row || row.IsAncestorOf(kept.Row))) _shelfRows.Remove(id);
         if (_rowRules.TryGetValue(id, out var rule) && row.IsAncestorOf(rule)) _rowRules.Remove(id);
     }
     private FrameworkElement ClipList(List<ClipEntry> clips, ShelfLayout layout)
@@ -45,7 +45,7 @@ public partial class MainWindow
                         ? ClipRowThree(clip, layout, at > 0 ? clips[at - 1].Id : null, at >= 0 && at < clips.Count - 1 ? clips[at + 1].Id : null) : ClipRow(clip, layout);
                     row.Margin = new Thickness(0);
                     JoinPicked(row, clip.Id, clips.Select(entry => entry.Id));
-                    return row;
+                    return WithClipboardDecode(row, clip);
                 },
                 (item, row) => ForgetRow(((ClipEntry)item).Id, row))
             { ItemsSource = clips, Margin = new Thickness(-8, 0, 0, 0) };
@@ -687,7 +687,8 @@ public partial class MainWindow
         for (int i = 0; i < clips.Length; i++)
         {
             var block = ClipBlock(clips[i], layout, width);
-            Grid.SetColumn(block, 2 * i); row.Children.Add(block);
+            var entry = WithClipboardDecode(block, clips[i]);
+            Grid.SetColumn(entry, 2 * i); row.Children.Add(entry);
         }
         return row;
     }

@@ -507,6 +507,13 @@ internal sealed class ShelfService : IDisposable
         return false;
     }
 
+    internal bool CopyToolText(string text)
+    {
+        if (!Put(TextData(text))) return false;
+        if (_settings().ClipboardRecord) Copied(new ClipCopy(text, "", "", null, 0, 0, "DeckIsland"));
+        return true;
+    }
+
     // The window to paste into after the panel took the focus for typing (MainWindow.ShelfTyping).
     public IntPtr TypingTarget { get; set; }
 

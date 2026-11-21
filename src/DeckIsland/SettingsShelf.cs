@@ -52,6 +52,12 @@ public partial class SettingsWindow
             help: Loc.T("从最后一次复制起计算。", "Counted from the last copy."));
         SectionTitle(Loc.T("历史", "History"), description: Loc.T("记录哪些内容，以及保留多久。", "What is recorded, and for how long."));
         Group(record, _excludedHost = new Border { Child = ExcludedAppsContent() }, keep, length);
+        SectionTitle(Loc.T("剪贴板工具", "Clipboard tools"));
+        Group(
+            Toggle(Loc.T("解码标签", "Decode chips"), S.ClipboardDecode, value => Change(s => s.ClipboardDecode = value)),
+            Toggle(Loc.T("演示模式", "Presentation mode"), S.ClipboardPresentationMode,
+                value => Change(s => s.ClipboardPresentationMode = value),
+                help: Loc.T("隐藏解码标签和结果。", "Hides decode chips and their results.")));
         SectionTitle(Loc.T("分类", "Categories"), description: Loc.T("自己整理的分组，拖动可调整顺序。", "Groups of your own; drag to reorder."), help: () => Loc.T("一条内容可以放进多个分类。关闭“一直保留”的分类，其中的内容与普通历史一样清除。单击筛选按钮设置自动放入的规则。拖动调整顺序。",
             "An entry can be in several categories. What is in a category with Keep off is cleared with the rest of the history. The filter button sets what goes in by itself. Drag to reorder."));
         CategoryList(ShelfSide.Clipboard);

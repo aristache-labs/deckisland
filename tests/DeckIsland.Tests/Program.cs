@@ -9,6 +9,12 @@ void Check(string name, bool condition)
 }
 JsonElement Json(string value) { using var doc = JsonDocument.Parse(value); return doc.RootElement.Clone(); }
 DeckSettings Only(params ProviderId[] ids) => new() { Apps = ids.Select(id => new AppEntry { Id = id }).ToList() };
+if (args is ["--clipboard-tools"])
+{
+    ClipboardToolsTests.Run(Check);
+    Console.WriteLine($"Passed {passed} clipboard tool checks.");
+    return;
+}
 var root = Path.Combine(Path.GetTempPath(), "DeckIsland-Tests-" + Guid.NewGuid().ToString("N"));
 Directory.CreateDirectory(root);
 try
@@ -17,6 +23,7 @@ try
     FocusTimerTests.Run(Check);
     WeatherTests.Run(Check);
     ClipboardSyncTests.Run(Check);
+    ClipboardToolsTests.Run(Check);
     await PiUsageTests.Run(root, Check);
     await CodeAgentUsageTests.Run(root, Check);
     await CommandCodeUsageTests.Run(root, Check);

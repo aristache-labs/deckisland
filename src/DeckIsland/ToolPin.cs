@@ -8,7 +8,7 @@ using Path = System.Windows.Shapes.Path;
 
 namespace DeckIsland;
 
-// The pin of the Scratchpad, Converter and Terminal tabs: while it is on and one of them is shown, the open panel stays open when the
+// The pin of the Scratchpad, Converter, Terminal and Colour tabs: while it is on and one of them is shown, the open panel stays open when the
 // pointer leaves it, so typing elsewhere and coming back finds it still there. Esc, the hotkey or closing it by hand still close it,
 // and that also takes the pin off.
 public partial class MainWindow
@@ -17,7 +17,8 @@ public partial class MainWindow
     private readonly List<(Path Glyph, Button Button)> _toolPins = [];
     private const string PinGlyph = "M9.6,1.6 L14.4,6.4 L12.2,7.3 L9.3,10.2 L9.7,12.8 L8.4,14.1 L1.9,7.6 L3.2,6.3 L5.8,6.7 L8.7,3.8 Z M5.1,10.9 L1.6,14.4";
 
-    private bool ToolPinHolds => _toolPinned && CurrentPage is DeckPage.Scratchpad or DeckPage.Converter or DeckPage.Terminal;
+    private bool ToolPinHolds => _colourPicking || _toolPinned
+        && CurrentPage is DeckPage.Scratchpad or DeckPage.Converter or DeckPage.Terminal or DeckPage.Colour;
 
     private Button ToolPinButton()
     {

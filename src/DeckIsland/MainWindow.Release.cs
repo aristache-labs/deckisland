@@ -16,6 +16,8 @@ public partial class MainWindow
             if (DeckPages.Shown(Settings, page) || page == CurrentPage) continue;
             var content = (Panel)PageContent(page);
             bool held = content.Children.Count > 0;
+            if (page == DeckPage.Colour && content.Children.OfType<ColourPanel>().FirstOrDefault() is { } colour)
+                _toolPins.RemoveAll(item => item.Button == colour.Pin);
             content.Children.Clear();
             switch (page)
             {
