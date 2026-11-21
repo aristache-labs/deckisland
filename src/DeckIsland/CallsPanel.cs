@@ -28,6 +28,8 @@ public partial class MainWindow
     private Button? _callMuteChip, _callCameraButton;
     private TextBlock? _callMuteLabel, _callCameraLabel, _callSay;
     private Image? _callPreview;
+    private TextBlock? _callTitle, _callHint, _callTimer, _callWhere;
+    private StackPanel? _callLiveBlock;
     private bool _callHearing, _callTesting;
     private MediaCapture? _camera;
     private MediaFrameReader? _cameraReader;
@@ -103,9 +105,26 @@ public partial class MainWindow
         // The tests.
         var title = WeatherText(Loc.T("通话准备就绪", "Ready for calls"), 15);
         title.FontWeight = FontWeights.SemiBold;
+        _callTitle = title;
         var hint = WeatherText(Loc.T("加入前先测试麦克风和扬声器。", "Test your mic and speaker before you join."), 12);
         hint.Foreground = UI.Brush(Look.Secondary);
         hint.Margin = new Thickness(0, 2, 0, 8);
+        _callHint = hint;
+
+        // In a call: the running time, a Live pill and the app that has the microphone, in place of the title.
+        _callTimer = WeatherText("", 30);
+        _callTimer.FontFamily = new FontFamily("Cascadia Mono, Consolas");
+        _callTimer.FontWeight = FontWeights.Bold;
+        var liveDot = new Ellipse { Width = 7, Height = 7, Fill = new SolidColorBrush(Color.FromRgb(0x30, 0xD1, 0x58)), Margin = new Thickness(0, 0, 6, 0), VerticalAlignment = VerticalAlignment.Center };
+        var liveText = WeatherText(Loc.T("通话中", "Live"), 12);
+        liveText.Foreground = new SolidColorBrush(Color.FromRgb(0x30, 0xD1, 0x58));
+        liveText.FontWeight = FontWeights.SemiBold;
+        var livePill = new Border { CornerRadius = new CornerRadius(12), Padding = new Thickness(10, 3, 12, 3), Margin = new Thickness(12, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center,
+            Background = new SolidColorBrush(Color.FromArgb(0x30, 0x30, 0xD1, 0x58)), Child = new StackPanel { Orientation = Orientation.Horizontal, Children = { liveDot, liveText } } };
+        _callWhere = WeatherText("", 12);
+        _callWhere.Foreground = UI.Brush(Look.Secondary);
+        _callWhere.Margin = new Thickness(0, 0, 0, 8);
+        _callLiveBlock = new StackPanel { Visibility = Visibility.Collapsed, Children = { new StackPanel { Orientation = Orientation.Horizontal, Children = { _callTimer, livePill } }, _callWhere } };
 
         _callCameraGlyph = new Path { Data = Geometry.Parse("M2,6 H5 L6.5,4 H11.5 L13,6 H16 V15 H2 Z M9,8.2 A2.6,2.6 0 1 1 9,13.4 A2.6,2.6 0 1 1 9,8.2 Z"), Stroke = UI.Brush(Look.Primary),
             StrokeThickness = 1.3, Stretch = Stretch.Uniform, Width = 15, Height = 15, Margin = new Thickness(0, 0, 8, 0), StrokeLineJoin = PenLineJoin.Round };
@@ -123,7 +142,7 @@ public partial class MainWindow
         _callSay.Visibility = Visibility.Collapsed;
         var cameraRow = new Grid { Margin = new Thickness(0, 2, 0, 0), Children = { _callCameraButton, _callSay } };
 
-        var right = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Children = { title, hint, DeviceRow(DataFlow.Render), DeviceRow(DataFlow.Capture), cameraRow } };
+        var right = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Children = { title, hint, _callLiveBlock, DeviceRow(DataFlow.Render), DeviceRow(DataFlow.Capture), cameraRow } };
 
         var grid = new Grid();
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
@@ -138,9 +157,19 @@ public partial class MainWindow
     private void UpdateCallMic()
     {
         if (_callMic is null || _callMicState is null || _callMicHint is null || _callMicGlyph is null || _callMicRing is null || _callCameraBlock is null || _callMicBlock is null
-            || _callMuteLabel is null || _callCameraLabel is null || _callCameraButton is null || _callSay is null || _callCameraGlyph is null) return;
+            || _callMuteLabel is null || _callCameraLabel is null || _callCameraButton is null || _callSay is null || _callCameraGlyph is null
+            || _callTitle is null || _callHint is null || _callLiveBlock is null || _callTimer is null || _callWhere is null) return;
         bool muted = _app.MicMuted, camera = _camera is not null, hearing = _callHearing && !muted;
         var green = Color.FromRgb(0x30, 0xD1, 0x58);
+        bool inCall = _app.MicLive && _app.MicLiveFor is not null;
+        _callTitle.Visibility = _callHint.Visibility = inCall ? Visibility.Collapsed : Visibility.Visible;
+        _callLiveBlock.Visibility = inCall ? Visibility.Visible : Visibility.Collapsed;
+        if (inCall)
+        {
+            var span = _app.MicLiveFor ?? TimeSpan.Zero;
+            _callTimer.Text = span.TotalHours >= 1 ? $"{(int)span.TotalHours}:{span.Minutes:00}:{span.Seconds:00}" : $"{span.Minutes}:{span.Seconds:00}";
+            _callWhere.Text = Loc.T("在 ", "In ") + _app.MicLiveApp;
+        }
         _callMicBlock.Visibility = camera ? Visibility.Collapsed : Visibility.Visible;
         _callCameraBlock.Visibility = camera ? Visibility.Visible : Visibility.Collapsed;
         _callMicState.Text = muted ? Loc.T("已静音", "Muted") : hearing ? Loc.T("正在听到你", "Hearing you") : Loc.T("麦克风已开启", "Mic on");

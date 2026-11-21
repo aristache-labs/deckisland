@@ -15,6 +15,7 @@ public partial class App
     internal event Action? CallsChanged;
     private MMDeviceEnumerator? _callDevices;
     private DateTime? _micLiveSince;
+    private string _micLiveApp = "";
     private bool? _micMuted;
     private bool _callShown;
     // Until when a readout that goes by (volume, a lock key...) is on the island: the call pill waits for it.
@@ -22,6 +23,7 @@ public partial class App
 
     internal bool MicMuted => _micMuted == true;
     internal bool MicLive => _micLiveSince is not null;
+    internal string MicLiveApp => _micLiveApp;
     internal TimeSpan? MicLiveFor => _micLiveSince is { } since ? DateTime.UtcNow - since : null;
 
     private MMDevice? CaptureDevice()
@@ -52,7 +54,11 @@ public partial class App
         try { if (CaptureDevice() is { } device) muted = device.AudioEndpointVolume.Mute; }
         catch (Exception error) when (error is COMException or InvalidOperationException) { }
         bool live = false;
-        try { live = LiveApps("microphone").Any(app => !HudFormat.Ignored(Settings.SensorIgnoredApps, app)); }
+        try
+        {
+            var apps = LiveApps("microphone").Where(app => !HudFormat.Ignored(Settings.SensorIgnoredApps, app)).ToList();
+            live = apps.Count > 0; _micLiveApp = live ? apps[0] : "";
+        }
         catch (Exception error) when (error is System.Security.SecurityException or UnauthorizedAccessException or IOException) { }
         bool changed = live != (_micLiveSince is not null) || muted != _micMuted;
         if (muted != _micMuted)
@@ -64,7 +70,8 @@ public partial class App
         }
         if (live && _micLiveSince is null) _micLiveSince = DateTime.UtcNow;
         else if (!live) _micLiveSince = null;
-        if (changed) CallsChanged?.Invoke();
+        // While live the tab shows the running time, so it hears every second.
+        if (changed || live) CallsChanged?.Invoke();
         if (Settings.CallTimer && _micLiveSince is { } since)
         {
             if (DateTime.UtcNow < _hudTransientUntil) return;
