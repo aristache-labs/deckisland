@@ -39,6 +39,7 @@ public sealed partial class SettingsWindow
             Group(Row(label, choice));
         }
         ClockWidgetSettings();
+        CountdownWidgetSettings();
     }
 
     // Time format applies to every clock in DeckIsland; the cities are the Clock widget's.
@@ -84,6 +85,40 @@ public sealed partial class SettingsWindow
         }
         Group([.. rows]);
     }
+
+    // Saved as you type; the date only once it reads as year-month-day, and clearing it turns the countdown off.
+    private void CountdownWidgetSettings()
+    {
+        SectionTitle(WidgetLayout.Name(WidgetKind.Countdown));
+        var title = WidgetText(Loc.T("倒计时名称", "Countdown title"), S.CountdownTitle, 60);
+        title.TextChanged += (_, _) => Change(s => s.CountdownTitle = title.Text.Trim());
+        var date = WidgetText(Loc.T("倒计时日期", "Countdown date"), S.CountdownDate, 10);
+        var status = TextLine("", 11.5, TextSecondary);
+        void Validate()
+        {
+            string text = date.Text.Trim();
+            bool valid = text.Length == 0 || Countdown.Parse(text) is not null;
+            status.Text = valid ? "" : Loc.T("请按 年-月-日 填写，例如 2026-12-25。", "Write it as year-month-day, like 2026-12-25.");
+            if (valid) Change(s => s.CountdownDate = Countdown.Normalize(text));
+        }
+        date.TextChanged += (_, _) => Validate();
+        var dateColumn = new StackPanel { Children = { Boxed(date), status } };
+        Group(Row(Loc.T("名称", "Title"), Boxed(title), help: () => Loc.T("倒计时小组件显示的名称：旅行、考试、发布。", "What the Countdown widget counts down to: a trip, an exam, a launch.")),
+            Row(Loc.T("日期", "Date"), dateColumn, help: () => Loc.T("按 年-月-日 填写，例如 2026-12-25；留空则不显示倒计时。", "The day it counts to, written year-month-day, like 2026-12-25. Leave it empty to turn the countdown off.")));
+    }
+
+    private TextBox WidgetText(string label, string value, int maxLength)
+    {
+        var box = new TextBox { Style = (Style)FindResource("SettingsNumber"), MinWidth = 180, MaxLength = maxLength, TextAlignment = TextAlignment.Left, Text = value };
+        AutomationProperties.SetName(box, label);
+        return box;
+    }
+
+    private Border Boxed(TextBox box) => new()
+    {
+        Child = box, Background = UI.Brush(Inset), BorderBrush = UI.Brush(Divider),
+        BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(6), Padding = new Thickness(8, 4, 8, 4)
+    };
 
     private void WidgetSizeControls()
     {

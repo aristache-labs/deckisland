@@ -514,6 +514,8 @@ public sealed class DeckSettings
     public string ClockCustomColor { get; set; } = ClockColors.DefaultCustom;
     public List<string> ClockGradient { get; set; } = [.. ClockColors.Sunset];
     public List<string> WorldClocks { get; set; } = [];
+    public string CountdownTitle { get; set; } = "";
+    public string CountdownDate { get; set; } = "";
     public ClockTimeFormat TimeFormat { get; set; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public bool? Clock24Hour { get; set; }
     [JsonIgnore] public string TimePattern => TimeFormat switch
@@ -1098,6 +1100,8 @@ public sealed class DeckSettings
         var stops = (ClockGradient ?? []).Select(AppPresets.NormalizeColor).ToList();
         ClockGradient = stops.Count == 3 && stops.All(stop => stop.Length > 0) ? stops : [.. ClockColors.Sunset];
         WorldClocks = Core.WorldClocks.Normalize(WorldClocks);
+        CountdownTitle = (CountdownTitle ?? "").Trim();
+        CountdownDate = Countdown.Normalize(CountdownDate);
         if (!Enum.IsDefined(DefaultPage)) DefaultPage = DefaultDeckPage.Last;
         if (!Enum.IsDefined(LastPage)) LastPage = DeckPage.Usage;
         OpenDelay = Math.Clamp(OpenDelay, 0, 2000);

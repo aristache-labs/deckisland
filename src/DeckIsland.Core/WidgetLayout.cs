@@ -1,6 +1,6 @@
 namespace DeckIsland.Core;
 
-public enum WidgetKind { Empty, Weather, Monitor, Focus, Devices, Quotas, Today, Clock }
+public enum WidgetKind { Empty, Weather, Monitor, Focus, Devices, Quotas, Today, Clock, Countdown }
 
 public static class WidgetLayout
 {
@@ -31,6 +31,7 @@ public static class WidgetLayout
         WidgetKind.Devices => Loc.T("显示器与设备", "Display and devices"),
         WidgetKind.Today => Loc.T("今日", "Today"),
         WidgetKind.Clock => Loc.T("时钟", "Clock"),
+        WidgetKind.Countdown => Loc.T("倒计时", "Countdown"),
         WidgetKind.Quotas => Loc.T("配额与用量", "Quotas and usage"),
         _ => Loc.T("空", "Empty")
     };

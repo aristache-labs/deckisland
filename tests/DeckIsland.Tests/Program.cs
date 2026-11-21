@@ -27,6 +27,7 @@ try
     ModelUsageTests.Run(Check);
     AntigravityUsageTests.Run(root, Check);
     WorldClocksTests.Run(Check);
+    CountdownTests.Run(Check);
     await MusicTests.Run(Check);
     await AppleMusicLyricsTests.Run(root, Check);
     await QueMusicLyricsTests.Run(root, Check);

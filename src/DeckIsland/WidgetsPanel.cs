@@ -50,7 +50,7 @@ public partial class MainWindow
         ApplyHeader(PanelHeader.For(ToolbarFor(height), 14));
         WidgetsContent.Margin = new Thickness(_header.Side, 0, _header.Side, MonitorBottom(height));
         var slots = Settings.WidgetSlots;
-        string key = $"{string.Join(',', slots)}:{Look.Generation}:{Loc.Language}:{Settings.RemindersPage}:{Settings.FocusPage}:{Settings.WeatherEnabled}:{Settings.UsagePage}:{Settings.MonitorPage}:{Settings.DevicesPage}:{Settings.WeatherPage}:{Settings.TimePattern}:{string.Join('|', Settings.WorldClocks)}:{_pageWidth:0}";
+        string key = $"{string.Join(',', slots)}:{Look.Generation}:{Loc.Language}:{Settings.RemindersPage}:{Settings.FocusPage}:{Settings.WeatherEnabled}:{Settings.UsagePage}:{Settings.MonitorPage}:{Settings.DevicesPage}:{Settings.WeatherPage}:{Settings.TimePattern}:{string.Join('|', Settings.WorldClocks)}:{Settings.CountdownTitle}:{Settings.CountdownDate}:{_pageWidth:0}";
         if (slots.Contains(WidgetKind.Monitor)) key += $":{MonitorThemeColors.For(Settings, Look)}";
         if (_widgetKey != key || WidgetsContent.Children.Count == 0)
         {
@@ -149,6 +149,7 @@ public partial class MainWindow
         if (kind == WidgetKind.Monitor) return MonitorWidget(frame, detailed);
         if (kind == WidgetKind.Today) return TodayWidget(frame);
         if (kind == WidgetKind.Clock) return ClockWidget(frame);
+        if (kind == WidgetKind.Countdown) return CountdownWidget(frame);
         if (kind == WidgetKind.Devices) return DevicesWidget(frame, detailed);
         if (!setup && kind == WidgetKind.Quotas) return QuotasWidget(frame, detailed);
         if (!setup && kind == WidgetKind.Weather) return WeatherWidget(frame, detailed);
