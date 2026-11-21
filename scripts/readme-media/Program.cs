@@ -232,11 +232,22 @@ internal sealed class Renderer(App app, string output, string language, string[]
             // Calls, Panel theme, Shortcuts and Displays and profiles in the same cards; for checking.
             if (scenes.Contains("cards-more"))
             {
+                // Two invented profiles, the first in use, so the profile rows and their buttons show.
+                var first = new DeckProfile { Name = "Profile 1" };
+                _settings.Profiles = [first, new DeckProfile { Name = "Profile 2" }]; _settings.CurrentProfile = first.Id;
                 foreach (var (name, page) in new[] { ("calls", 24), ("theme", 8), ("shortcuts", 11), ("profiles", 16) })
                 {
                     await SettingsPage(name + "-dark", page, height: 3600);
                     await SettingsPage(name + "-narrow", page, height: 3600, width: 840, theme: SettingsTheme.Light);
                 }
+            }
+            // Quotas and usage and Model prices in the same cards; for checking.
+            if (scenes.Contains("quotas"))
+            {
+                await SettingsPage("quotas-dark", 3, height: 2600);
+                await SettingsPage("quotas-narrow", 3, height: 2600, width: 840, theme: SettingsTheme.Light);
+                await SettingsPage("prices-dark", 4, height: 1200);
+                await SettingsPage("prices-narrow", 4, height: 1200, width: 840, theme: SettingsTheme.Light);
             }
             if (scenes.Contains("hover-weather"))
             {

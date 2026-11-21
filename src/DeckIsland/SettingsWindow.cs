@@ -362,6 +362,9 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
         head.Children.Add(page == 7 ? Wordmark(28) : TextLine(_pages[page],24,TextPrimary,FontWeights.SemiBold)); _content.Children.Add(head);
         if (page == 0) PageHeader(head, Loc.T("启动、外观以及 DeckIsland 在桌面上的行为。", "Startup, appearance and how DeckIsland behaves on your desktop."));
         if (page == 1) PageHeader(head, Loc.T("面板收起时的样子、显示的内容和位置。", "How the island looks, what it shows and where it sits while closed."));
+        if (page == 3) PageHeader(head, Loc.T("灵动岛显示哪些应用的配额和用量，以及如何显示。", "Which apps' quotas and usage the island shows, and how."));
+        if (page == 4) PageHeader(head, Loc.T("面板和模型明细中的费用按这里的单价估算。价格每天从 OpenRouter 更新，手动添加的价格优先。",
+            "Costs in the panel and model details are estimated with these unit prices. Prices are updated daily from OpenRouter; prices added by hand take precedence."));
         if (page == CallsSettingsPage) PageHeader(head, Loc.T("通话时灵动岛显示的计时、静音和设备检查。", "The timer, mute and device check the island offers during calls."));
         if (page == ThemePage) PageHeader(head, Loc.T("刘海、胶囊和展开面板的配色与外观。", "The colors and look of the notch, capsule and open panel."));
         if (page == HotkeysPage) PageHeader(head, Loc.T("在任何地方都能使用的快捷键。", "Keyboard shortcuts that work from anywhere."));
@@ -845,16 +848,16 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
     // Each row independently chooses its quota source, statistics source and dashboard name.
     private void Pages()
     {
-        SectionTitle(Loc.T("提示", "Notifications"));
+        SectionTitle(Loc.T("提示", "Notifications"), description: Loc.T("额度用到预警或告警线时提醒你。", "A heads-up when a quota reaches its warning or critical level."));
         Group(Toggle(Loc.T("预警和告警提示", "Warning and critical notices"), S.QuotaAlerts, v => Change(s => s.QuotaAlerts = v), help:
             Loc.T($"开启后，某个应用的已用比例升到预警（{AppPresets.WarningPercent:0}%）或告警（{AppPresets.CriticalPercent:0}%）时，收起的刘海或胶囊会短暂显示该应用的名称、比例和重置时间，约 5 秒后恢复。比例按“配额显示”中的设置显示已用或剩余。",
                 $"When on, and an app's used share rises to the warning ({AppPresets.WarningPercent:0}%) or critical ({AppPresets.CriticalPercent:0}%) level, the collapsed notch or capsule briefly shows the app's name, used share and reset time, then returns after about 5 seconds.")));
-        SectionTitle(Loc.T("数据来源", "Data sources"));
+        SectionTitle(Loc.T("数据来源", "Data sources"), description: Loc.T("用量统计从哪里读取。", "Where usage is read from."));
         Group(Toggle(Loc.T("同步 WSL 中的用量统计", "Include usage from WSL"), S.IncludeWsl, v => Change(s => s.IncludeWsl = v), help:
             Loc.T("开启后，会读取已安装的 WSL 子系统中 Claude Code 和 Codex CLI 的会话记录，并计入 Token 用量与费用统计。读取时会唤醒尚未运行的 WSL 子系统，默认关闭。",
                 "When on, the Claude Code and Codex CLI session records inside installed WSL distributions are read and counted in token usage and cost. Reading wakes a distribution that is not running, so this is off by default.")));
         QuotaRingSection();
-        SectionTitle(Loc.T("应用", "Apps"));
+        SectionTitle(Loc.T("应用", "Apps"), description: Loc.T("看板上的每一列：配额来源、统计应用、名称和颜色。", "Each column of the panel: its quota source, usage app, name and colors."));
         _appRows = new StackPanel();
         foreach (var entry in S.Apps) _appRows.Children.Add(AppRow(entry));
         UpdateDividers(); UpdateShowLimit();
@@ -886,7 +889,10 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
             $"The same quota source or usage app can be chosen more than once. With {AppPresets.MaximumShownApps} apps shown, a new app is added switched off.");
         AutomationProperties.SetName(add, Loc.T("添加应用", "Add app"));
         list.Children.Add(add);
-        _content.Children.Add(list);
+        // Into the Apps card (Card), as the sections above; the table reaches nearer the card's edges than rows do, so its seven
+        // columns keep their width at the narrowest window.
+        list.Margin = new Thickness(-12, 0, -12, 0);
+        Group(list);
     }
 
     // Column headings, each with its help mark when it has a note, as the app list has them.
@@ -1275,7 +1281,7 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
 
     // The Collapsed view page is laid out in General's cards (Card): there a section title heads the card its next group
     // opens, and a group with no title of its own joins the card above it.
-    private bool CardPage => _page is 1 or 2 or WidgetsSettingsPage or NotificationsSettingsPage or CallsSettingsPage or ThemePage or HotkeysPage or ProfilesPage;
+    private bool CardPage => _page is 1 or 2 or 3 or WidgetsSettingsPage or NotificationsSettingsPage or CallsSettingsPage or ThemePage or HotkeysPage or ProfilesPage;
     private (string Title, string Description, FrameworkElement? Action, Func<string>? Help)? _cardTitle;
     private StackPanel? _cardBody;
 

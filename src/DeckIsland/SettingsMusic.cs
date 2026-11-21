@@ -217,7 +217,7 @@ public sealed partial class SettingsWindow
     // switched on or off with the collapsed content (PartRow). A new style builds the application rows again, so their ring lines follow it.
     private void QuotaRingSection()
     {
-        SectionTitle(Loc.T("配额显示", "Quota display"));
+        SectionTitle(Loc.T("配额显示", "Quota display"), description: Loc.T("收起时配额环的样子。", "How the quota rings look on the collapsed island."));
         Group(MusicChoice(Loc.T("环的样式", "Ring style"), S.QuotaRingStyle, [(QuotaRingStyle.Single, Loc.T("单环", "Single")), (QuotaRingStyle.Nested, Loc.T("多环", "Nested"))],
                 v => { Change(s => s.QuotaRingStyle = v); foreach (var entry in S.Apps) RefreshAppRow(entry.InstanceId); }, help: Loc.T("单环：每个应用一个环，默认显示已用比例最高的一项额度。\n多环：每个应用最多三个环，分别显示不同的额度。\n各环显示哪项额度，在下方展开该应用后设置。",
                     "Single: one ring per app, showing its most used quota by default.\nNested: up to three rings per app, each showing a different quota.\nWhich quota each ring shows is set by expanding the app below."), width: 200),

@@ -26,14 +26,12 @@ public sealed partial class SettingsWindow
     private TextBlock? _priceCount;
     private TextBlock? _priceUpdated;
     // Everything on the page except the table: title, description, toolbar, search and the footer.
-    private const double PriceTableReserve = 358;
+    // The page above and below the table: its header and subtitle, the card's header, the search box and the line under the table.
+    private const double PriceTableReserve = 400;
     private void ModelPrices()
     {
-        // Sits directly under the page title, closer to it than the usual gap below a title.
-        var description=TextLine(Loc.T("面板和模型明细中的费用按这里的单价估算。价格每天从 OpenRouter 更新，手动添加的价格优先。",
-            "Costs in the panel and model details are estimated with these unit prices. Prices are updated daily from OpenRouter; prices added by hand take precedence."),12,TextSecondary);
-        description.TextWrapping=TextWrapping.Wrap;description.Margin=new Thickness(0,-8,0,14);_content.Children.Add(description);
-        var toolbar=new DockPanel {Margin=new Thickness(0,0,0,20)};
+        // What the prices are for is the page's subtitle (PageHeader); the update button and when it last ran head the card (Card).
+        var toolbar=new DockPanel();
         var refresh=ActionButton(Loc.T("更新价格", "Update prices"),()=>{});refresh.BorderBrush=UI.Brush(_palette.Border);refresh.Background=UI.Brush(_palette.Input);
         AutomationProperties.SetName(refresh,Loc.T("更新价格", "Update prices"));DockPanel.SetDock(refresh,Dock.Right);toolbar.Children.Add(refresh);
         refresh.Click+=async(_,_)=>
@@ -43,10 +41,10 @@ public sealed partial class SettingsWindow
             catch(OperationCanceledException) { }
             finally {refresh.IsEnabled=true;refresh.Content=Loc.T("更新价格", "Update prices");}
         };
-        _priceUpdated=TextLine("",11,TextTertiary);_priceUpdated.VerticalAlignment=VerticalAlignment.Center;toolbar.Children.Add(_priceUpdated);_content.Children.Add(toolbar);
-        _priceSearch=new TextBox {Style=(Style)FindResource("SettingsField"),MaxLength=200,Margin=new Thickness(0,0,0,16)};
+        _priceUpdated=TextLine("",11,TextTertiary);_priceUpdated.VerticalAlignment=VerticalAlignment.Center;_priceUpdated.Margin=new Thickness(0,0,12,0);toolbar.Children.Add(_priceUpdated);
+        _priceSearch=new TextBox {Style=(Style)FindResource("SettingsField"),MaxLength=200,Margin=new Thickness(0,16,0,16)};
         AutomationProperties.SetName(_priceSearch,Loc.T("搜索模型", "Search models"));_priceSearch.ToolTip=Loc.T("按模型 ID 搜索", "Search by model ID");
-        var search=new DockPanel();var searchLabel=TextLine(Loc.T("搜索模型", "Search models"),12,TextSecondary);searchLabel.Margin=new Thickness(0,8,16,0);DockPanel.SetDock(searchLabel,Dock.Left);search.Children.Add(searchLabel);search.Children.Add(_priceSearch);_content.Children.Add(search);
+        var search=new DockPanel();var searchLabel=TextLine(Loc.T("搜索模型", "Search models"),12,TextSecondary);searchLabel.Margin=new Thickness(0,8,16,0);DockPanel.SetDock(searchLabel,Dock.Left);search.Children.Add(searchLabel);search.Children.Add(_priceSearch);var body=new StackPanel();body.Children.Add(search);
         _priceTable=new DataGrid {Style=(Style)FindResource("SettingsPriceTable"),Height=Math.Max(220,ActualHeight-PriceTableReserve),FontSize=12,FontFamily=SettingsFont(UiFontRole.Panel)};
         _priceTable.Resources[typeof(ScrollViewer)]=new Style(typeof(ScrollViewer));
         AutomationProperties.SetName(_priceTable,Loc.T("模型单价", "Model unit prices"));
@@ -77,12 +75,13 @@ public sealed partial class SettingsWindow
             for(int i=0;i<weights.Length;i++)_priceTable.Columns[i].Width=new DataGridLength(available*weights[i]/weights.Sum());
         };
         _priceTable.MouseDoubleClick+=(_,e)=>{if(_priceTable.SelectedItem is PriceRow item&&e.OriginalSource is FrameworkElement element&&FindVisualParent<DataGridRow>(element) is not null)CreatePriceEditor(item.Model).ShowDialog();};
-        _content.Children.Add(_priceTable);
+        body.Children.Add(_priceTable);
         var tail=new DockPanel {Margin=new Thickness(0,16,0,0),HorizontalAlignment=HorizontalAlignment.Left};
         var add=ActionButton(Loc.T("+  添加模型", "+  Add model"),()=>CreatePriceEditor(null).ShowDialog());add.BorderBrush=UI.Brush(_palette.Border);add.Background=UI.Brush(_palette.Input);AutomationProperties.SetName(add,Loc.T("添加模型", "Add model"));DockPanel.SetDock(add,Dock.Left);tail.Children.Add(add);
         var details=new StackPanel {Orientation=Orientation.Horizontal,HorizontalAlignment=HorizontalAlignment.Right,VerticalAlignment=VerticalAlignment.Center,Margin=new Thickness(0,0,0,2)};
         var units=TextLine(Loc.T("单价单位：美元 / 百万 Token", "Unit prices in US dollars per million tokens"),11,TextTertiary);units.Margin=new Thickness(16,0,16,0);details.Children.Add(units);
-        _priceCount=TextLine("",11,TextTertiary);details.Children.Add(_priceCount);tail.Children.Add(details);_content.Children.Add(tail);
+        _priceCount=TextLine("",11,TextTertiary);details.Children.Add(_priceCount);tail.Children.Add(details);body.Children.Add(tail);tail.Margin=new Thickness(0,16,0,16);
+        Card(Loc.T("模型单价", "Unit prices"),Loc.T("搜索模型，双击一行即可编辑它的单价。", "Search the models; double-click a row to edit its prices."),toolbar,null,body);
         var table=_priceTable;
         table.Loaded+=(_,_)=>
         {

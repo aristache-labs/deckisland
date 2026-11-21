@@ -132,43 +132,33 @@ public sealed partial class SettingsWindow
         if (_renamingProfile == id) { _renamingProfile = null; Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, Edit); }
 
         var controls = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
-        if (!current)
+        // Each action is its own outline button: Use and Delete for a profile not in use, Rename and Copy for every one.
+        Button Offer(string label, string spoken, Action action)
         {
-            var use = ActionButton(Loc.T("使用", "Use"), () => _app.ChooseProfile(id)); use.Style = (Style)FindResource("SettingsOutlineButton");
-            AutomationProperties.SetName(use, Loc.T("使用 ", "Use ") + name); use.Margin = new Thickness(0, 0, 4, 0);
-            controls.Children.Add(use);
+            var button = Outline(ActionButton(label, action)); button.Margin = new Thickness(0, 0, 6, 0);
+            AutomationProperties.SetName(button, spoken + name); controls.Children.Add(button); return button;
         }
-        // Three dots in a 14 by 4 box, centred as the box is.
-        Button? more = null;
-        more = GlyphButton("M 1.9,2 L 2.1,2 M 6.9,2 L 7.1,2 M 11.9,2 L 12.1,2", 14, 4, Loc.T("更多操作：", "More: ") + name, () =>
+        // The profile in use keeps Use's place, hidden, so Rename and Copy line up from row to row.
+        Offer(Loc.T("使用", "Use"), Loc.T("使用 ", "Use "), () => _app.ChooseProfile(id)).Visibility = current ? Visibility.Hidden : Visibility.Visible;
+        Offer(Loc.T("重命名", "Rename"), Loc.T("重命名 ", "Rename "), () => Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, Edit));
+        Offer(Loc.T("复制", "Copy"), Loc.T("复制 ", "Copy "), () => ChangeShared(s => s.Profiles.Add(Profiles.Duplicate(s, id, Profiles.NextName(s)))))
+            .IsEnabled = shared.Profiles.Count < Profiles.Maximum;
+        if (!current) Offer(Loc.T("删除", "Delete"), Loc.T("删除 ", "Delete "), () =>
         {
-            var menu = AppMenu(more!);
-            var rename = new MenuItem { Header = Loc.T("重命名", "Rename") }; rename.Click += (_, _) => Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, Edit);
-            var copy = new MenuItem { Header = Loc.T("复制", "Copy"), IsEnabled = _app.Settings.Profiles.Count < Profiles.Maximum };
-            copy.Click += (_, _) => ChangeShared(s => s.Profiles.Add(Profiles.Duplicate(s, id, Profiles.NextName(s))));
-            var delete = new MenuItem { Header = Loc.T("删除", "Delete"), IsEnabled = !current };
-            delete.Click += (_, _) =>
-            {
-                // What changes is said only for what uses the profile, the rules by their apps' names.
-                var now = _app.Settings;
-                var lines = new List<string> { Loc.T($"确定删除“{name}”吗？", $"Delete “{name}”?") };
-                if (now.Display == DisplayPlacement.Chosen && now.DisplayMonitors.Any(d => d.Profile == id))
-                    lines.Add(Loc.T("使用它的显示器会自动改为当前正在使用的配置。", "Displays that use it will change to the profile in use."));
-                string Apps(IEnumerable<ProfileRule> rules) => string.Join(Loc.T("、", ", "), rules.Select(r => AppName(r.Name, r.Path)).Distinct());
-                if (now.ProfileRules.Where(r => r.Profile == id).ToList() is { Count: > 0 } switching)
-                    lines.Add(Loc.T($"删除后，{Apps(switching)}的自动切换规则不会再切换配置。", $"The automatic switch rules for {Apps(switching)} will no longer switch profiles."));
-                if (now.ProfileRules.Where(r => r.Displays.Any(d => d.Profile == id)).ToList() is { Count: > 0 } showing)
-                    lines.Add(Loc.T($"{Apps(showing)}的规则中使用它的显示器，会自动改为跟随当前正在使用的配置。", $"In the rules for {Apps(showing)}, displays that use it will follow the profile in use."));
-                string text = string.Join(Environment.NewLine, lines);
-                if (!Confirm(Loc.T("删除配置", "Delete profile"), text, Loc.T("删除", "Delete"))) return;
-                ChangeShared(s => s.Profiles.RemoveAll(p => p.Id == id));
-            };
-            menu.Items.Add(rename); menu.Items.Add(copy); menu.Items.Add(new Separator()); menu.Items.Add(delete);
-            menu.IsOpen = true;
+            // What changes is said only for what uses the profile, the rules by their apps' names.
+            var now = _app.Settings;
+            var lines = new List<string> { Loc.T($"确定删除“{name}”吗？", $"Delete “{name}”?") };
+            if (now.Display == DisplayPlacement.Chosen && now.DisplayMonitors.Any(d => d.Profile == id))
+                lines.Add(Loc.T("使用它的显示器会自动改为当前正在使用的配置。", "Displays that use it will change to the profile in use."));
+            string Apps(IEnumerable<ProfileRule> rules) => string.Join(Loc.T("、", ", "), rules.Select(r => AppName(r.Name, r.Path)).Distinct());
+            if (now.ProfileRules.Where(r => r.Profile == id).ToList() is { Count: > 0 } switching)
+                lines.Add(Loc.T($"删除后，{Apps(switching)}的自动切换规则不会再切换配置。", $"The automatic switch rules for {Apps(switching)} will no longer switch profiles."));
+            if (now.ProfileRules.Where(r => r.Displays.Any(d => d.Profile == id)).ToList() is { Count: > 0 } showing)
+                lines.Add(Loc.T($"{Apps(showing)}的规则中使用它的显示器，会自动改为跟随当前正在使用的配置。", $"In the rules for {Apps(showing)}, displays that use it will follow the profile in use."));
+            string text = string.Join(Environment.NewLine, lines);
+            if (!Confirm(Loc.T("删除配置", "Delete profile"), text, Loc.T("删除", "Delete"))) return;
+            ChangeShared(s => s.Profiles.RemoveAll(p => p.Id == id));
         });
-        if (more.Content is System.Windows.Shapes.Path dots) dots.StrokeThickness = 2.2;
-        more.Width = 28; more.Height = 28;
-        controls.Children.Add(more);
         Grid.SetColumn(controls, 1); row.Children.Add(controls);
         return row;
     }
