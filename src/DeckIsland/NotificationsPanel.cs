@@ -21,6 +21,8 @@ public partial class MainWindow
     private TextBlock? _noticeCount;
     private Button? _noticeClear;
     private readonly HashSet<string> _noticeOpen = [];
+    // Which notice of a closed stack is on top, by stack (the arrows under the pointer step it).
+    private readonly Dictionary<string, int> _noticeTop = [];
     private (int Theme, string Language, string TimePattern, bool Clock) _noticeAppearance;
 
     private void InitializeNotifications()
@@ -54,7 +56,7 @@ public partial class MainWindow
         var body = new DockPanel();
         // The count and Clear all, side by side in the middle.
         _noticeClear = new Button { Content = Loc.T("全部清除", "Clear all"), Style = (Style)FindResource("PanelOutlineButton"), Margin = new Thickness(14, 0, 0, 0) };
-        _noticeClear.Click += (_, _) => { _noticeOpen.Clear(); _app.ClearNotices(); };
+        _noticeClear.Click += (_, _) => { _noticeOpen.Clear(); _noticeTop.Clear(); _app.ClearNotices(); };
         _noticeCount = WeatherText("", 12);
         _noticeCount.Foreground = UI.Brush(Look.Secondary);
         _noticeCount.VerticalAlignment = VerticalAlignment.Center;
@@ -125,7 +127,9 @@ public partial class MainWindow
             }
             // Closed: the newest on top of two edges of the ones under it; pressing it opens the stack.
             var stack = new StackPanel { Margin = new Thickness(0, 0, 0, 4) };
-            stack.Children.Add(NoticeRow(notices[0], notices.Count - 1, () => { _noticeOpen.Add(group.Key); FillNoticeRows(); }, margin: false));
+            int shown = Math.Clamp(_noticeTop.GetValueOrDefault(group.Key), 0, notices.Count - 1);
+            var top = NoticeRow(notices[shown], notices.Count - 1, () => { _noticeOpen.Add(group.Key); FillNoticeRows(); }, margin: false);
+            stack.Children.Add(StackStepper(top, group.Key, shown, notices.Count));
             foreach (var (inset, opacity) in new[] { (10d, .6), (20d, .35) })
                 stack.Children.Add(new Border
                 {
@@ -144,6 +148,35 @@ public partial class MainWindow
                 : total == 1 ? Loc.T("1 条通知", "1 notice") : Loc.T($"{total} 条通知", $"{total} notices");
             _noticeCount.Visibility = none ? Visibility.Collapsed : Visibility.Visible;
         }
+    }
+
+    // The top row of a closed stack with "‹ 1 / 3 ›" over its right side while the pointer (or the keyboard) is on it, to change
+    // which notice of the stack is on top.
+    private FrameworkElement StackStepper(FrameworkElement row, string key, int shown, int count)
+    {
+        Button Step(string glyph, int by, string name)
+        {
+            var button = new Button { Content = glyph, Style = (Style)FindResource("PanelOutlineButton"), MinWidth = 24, Padding = new Thickness(6, 0, 6, 0), Margin = new Thickness(2, 0, 0, 0) };
+            AutomationProperties.SetName(button, name);
+            button.Click += (_, _) => { _noticeTop[key] = (shown + by + count) % count; FillNoticeRows(); };
+            return button;
+        }
+        var position = WeatherText($"{shown + 1} / {count}", 12);
+        position.Foreground = UI.Brush(Look.Secondary);
+        position.VerticalAlignment = VerticalAlignment.Center;
+        position.Margin = new Thickness(4, 0, 4, 0);
+        var strip = new Border
+        {
+            Child = new StackPanel { Orientation = Orientation.Horizontal, Children = { Step("‹", -1, Loc.T("上一条", "Previous notice")), position, Step("›", 1, Loc.T("下一条", "Next notice")) } },
+            Background = UI.Brush(Look.Hex("fillSelected")), CornerRadius = new CornerRadius(Corner(8)), Padding = new Thickness(3),
+            HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 64, 0), Opacity = 0
+        };
+        var host = new Grid { Children = { row, strip } };
+        void Update() => strip.Opacity = host.IsMouseOver || host.IsKeyboardFocusWithin ? 1 : 0;
+        host.MouseEnter += (_, _) => Update();
+        host.MouseLeave += (_, _) => Update();
+        host.IsKeyboardFocusWithinChanged += (_, _) => Update();
+        return host;
     }
 
     // One notice as a pressable row: the picture, the title over the message, its age (and how many more are stacked under it).
