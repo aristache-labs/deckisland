@@ -76,7 +76,6 @@ public sealed partial class SettingsWindow
         gradient.Visibility = S.ClockColor == ClockColor.Gradient ? Visibility.Visible : Visibility.Collapsed;
         panel.Children.Add(gradient);
         panel.Children.Add(new Border { Height = 1, Background = UI.Brush(Divider) });
-        panel.Children.Add(Toggle(Loc.T("24 小时制", "24-hour clock"), S.Clock24Hour, value => { Change(s => s.Clock24Hour = value); RefreshClockTiles(); }));
         panel.Children.Add(new Border { Height = 1, Background = UI.Brush(Divider) });
         panel.Children.Add(Toggle(Loc.T("显示秒数", "Show seconds"), S.ClockSeconds, value => { Change(s => s.ClockSeconds = value); RefreshClockTiles(); }));
         return panel;
@@ -84,7 +83,7 @@ public sealed partial class SettingsWindow
 
     // Every card shows 14:32:08 today in the chosen color, hour format and seconds, at twice the size of the collapsed surface.
     private FrameworkElement ClockPreview(ClockStyle style)
-        => new ClockFace(style, S.Clock24Hour, S.ClockSeconds, ClockFace.Palette(S, _app.PreviewDeck.CoverColor), DateTime.Today.AddHours(14).AddMinutes(32).AddSeconds(8)) { LayoutTransform = new ScaleTransform(2, 2) };
+        => new ClockFace(style, S.Uses24HourClock, S.ClockSeconds, ClockFace.Palette(S, _app.PreviewDeck.CoverColor), DateTime.Today.AddHours(14).AddMinutes(32).AddSeconds(8)) { LayoutTransform = new ScaleTransform(2, 2) };
     private void RefreshClockTiles()
     {
         foreach (var (tile, style) in _clockTiles) tile.Content = ClockPreview(style);

@@ -286,6 +286,11 @@ internal static class CompactReadingTests
     // The order of the collapsed parts: one per style, each part once, kept by copies and by saving.
     private static void PartOrder(Action<string, bool> check)
     {
+        check("Clock format: old choices survive and new settings follow the system",
+            Read("""{"Clock24Hour":true}""").TimeFormat == ClockTimeFormat.Hour24
+            && Read("""{"Clock24Hour":false}""").TimeFormat == ClockTimeFormat.Hour12
+            && Read("{}").TimeFormat == ClockTimeFormat.System
+            && !Profiles.IsProfileKey(nameof(DeckSettings.TimeFormat)));
         CompactPart[] standard = [CompactPart.Rings, CompactPart.Music, CompactPart.Monitor, CompactPart.Transfer, CompactPart.Devices, CompactPart.Equalizer, CompactPart.Clock, CompactPart.Weather, CompactPart.Focus];
         check("Compact order: the default order appends Weather after the clock", new DeckSettings().NotchOrder.SequenceEqual(standard)
             && CompactParts.Default.SequenceEqual(standard));

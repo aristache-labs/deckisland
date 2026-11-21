@@ -14,7 +14,7 @@ public partial class MainWindow
     internal Guid? ReminderAlertId { get; private set; }
     private StackPanel? _reminderRows;
     private StackPanel? _reminderEmpty;
-    private (int Theme, string Language) _reminderAppearance;
+    private (int Theme, string Language, string TimePattern) _reminderAppearance;
     internal bool CanShowReminder => Settings.RemindersPage && IsVisible && !IsSuppressed && !DisplayPower.Off && !_preview;
 
     private void InitializeReminders()
@@ -45,7 +45,7 @@ public partial class MainWindow
         var title = WeatherText(item.Title, 18);
         title.FontWeight = FontWeights.SemiBold;
         title.ToolTip = item.Title;
-        var time = WeatherText($"{Loc.T("提醒", "Reminder")} · {item.Due.ToLocalTime().ToString("t", Loc.Culture)}", 13);
+        var time = WeatherText($"{Loc.T("提醒", "Reminder")} · {item.Due.ToLocalTime().ToString(Settings.TimePattern, Loc.Culture)}", 13);
         time.Foreground = UI.Brush(Look.Secondary);
         var details = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Children = { title, time } };
 
@@ -110,7 +110,7 @@ public partial class MainWindow
         var header = PanelHeader.For(ToolbarFor(height), height < 170 ? 14 : 20);
         ApplyHeader(Settings.UsagePage ? header.WithControlsOf(CachedUsageHeader()) : header);
         RemindersContent.Margin = new Thickness(_header.Side, 0, _header.Side, MonitorBottom(height));
-        var appearance = (Look.Generation, Loc.Language);
+        var appearance = (Look.Generation, Loc.Language, Settings.TimePattern);
         if (RemindersContent.Children.Count > 0 && _reminderAppearance == appearance) return;
         _reminderAppearance = appearance;
         RemindersContent.Children.Clear();
@@ -119,7 +119,7 @@ public partial class MainWindow
         DockPanel.SetDock(actions, System.Windows.Controls.Dock.Bottom);
         actions.Children.Add(ReminderButton(Loc.T("新提醒", "New reminder"), () =>
         {
-            var dialog = new ReminderDialog(Settings.Theme, Look.Current);
+            var dialog = new ReminderDialog(Settings.Theme, Look.Current, Settings.TimePattern);
             if (dialog.ShowDialog() == true && dialog.Reminder is { } item) _app.AddReminder(item);
         }));
         actions.Children.Add(ReminderButton("+15 min", () => QuickReminder(DateTimeOffset.Now.AddMinutes(15))));
@@ -180,7 +180,7 @@ public partial class MainWindow
             var name = WeatherText(item.Title, 14);
             name.FontWeight = due ? FontWeights.SemiBold : FontWeights.Normal;
             description.Children.Add(name);
-            var time = item.Due.ToLocalTime().ToString("ddd d MMM · HH:mm", Loc.Culture);
+            var time = item.Due.ToLocalTime().ToString($"ddd d MMM · {Settings.TimePattern}", Loc.Culture);
             description.Children.Add(WeatherText(due ? $"{Loc.T("到期", "Due")} · {time}" : time, 11));
             row.Children.Add(description);
             rows.Children.Add(new Border { Child = row, Padding = new Thickness(8, 4, 4, 4), Margin = new Thickness(0, 0, 0, 4),

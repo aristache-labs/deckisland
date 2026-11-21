@@ -31,7 +31,7 @@ internal static class SettingsMigrationTests
         bool capsuleOff = !clock.ShowsClock(CompactStyle.Capsule);
         clock.CapsuleClock = true;
         check("the clock is switched per style and never shown on the indicator", clock.ShowsClock(CompactStyle.Notch) && capsuleOff
-            && clock.ShowsClock(CompactStyle.Capsule) && !clock.ShowsClock(CompactStyle.Line) && !clock.Clock24Hour);
+            && clock.ShowsClock(CompactStyle.Capsule) && !clock.ShowsClock(CompactStyle.Line) && clock.TimeFormat == ClockTimeFormat.Hour12);
         check("unknown clock styles and colors fall back to the defaults", clock.ClockStyle == ClockStyle.Minimal && clock.ClockColor == ClockColor.White
             && clock.ClockCustomColor == ClockColors.DefaultCustom && clock.ClockGradient.SequenceEqual(ClockColors.Sunset));
         var colors = SettingsMigrations.Read("""{"AppVersion":"0.1.0","ClockColor":7,"ClockCustomColor":"12ab3c","ClockGradient":["#000000","#ffffff"]}""", v010, out _);

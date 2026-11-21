@@ -17,7 +17,7 @@ internal sealed class ReminderDialog : ControlDialog
     private readonly PanelPalette _colors;
     private string Color(string token) => _colors[token].ToString();
 
-    internal ReminderDialog(SettingsTheme theme, PanelPalette colors) : base(theme, Loc.T("新提醒", "New reminder"))
+    internal ReminderDialog(SettingsTheme theme, PanelPalette colors, string timePattern) : base(theme, Loc.T("新提醒", "New reminder"))
     {
         _colors = colors;
         foreach (var (resource, token) in new[]
@@ -66,8 +66,18 @@ internal sealed class ReminderDialog : ControlDialog
         var save = new Button { Content = Loc.T("设置提醒", "Set reminder"), Style = (Style)FindResource("ControlDialogPrimaryButton"), MinWidth = 114, IsDefault = true, Foreground = UI.Brush(Color("onAccent")) };
         var initial = DateTime.Now.AddMinutes(30);
         var selectedDate = initial.Date;
-        var hour = TimeField(initial.Hour, Loc.T("小时（24 小时制）", "Hours (24-hour format)"));
+        bool use24Hour = timePattern.Contains('H');
+        var hour = TimeField(use24Hour ? initial.Hour : (initial.Hour + 11) % 12 + 1,
+            use24Hour ? Loc.T("小时（24 小时制）", "Hours (24-hour format)") : Loc.T("小时（12 小时制）", "Hours (12-hour format)"));
         var minute = TimeField(initial.Minute, Loc.T("分钟", "Minutes"));
+        var period = new ComboBox
+        {
+            ItemsSource = new[] { "AM", "PM" }, SelectedIndex = initial.Hour / 12,
+            Style = (Style)FindResource("SettingsCombo"), Width = 70, Height = 30,
+            Margin = new Thickness(8, 0, 0, 0), Visibility = use24Hour ? Visibility.Collapsed : Visibility.Visible
+        };
+        AutomationProperties.SetName(period, "AM / PM");
+        PopupMotion.Attach(period);
         var separator = Text(":", 14, Color("textSecondary"));
         separator.VerticalAlignment = VerticalAlignment.Center;
         separator.Margin = new Thickness(5, 0, 5, 0);
@@ -78,7 +88,7 @@ internal sealed class ReminderDialog : ControlDialog
         var calendar = new ModelDatePicker(new UsageDateRange(selectedDate, selectedDate), colors, singleFutureDate: true);
         var popup = new Popup { PlacementTarget = date, Placement = PlacementMode.Bottom, StaysOpen = false,
             AllowsTransparency = true, Child = calendar };
-        custom.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, Children = { date, hour, separator, minute, popup } });
+        custom.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, Children = { date, hour, separator, minute, period, popup } });
         date.Click += (_, _) => popup.IsOpen = !popup.IsOpen;
         popup.Opened += (_, _) => calendar.MoveFocus(new TraversalRequest(FocusNavigationDirection.First));
         calendar.Applied += range =>
@@ -128,6 +138,7 @@ internal sealed class ReminderDialog : ControlDialog
         };
         hour.TextChanged += (_, _) => UpdatePreview();
         minute.TextChanged += (_, _) => UpdatePreview();
+        period.SelectionChanged += (_, _) => UpdatePreview();
         UpdatePreview();
 
         DateTimeOffset? GetDue(DateTimeOffset now)
@@ -139,14 +150,23 @@ internal sealed class ReminderDialog : ControlDialog
                 0 => now.AddMinutes(10), 1 => now.AddMinutes(30), 2 => now.AddHours(1),
                 3 => evening > now ? evening : At(now.Date.AddDays(1).AddHours(19)),
                 4 => At(now.Date.AddDays(1).AddHours(9)),
-                _ => int.TryParse(hour.Text, NumberStyles.None, CultureInfo.InvariantCulture, out int h) && h is >= 0 and < 24
-                    && int.TryParse(minute.Text, NumberStyles.None, CultureInfo.InvariantCulture, out int m) && m is >= 0 and < 60
-                    ? At(selectedDate.AddHours(h).AddMinutes(m)) : null
+                _ => CustomTime() is { } clock ? At(selectedDate + clock.ToTimeSpan()) : null
             };
             if (due is not { } value || value <= now) return null;
             if (rule == ReminderRepeat.Weekdays && value.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday)
                 return At(value.DateTime.AddDays(value.DayOfWeek == DayOfWeek.Saturday ? 2 : 1));
             return value;
+        }
+
+        TimeOnly? CustomTime()
+        {
+            if (!int.TryParse(hour.Text, NumberStyles.None, CultureInfo.InvariantCulture, out int h) ||
+                !int.TryParse(minute.Text, NumberStyles.None, CultureInfo.InvariantCulture, out int m) || m is < 0 or >= 60)
+                return null;
+            if (use24Hour) return h is >= 0 and < 24 ? new TimeOnly(h, m) : null;
+            return h is >= 1 and <= 12 && period.SelectedIndex >= 0
+                ? new TimeOnly(h % 12 + period.SelectedIndex * 12, m)
+                : null;
         }
 
         void UpdatePreview()
@@ -158,7 +178,7 @@ internal sealed class ReminderDialog : ControlDialog
             {
                 string day = value.Date == now.Date ? Loc.T("今天", "Today") :
                     value.Date == now.Date.AddDays(1) ? Loc.T("明天", "Tomorrow") : value.ToString("ddd d MMM", Loc.Culture);
-                string clock = value.ToString("t", Loc.Culture);
+                string clock = value.ToString(timePattern, Loc.Culture);
                 summary.Text = Loc.T($"{day} {clock}", $"{day} at {clock}");
                 var remaining = value - now;
                 int minutes = (int)Math.Ceiling(remaining.TotalMinutes);
@@ -171,7 +191,9 @@ internal sealed class ReminderDialog : ControlDialog
             else
             {
                 summary.Text = Loc.T("请选择将来的日期和时间。", "Choose a date and time in the future.");
-                relative.Text = Loc.T("请输入 24 小时制时间，例如 14:30。", "Enter a 24-hour time, for example 14:30.");
+                relative.Text = use24Hour
+                    ? Loc.T("请输入 24 小时制时间，例如 14:30。", "Enter a 24-hour time, for example 14:30.")
+                    : Loc.T("请输入 12 小时制时间，例如 2:30 PM。", "Enter a 12-hour time, for example 2:30 PM.");
             }
             FrameworkElementAutomationPeer.FromElement(summary)?.RaiseAutomationEvent(AutomationEvents.LiveRegionChanged);
         }

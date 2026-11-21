@@ -90,6 +90,7 @@ public static class CompactParts
     public static List<CompactPart> Normalize(IEnumerable<CompactPart>? order) => [.. (order ?? []).Where(part => Enum.IsDefined(part)).Concat(Missing).Distinct()];
 }
 // Saved settings keep the number, so a new style goes at the end.
+public enum ClockTimeFormat { System, Hour12, Hour24 }
 public enum ClockStyle { Minimal, Stacked, Digits, Dots, Segment, Neon, Serif, Wide, Condensed, Pixel, Rounded }
 // Every clock style takes this one color. Gradient spreads ClockGradient across the digits, Custom is ClockCustomColor,
 // and Cover follows the color picked from the playing song's cover. Saved as numbers, so new members go at the end.
@@ -505,7 +506,15 @@ public sealed class DeckSettings
     public ClockColor ClockColor { get; set; }
     public string ClockCustomColor { get; set; } = ClockColors.DefaultCustom;
     public List<string> ClockGradient { get; set; } = [.. ClockColors.Sunset];
-    public bool Clock24Hour { get; set; } = true;
+    public ClockTimeFormat TimeFormat { get; set; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public bool? Clock24Hour { get; set; }
+    [JsonIgnore] public string TimePattern => TimeFormat switch
+    {
+        ClockTimeFormat.Hour12 => "h:mm tt",
+        ClockTimeFormat.Hour24 => "HH:mm",
+        _ => System.Globalization.DateTimeFormatInfo.CurrentInfo.ShortTimePattern
+    };
+    [JsonIgnore] public bool Uses24HourClock => TimePattern.Contains('H');
     public bool ClockSeconds { get; set; }
     public CompactMusicText MusicText { get; set; }
     public bool MusicTrackNotice { get; set; } = true;
@@ -1012,6 +1021,10 @@ public sealed class DeckSettings
         if (!Enum.IsDefined(MusicText)) MusicText = CompactMusicText.None;
         if (!Enum.IsDefined(MusicLyricsLayout)) MusicLyricsLayout = MusicLyricsLayout.Columns;
         if (!Enum.IsDefined(MusicLyricsAlign)) MusicLyricsAlign = MusicLyricsAlign.Left;
+        if (!Enum.IsDefined(TimeFormat)) TimeFormat = ClockTimeFormat.System;
+        if (TimeFormat == ClockTimeFormat.System && Clock24Hour is { } legacyClock)
+            TimeFormat = legacyClock ? ClockTimeFormat.Hour24 : ClockTimeFormat.Hour12;
+        Clock24Hour = null;
         if (!Enum.IsDefined(ClockStyle)) ClockStyle = ClockStyle.Minimal;
         if (!Enum.IsDefined(ClockColor)) ClockColor = ClockColor.White;
         ClockCustomColor = AppPresets.NormalizeColor(ClockCustomColor) is { Length: > 0 } custom ? custom : ClockColors.DefaultCustom;

@@ -468,7 +468,22 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
             followRow = Toggle(Loc.T("字体应用到设置窗口", "Apply font to settings window"), S.SettingsFollowsFont,
                 on => { Change(s => s.SettingsFollowsFont = on); RebuildTheme(); });
         }
-        Group(Row(Loc.T("主题", "Theme"),SegmentBorder(themes)),Row(Loc.T("语言", "Language"),language),Row(Loc.T("缩放", "Scale"),scale),transparency,
+        var timeFormats = new UniformGrid { Columns = 3, Width = 292 };
+        foreach (var (format, name) in new[]
+        {
+            (ClockTimeFormat.System, Loc.T("跟随系统", "System")),
+            (ClockTimeFormat.Hour12, Loc.T("12 小时制", "12-hour")),
+            (ClockTimeFormat.Hour24, Loc.T("24 小时制", "24-hour"))
+        })
+        {
+            var choice = new RadioButton { Style = (Style)FindResource("SettingsSegment"), Content = name,
+                IsChecked = S.TimeFormat == format, GroupName = "TimeFormat" };
+            AutomationProperties.SetName(choice, name);
+            choice.Checked += (_, _) => Change(s => s.TimeFormat = format);
+            timeFormats.Children.Add(choice);
+        }
+        Group(Row(Loc.T("主题", "Theme"),SegmentBorder(themes)),Row(Loc.T("语言", "Language"),language),
+            Row(Loc.T("时间格式", "Time format"), SegmentBorder(timeFormats)),Row(Loc.T("缩放", "Scale"),scale),transparency,
             fontRow,followRow,Row(Loc.T("字体预览", "Font preview"),fontSample));
         Interaction(); WindowRules();
     }
@@ -658,13 +673,13 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
         {
             switch(_page)
             {
-                case 0:s.LaunchAtStartup=false;s.ShowTrayIcon=defaults.ShowTrayIcon;s.MemoryMode=defaults.MemoryMode;s.Theme=defaults.Theme;s.Language=Loc.SystemLanguage();s.OpenDelay=defaults.OpenDelay;s.ClickToExpand=defaults.ClickToExpand;s.CloseDelay=defaults.CloseDelay;s.Animations=defaults.Animations;s.AnimationDuration=defaults.AnimationDuration;s.AlwaysOnTop=defaults.AlwaysOnTop;s.ForceTopmost=defaults.ForceTopmost;s.Maximized=defaults.Maximized;s.Borderless=defaults.Borderless;s.Exclusive=defaults.Exclusive;s.Occupied=defaults.Occupied;s.FullscreenRules=[];s.PanelScale=defaults.PanelScale;s.SurfaceTransparency=defaults.SurfaceTransparency;s.UiFont=defaults.UiFont;s.SettingsFollowsFont=defaults.SettingsFollowsFont;
+                case 0:s.LaunchAtStartup=false;s.ShowTrayIcon=defaults.ShowTrayIcon;s.MemoryMode=defaults.MemoryMode;s.Theme=defaults.Theme;s.TimeFormat=defaults.TimeFormat;s.Language=Loc.SystemLanguage();s.OpenDelay=defaults.OpenDelay;s.ClickToExpand=defaults.ClickToExpand;s.CloseDelay=defaults.CloseDelay;s.Animations=defaults.Animations;s.AnimationDuration=defaults.AnimationDuration;s.AlwaysOnTop=defaults.AlwaysOnTop;s.ForceTopmost=defaults.ForceTopmost;s.Maximized=defaults.Maximized;s.Borderless=defaults.Borderless;s.Exclusive=defaults.Exclusive;s.Occupied=defaults.Occupied;s.FullscreenRules=[];s.PanelScale=defaults.PanelScale;s.SurfaceTransparency=defaults.SurfaceTransparency;s.UiFont=defaults.UiFont;s.SettingsFollowsFont=defaults.SettingsFollowsFont;
                     s.ClickThrough=defaults.ClickThrough;s.ClickThroughPanel=defaults.ClickThroughPanel;s.ClickThroughKeyboard=defaults.ClickThroughKeyboard;s.WindowCapture=defaults.WindowCapture;break;
                 case HotkeysPage:foreach(var kind in Enum.GetValues<HotkeyKind>())s.SetHotkey(kind,defaults.Hotkey(kind));break;
                 case 1:s.Style=defaults.Style;s.NotchSummary=defaults.NotchSummary;s.NotchMusic=defaults.NotchMusic;s.CapsuleSummary=defaults.CapsuleSummary;s.CapsuleMusic=defaults.CapsuleMusic;s.MusicIndicatorProgress=defaults.MusicIndicatorProgress;
                     s.NotchFocus=defaults.NotchFocus;s.CapsuleFocus=defaults.CapsuleFocus;
                     s.NotchWeather=defaults.NotchWeather;s.CapsuleWeather=defaults.CapsuleWeather;
-                    s.NotchEqualizer=defaults.NotchEqualizer;s.CapsuleEqualizer=defaults.CapsuleEqualizer;s.NotchClock=defaults.NotchClock;s.CapsuleClock=defaults.CapsuleClock;s.ClockStyle=defaults.ClockStyle;s.ClockColor=defaults.ClockColor;s.ClockCustomColor=defaults.ClockCustomColor;s.ClockGradient=[.. PanelTheme.Current.ClockGradients[0].Stops];s.Clock24Hour=defaults.Clock24Hour;s.ClockSeconds=defaults.ClockSeconds;CopyCollapsedSize(s,defaults);s.GripDoubleClick=defaults.GripDoubleClick;
+                    s.NotchEqualizer=defaults.NotchEqualizer;s.CapsuleEqualizer=defaults.CapsuleEqualizer;s.NotchClock=defaults.NotchClock;s.CapsuleClock=defaults.CapsuleClock;s.ClockStyle=defaults.ClockStyle;s.ClockColor=defaults.ClockColor;s.ClockCustomColor=defaults.ClockCustomColor;s.ClockGradient=[.. PanelTheme.Current.ClockGradients[0].Stops];s.ClockSeconds=defaults.ClockSeconds;CopyCollapsedSize(s,defaults);s.GripDoubleClick=defaults.GripDoubleClick;
                     s.NotchMonitor=defaults.NotchMonitor;s.CapsuleMonitor=defaults.CapsuleMonitor;s.NotchDevices=defaults.NotchDevices;s.CapsuleDevices=defaults.CapsuleDevices;s.NotchOrder=defaults.NotchOrder;s.CapsuleOrder=defaults.CapsuleOrder;s.NotchTransfer=defaults.NotchTransfer;s.CapsuleTransfer=defaults.CapsuleTransfer;
                     // The clock goes back to the one the panel theme suggests, as choosing the theme gives.
                     PanelThemes.ApplyClock(PanelTheme.Current,s);break;
