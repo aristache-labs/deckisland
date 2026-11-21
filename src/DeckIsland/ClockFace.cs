@@ -31,15 +31,18 @@ internal sealed class ClockFace : FrameworkElement
     // geometry, so a scaled outline is the same as one built at the larger size.
     private readonly double _scale;
     private readonly bool _plain;
+    // On a side edge the face stands as hours over minutes, with AM or PM under them on the 12-hour clock.
+    private readonly bool _vertical;
 
     // One color fills the face; more are spread evenly across it from left to right.
     // look: the look of the panel it is drawn on (MainWindow.Look); the main look by default.
-    public ClockFace(ClockStyle style, bool h24, bool seconds, Color[] colors, DateTime time, double scale = 1, PanelLook? look = null)
+    public ClockFace(ClockStyle style, bool h24, bool seconds, Color[] colors, DateTime time, double scale = 1, PanelLook? look = null, bool vertical = false)
     {
         var Look = look ?? PanelTheme.Main;
         _style = style; _h24 = h24; _seconds = seconds; _colors = colors.Length > 0 ? colors : [ThemeWhite(Look)]; _time = time;
         _scale = CompactMusicLayout.SafeScale(scale);
-        Height = FaceHeight * _scale; IsHitTestVisible = false;
+        _vertical = vertical;
+        Height = (vertical ? (h24 ? 29 : 42) : FaceHeight) * _scale; IsHitTestVisible = false;
         // Under high contrast nothing is dimmed or glows (ClockColors.Glows).
         _plain = Look.HighContrast;
         if (!ClockColors.Glows(style, _plain)) return;
@@ -101,14 +104,15 @@ internal sealed class ClockFace : FrameworkElement
             return _reserved.Value;
         }
     }
-    private double MeasureReserved() =>
+    private double MeasureReserved() => _vertical ? Math.Max(RunWidth(new Run("00", Bold, 13)), RunWidth(new Run("AM", Plain, 9, Opacity: .7, Cells: false))) :
         Enumerable.Range(22, 7).SelectMany(day => new[] { 10, 22 }.Select(hour => new DateTime(2025, 12, day, hour, 0, 0)))
         .Max(time => Layout(null, time, 0, Brushes.White));
 
-    protected override Size MeasureOverride(Size availableSize) => new(ReservedWidth, FaceHeight * _scale);
+    protected override Size MeasureOverride(Size availableSize) => new(ReservedWidth, Height);
 
     protected override void OnRender(DrawingContext dc)
     {
+        if (_vertical) { RenderVertical(dc); return; }
         double width = Layout(null, _time, 0, Brushes.White), scale = VisualTreeHelper.GetDpi(this).DpiScaleX;
         // The start is a whole device pixel after scaling, as at the default size.
         double x = Math.Round((ReservedWidth - width * _scale) / 2 * scale) / scale / _scale;
@@ -117,6 +121,19 @@ internal sealed class ClockFace : FrameworkElement
         paint.Freeze();
         if (_scale != 1) dc.PushTransform(new ScaleTransform(_scale, _scale));
         Layout(dc, _time, x, paint);
+        if (_scale != 1) dc.Pop();
+    }
+
+    private void RenderVertical(DrawingContext dc)
+    {
+        Brush paint = Fill(_colors);
+        paint.Freeze();
+        double width = ReservedWidth / _scale;
+        string hour = (_h24 ? _time.Hour : _time.Hour % 12 == 0 ? 12 : _time.Hour % 12).ToString("00", CultureInfo.InvariantCulture);
+        var lines = new List<(Run Run, double Middle)> { (new Run(hour, Bold, 13), 7), (new Run(_time.ToString("mm", CultureInfo.InvariantCulture), Bold, 13), 22) };
+        if (!_h24) lines.Add((new Run(_time.Hour < 12 ? "AM" : "PM", Plain, 9, Opacity: .7, Cells: false), 35));
+        if (_scale != 1) dc.PushTransform(new ScaleTransform(_scale, _scale));
+        foreach (var (run, middle) in lines) Draw(dc, (width - RunWidth(run)) / 2, Baseline(run, middle), paint, run);
         if (_scale != 1) dc.Pop();
     }
 

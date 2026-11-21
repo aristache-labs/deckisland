@@ -137,9 +137,10 @@ public partial class MainWindow
     private CollapsedShape HudThin(CollapsedShape shape)
     {
         if (_hudMessage is not { Text.Length: > 0 } || shape.Style != CompactStyle.Notch || !ColumnFor(CompactStyle.Notch)) return shape;
-        double line = Math.Max(Math.Round(14 * shape.Scale), Math.Max(1, CompactMusicLayout.Whole(16 * shape.Scale)));
-        double length = Math.Round(CollapsedLimits.BaseHeight * shape.Scale);
-        double inset = Math.Max(2, Math.Round((length - line) / 2));
+        // The content box is the row's own (26 DIP at the notch's scale, which the height setting gives), with small ends.
+        double line = Math.Max(1, CompactMusicLayout.Whole(26 * shape.Scale));
+        double inset = Math.Max(2, Math.Round(5 * shape.Scale));
+        double length = line + 2 * inset;
         double x = Math.Max(0, shape.Surface.X + (shape.Surface.Width - length) / 2);
         return shape with { Surface = shape.Surface with { X = x, Width = length }, Inset = inset, ContentWidth = Math.Max(0, length - 2 * inset),
             BottomRadius = Math.Min(shape.BottomRadius, inset), Shoulder = Math.Min(shape.Shoulder, inset) };
@@ -151,11 +152,13 @@ public partial class MainWindow
     {
         if (hud.Text.Length == 0) { RenderHudVertical(hud, scale, dpi, column, room); return; }
         double pad = Math.Round(28 * scale);
-        var (parts, natural) = BuildHudRow(hud, scale, dpi, Math.Round(360 * scale));
+        // Across: as wide as the readout, up to the width set for the notch (Size and position).
+        double saved = Settings.NotchWidth * _scale;
+        var (parts, natural) = BuildHudRow(hud, scale, dpi, Math.Min(Math.Round(360 * scale), Math.Max(Math.Round(60 * scale), saved - pad)));
         double row = Math.Max(1, CompactMusicLayout.Whole(26 * scale));
         double wantedColumn = CompactColumn.Width(scale, [natural + pad], []);
-        // As thin along the edge as the notch's shoulders allow: the one line of text and nothing more.
-        double line = Math.Max(Math.Round(14 * scale), Math.Max(1, CompactMusicLayout.Whole(16 * scale)));
+        // Along the edge: the row's own height, as at the top.
+        double line = Math.Max(1, CompactMusicLayout.Whole(26 * scale));
         double wanted = DevicePixels.Up(line, dpi);
         if (double.IsNaN(_compactWanted) || Math.Abs(wanted - _compactWanted) > .5 || Math.Abs(line - _compactRequired) > .5 || double.IsNaN(_compactColumn) || Math.Abs(wantedColumn - _compactColumn) > .5)
         {

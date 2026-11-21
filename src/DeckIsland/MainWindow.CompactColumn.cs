@@ -50,7 +50,7 @@ public partial class MainWindow
         var liveApps = !FocusCompactOnly && Show(CompactPart.Rings) && Settings.ShowsSummary(EffectiveStyle) ? RunningQuotaApps() : [];
         _visibleQuotaAgentIds = liveApps.Select(entry => entry.InstanceId).ToArray();
         var apps = notice ? [] : liveApps;
-        var clock = Show(CompactPart.Clock) && Settings.ShowsClock(EffectiveStyle) ? new ClockFace(Settings.ClockStyle, Settings.Uses24HourClock, Settings.ClockSeconds, ClockFace.Palette(Settings, CoverColor, Look), DateTime.Now, scale, Look) : null;
+        var clock = Show(CompactPart.Clock) && Settings.ShowsClock(EffectiveStyle) ? new ClockFace(Settings.ClockStyle, Settings.Uses24HourClock, Settings.ClockSeconds, ClockFace.Palette(Settings, CoverColor, Look), DateTime.Now, scale, Look, vertical: true) : null;
         var transfer = TransferBadge(scale, Show(CompactPart.Transfer));
         var devices = Show(CompactPart.Devices) ? CompactDevices(scale) : null;
         var weather = Show(CompactPart.Weather) ? CompactWeather(scale) : null;
@@ -186,7 +186,8 @@ public partial class MainWindow
     private FrameworkElement ColumnRings(IReadOnlyList<AppEntry> apps, CompactMusicLayout layout, double gap, double column, out double height)
     {
         var rings = QuotaRings(apps);
-        var (perLine, count) = CompactColumn.Rings(rings.Length, layout.RingSize, gap, column);
+        // One ring under another, never two side by side.
+        var (perLine, count) = (1, rings.Length);
         height = count * layout.RingSize + Math.Max(0, count - 1) * gap;
         var canvas = new Canvas { Width = column, Height = height, ToolTip = string.Join("\n", rings.Select(ring => ring.Tip)) };
         for (int i = 0; i < rings.Length; i++)
