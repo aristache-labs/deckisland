@@ -885,7 +885,7 @@ public partial class MainWindow : Window
         // The smooth memory mode holds off full collections while a panel is open (App.UpdateCollectionLatency).
         if (expanded && !wasExpanded) _app.UpdateCollectionLatency();
         _escapeDismissal?.SetEnabled(HoldsEscape);
-        if (!expanded) { CloseSourceMenu(); _popupReturnArea = null; _leave.Stop(); _pageSwitchHold.Stop(); _detailPopup?.Close(); }
+        if (!expanded) { if (_toolPinned) SetToolPin(false); CloseSourceMenu(); _popupReturnArea = null; _leave.Stop(); _pageSwitchHold.Stop(); _detailPopup?.Close(); }
         if (wasExpanded && !expanded) PanelClosed();
         Collapsed = ShapeFor(EffectiveStyle);
         var shape = Collapsed;
@@ -1227,7 +1227,7 @@ public partial class MainWindow : Window
     }
     internal void CheckPointerExit(Point screenPoint)
     {
-        if (IsHotkeyPinned || Resizing || ReminderAlertId is not null) { _leave.Stop(); return; }
+        if (IsHotkeyPinned || ToolPinHolds || Resizing || ReminderAlertId is not null) { _leave.Stop(); return; }
         if (_pointerInside || _preview || _pageSwitchHold.IsEnabled || _detailPopup is not null || MediaSourceButton.ContextMenu?.IsOpen == true || ShelfHolds) { _leave.Stop(); return; }
         // Closing a calendar with either button must leave a path back to the results.
         // Keep checking until the cursor leaves that area; entering the island restores normal hover behavior.

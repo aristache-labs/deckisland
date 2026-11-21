@@ -1,0 +1,8 @@
+# Add directories or file patterns to ignore during indexing (e.g. foo/ or *.csv)
+TokenEconomizer/**
+**/TokenEconomizer/**
+**/TokenEconomizer.csproj
+**/TokenEconomizer.csproj.user
+**/TokenEconomizer.csproj.user.props
+**/TokenEconomizer.csproj.user.targets
+**/TokenEconomizer.csproj.user.props

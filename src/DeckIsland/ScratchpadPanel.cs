@@ -43,8 +43,10 @@ public partial class MainWindow
         var title = WeatherText(Loc.T("代码草稿", "Code scratchpad"), 14);
         title.FontWeight = FontWeights.SemiBold;
         var chip = PickerChip(Scratchpad.Name(language), PickScratchLanguage);
-        chip.HorizontalAlignment = HorizontalAlignment.Right;
-        var top = new Grid { Margin = new Thickness(0, 0, 0, 8), Children = { title, chip } };
+        var pin = ToolPinButton();
+        pin.Margin = new Thickness(8, 0, 0, 0);
+        var right = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Children = { chip, pin } };
+        var top = new Grid { Margin = new Thickness(0, 0, 0, 8), Children = { title, right } };
 
         var editor = new TextEditor
         {
