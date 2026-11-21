@@ -1,7 +1,7 @@
-using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows.Threading;
 using DeckIsland.Core;
+using DeckIsland.Native;
 using NAudio.CoreAudioApi;
 
 namespace DeckIsland;
@@ -14,17 +14,17 @@ public partial class App
     private const string LiveGreen = "#30D158";
     internal event Action? CallsChanged;
     private MMDeviceEnumerator? _callDevices;
-    private DateTime? _micLiveSince;
+    private long? _micLiveSince;
+    private long _micLastSeen;
     private string _micLiveApp = "";
     private bool? _micMuted;
-    private bool _callShown;
+    private bool _callShown, _checkingCalls;
     // Until when a readout that goes by (volume, a lock key...) is on the island: the call pill waits for it.
     private DateTime _hudTransientUntil;
 
     internal bool MicMuted => _micMuted == true;
-    internal bool MicLive => _micLiveSince is not null;
     internal string MicLiveApp => _micLiveApp;
-    internal TimeSpan? MicLiveFor => _micLiveSince is { } since ? DateTime.UtcNow - since : null;
+    internal TimeSpan? MicLiveFor => _micLiveSince is { } since ? TimeSpan.FromMilliseconds(Environment.TickCount64 - since) : null;
 
     private MMDevice? CaptureDevice()
     {
@@ -34,49 +34,80 @@ public partial class App
 
     internal void ToggleMicMute()
     {
-        if (CaptureDevice() is not { } device) return;
+        using var device = CaptureDevice();
+        if (device is null) return;
         try { device.AudioEndpointVolume.Mute = !device.AudioEndpointVolume.Mute; }
         catch (Exception error) when (error is COMException or InvalidOperationException) { return; }
-        CheckCalls();
+        if (ReadMicMute()) CallsChanged?.Invoke();
+        UpdateCallHud();
     }
 
     private void StartCalls()
     {
         var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
-        timer.Tick += (_, _) => CheckCalls();
+        timer.Tick += async (_, _) => await CheckCallsAsync();
         timer.Start();
         _hudKeep.Add(timer);
+        _hudSources.Add(new Disposer(() => _callDevices?.Dispose()));
     }
 
-    private void CheckCalls()
+    private bool ReadMicMute()
     {
         bool? muted = null;
-        try { if (CaptureDevice() is { } device) muted = device.AudioEndpointVolume.Mute; }
+        try { using var device = CaptureDevice(); muted = device?.AudioEndpointVolume.Mute; }
         catch (Exception error) when (error is COMException or InvalidOperationException) { }
-        bool live = false;
+        if (muted == _micMuted) return false;
+        bool first = _micMuted is null;
+        _micMuted = muted;
+        if (!first && muted is { } now && Settings.MicHud)
+            ShowHud(new("mic", now ? HudIcon.MicOff : HudIcon.Mic, now ? "Microphone muted" : "Microphone on", Lit: !now));
+        return true;
+    }
+
+    private async Task CheckCallsAsync()
+    {
+        if (_checkingCalls || Exiting) return;
+        _checkingCalls = true;
         try
         {
-            var apps = LiveApps("microphone").Where(app => !HudFormat.Ignored(Settings.SensorIgnoredApps, app)).ToList();
-            live = apps.Count > 0; _micLiveApp = live ? apps[0] : "";
+            bool mutedChanged = ReadMicMute();
+            var active = await Task.Run(() =>
+            {
+                var names = CallAudio.ActiveInputApps();
+                names.AddRange(ReadSensorApps("microphone"));
+                return names;
+            });
+            if (Exiting) return;
+            _sensorMicrophoneApps = active;
+            UpdateSensorIndicator();
+            string? app = CallAudio.MeetingOwner(active, Settings.SensorIgnoredApps, _micLiveApp);
+            long now = Environment.TickCount64;
+            bool wasLive = _micLiveSince is not null;
+            if (app is not null)
+            {
+                if (!app.Equals(_micLiveApp, StringComparison.OrdinalIgnoreCase)) _micLiveSince = now;
+                _micLiveApp = app;
+                _micLastSeen = now;
+            }
+            else if (now - _micLastSeen >= 1500)
+            {
+                _micLiveSince = null;
+                _micLiveApp = "";
+            }
+
+            if (mutedChanged || wasLive || _micLiveSince is not null) CallsChanged?.Invoke();
+            UpdateCallHud();
         }
-        catch (Exception error) when (error is System.Security.SecurityException or UnauthorizedAccessException or IOException) { }
-        bool changed = live != (_micLiveSince is not null) || muted != _micMuted;
-        if (muted != _micMuted)
-        {
-            bool first = _micMuted is null;
-            _micMuted = muted;
-            if (!first && muted is { } now && Settings.MicHud)
-                ShowHud(new("mic", now ? HudIcon.MicOff : HudIcon.Mic, now ? "Microphone muted" : "Microphone on", Lit: !now));
-        }
-        if (live && _micLiveSince is null) _micLiveSince = DateTime.UtcNow;
-        else if (!live) _micLiveSince = null;
-        // While live the tab shows the running time, so it hears every second.
-        if (changed || live) CallsChanged?.Invoke();
-        if (Settings.CallTimer && _micLiveSince is { } since)
+        finally { _checkingCalls = false; }
+    }
+
+    private void UpdateCallHud()
+    {
+        if (Settings.CallTimer && MicLiveFor is { } span)
         {
             if (DateTime.UtcNow < _hudTransientUntil) return;
-            string time = HudFormat.Duration(DateTime.UtcNow - since);
-            bool off = muted == true;
+            string time = HudFormat.Duration(span);
+            bool off = MicMuted;
             ShowHud(new("call", off ? HudIcon.MicOff : HudIcon.Mic, time, Figure: off ? "muted" : "live", FigureColor: off ? null : LiveGreen, Lit: !off,
                 Hold: TimeSpan.Zero, Label: $"{(off ? "Muted call" : "Call")} {time}"));
             _callShown = true;

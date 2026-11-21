@@ -25,7 +25,8 @@ public partial class App
         if (message.Key != "call" && message.Hold is { } hold && hold > TimeSpan.Zero) _hudTransientUntil = DateTime.UtcNow + hold;
         bool inline = false;
         foreach (var deck in Decks.ToList()) inline |= deck.ShowHudInline(message);
-        if (inline) { _hud?.Clear(message.Key); return; }
+        if (inline || message.Key == "call" && Decks.Any(deck => deck.IsVisible && deck.IsExpanded && deck.CurrentPage == DeckPage.Calls))
+        { _hud?.Clear(message.Key); return; }
         _hud ??= new HudWindow();
         _hud.Present(message, PanelTheme.Main);
     }

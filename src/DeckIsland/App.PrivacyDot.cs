@@ -1,28 +1,19 @@
 using System.IO;
-using System.Runtime.InteropServices;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Interop;
-using System.Windows.Media;
-using System.Windows.Shapes;
+using System.Windows.Automation;
 using System.Windows.Threading;
 using DeckIsland.Core;
+using DeckIsland.Native;
 using Microsoft.Win32;
 
 namespace DeckIsland;
 
-// A dot at the island's edge while the microphone, camera or screen capture is live. Windows keeps who uses what in its privacy
-// store (CapabilityAccessManager): an entry whose LastUsedTimeStop is 0 is in use now. Only the program names are read.
+// External privacy activity comes from Windows and the call monitor. Calls reports its own previews directly.
 public partial class App
 {
     private const string ConsentRoot = @"Software\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\";
-    private static readonly (string Capability, string Label, Color Color)[] Sensors =
-    [
-        ("webcam", "Camera", Color.FromRgb(0x30, 0xD1, 0x58)),
-        ("microphone", "Microphone", Color.FromRgb(0xFF, 0x9F, 0x0A)),
-        ("graphicsCaptureProgrammatic", "Screen", Color.FromRgb(0x0A, 0x84, 0xFF))
-    ];
-    private PrivacyDotWindow? _privacyDot;
+    private IReadOnlyList<string> _sensorCameraApps = [], _sensorMicrophoneApps = [], _sensorScreenApps = [];
+    private bool _unattributedCameraStream;
 
     private static IEnumerable<string> LiveApps(string capability)
     {
@@ -47,56 +38,102 @@ public partial class App
 
     private void StartSensors()
     {
-        var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
-        timer.Tick += (_, _) =>
+        var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+        var camera = new CameraFrameServer();
+        bool reading = false;
+        timer.Tick += async (_, _) =>
         {
-            if (!Settings.SensorIndicator) { _privacyDot?.Hide(); return; }
-            List<(string Label, Color Color, string App)> live = [];
+            if (Exiting || reading) return;
+            if (!Settings.SensorIndicator) { UpdateSensorIndicator(); return; }
+
+            reading = true;
             try
             {
-                foreach (var (capability, label, color) in Sensors)
-                    foreach (var app in LiveApps(capability).Where(app => !HudFormat.Ignored(Settings.SensorIgnoredApps, app)).Distinct())
-                        live.Add((label, color, app));
+                bool checkingOwnCamera = Decks.Any(deck => deck?.CameraPreviewActive == true);
+                (_sensorCameraApps, _unattributedCameraStream, _sensorScreenApps) = await Task.Run(() =>
+                {
+                    var apps = ReadSensorApps("webcam").Where(name => !CallAudio.IsDeckIsland(name)).ToArray();
+                    return (apps, !checkingOwnCamera && apps.Length == 0 && camera.IsActive(), ReadSensorApps("graphicsCaptureProgrammatic"));
+                });
+                UpdateSensorIndicator();
             }
-            catch (Exception error) when (error is System.Security.SecurityException or UnauthorizedAccessException or IOException) { }
-            if (live.Count == 0) { _privacyDot?.Hide(); return; }
-            _privacyDot ??= new PrivacyDotWindow();
-            _privacyDot.Present(live[0].Color, string.Join("\n", live.Select(item => $"{item.Label}: {item.App}")), Deck);
+            finally { reading = false; }
         };
         timer.Start();
         _hudKeep.Add(timer);
-        _hudSources.Add(new Disposer(() => _privacyDot?.Close()));
+    }
+
+    private static string[] ReadSensorApps(string capability)
+    {
+        try { return LiveApps(capability).ToArray(); }
+        catch (Exception error) when (error is System.Security.SecurityException or UnauthorizedAccessException or IOException) { return []; }
+    }
+
+    internal void UpdateSensorIndicator()
+    {
+        if (Exiting) return;
+        var decks = Decks.Where(deck => deck is not null).ToArray();
+        var uses = new List<string>();
+        string? color = null;
+
+        if (Settings.SensorIndicator)
+        {
+            bool preview = decks.Any(deck => deck.CameraPreviewActive);
+            if (preview) _unattributedCameraStream = false;
+            Add(Loc.T("摄像头", "Camera"), "#30D158", _sensorCameraApps, preview);
+            if (!preview && _sensorCameraApps.Count == 0 && _unattributedCameraStream)
+            {
+                color = "#30D158";
+                uses.Add(Loc.T("摄像头正在使用", "Camera in use"));
+            }
+            Add(Loc.T("麦克风", "Microphone"), "#FF9F0A", _sensorMicrophoneApps, decks.Any(deck => deck.MicrophoneTestActive));
+            Add(Loc.T("屏幕", "Screen"), "#0A84FF", _sensorScreenApps);
+        }
+        string? description = uses.Count > 0 ? string.Join("\n", uses) : null;
+        foreach (var deck in decks) deck.ShowSensorIndicator(color, description);
+
+        void Add(string label, string tint, IReadOnlyList<string> apps, bool ownPreview = false)
+        {
+            // The preview lifetime is authoritative for this process, even if Windows still lists it after closing.
+            var names = apps.Where(name => !CallAudio.IsDeckIsland(name));
+            if (ownPreview) names = names.Append("DeckIsland");
+            foreach (string name in names.Distinct(StringComparer.OrdinalIgnoreCase))
+            {
+                if (HudFormat.Ignored(Settings.SensorIgnoredApps, name)) continue;
+                color ??= tint;
+                uses.Add($"{label}: {name}");
+            }
+        }
     }
 }
 
-internal sealed class PrivacyDotWindow : Window
+public partial class MainWindow
 {
-    [DllImport("user32.dll")] private static extern int GetWindowLong(IntPtr window, int index);
-    [DllImport("user32.dll")] private static extern int SetWindowLong(IntPtr window, int index, int value);
-
-    private readonly Ellipse _dot = new() { Width = 10, Height = 10 };
-
-    internal PrivacyDotWindow()
+    internal void ShowSensorIndicator(string? color, string? description)
     {
-        WindowStyle = WindowStyle.None; AllowsTransparency = true; Background = Brushes.Transparent; ShowInTaskbar = false;
-        Topmost = true; ShowActivated = false; ResizeMode = ResizeMode.NoResize; Width = 22; Height = 22;
-        Content = new Grid { Background = Brushes.Transparent, Children = { _dot } };
-        SourceInitialized += (_, _) =>
+        if (color is null)
         {
-            var handle = new WindowInteropHelper(this).Handle;
-            SetWindowLong(handle, -20, GetWindowLong(handle, -20) | 0x08000000 | 0x80);
-        };
+            SensorDot.Visibility = Visibility.Collapsed;
+            return;
+        }
+        SensorDot.Fill = UI.Brush(color);
+        if (!Equals(SensorDot.ToolTip, description))
+        {
+            SensorDot.ToolTip = description;
+            AutomationProperties.SetName(SensorDot, description?.Replace('\n', ','));
+        }
+        SensorDot.Visibility = Visibility.Visible;
+        PlaceSensorIndicator();
     }
 
-    internal void Present(Color color, string who, Window island)
+    private void PlaceSensorIndicator()
     {
-        _dot.Fill = new SolidColorBrush(color);
-        ToolTip = who;
-        System.Windows.Automation.AutomationProperties.SetName(this, who.Replace('\n', ',') + " in use");
-        // Only beside the collapsed island; an open one is already showing the pages.
-        if (island.ActualHeight > 90 || !island.IsVisible) { Hide(); return; }
-        Left = island.Left + island.ActualWidth - 20;
-        Top = island.Top + Math.Max(0, (island.ActualHeight - Height) / 2);
-        if (!IsVisible) Show();
+        if (SensorDot.Visibility != Visibility.Visible) return;
+        double width = IslandContent.ActualWidth, height = IslandContent.ActualHeight;
+        double size = Math.Min(8, Math.Min(width, height));
+        SensorDot.Width = SensorDot.Height = size;
+        double left = Math.Clamp((width - size) / 2, 0, _expanded ? 12 : 8);
+        double top = Math.Clamp((height - size) / 2, 0, _expanded ? 10 : _frame.Across ? 8 : height / 2);
+        SensorDot.Margin = new Thickness(left, top, 0, 0);
     }
 }

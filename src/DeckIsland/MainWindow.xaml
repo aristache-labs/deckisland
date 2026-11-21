@@ -192,6 +192,8 @@
               </Grid>
               <Border x:Name="ReminderAlertContent" Visibility="Collapsed"/>
           </Grid>
+          <Ellipse x:Name="SensorDot" Width="8" Height="8" HorizontalAlignment="Left" VerticalAlignment="Top"
+                   Visibility="Collapsed" AutomationProperties.AutomationId="SensorDot"/>
         </Grid>
       </local:IslandBorder>
     </Grid>

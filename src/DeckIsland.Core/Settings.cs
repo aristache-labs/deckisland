@@ -742,8 +742,9 @@ public sealed class DeckSettings
     public bool NotificationClockTimes { get; set; }
     // The Calls tab, the call timer (how long the microphone has been open) and the readout when the microphone is muted or unmuted.
     public bool CallsPage { get; set; } = true;
-    public double CallsWidth { get; set; } = 490;
-    public double CallsHeight { get; set; } = 280;
+    private const double DefaultCallsWidth = 450, DefaultCallsHeight = 200;
+    public double CallsWidth { get; set; } = DefaultCallsWidth;
+    public double CallsHeight { get; set; } = DefaultCallsHeight;
     public bool CallTimer { get; set; } = true;
     public bool MicHud { get; set; } = true;
     public bool MirrorNotifications { get; set; } = true;
@@ -1005,8 +1006,8 @@ public sealed class DeckSettings
         CornerPercent = Math.Clamp(CornerPercent, 0, 100);
         if (!Enum.IsDefined(MusicProgressLook)) MusicProgressLook = MusicProgressStyle.Wave;
         if (!Enum.IsDefined(MusicBackground)) MusicBackground = MusicCardBackground.AlbumColours;
-        CallsWidth = double.IsFinite(CallsWidth) ? Math.Clamp(CallsWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : 490;
-        CallsHeight = double.IsFinite(CallsHeight) ? Math.Clamp(CallsHeight, DeckPages.MinHeight, DeckPages.MaxHeight) : 280;
+        CallsWidth = double.IsFinite(CallsWidth) ? Math.Clamp(CallsWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : DefaultCallsWidth;
+        CallsHeight = double.IsFinite(CallsHeight) ? Math.Clamp(CallsHeight, DeckPages.MinHeight, DeckPages.MaxHeight) : DefaultCallsHeight;
         NotificationsWidth = double.IsFinite(NotificationsWidth) ? Math.Clamp(NotificationsWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : 490;
         NotificationsHeight = double.IsFinite(NotificationsHeight) ? Math.Clamp(NotificationsHeight, DeckPages.MinHeight, DeckPages.MaxHeight) : 280;
         NotificationSeconds = Math.Clamp(NotificationSeconds, 2, 15);
