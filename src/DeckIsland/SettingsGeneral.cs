@@ -50,6 +50,8 @@ public partial class SettingsWindow
         var body = new StackPanel { Margin = new Thickness(20, 2, 20, 2) };
         CardRows(body, rows);
         var frame = new StackPanel();
+        // A card with nothing under its header (a player that needs no setup) ends with the header.
+        bool empty = rows.Length == 0;
         if (title.Length > 0)
         {
             var about = TextLine(description, 12.5, TextSecondary);
@@ -60,9 +62,10 @@ public partial class SettingsWindow
             var header = new DockPanel { Margin = new Thickness(20, 16, 20, 14) };
             if (action is not null) { DockPanel.SetDock(action, Dock.Right); action.VerticalAlignment = VerticalAlignment.Center; action.Margin = new Thickness(16, 0, 0, 0); header.Children.Add(action); }
             header.Children.Add(text);
-            frame.Children.Add(header); frame.Children.Add(new Border { Height = 1, Background = UI.Brush(Divider) });
+            frame.Children.Add(header);
+            if (!empty) frame.Children.Add(new Border { Height = 1, Background = UI.Brush(Divider) });
         }
-        frame.Children.Add(body);
+        if (!empty) frame.Children.Add(body);
         Target.Children.Add(new Border
         {
             Background = UI.Brush(_palette.Card), BorderBrush = UI.Brush(_palette.Border), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(12),
@@ -140,6 +143,7 @@ public partial class SettingsWindow
                 toggle.Content = null; toggle.Padding = new Thickness(0);
                 var reshaped = new Grid();
                 var labelStack = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 20, 0), Children = { SettingLabel(AutomationProperties.GetName(toggle)) } };
+                Wrap(labelStack);
                 if (AutomationProperties.GetHelpText(frame) is { Length: > 0 } help) labelStack.Children.Add(Description(help));
                 toggle.HorizontalAlignment = HorizontalAlignment.Left; toggle.VerticalAlignment = VerticalAlignment.Center;
                 Grid.SetColumn(toggle, 1);

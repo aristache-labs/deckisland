@@ -267,7 +267,7 @@ public sealed partial class SettingsWindow
     {
         // The equalizer's way and color serve the collapsed and the expanded equalizer alike; each keeps its own length, and the
         // collapsed one's switch stays with the collapsed content (PartRow).
-        SectionTitle(Loc.T("通用", "General"));
+        SectionTitle(Loc.T("通用", "General"), description: Loc.T("强调色与收起时的律动条。", "The accent and the collapsed equalizer."));
         // The accent colours the collapsed equalizer, the card's progress bar and its level bars; the progress bar's look is the card's own.
         Group(Row(Loc.T("强调色", "Accent"), ColorSwatches("EqualizerColor", Loc.T("强调色 ", "Accent "), S.EqualizerColor, S.EqualizerCustomColor,
                 UI.Brush(PanelTheme.Hex("equalizer")), (chosen, custom) => Change(s => { s.EqualizerColor = chosen; s.EqualizerCustomColor = custom; }))),
@@ -276,7 +276,7 @@ public sealed partial class SettingsWindow
             MusicChoice(Loc.T("收起时律动条显示时机", "Collapsed equalizer shown"), S.EqualizerAlways, [(false, Loc.T("播放音乐时", "While music plays")), (true, Loc.T("始终显示", "Always"))],
                 v => Change(s => s.EqualizerAlways = v), help: Loc.T("在收起形态中打开律动条后生效。始终显示时，没有音乐播放也会显示，读取系统的全部声音。",
                     "Applies once the equalizer is switched on in the collapsed content. When always shown, it also shows while no music plays, reading all system sound.")));
-        SectionTitle(Loc.T("音乐卡片", "Music card"));
+        SectionTitle(Loc.T("音乐卡片", "Music card"), description: Loc.T("音乐页面上的卡片。", "The card on the music page."));
         Group(MusicChoice(Loc.T("背景", "Background"), S.MusicBackground, [(MusicCardBackground.AlbumColours, Loc.T("专辑配色", "Album colours")), (MusicCardBackground.Plain, Loc.T("纯色", "Plain"))],
                 v => Change(s => s.MusicBackground = v), help: Loc.T("音乐卡片的背景：封面的颜色化作柔和的光带，或灵动岛的纯色表面。卡片角落的调色板按钮也可以切换。",
                     "Behind the music card: the cover's colours in soft streaks, or the island's plain surface. The palette button in the card's corner switches it too.")),
@@ -287,7 +287,7 @@ public sealed partial class SettingsWindow
                     "How the card shows how far the song has played. Wave ripples while it plays and lies flat when paused; Pixels shimmer behind a glowing head; Comet pulses and sheds sparks; Song shape draws the song as bars; Simple is a plain line; Hearts fill one by one.")),
             Toggle(Loc.T("播放器音量", "Player volume"), S.MusicPlayerVolume, v => Change(s => s.MusicPlayerVolume = v),
                 help: Loc.T("卡片上的音量滑块调节正在播放的应用自己的音量，不是 Windows 的主音量。", "A volume slider on the card for the playing app's own volume, not Windows' master volume.")));
-        SectionTitle(Loc.T("收起时", "When collapsed"));
+        SectionTitle(Loc.T("收起时", "When collapsed"), description: Loc.T("收起时显示的音乐内容。", "What the collapsed island shows for music."));
         // The instrumental choice belongs to the lyric, so it shows only while the middle text is the lyric.
         var text = new List<FrameworkElement> { MusicChoice(Loc.T("中间文字", "Middle text"), S.MusicText, new[] { (CompactMusicText.None, Loc.T("无", "None")), (CompactMusicText.Title, Loc.T("歌名", "Title")), (CompactMusicText.Lyrics, Loc.T("歌词", "Lyrics")) },
             v => { Change(s => s.MusicText = v); ShowPage(_page); }) };
@@ -309,7 +309,7 @@ public sealed partial class SettingsWindow
                     "While music is paused, the chosen part is hidden when collapsed and comes back when playback resumes. \"Text\" is the title or lyric shown by \"Middle text\"; \"Both\" is the text and the cover, not the equalizer.")),
             Toggle(Loc.T("切歌时短暂显示歌名", "Briefly show the title on a track change"), S.MusicTrackNotice, v => Change(s => s.MusicTrackNotice = v)),
             Toggle(Loc.T("显示封面", "Show cover"), S.MusicCompactCover, v => Change(s => s.MusicCompactCover = v))]);
-        SectionTitle(Loc.T("展开时", "When expanded"));
+        SectionTitle(Loc.T("展开时", "When expanded"), description: Loc.T("展开后的音乐页面。", "The open music page."));
         var lyricColor = Row(Loc.T("当前歌词颜色", "Current lyric color"), ColorSwatches("MusicLyricColor", Loc.T("当前歌词颜色 ", "Current lyric color "),
             S.MusicLyricColor, S.MusicLyricCustomColor, UI.Brush(PanelTheme.Hex("textPrimary")),
             (chosen, custom) => Change(s => { s.MusicLyricColor = chosen; s.MusicLyricCustomColor = custom; })));
@@ -377,7 +377,7 @@ public sealed partial class SettingsWindow
     // Operations only one player supports, grouped under that player's name.
     private void Players()
     {
-        SectionTitle(Loc.T("播放来源", "Playback sources"));
+        SectionTitle(Loc.T("播放来源", "Playback sources"), description: Loc.T("灵动岛不显示其播放内容的应用。", "Apps whose playback the island leaves out."));
         Group(IgnoredAppsRow());
         SectionTitle(Loc.T("网易云音乐", "NetEase Cloud Music"));
         // Without full control NetEase is controlled through its system media session, an option in its own settings.
@@ -395,7 +395,7 @@ public sealed partial class SettingsWindow
         PlayerNote(Loc.T("在酷狗“设置 › 常规设置 › 播放”中勾选“支持系统播放控件，如锁屏界面”，即可显示曲目并控制播放。",
             "Check \"支持系统播放控件，如锁屏界面\" in KuGou's 设置 › 常规设置 › 播放 to show the track and control playback."));
         Group(KugouSwitch());
-        SectionTitle("Apple Music");
+        SectionTitle("Apple Music", description: Loc.T("Apple Music 的完整控制。", "Full control of Apple Music."));
         Group(Toggle(Loc.T("始终启用完整控制", "Always enable full control"), S.AppleMusicFullControl, v => Change(s => s.AppleMusicFullControl = v), S.MusicPage,
             Loc.T("DeckIsland 启动后自动启用 Apple Music 的完整控制。", "Enables full control of Apple Music when DeckIsland starts.")));
         // QQ Music is read through its own pipe; it has nothing to set.
@@ -459,6 +459,13 @@ public sealed partial class SettingsWindow
     // section with a group's spacing.
     private void PlayerNote(string text, bool last = false)
     {
+        // On a card page the note describes the player's card; a player with nothing to set is a card of its header alone.
+        if (CardPage && _cardTitle is { } heading)
+        {
+            _cardTitle = heading with { Description = text };
+            if (last) { _cardTitle = null; _cardBody = Card(heading.Title, text, heading.Action, heading.Help); }
+            return;
+        }
         var note = TextLine(text, 11, TextTertiary);
         note.TextWrapping = TextWrapping.Wrap; note.Margin = new Thickness(0, 0, 0, last ? 28 : 8); Target.Children.Add(note);
     }

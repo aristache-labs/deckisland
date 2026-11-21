@@ -249,6 +249,15 @@ internal sealed class Renderer(App app, string output, string language, string[]
                 await SettingsPage("prices-dark", 4, height: 1200);
                 await SettingsPage("prices-narrow", 4, height: 1200, width: 840, theme: SettingsTheme.Light);
             }
+            // The music pages (Style, Players, Quick actions) in the same cards; for checking.
+            if (scenes.Contains("music-cards"))
+            {
+                foreach (var (name, page) in new[] { ("music-style", 5), ("music-players", 6), ("music-gestures", 15) })
+                {
+                    await SettingsPage(name + "-dark", page, height: 3200);
+                    await SettingsPage(name + "-narrow", page, height: 3200, width: 840, theme: SettingsTheme.Light);
+                }
+            }
             if (scenes.Contains("hover-weather"))
             {
                 _settings.ColourfulWeatherCard = true; _settings.WeatherEnabled = true;

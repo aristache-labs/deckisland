@@ -25,12 +25,12 @@ public sealed partial class SettingsWindow
 
     private void MusicGesturesSettings()
     {
-        SectionTitle(Loc.T("鼠标拖动", "Mouse drag"));
+        SectionTitle(Loc.T("鼠标拖动", "Mouse drag"), description: Loc.T("用鼠标在音乐页面上拖动。", "Drag across the music page with the mouse."));
         Group(GestureRow(Loc.T("向左拖动", "Drag left"), S.MusicDragLeft, v => Change(s => s.MusicDragLeft = v)),
             GestureRow(Loc.T("向右拖动", "Drag right"), S.MusicDragRight, v => Change(s => s.MusicDragRight = v)),
             GestureRow(Loc.T("向上拖动", "Drag up"), S.MusicDragUp, v => Change(s => s.MusicDragUp = v)),
             GestureRow(Loc.T("向下拖动", "Drag down"), S.MusicDragDown, v => Change(s => s.MusicDragDown = v)));
-        SectionTitle(Loc.T("触控板", "Touchpad"), help: () => Loc.T("在音乐页面上用两根手指左右滑动。左右拨动鼠标滚轮也会触发。两根手指上下滑动按“鼠标滚轮”设置处理。",
+        SectionTitle(Loc.T("触控板", "Touchpad"), description: Loc.T("在音乐页面上用两根手指滑动。", "Two-finger swipes on the music page."), help: () => Loc.T("在音乐页面上用两根手指左右滑动。左右拨动鼠标滚轮也会触发。两根手指上下滑动按“鼠标滚轮”设置处理。",
             "Swipe sideways with two fingers over the music page. Tilting the mouse wheel sideways does the same. A two-finger swipe up or down follows the mouse wheel setting."));
         Group(GestureRow(Loc.T("双指左滑", "Two-finger swipe left"), S.MusicSwipeLeft, v => Change(s => s.MusicSwipeLeft = v)),
             GestureRow(Loc.T("双指右滑", "Two-finger swipe right"), S.MusicSwipeRight, v => Change(s => s.MusicSwipeRight = v)));
@@ -39,7 +39,7 @@ public sealed partial class SettingsWindow
     private FrameworkElement GestureRow(string title, MusicGestureAction selected, Action<MusicGestureAction> change)
     {
         var actions = Enum.GetValues<MusicGestureAction>();
-        var choice = new ComboBox { Width = 150, Style = (Style)FindResource("SettingsCombo"), ItemsSource = actions.Select(GestureName).ToList(),
+        var choice = new ComboBox { Width = GeneralCombo, Style = (Style)FindResource("SettingsCombo"), ItemsSource = actions.Select(GestureName).ToList(),
             SelectedIndex = Array.IndexOf(actions, selected), IsEnabled = S.MusicPage };
         AutomationProperties.SetName(choice, title); PopupMotion.Attach(choice);
         choice.SelectionChanged += (_, _) => { if (choice.SelectedIndex >= 0) change(actions[choice.SelectedIndex]); };

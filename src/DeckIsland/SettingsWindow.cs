@@ -365,6 +365,9 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
         if (page == 3) PageHeader(head, Loc.T("灵动岛显示哪些应用的配额和用量，以及如何显示。", "Which apps' quotas and usage the island shows, and how."));
         if (page == 4) PageHeader(head, Loc.T("面板和模型明细中的费用按这里的单价估算。价格每天从 OpenRouter 更新，手动添加的价格优先。",
             "Costs in the panel and model details are estimated with these unit prices. Prices are updated daily from OpenRouter; prices added by hand take precedence."));
+        if (page == 5) PageHeader(head, Loc.T("音乐在灵动岛上收起和展开时的样子。", "How music looks on the island, collapsed and open."));
+        if (page == 6) PageHeader(head, Loc.T("针对特定音乐播放器的设置。", "Settings for particular music players."));
+        if (page == MusicGesturesPage) PageHeader(head, Loc.T("在音乐页面上拖动和滑动时执行的操作。", "What drags and swipes do on the music page."));
         if (page == CallsSettingsPage) PageHeader(head, Loc.T("通话时灵动岛显示的计时、静音和设备检查。", "The timer, mute and device check the island offers during calls."));
         if (page == ThemePage) PageHeader(head, Loc.T("刘海、胶囊和展开面板的配色与外观。", "The colors and look of the notch, capsule and open panel."));
         if (page == HotkeysPage) PageHeader(head, Loc.T("在任何地方都能使用的快捷键。", "Keyboard shortcuts that work from anywhere."));
@@ -1281,7 +1284,7 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
 
     // The Collapsed view page is laid out in General's cards (Card): there a section title heads the card its next group
     // opens, and a group with no title of its own joins the card above it.
-    private bool CardPage => _page is 1 or 2 or 3 or WidgetsSettingsPage or NotificationsSettingsPage or CallsSettingsPage or ThemePage or HotkeysPage or ProfilesPage;
+    private bool CardPage => _page is 1 or 2 or 3 or 5 or 6 or MusicGesturesPage or WidgetsSettingsPage or NotificationsSettingsPage or CallsSettingsPage or ThemePage or HotkeysPage or ProfilesPage;
     private (string Title, string Description, FrameworkElement? Action, Func<string>? Help)? _cardTitle;
     private StackPanel? _cardBody;
 
@@ -1360,6 +1363,8 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
 
     private Grid SliderRow(string title, double value, double min, double max, double tick, string unit, Action<double> changed, string? help = null)
     {
+        // A card page's slider is General's, its slider and number box together on the control column.
+        if (CardPage) return InlineSlider(title, value, min, max, tick, unit, changed, help);
         var row=new Grid { Height=44 };
         row.ColumnDefinitions.Add(new ColumnDefinition {Width=new GridLength(174)});row.ColumnDefinitions.Add(new ColumnDefinition());row.ColumnDefinitions.Add(new ColumnDefinition {Width=GridLength.Auto});
         row.Children.Add(SettingLabel(title, help is null ? null : () => help));
