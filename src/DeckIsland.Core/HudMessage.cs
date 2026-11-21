@@ -56,5 +56,7 @@ public sealed class NoticeLog
         if (_items.Count > Capacity) _items.RemoveRange(Capacity, _items.Count - Capacity);
     }
 
+    public void Remove(NoticeItem item) => _items.Remove(item);
+
     public void Clear() => _items.Clear();
 }

@@ -17,6 +17,7 @@ public partial class App
     internal NoticeLog Notices { get; } = new();
     internal event Action? NoticesChanged;
     internal void ClearNotices() { Notices.Clear(); NoticesChanged?.Invoke(); }
+    internal void DismissNotice(NoticeItem item) { Notices.Remove(item); NoticesChanged?.Invoke(); }
     private void AddNotice(NoticeItem item) { Notices.Add(item); NoticesChanged?.Invoke(); }
     internal NotificationAccess NotificationAccess { get; private set; } = NotificationAccess.Starting;
     private readonly HashSet<uint> _toastsSeen = [];

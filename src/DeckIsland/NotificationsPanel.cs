@@ -6,7 +6,6 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 using DeckIsland.Core;
 
 namespace DeckIsland;
@@ -19,6 +18,7 @@ public partial class MainWindow
 {
     private StackPanel? _noticeRows;
     private StackPanel? _noticeEmpty;
+    private ScrollViewer? _noticeScroll;
     private TextBlock? _noticeCount;
     private Button? _noticeClear;
     private readonly HashSet<string> _noticeOpen = [];
@@ -26,8 +26,7 @@ public partial class MainWindow
     private readonly HashSet<string> _noticeExpanded = [];
     // Which notice of a closed stack is on top, by stack (the arrows under the pointer step it).
     private readonly Dictionary<string, int> _noticeTop = [];
-    // A stepped stack whose new top notice slides in from the side it was stepped to: (stack, direction).
-    private (string Key, int By)? _noticeSlide;
+    private readonly List<(FrameworkElement Row, int First, int Last)> _noticeRanges = [];
     private (int Theme, string Language, string TimePattern, bool Clock) _noticeAppearance;
 
     private void InitializeNotifications()
@@ -61,7 +60,7 @@ public partial class MainWindow
         var body = new DockPanel();
         // The count and Clear all, side by side in the middle.
         _noticeClear = new Button { Content = Loc.T("全部清除", "Clear all"), Style = (Style)FindResource("PanelOutlineButton"), Margin = new Thickness(14, 0, 0, 0) };
-        _noticeClear.Click += (_, _) => { _noticeOpen.Clear(); _noticeTop.Clear(); _app.ClearNotices(); };
+        _noticeClear.Click += (_, _) => { _noticeOpen.Clear(); _noticeTop.Clear(); _noticeExpanded.Clear(); _app.ClearNotices(); };
         _noticeCount = WeatherText("", 12);
         _noticeCount.Foreground = UI.Brush(Look.Secondary);
         _noticeCount.VerticalAlignment = VerticalAlignment.Center;
@@ -82,10 +81,9 @@ public partial class MainWindow
             line.TextAlignment = TextAlignment.Center;
             _noticeEmpty.Children.Add(line);
         }
-        body.Children.Add(new Grid
-        {
-            Children = { new ScrollViewer { Content = _noticeRows, VerticalScrollBarVisibility = ScrollBarVisibility.Auto }, _noticeEmpty }
-        });
+        _noticeScroll = new ScrollViewer { Content = _noticeRows, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
+        _noticeScroll.ScrollChanged += (_, _) => UpdateNoticeCount();
+        body.Children.Add(new Grid { Children = { _noticeScroll, _noticeEmpty } });
         NotificationsContent.Children.Add(body);
         FillNoticeRows();
     }
@@ -105,19 +103,21 @@ public partial class MainWindow
     {
         if (_noticeRows is not { } rows || _noticeEmpty is not { } empty) return;
         rows.Children.Clear();
+        _noticeRanges.Clear();
+        int index = 1;
         var items = _app.Notices.Items;
         var groups = items.GroupBy(NoticeGroup).ToList();
         _noticeOpen.RemoveWhere(key => groups.All(group => group.Key != key || group.Count() < 2));
         foreach (var group in groups)
         {
             var notices = group.ToList();
-            if (notices.Count == 1) { rows.Children.Add(NoticeRow(notices[0], 0, null)); continue; }
+            if (notices.Count == 1) { AddRow(NoticeRow(notices[0])); continue; }
             bool open = _noticeOpen.Contains(group.Key);
             string app = notices[0].App;
             if (open)
             {
                 var head = new DockPanel { Margin = new Thickness(6, 2, 6, 4) };
-                var less = new Button { Content = Loc.T("收起 ˄", "Show less ˄"), Style = (Style)FindResource("PanelOutlineButton") };
+                var less = new Button { Content = Loc.T("收起 ˄", "Show less ˄"), Style = (Style)FindResource("PanelTextButton") };
                 less.Click += (_, _) => { _noticeOpen.Remove(group.Key); FillNoticeRows(); };
                 AutomationProperties.SetName(less, Loc.T($"收起 {app}", $"Show less of {app}"));
                 DockPanel.SetDock(less, System.Windows.Controls.Dock.Right);
@@ -127,201 +127,306 @@ public partial class MainWindow
                 head.Children.Add(less);
                 head.Children.Add(title);
                 rows.Children.Add(head);
-                foreach (var notice in notices) rows.Children.Add(NoticeRow(notice, 0, null));
+                foreach (var notice in notices) AddRow(NoticeRow(notice));
                 continue;
             }
             // Closed: the newest on top of two edges of the ones under it; pressing it opens the stack.
             var stack = new StackPanel { Margin = new Thickness(0, 0, 0, 4) };
-            int shown = Math.Clamp(_noticeTop.GetValueOrDefault(group.Key), 0, notices.Count - 1);
-            var top = NoticeRow(notices[shown], notices.Count - 1, () => { _noticeOpen.Add(group.Key); FillNoticeRows(); }, margin: false);
-            stack.Children.Add(StackStepper(top, group.Key, shown, notices.Count));
+            stack.Children.Add(NoticeStack(group.Key, notices));
             foreach (var (inset, opacity) in new[] { (10d, .6), (20d, .35) })
                 stack.Children.Add(new Border
                 {
                     Height = 5, Margin = new Thickness(inset, -1, inset, 0), Opacity = opacity, Background = UI.Brush(Look.Hex("fill")),
                     CornerRadius = new CornerRadius(0, 0, Corner(6), Corner(6)), IsHitTestVisible = false
                 });
-            rows.Children.Add(stack);
+            AddRow(stack, notices.Count);
         }
         bool none = rows.Children.Count == 0;
         empty.Visibility = none ? Visibility.Visible : Visibility.Collapsed;
         if (_noticeClear is not null) _noticeClear.Visibility = none ? Visibility.Collapsed : Visibility.Visible;
-        if (_noticeCount is not null)
+        UpdateNoticeCount();
+        rows.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, UpdateNoticeCount);
+
+        void AddRow(FrameworkElement row, int count = 1)
         {
-            int total = items.Count;
-            _noticeCount.Text = none ? "" : _noticeOpen.Count > 0 ? Loc.T($"共 {total} 条，可滚动", $"1-{total} of {total}, scroll for more")
-                : total == 1 ? Loc.T("1 条通知", "1 notice") : Loc.T($"{total} 条通知", $"{total} notices");
-            _noticeCount.Visibility = none ? Visibility.Collapsed : Visibility.Visible;
+            rows.Children.Add(row);
+            _noticeRanges.Add((row, index, index + count - 1));
+            index += count;
         }
     }
 
-    // The top row of a closed stack with "‹ 1 / 3 ›" over its right side while the pointer (or the keyboard) is on it, to change
-    // which notice of the stack is on top.
-    private FrameworkElement StackStepper(FrameworkElement row, string key, int shown, int count)
+    private void UpdateNoticeCount()
     {
-        Button Step(string glyph, int by, string name)
+        if (_noticeCount is not { } count || _noticeScroll is not { } scroll) return;
+        int total = _app.Notices.Items.Count;
+        count.Visibility = total == 0 ? Visibility.Collapsed : Visibility.Visible;
+        if (total == 0) return;
+        int first = 0, last = 0;
+        if (_noticeOpen.Count > 0 && scroll.ScrollableHeight > 0)
         {
-            var button = FlatGlyph(glyph, 14);
-            AutomationProperties.SetName(button, name);
-            button.Click += (_, _) =>
+            foreach (var (row, from, to) in _noticeRanges)
             {
-                void Change() { _noticeTop[key] = (shown + by + count) % count; _noticeSlide = (key, by); FillNoticeRows(); }
-                if (!Animates) { Change(); return; }
-                // The notice on show slides away the way the stack is stepped, then the next one slides in (below).
-                var leave = new DoubleAnimation(0, TimeSpan.FromMilliseconds(110)) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn } };
-                leave.Completed += (_, _) => Change();
-                row.RenderTransform = new TranslateTransform();
-                row.RenderTransform.BeginAnimation(TranslateTransform.XProperty, new DoubleAnimation(-by * 36, TimeSpan.FromMilliseconds(110)) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn } });
-                row.BeginAnimation(OpacityProperty, leave);
-            };
-            return button;
+                if (row.ActualHeight <= 0 || !row.IsDescendantOf(scroll)) continue;
+                double middle = row.TranslatePoint(new Point(0, row.ActualHeight / 2), scroll).Y;
+                if (middle < 0 || middle >= scroll.ViewportHeight) continue;
+                if (first == 0) first = from;
+                last = to;
+            }
         }
-        var position = WeatherText($"{shown + 1} / {count}", 12);
-        position.Foreground = UI.Brush(Look.Secondary);
-        position.VerticalAlignment = VerticalAlignment.Center;
-        position.Margin = new Thickness(2, 0, 2, 0);
-        // The row's hover strip already holds the expand arrow; the stepper follows it, a little apart.
-        if (row.Tag is StackPanel controls)
-        {
-            var steps = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(6, 0, 0, 0),
-                Children = { Step("‹", -1, Loc.T("上一条", "Previous notice")), position, Step("›", 1, Loc.T("下一条", "Next notice")) } };
-            controls.Children.Add(steps);
-        }
-        if (Animates && _noticeSlide is { } slide && slide.Key == key)
-        {
-            _noticeSlide = null;
-            var travel = new TranslateTransform(slide.By * 36, 0);
-            row.RenderTransform = travel;
-            var settle = new Duration(TimeSpan.FromMilliseconds(190));
-            travel.BeginAnimation(TranslateTransform.XProperty, new DoubleAnimation(0, settle) { EasingFunction = Soft.Out });
-            row.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, settle) { EasingFunction = Soft.Out, FillBehavior = FillBehavior.Stop });
-        }
-        return row;
+        count.Text = first > 0 ? Loc.T($"第 {first}-{last} 条，共 {total} 条，可滚动", $"{first}-{last} of {total}, scroll for more")
+            : total == 1 ? Loc.T("1 条通知", "1 notice") : Loc.T($"{total} 条通知", $"{total} notices");
     }
 
-    // The notice's picture as the button that opens its app: under the pointer a link glyph covers it.
-    private FrameworkElement MarkButton(NoticeItem item, FrameworkElement mark)
+    private FrameworkElement NoticeStack(string key, IReadOnlyList<NoticeItem> items)
     {
-        if (item.AppId is not { Length: > 0 }) { mark.Margin = new Thickness(0, 0, 10, 0); return mark; }
-        var link = new System.Windows.Shapes.Path
+        int shown = Math.Clamp(_noticeTop.GetValueOrDefault(key), 0, items.Count - 1);
+        var body = new ContentControl { HorizontalContentAlignment = HorizontalAlignment.Stretch, ClipToBounds = true };
+        var age = NoticeAgeText();
+        var badge = WeatherText($"+{items.Count - 1}", 12);
+        badge.FontWeight = FontWeights.SemiBold;
+        badge.Foreground = UI.Brush(Look.Readable(Look.Hex("accent"), 4.5));
+        badge.HorizontalAlignment = HorizontalAlignment.Right;
+        badge.IsHitTestVisible = false;
+        var position = WeatherText("", 12);
+        position.Foreground = UI.Brush(Look.Secondary);
+        position.IsHitTestVisible = false;
+        var expand = NoticeAction("⌄", 14, Loc.T("展开此应用的通知", "Expand notification stack"));
+        var previous = NoticeAction("‹", 15, Loc.T("上一条", "Previous notice"));
+        var next = NoticeAction("›", 15, Loc.T("下一条", "Next notice"));
+        var actions = new StackPanel { Orientation = Orientation.Horizontal, Children = { expand, previous, position, next } };
+
+        var card = NoticeCard(body, age, actions, badge, OpenStack, out var surface);
+        expand.Click += (_, _) => OpenStack();
+        previous.Click += (_, _) => Step(-1);
+        next.Click += (_, _) => Step(1);
+        Show(0);
+        return card;
+
+        void OpenStack()
         {
-            Data = Geometry.Parse("M6,3.5 H3.5 V12.5 H12.5 V10 M8,2.5 H13.5 V8 M13.5,2.5 L7,9"), Stroke = UI.Brush(Look.Primary), StrokeThickness = 1.4, Width = 15, Height = 15,
-            Stretch = Stretch.Uniform, StrokeLineJoin = PenLineJoin.Round, StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center
-        };
-        var cover = new Border { Width = 30, Height = 30, CornerRadius = new CornerRadius(Corner(7)), Background = UI.Brush(Look.Hex("fillSelected")), Child = link, Opacity = 0, IsHitTestVisible = false };
-        var presenter = new FrameworkElementFactory(typeof(ContentPresenter));
-        var button = new Button
+            _noticeOpen.Add(key);
+            FillNoticeRows();
+        }
+
+        void Step(int direction)
         {
-            Content = new Grid { Children = { mark, cover } }, Template = new ControlTemplate(typeof(Button)) { VisualTree = presenter }, Margin = new Thickness(0, 0, 10, 0),
-            VerticalAlignment = VerticalAlignment.Center, Cursor = System.Windows.Input.Cursors.Hand, Background = Brushes.Transparent, Padding = new Thickness(0)
-        };
-        button.MouseEnter += (_, _) => cover.Opacity = 1;
-        button.MouseLeave += (_, _) => cover.Opacity = 0;
-        button.Click += (_, _) => OpenNoticeApp(item);
-        button.ToolTip = Loc.T("打开应用", "Open the app");
-        AutomationProperties.SetName(button, Loc.T("打开 ", "Open ") + item.App);
-        return button;
+            shown = (shown + direction + items.Count) % items.Count;
+            _noticeTop[key] = shown;
+            Show(direction);
+        }
+
+        void Show(int direction)
+        {
+            var item = items[shown];
+            string detail = NoticeDetail(item);
+            var content = NoticeBody(item, detail, wrap: false, out var line);
+            body.Content = content;
+            WatchNoticeOverflow(line, detail, expand);
+            age.Text = NoticeAge(item.At);
+            position.Text = $"{shown + 1}/{items.Count}";
+            AutomationProperties.SetName(surface, $"{NoticeLabel(item)} · {position.Text}");
+            if (!Animates || direction == 0) return;
+
+            // Only the incoming content moves. The click targets and the count keep their positions.
+            var travel = new TranslateTransform();
+            content.RenderTransform = travel;
+            var settle = new Duration(TimeSpan.FromMilliseconds(160));
+            travel.BeginAnimation(TranslateTransform.XProperty, new DoubleAnimation(direction * 24, 0, settle)
+            { EasingFunction = Soft.Out, FillBehavior = FillBehavior.Stop });
+            content.BeginAnimation(OpacityProperty, new DoubleAnimation(.35, 1, settle)
+            { EasingFunction = Soft.Out, FillBehavior = FillBehavior.Stop });
+        }
     }
 
-    // A bare glyph for a button, with no background or outline: dim, and full strength under the pointer.
-    private Button FlatGlyph(string glyph, double size)
+    private FrameworkElement NoticeRow(NoticeItem item)
+    {
+        string key = $"{NoticeGroup(item)}|{item.Title}|{item.At.Ticks}";
+        bool canOpenApp = item.AppId is { Length: > 0 };
+        bool expanded = _noticeExpanded.Contains(key);
+        string detail = NoticeDetail(item);
+        var body = NoticeBody(item, detail, expanded, out var line);
+        var age = NoticeAgeText();
+        age.Text = NoticeAge(item.At);
+        var actions = new StackPanel { Orientation = Orientation.Horizontal };
+        if (!expanded && detail.Length > 0)
+        {
+            var expand = NoticeAction("⌄", 14, Loc.T("展开通知正文", "Expand notification description"));
+            expand.Click += (_, _) => Toggle();
+            WatchNoticeOverflow(line, detail, expand);
+            actions.Children.Add(expand);
+        }
+
+        var dismiss = NoticeAction("×", 16, Loc.T("清除通知", "Dismiss the notice"));
+        dismiss.Click += (_, _) =>
+        {
+            _noticeExpanded.Remove(key);
+            _app.DismissNotice(item);
+        };
+        actions.Children.Add(dismiss);
+
+        FrameworkElement? footer = null;
+        if (expanded)
+        {
+            var collapse = NoticeAction("⌃", 14, Loc.T("收起通知正文", "Collapse notification description"));
+            collapse.Click += (_, _) => Toggle();
+            var buttons = new StackPanel { Orientation = Orientation.Horizontal, Children = { collapse } };
+            if (canOpenApp)
+            {
+                var open = WidgetSurface(Loc.T("打开", "Open"), Loc.T("打开 ", "Open ") + item.App, () => OpenNoticeApp(item));
+                open.Background = UI.Brush(Look.Hex("fillSelected"));
+                open.Padding = new Thickness(12, 2, 12, 2);
+                open.Height = 22;
+                open.Margin = new Thickness(4, 0, 0, 0);
+                buttons.Children.Add(open);
+            }
+            var app = WeatherText(item.App, 11.5);
+            app.Foreground = UI.Brush(Look.Secondary);
+            app.IsHitTestVisible = false;
+            var bar = new DockPanel { Margin = new Thickness(48, 0, 8, 6), Children = { buttons, app } };
+            DockPanel.SetDock(buttons, System.Windows.Controls.Dock.Right);
+            footer = bar;
+        }
+
+        var card = NoticeCard(body, age, actions, null, Activate, out var surface, footer);
+        AutomationProperties.SetName(surface, NoticeLabel(item));
+        card.Margin = new Thickness(0, 0, 0, 4);
+        return card;
+
+        void Toggle()
+        {
+            if (!_noticeExpanded.Remove(key)) _noticeExpanded.Add(key);
+            FillNoticeRows();
+        }
+
+        void Activate()
+        {
+            if (expanded || NoticeOverflows(line, detail)) Toggle();
+            else OpenNoticeApp(item);
+        }
+    }
+
+    private static void WatchNoticeOverflow(TextBlock line, string detail, Button expand)
+    {
+        // A reserved slot keeps the text width stable when the arrow appears.
+        expand.Visibility = Visibility.Hidden;
+        void Update()
+        {
+            if (line.IsLoaded)
+                expand.Visibility = NoticeOverflows(line, detail) ? Visibility.Visible : Visibility.Hidden;
+        }
+        line.Loaded += (_, _) => Update();
+        line.SizeChanged += (_, _) => Update();
+    }
+
+    private static bool NoticeOverflows(TextBlock line, string detail)
+    {
+        if (detail != line.Text) return true;
+        var face = new Typeface(line.FontFamily, line.FontStyle, line.FontWeight, line.FontStretch);
+        var measured = new FormattedText(detail, System.Globalization.CultureInfo.CurrentUICulture, line.FlowDirection,
+            face, line.FontSize, Brushes.Black, VisualTreeHelper.GetDpi(line).PixelsPerDip);
+        return measured.Width > line.ActualWidth + .5;
+    }
+
+    // The card button covers the row. Its age, content and secondary buttons sit above it as siblings.
+    private Grid NoticeCard(FrameworkElement body, TextBlock age, StackPanel actions, TextBlock? badge, Action activate, out Button surface,
+        FrameworkElement? footer = null)
+    {
+        var card = new Grid();
+        card.ColumnDefinitions.Add(new ColumnDefinition());
+        card.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        var background = new Border { Background = UI.Brush(Look.Hex("fill")), CornerRadius = new CornerRadius(Corner(10)), IsHitTestVisible = false };
+        Grid.SetColumnSpan(background, 2);
+        card.Children.Add(background);
+        surface = WidgetSurface("", "", activate);
+        surface.Background = Brushes.Transparent;
+        Grid.SetColumnSpan(surface, 2);
+        card.Children.Add(surface);
+
+        body.IsHitTestVisible = false;
+        body.Margin = new Thickness(8, 6, 0, 6);
+        card.Children.Add(body);
+
+        var tools = new Grid { HorizontalAlignment = HorizontalAlignment.Right };
+        actions.HorizontalAlignment = HorizontalAlignment.Right;
+        if (badge is not null) tools.Children.Add(badge);
+        tools.Children.Add(actions);
+        var side = new StackPanel { VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(8, 5, 6, 3), Children = { age, tools } };
+        Grid.SetColumn(side, 1);
+        card.Children.Add(side);
+        if (footer is not null)
+        {
+            card.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            card.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            Grid.SetRowSpan(background, 2);
+            Grid.SetRowSpan(surface, 2);
+            Grid.SetRow(footer, 1);
+            Grid.SetColumnSpan(footer, 2);
+            card.Children.Add(footer);
+        }
+
+        void Update()
+        {
+            bool active = card.IsMouseOver || card.IsKeyboardFocusWithin;
+            actions.Opacity = active ? 1 : 0;
+            if (badge is not null) badge.Opacity = active ? 0 : 1;
+        }
+
+        card.MouseEnter += (_, _) => Update();
+        card.MouseLeave += (_, _) => Update();
+        card.IsKeyboardFocusWithinChanged += (_, _) => Update();
+        Update();
+        return card;
+    }
+
+    private TextBlock NoticeAgeText()
+    {
+        var age = WeatherText("", 12);
+        age.Foreground = UI.Brush(Look.Secondary);
+        age.HorizontalAlignment = HorizontalAlignment.Right;
+        age.IsHitTestVisible = false;
+        return age;
+    }
+
+    private string NoticeLabel(NoticeItem item) => $"{item.App}: {item.Title} {item.Body} · {NoticeAge(item.At)}";
+
+    private static string NoticeDetail(NoticeItem item) => item.Body.Length > 0 ? item.Body : item.App;
+
+    private FrameworkElement NoticeBody(NoticeItem item, string detail, bool wrap, out TextBlock line)
+    {
+        var title = WeatherText(item.Title, 13);
+        title.FontWeight = FontWeights.SemiBold;
+        line = WeatherText(wrap ? detail : detail.ReplaceLineEndings(" "), 11.5);
+        line.Foreground = UI.Brush(Look.Secondary);
+        line.TextWrapping = wrap ? TextWrapping.Wrap : TextWrapping.NoWrap;
+        line.TextTrimming = wrap ? TextTrimming.None : TextTrimming.CharacterEllipsis;
+        var text = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Children = { title, line } };
+        var mark = NoticeMark(item);
+        if (wrap) mark.VerticalAlignment = VerticalAlignment.Top;
+        return new DockPanel { Children = { mark, text } };
+    }
+
+    private Button NoticeAction(string glyph, double size, string name)
     {
         var presenter = new FrameworkElementFactory(typeof(ContentPresenter), "Glyph");
         presenter.SetValue(UIElement.OpacityProperty, .65);
         presenter.SetValue(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Center);
         presenter.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
-        var template = new ControlTemplate(typeof(Button)) { VisualTree = presenter };
+        var box = new FrameworkElementFactory(typeof(Border));
+        box.SetValue(Border.BackgroundProperty, new TemplateBindingExtension(Control.BackgroundProperty));
+        box.AppendChild(presenter);
+        var template = new ControlTemplate(typeof(Button)) { VisualTree = box };
         var hover = new Trigger { Property = UIElement.IsMouseOverProperty, Value = true };
         hover.Setters.Add(new Setter(UIElement.OpacityProperty, 1d, "Glyph"));
         template.Triggers.Add(hover);
-        return new Button { Content = glyph, Template = template, FontSize = size, Foreground = UI.Brush(Look.Primary), Padding = new Thickness(5, 0, 5, 0), Cursor = System.Windows.Input.Cursors.Hand, Background = Brushes.Transparent };
-    }
-
-    // One notice as a pressable row: the picture, the title over the message, its age (and how many more are stacked under it).
-    // Pressing a notice opens or closes its whole message; the app opens from the icon, or from "Open" in the whole message. A stack's top
-    // notice (press given) opens the stack instead.
-    private FrameworkElement NoticeRow(NoticeItem item, int more, Action? press, bool margin = true)
-    {
-        var row = new DockPanel { LastChildFill = true };
-        var side = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 4, 0) };
-        var age = WeatherText(NoticeAge(item.At), 12);
-        age.Foreground = UI.Brush(Look.Secondary);
-        age.HorizontalAlignment = HorizontalAlignment.Right;
-        side.Children.Add(age);
-        TextBlock? badge = null;
-        if (more > 0)
+        var button = new Button
         {
-            badge = WeatherText($"+{more}", 12);
-            badge.FontWeight = FontWeights.SemiBold;
-            badge.Foreground = UI.Brush(Look.Readable(Look.Hex("accent"), 4.5));
-            badge.HorizontalAlignment = HorizontalAlignment.Right;
-        }
-        DockPanel.SetDock(side, System.Windows.Controls.Dock.Right);
-        row.Children.Add(side);
-        // Under the age: the "+n" of a stack, which the arrows take the place of while the pointer is on the row.
-        var controls = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Opacity = 0 };
-        side.Children.Add(new Grid { HorizontalAlignment = HorizontalAlignment.Right, Children = { controls } });
-        if (badge is not null) ((Grid)side.Children[^1]).Children.Insert(0, badge);
-        var mark = NoticeMark(item);
-        mark.Margin = new Thickness(0);
-        row.Children.Add(MarkButton(item, mark));
-        string noticeKey = $"{NoticeGroup(item)}|{item.Title}|{item.At.Ticks}";
-        bool expanded = _noticeExpanded.Contains(noticeKey);
-        void Toggle() { if (!_noticeExpanded.Remove(noticeKey)) _noticeExpanded.Add(noticeKey); FillNoticeRows(); }
-        Button Arrow()
-        {
-            var arrow = FlatGlyph(expanded ? "˄" : "˅", 12);
-            AutomationProperties.SetName(arrow, expanded ? Loc.T("收起通知", "Collapse the notice") : Loc.T("展开通知", "Expand the notice"));
-            arrow.Click += (_, _) => Toggle();
-            return arrow;
-        }
-        var title = WeatherText(item.Title, 13);
-        title.FontWeight = FontWeights.SemiBold;
-        title.TextTrimming = TextTrimming.CharacterEllipsis;
-        var text = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Children = { title } };
-        string detail = item.Body.Length > 0 ? item.Body : item.App;
-        if (detail.Length > 0)
-        {
-            var body = WeatherText(detail, 11.5);
-            body.Foreground = UI.Brush(Look.Secondary);
-            body.TextWrapping = expanded ? TextWrapping.Wrap : TextWrapping.NoWrap;
-            body.TextTrimming = expanded ? TextTrimming.None : TextTrimming.CharacterEllipsis;
-            text.Children.Add(body);
-            if (expanded)
-            {
-                // The whole message ends with the sending app, and the arrow back up with "Open" beside it.
-                var foot = new DockPanel { Margin = new Thickness(0, 6, 0, 0) };
-                var buttons = new StackPanel { Orientation = Orientation.Horizontal };
-                DockPanel.SetDock(buttons, System.Windows.Controls.Dock.Right);
-                buttons.Children.Add(Arrow());
-                if (item.AppId is { Length: > 0 })
-                {
-                    var open = new Button { Content = Loc.T("打开", "Open"), Style = (Style)FindResource("PanelOutlineButton"), Padding = new Thickness(12, 3, 12, 3), Margin = new Thickness(6, 0, 0, 0) };
-                    open.Click += (_, _) => OpenNoticeApp(item);
-                    buttons.Children.Add(open);
-                }
-                var from = WeatherText(item.App, 12);
-                from.Foreground = UI.Brush(Look.Tertiary);
-                from.FontWeight = FontWeights.SemiBold;
-                foot.Children.Add(buttons); foot.Children.Add(from);
-                text.Children.Add(foot);
-            }
-        }
-        row.Children.Add(text);
-        string label = $"{item.App}: {item.Title} {item.Body} · {NoticeAge(item.At)}{(more > 0 ? $" · +{more}" : "")}".Trim();
-        var frame = new Border { Child = row, Padding = new Thickness(8, 6, 6, 6), CornerRadius = new CornerRadius(Corner(10)), Background = UI.Brush(Look.Hex("fill")) };
-        var button = WidgetSurface(frame, label, press ?? Toggle);
-        button.ToolTip = more > 0 ? Loc.T("展开此应用的通知", "Open the stack") : expanded ? Loc.T("收起通知", "Collapse the notice") : Loc.T("展开通知", "Expand the notice");
-
-        // The expand arrow (and, on a stack, its stepper) is in the row, before the age, and shows while the pointer or the keyboard is on it.
-        var host = new Grid { Children = { button }, Tag = controls };
-        if (detail.Length > 0 && !expanded) controls.Children.Add(Arrow());
-        void Update() { bool on = host.IsMouseOver || host.IsKeyboardFocusWithin; controls.Opacity = on ? 1 : 0; if (badge is not null) badge.Opacity = on ? 0 : 1; }
-        host.MouseEnter += (_, _) => Update();
-        host.MouseLeave += (_, _) => Update();
-        host.IsKeyboardFocusWithinChanged += (_, _) => Update();
-        if (margin) host.Margin = new Thickness(0, 0, 0, 4);
-        return host;
+            Content = glyph, Template = template, FontSize = size, Foreground = UI.Brush(Look.Primary),
+            Cursor = System.Windows.Input.Cursors.Hand, Background = Brushes.Transparent, MinWidth = 22, Height = 18,
+            FocusVisualStyle = (Style)FindResource("PanelKeyboardFocus")
+        };
+        AutomationProperties.SetName(button, name);
+        return button;
     }
 
     // Opens the app that sent a notice: Windows starts it, or brings it forward, from its id in the Apps folder.
@@ -354,7 +459,7 @@ public partial class MainWindow
             }
             catch (Exception error) when (error is NotSupportedException or System.IO.IOException or InvalidOperationException) { }
         }
-        tile.Child = new Path
+        tile.Child = new System.Windows.Shapes.Path
         {
             Data = HudWindow.IconGeometry(HudIcon.Notice), Stroke = UI.Brush(Look.Hex("accent")), StrokeThickness = 1.4, Stretch = Stretch.Uniform,
             Width = 15, Height = 15, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center
