@@ -3,7 +3,7 @@
 [Oo]bj/
 artifacts/
 .artifacts/
-
+/TokenEconomizer/
 # Local environment variables
 .env
 .env.*
@@ -36,6 +36,8 @@ AGENTS.md
 
 # Local design drafts
 output/
-
+TokenEconomizer/
 # Local development notes: architecture, design decisions, plans, release steps
 dev-docs/
+TokenEconomizer
+TokenEconomizer/
