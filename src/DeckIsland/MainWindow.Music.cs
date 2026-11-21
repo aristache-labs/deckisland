@@ -476,14 +476,13 @@ public partial class MainWindow
         var modes = track is null ? [] : MusicPlaybackModes.Supported(track);
         // While the timeline is held (MusicTimelineHold) the bar stays in its place, empty and without times.
         bool timeline = track?.HasTimeline == true || track is not null && _timelineHold.Holds(DateTimeOffset.UtcNow);
-        // The one-column page (Stacked) puts the transport at the right of the titles; the column page puts it at the left, small, with the volume.
-        bool columnPage = Settings.MusicLyricsLayout == MusicLyricsLayout.Columns && (Settings.MusicPageCover || Settings.LyricsEnabled);
         var layout = MusicLayout.Calculate(w, h, hasLyrics, timeline, message.Length > 0, logMode || appleEntry || kugouEntry, transport: !showSmtcHint,
-            lyricsExpected: Settings.LyricsEnabled, controlsAside: !columnPage);
+            lyricsExpected: Settings.LyricsEnabled);
         var c = layout.Metrics;
-        if (columnPage && !showSmtcHint)
+        // Both layouts: smaller buttons close together at the left end of the bottom row, the volume in the middle of that row and the
+        // source (with the background switch before it) at the right.
+        if (!showSmtcHint)
         {
-            // Smaller buttons close together at the left end of the bottom row; the volume takes the rest of that row (below).
             double oldPlay = c.Play;
             c = c with { Play = Math.Round(c.Play * .82), Skip = Math.Round(c.Skip * .84), Mode = Math.Round(c.Mode * .9) };
             double gap = Math.Round(c.Play * .55), triplet = c.Skip * 2 + c.Play + 2 * gap;
@@ -573,7 +572,7 @@ public partial class MainWindow
             bool alone = false;
             right.RowDefinitions.Add(new RowDefinition { Height = alone ? new GridLength(1, GridUnitType.Star) : new GridLength(layout.HeaderHeight) });
             right.RowDefinitions.Add(new RowDefinition { Height = alone ? GridLength.Auto : new GridLength(1, GridUnitType.Star) });
-            double equalizerWidth = layout.ControlsAside ? layout.AsideRoom : MusicEqualizerWidth(c);
+            double equalizerWidth = MusicEqualizerWidth(c);
             var header = new Grid();
             // Centred, the titles take the page's whole width, so their centre is the page's, and the equalizer stands over the
             // end of the title's line. The title keeps clear of it and leaves as much room free at its left (MusicTitleFit
@@ -640,9 +639,11 @@ public partial class MainWindow
         }
         if (timeline)
         {
-            var times = new Grid { Height = c.TimeLine, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, layout.TimesY, 0, 0), IsHitTestVisible = false };
-            _musicElapsed = UI.Fixed("", c.Time, c.TimeLine, Look.Secondary); times.Children.Add(_musicElapsed);
-            _musicDuration = UI.Fixed("", c.Time, c.TimeLine, Look.Secondary); _musicDuration.HorizontalAlignment = HorizontalAlignment.Right; times.Children.Add(_musicDuration);
+            // The times stand on the bar's own line: the elapsed time before it, the length after it ("2:30 ———— 4:50").
+            double timeRoom = Math.Ceiling(c.Time * (track.Duration.TotalHours >= 1 ? 4 : 2.9)) + 6, barInset = timeRoom + 8;
+            var times = new Grid { Height = c.SeekRow, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, layout.ProgressY, 0, 0), IsHitTestVisible = false };
+            _musicElapsed = UI.Fixed("", c.Time, c.TimeLine, Look.Secondary); _musicElapsed.VerticalAlignment = VerticalAlignment.Center; times.Children.Add(_musicElapsed);
+            _musicDuration = UI.Fixed("", c.Time, c.TimeLine, Look.Secondary); _musicDuration.HorizontalAlignment = HorizontalAlignment.Right; _musicDuration.VerticalAlignment = VerticalAlignment.Center; times.Children.Add(_musicDuration);
             foreach (var time in new[] { _musicElapsed, _musicDuration }) Typography.SetNumeralAlignment(time, FontNumeralAlignment.Tabular);
             // The player's own volume, in the middle of the times: the level of the app that plays (not Windows' master volume).
             _musicVolume = null;
@@ -655,11 +656,11 @@ public partial class MainWindow
                 bar.Available = level is not null; bar.Level = level ?? 0;
                 bar.Changed += value => PlayerVolume.Set(source, (float)value);
                 _musicVolume = bar; _volumeRead = Environment.TickCount64;
-                if (columnPage && !showSmtcHint)
+                if (!showSmtcHint)
                 {
-                    // On the transport's line, after the heart's place.
-                    bar.HorizontalAlignment = HorizontalAlignment.Left; bar.VerticalAlignment = VerticalAlignment.Top; bar.Width = 140;
-                    bar.Margin = new Thickness(layout.TripletX + layout.TripletWidth + layout.ControlGap + c.Mode + 26, layout.ControlsY + (c.Play - bar.Height) / 2, 0, 0);
+                    // In the middle of the transport's line.
+                    bar.HorizontalAlignment = HorizontalAlignment.Left; bar.VerticalAlignment = VerticalAlignment.Top; bar.Width = 150;
+                    bar.Margin = new Thickness(Math.Round((layout.BodyWidth - bar.Width) / 2), layout.ControlsY + (c.Play - bar.Height) / 2, 0, 0);
                     body.Children.Add(bar);
                 }
                 else { times.Children.Add(bar); times.IsHitTestVisible = true; }
@@ -669,7 +670,7 @@ public partial class MainWindow
             bool styled = Settings.MusicProgressLook != MusicProgressStyle.Simple;
             _musicSeek = new MusicSeekSlider { Style = (Style)FindResource("MusicSeek"), RestHeight = styled ? 0 : c.Bar, HoverHeight = styled ? 0 : c.BarHover, BarHeight = styled ? 0 : c.Bar,
                 Accent = ((SolidColorBrush)_musicAccent).Color, DurationSeconds = track.Duration.TotalSeconds, Height = c.SeekRow, AnimationsEnabled = animate, IsEnabled = track.CanSeek && track.HasTimeline,
-                VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, layout.ProgressY, 0, 0) };
+                VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(barInset, layout.ProgressY, barInset, 0) };
             AutomationProperties.SetName(_musicSeek, Loc.T("播放进度", "Playback position"));
             // Slider handles move-to-point before instance handlers; observe that handled event too.
             _musicSeek.AddHandler(PreviewMouseLeftButtonDownEvent, new MouseButtonEventHandler((sender, _) =>
@@ -693,7 +694,7 @@ public partial class MainWindow
             {
                 _musicProgress = new MusicProgress(_musicSeek, Settings.MusicProgressLook, ((SolidColorBrush)_musicAccent).Color, ((SolidColorBrush)UI.Brush(Look.Hex("track"))).Color,
                     track.State == MediaState.Playing && animate, track.SongKey)
-                { Height = c.SeekRow * 1.6, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, layout.ProgressY - c.SeekRow * .3, 0, 0) };
+                { Height = c.SeekRow * 1.6, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(barInset, layout.ProgressY - c.SeekRow * .3, barInset, 0) };
                 body.Children.Add(_musicProgress);
             }
             else _musicProgress = null;
@@ -1114,9 +1115,11 @@ public partial class MainWindow
         if (_mediaTrack is not { HasTimeline: true } track || _musicElapsed is null || _musicDuration is null) return;
         var position = TimeSpan.FromSeconds(track.Duration.TotalSeconds * fraction);
         _musicElapsed.Text = MusicTime(position);
-        _musicDuration.Text = MusicTime(track.Duration);
+        // The time on the right counts down: the time left, with a minus ("-4:50"), where the one on the left counts up from 0:00.
+        var remaining = track.Duration - position;
+        _musicDuration.Text = "-" + MusicTime(remaining > TimeSpan.Zero ? remaining : TimeSpan.Zero);
         AutomationProperties.SetName(_musicElapsed, Loc.T("已播放 ", "Elapsed ") + _musicElapsed.Text);
-        AutomationProperties.SetName(_musicDuration, Loc.T("总时长 ", "Duration ") + _musicDuration.Text);
+        AutomationProperties.SetName(_musicDuration, Loc.T("剩余 ", "Remaining ") + MusicTime(remaining > TimeSpan.Zero ? remaining : TimeSpan.Zero));
     }
     private void UpdateMusicPosition()
     {

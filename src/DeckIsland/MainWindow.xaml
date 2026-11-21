@@ -59,13 +59,12 @@
               <!-- Behind the music card: the cover's colours in soft streaks (MusicCard.cs). -->
               <local:MusicBackdrop Grid.Row="1" x:Name="MusicBackdropView" Visibility="Collapsed"/>
               <Grid Grid.Row="1" x:Name="MusicContent" Visibility="Collapsed"/>
-              <Button Grid.Row="1" x:Name="MusicPaletteButton" Style="{StaticResource PanelIconButton}" Width="26" Height="26" HorizontalAlignment="Right" VerticalAlignment="Top"
-                      Margin="0,2,10,0" Visibility="Collapsed" Click="MusicPalette_Click">
+              <!-- The playback source of the music page (Google Chrome, an app): beside the controls rather than in the crowded header; the button shows itself only while something plays. -->
+              <StackPanel Grid.Row="1" x:Name="MusicSourceHost" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom">
+                <Button x:Name="MusicPaletteButton" Style="{StaticResource PanelIconButton}" Width="26" Height="26" VerticalAlignment="Center" Margin="0,0,6,0" Visibility="Collapsed" Click="MusicPalette_Click">
                 <Path Width="14" Height="14" Stretch="Uniform" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.5"
                       StrokeLineJoin="Round" Data="M12,2 C6.5,2 2,6 2,11 C2,15.5 5.5,19 9.5,19 C11.5,19 12,17.8 12,17 C12,16 11.4,15.5 11.4,14.5 C11.4,13.4 12.3,12.6 13.4,12.6 H16 C19,12.6 21,10.6 21,8 C21,4.5 17,2 12,2 Z M7,9.5 L7.01,9.5 M10.5,6 L10.51,6 M15,6.5 L15.01,6.5"/>
               </Button>
-              <!-- The playback source of the music page (Google Chrome, an app): beside the controls rather than in the crowded header; the button shows itself only while something plays. -->
-              <Grid Grid.Row="1" x:Name="MusicSourceHost" HorizontalAlignment="Right" VerticalAlignment="Bottom">
                 <Button x:Name="MediaSourceButton" Style="{StaticResource PanelSourceButton}" Width="Auto" MaxWidth="150" Padding="8,0" Margin="0,0,2,0" Click="MediaSource_Click" Visibility="Collapsed">
                     <Grid>
                       <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
@@ -85,7 +84,7 @@
                                  Foreground="{Binding Foreground, ElementName=MediaSourceButton}" VerticalAlignment="Center" Visibility="Collapsed"/>
                     </Grid>
                   </Button>
-              </Grid>
+              </StackPanel>
               <!-- The clipboard and file transfer page (MainWindow.Shelf.cs); its full-content view spans the header row too. -->
               <Grid Grid.Row="1" x:Name="ShelfContent" Visibility="Collapsed"/>
               <Grid Grid.Row="1" x:Name="DevicesContent" Visibility="Collapsed"/>

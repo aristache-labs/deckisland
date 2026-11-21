@@ -63,27 +63,22 @@ public sealed record MusicLayout(MusicMetrics Metrics, double Density, double Bo
     }
     // The height of the upper part, above the progress bar; the cover is centred in it.
     public double UpperHeight { get; init; }
-    // The transport stands at the right of the titles, above the bar, and the room it takes from the titles' line.
-    public bool ControlsAside { get; init; }
-    public double AsideRoom { get; init; }
     // The lyric lines the room beside the cover holds, whether or not there are lyrics to show in them.
     public int LyricRoom => (int)Math.Clamp(Math.Floor((MiddleHeight - Metrics.MiddleGap) / Metrics.LyricLine), 0, 3);
     // lyricsExpected lays out the titles as if lyrics were shown, so they keep their place while lyrics are still looked up,
     // or when a song has none.
     public static MusicLayout Calculate(double width, double height, bool lyrics, bool timeline, bool message = false, bool fullControlEntry = false, bool transport = true,
-        bool lyricsExpected = false, bool controlsAside = false)
+        bool lyricsExpected = false)
     {
         double density = DensityFor(width, height);
         var c = MusicMetrics.At(density);
         double bodyW = width - 2 * c.Side, bodyH = height - c.Toolbar - c.Top - c.Bottom;
         // The transport glyphs occupy 3..21 of a 24-unit square; their ink ends at the body bottom.
         double controlsY = Math.Round(bodyH - c.Play * 7 / 8), inkTop = controlsY + c.Play / 8;
-        // Aside: the transport leaves the bottom row for the right of the titles, so the bar and the times take the bottom.
-        bool aside = controlsAside && transport && !fullControlEntry;
-        if (aside) { controlsY = bodyH; inkTop = bodyH; }
         // The times sit just below the bar, clear of it while the hovered bar is thicker.
         double timesY = Math.Round(inkTop - c.ControlsGap - c.TimeLine);
-        double progressY = Math.Round(timesY - c.BarHover / 2 - 2 - c.SeekRow / 2), barTop = progressY + (c.SeekRow - c.Bar) / 2;
+        // The times stand on the bar's own line (before and after it), so the bar takes the row they had.
+        double progressY = Math.Round(timesY + (c.TimeLine - c.SeekRow) / 2), barTop = progressY + (c.SeekRow - c.Bar) / 2;
         double upper = Math.Floor((timeline ? barTop : inkTop) - c.SectionGap);
         double cover = Math.Max(40, Math.Min(upper, bodyW - c.Gap - c.MinColumn));
         double coverY = Math.Floor((upper - cover) / 2), textX = cover + c.Gap, textW = bodyW - textX;
@@ -99,17 +94,8 @@ public sealed record MusicLayout(MusicMetrics Metrics, double Density, double Bo
         // The play button sits at the centre of the panel, with previous and next spread out with the panel's width
         // rather than packed beside it. The mode button is left of previous, with the same gap as between the others.
         double gap = Math.Round(Math.Clamp(bodyW * .14, c.Play * 1.2, c.Play * 2.6));
-        if (aside) gap = Math.Round(c.Play * .8);
         double tripletW = c.Skip * 2 + c.Play + 2 * gap;
         double tripletX = Math.Floor((bodyW - tripletW) / 2 + .5), modeX = tripletX - gap - c.Mode;
-        double asideRoom = 0;
-        if (aside)
-        {
-            // At the right end, with room after next for the heart; level with the titles, whose room ends before the mode button.
-            tripletX = bodyW - tripletW - gap - c.Mode; modeX = tripletX - gap - c.Mode;
-            controlsY = coverY + Math.Max(0, Math.Floor((headH - c.Play) / 2));
-            asideRoom = bodyW - modeX + 10;
-        }
         // Netease and Apple Music without full control offer the entry at the right end of the transport row. The entry
         // never moves the transport; the window shortens its label to the room right of the buttons.
         double fullControlRoom = !fullControlEntry ? 0 : transport ? bodyW - (tripletX + tripletW) - FullControlGap : bodyW;
@@ -117,7 +103,7 @@ public sealed record MusicLayout(MusicMetrics Metrics, double Density, double Bo
         if (!enable) fullControlRoom = 0;
         double radius = Math.Clamp(Math.Round(cover * .08), 5, 16);
         return new(c, density, bodyW, bodyH, cover, coverY, radius, textX, textW, merge, headH, cover - headH, lines, showMessage,
-            timeline ? progressY : 0, timeline ? c.SeekRow : 0, timesY, controlsY, gap, tripletX, tripletW, modeX, enable, fullControlRoom) { UpperHeight = upper, ControlsAside = aside, AsideRoom = asideRoom };
+            timeline ? progressY : 0, timeline ? c.SeekRow : 0, timesY, controlsY, gap, tripletX, tripletW, modeX, enable, fullControlRoom) { UpperHeight = upper };
     }
 
     // In the column layout the upper part has two columns, so the titles and the lyrics are not read as one block: the title,
