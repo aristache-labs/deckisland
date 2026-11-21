@@ -200,6 +200,21 @@ internal sealed class Renderer(App app, string output, string language, string[]
                 _settings.Style = CompactStyle.Line; await SettingsPage("collapsed-line", 1, height: 1600);
                 _settings.Style = style;
             }
+            // The Expanded view settings page in the same cards: dark and light, and the narrowest window; for checking.
+            if (scenes.Contains("expanded"))
+            {
+                await SettingsPage("expanded-dark", 2, height: 2000);
+                await SettingsPage("expanded-light", 2, height: 2000, theme: SettingsTheme.Light);
+                await SettingsPage("expanded-narrow", 2, height: 2000, width: 840);
+                // Every page row open, with its sizes and quick sizes.
+                _settings.WidgetsPage = _settings.RemindersPage = _settings.FocusPage = true;
+                await SettingsPage("expanded-open", 2, height: 5200, prepare: window =>
+                {
+                    // A page opened from another clears the open rows, so the page is opened first.
+                    window.ShowPage(2);
+                    if (Program.Field(window, "_openSizes") is HashSet<DeckPage> open) foreach (var each in Enum.GetValues<DeckPage>()) open.Add(each);
+                });
+            }
             if (scenes.Contains("hover-weather"))
             {
                 _settings.ColourfulWeatherCard = true; _settings.WeatherEnabled = true;
@@ -1664,11 +1679,12 @@ internal sealed class Renderer(App app, string output, string language, string[]
         Console.WriteLine("moons");
     }
 
-    private async Task SettingsPage(string name, int page, double height = 640, bool tips = false, SettingsTheme theme = SettingsTheme.Dark, double width = 960)
+    private async Task SettingsPage(string name, int page, double height = 640, bool tips = false, SettingsTheme theme = SettingsTheme.Dark, double width = 960, Action<SettingsWindow>? prepare = null)
     {
         const double scale = 1.5;
         _settings.Theme = theme;
         var window = new SettingsWindow(app);
+        prepare?.Invoke(window);
         window.ShowPage(page);
         var root = window.RootVisual;
         var resources = window.Resources;

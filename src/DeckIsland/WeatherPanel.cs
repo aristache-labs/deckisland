@@ -12,6 +12,8 @@ public partial class MainWindow
     private const string RainIcon = "rain";
     private const string WaterIcon = "water";
     private const string PartlyCloudyNight = "partly-cloudy-night";
+    // How much smaller the clear-night moon is drawn in the collapsed row (CompactWeather).
+    private const double MoonShrink = .8;
     private const string RainCloud = "M 5.5,15 A 3.5,3.5 0 0 1 5,8 A 5,5 0 0 1 14.6,7 A 4.1,4.1 0 0 1 18,15";
     private static readonly string[] RainDrops = ["M 8,15 L 6.5,19", "M 12.5,16 L 11,20", "M 17,15 L 15.5,19"];
     private (WeatherReading? Reading, bool Loading, bool Setup, bool Stale, bool Fahrenheit, bool Colourful,
@@ -75,6 +77,9 @@ public partial class MainWindow
         bool nested = Settings.QuotaRingStyle == QuotaRingStyle.Nested && icon != "–";
         double statusSize = CompactMusicLayout.StatusRingSize(Settings.QuotaRingStyle, scale);
         double iconHeight = nested ? CompactMusicLayout.Whole(statusSize * .9) : 14 * scale;
+        // The crescent fills its whole box where the other marks leave air around them (the sun's rays, a cloud's curves), so at
+        // the same height it read larger than the rings and text beside it.
+        if (icon == "☾") iconHeight = CompactMusicLayout.Whole(iconHeight * MoonShrink);
         var mark = WeatherLineIcon(icon, iconHeight, text.Foreground, matchHeight: nested);
         if (nested && mark is Path path && path.Data.Bounds is { Height: > 0 } bounds)
             path.Width = Math.Min(statusSize, path.StrokeThickness + (iconHeight - path.StrokeThickness) * bounds.Width / bounds.Height);

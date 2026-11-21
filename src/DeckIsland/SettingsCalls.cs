@@ -19,11 +19,5 @@ public sealed partial class SettingsWindow
                 help: Loc.T("通话标签页：麦克风静音开关，以及通话前测试扬声器和麦克风。", "A tab for calls: the call timer, mute, your speaker and microphone, and a camera mirror that opens only when you press Check camera. The camera is released the moment the tab closes.")));
     }
 
-    private void CallSizeControls()
-    {
-        Target.Children.Add(Dimension(Loc.T("宽度", "Width"), S.CallsWidth, DeckPages.MinWidth, DeckPages.MaxWidth,
-            value => Resize(s => s.CallsWidth = value, DeckPage.Calls)));
-        Target.Children.Add(Dimension(Loc.T("高度", "Height"), S.CallsHeight, DeckPages.MinHeight, DeckPages.MaxHeight,
-            value => Resize(s => s.CallsHeight = value, DeckPage.Calls)));
-    }
+    private void CallSizeControls() => PageSizeControls(DeckPage.Calls, Loc.T("通话", "Calls"));
 }

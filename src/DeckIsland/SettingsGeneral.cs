@@ -41,11 +41,11 @@ public partial class SettingsWindow
     }
 
     // A section: its title and what it is for in a header, a line, then the rows with a thin line between them.
-    private void GeneralCard(string title, string description, params FrameworkElement[] rows) => Card(title, description, null, rows);
+    private void GeneralCard(string title, string description, params FrameworkElement[] rows) => Card(title, description, null, null, rows);
 
-    // The same card with an optional action at the right of its header (a reset link); returns the body, which later rows can
-    // join (CardRows). A card without a title has no header.
-    private StackPanel Card(string title, string description, FrameworkElement? action, params FrameworkElement[] rows)
+    // The same card with an optional action at the right of its header (a reset link) and an info icon after its title; returns
+    // the body, which later rows can join (CardRows). A card without a title has no header.
+    private StackPanel Card(string title, string description, FrameworkElement? action, Func<string>? help, params FrameworkElement[] rows)
     {
         var body = new StackPanel { Margin = new Thickness(20, 2, 20, 2) };
         CardRows(body, rows);
@@ -54,7 +54,8 @@ public partial class SettingsWindow
         {
             var about = TextLine(description, 12.5, TextSecondary);
             about.TextWrapping = TextWrapping.Wrap; about.Margin = new Thickness(0, 3, 0, 0);
-            var text = new StackPanel { Children = { TextLine(title, 15, TextPrimary, FontWeights.SemiBold) } };
+            var name = TextLine(title, 15, TextPrimary, FontWeights.SemiBold);
+            var text = new StackPanel { Children = { help is null ? name : new HelpHeading(name, HelpIcon(title, help, 14)) { HorizontalAlignment = HorizontalAlignment.Left } } };
             if (description.Length > 0) text.Children.Add(about);
             var header = new DockPanel { Margin = new Thickness(20, 16, 20, 14) };
             if (action is not null) { DockPanel.SetDock(action, Dock.Right); action.VerticalAlignment = VerticalAlignment.Center; action.Margin = new Thickness(16, 0, 0, 0); header.Children.Add(action); }

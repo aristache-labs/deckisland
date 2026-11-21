@@ -189,20 +189,5 @@ public partial class SettingsWindow
             sources);
     }
 
-    private void WeatherSizeControls()
-    {
-        var dimensions = new Grid { Margin = new Thickness(0, 8, 0, 0) };
-        dimensions.ColumnDefinitions.Add(new());
-        dimensions.ColumnDefinitions.Add(new());
-        var width = Dimension(Loc.T("宽度", "Width"), S.WeatherWidth, DeckPages.MinWidth, DeckPages.MaxWidth,
-            value => Resize(s => s.WeatherWidth = value, DeckPage.Weather));
-        var height = Dimension(Loc.T("高度", "Height"), S.WeatherHeight, DeckPages.MinHeight, DeckPages.MaxHeight,
-            value => Resize(s => s.WeatherHeight = value, DeckPage.Weather));
-        width.Margin = new Thickness(0, 0, 20, 0);
-        height.Margin = new Thickness(20, 0, 0, 0);
-        Grid.SetColumn(height, 1);
-        dimensions.Children.Add(width);
-        dimensions.Children.Add(height);
-        Target.Children.Add(dimensions);
-    }
+    private void WeatherSizeControls() => PageSizeControls(DeckPage.Weather, Loc.T("天气", "Weather"));
 }

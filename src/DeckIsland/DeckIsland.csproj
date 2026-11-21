@@ -14,6 +14,7 @@
     <Resource Include="Assets\Fonts\*.ttf" />
     <Resource Include="Assets\Weather\*.png" />
     <Resource Include="Assets\QuotaAgents\*.png" />
+    <Resource Include="Assets\DeckIsland.ico" />
     <Content Include="ThirdPartyNotices.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Content Include="..\..\LICENSE" Link="LICENSE" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>

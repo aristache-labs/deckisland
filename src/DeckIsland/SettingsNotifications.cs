@@ -84,11 +84,5 @@ public sealed partial class SettingsWindow
             ignored);
     }
 
-    private void NotificationSizeControls()
-    {
-        Target.Children.Add(Dimension(Loc.T("宽度", "Width"), S.NotificationsWidth, DeckPages.MinWidth, DeckPages.MaxWidth,
-            value => Resize(s => s.NotificationsWidth = value, DeckPage.Notifications)));
-        Target.Children.Add(Dimension(Loc.T("高度", "Height"), S.NotificationsHeight, DeckPages.MinHeight, DeckPages.MaxHeight,
-            value => Resize(s => s.NotificationsHeight = value, DeckPage.Notifications)));
-    }
+    private void NotificationSizeControls() => PageSizeControls(DeckPage.Notifications, Loc.T("通知", "Notifications"));
 }

@@ -96,6 +96,8 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
         UseLayoutRounding = true; SnapsToDevicePixels = true;
         TextOptions.SetTextFormattingMode(this, TextFormattingMode.Display);
         Native.SettingsChrome.Apply(this);
+        // Its own icon on the taskbar: without one, Windows drew an empty tile for it under the app's own taskbar id (App.OnStartup).
+        Icon = System.Windows.Media.Imaging.BitmapFrame.Create(new Uri("pack://application:,,,/DeckIsland;component/Assets/DeckIsland.ico"));
         SourceInitialized += (_, _) => Native.SettingsChrome.SetTheme(this, _palette.Dark);
         SystemEvents.UserPreferenceChanged += SystemThemeChanged;
         Deactivated += (_, _) => { EndAppDrag(false); QueuePreviewDismissal(); };
@@ -360,6 +362,7 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
         head.Children.Add(page == 7 ? Wordmark(28) : TextLine(_pages[page],24,TextPrimary,FontWeights.SemiBold)); _content.Children.Add(head);
         if (page == 0) PageHeader(head, Loc.T("启动、外观以及 DeckIsland 在桌面上的行为。", "Startup, appearance and how DeckIsland behaves on your desktop."));
         if (page == 1) PageHeader(head, Loc.T("面板收起时的样子、显示的内容和位置。", "How the island looks, what it shows and where it sits while closed."));
+        if (page == 2) PageHeader(head, Loc.T("展开面板显示哪些页面、它们的尺寸以及如何响应。", "Which pages the open island shows, how big they are and how it responds."));
         switch(page) { case WidgetsSettingsPage: WidgetsSettings(); break; case NotificationsSettingsPage: NotificationsSettings(); break; case CallsSettingsPage: CallsSettings(); break; case 0: General(); break; case 1: Compact(); break; case 2: Expanded(); break; case 3: Pages(); break; case 4: ModelPrices(); break; case 5: MusicStyle(); break; case 6: Players(); break; case 7: About(); break; case ThemePage: ThemesPage(); break; case MonitorSettingsPage: MonitorSettings(); break; case SensorsPage: SensorsSettings(); break; case HotkeysPage: HotkeysSettings(); break; case DevicesSettingsPage: DevicesSettings(); break; case ClipboardSettingsPage: ClipboardSettings(); break; case TransferSettingsPage: TransferSettings(); break; case ClipboardSyncSettingsPage: ClipboardSyncSettings(); break; case ShelfLayoutSettingsPage: ShelfLayoutSettings(); break; case MusicGesturesPage: MusicGesturesSettings(); break; case ProfilesPage: ProfilesSettings(); break; }
         if (_content.Children[^1] is Border lastGroup) lastGroup.Margin = new Thickness(lastGroup.Margin.Left, lastGroup.Margin.Top, lastGroup.Margin.Right, 0);
         // Apply the offset before the frame is drawn, so the rebuilt page never shows its top for a frame.
@@ -511,7 +514,7 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
             _styleCards[style]=button;
         }
         _styleOptions=new Grid();
-        Card(Loc.T("收起样式", "Collapsed style"), Loc.T("面板收起时的形状。下面的选项属于所选样式。", "The island's shape while closed. The options below belong to the chosen style."), null, styles);
+        Card(Loc.T("收起样式", "Collapsed style"), Loc.T("面板收起时的形状。下面的选项属于所选样式。", "The island's shape while closed. The options below belong to the chosen style."), null, null, styles);
         _content.Children.Add(_styleOptions); ShowStyleOptions(S.Style,null);
     }
     // One row per expanded page: its switch at the right, and its sizes under the row while the row is open, set in
@@ -522,7 +525,8 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
         // The last viewed page is always offered, followed by each page that is shown. A choice whose page is switched off
         // reads as the last viewed page, which is what the panel does then, and returns when the page is shown again.
         // Switching a page on or off refills the list in place, so the page is not rebuilt and the switch keeps its animation.
-        var start = new ComboBox { Width = 150, Style = (Style)FindResource("SettingsCombo") };
+        _cardBody = null;
+        var start = new ComboBox { Width = GeneralCombo, Style = (Style)FindResource("SettingsCombo") };
         AutomationProperties.SetName(start, Loc.T("每次打开时显示", "Page shown on opening")); PopupMotion.Attach(start);
         List<(DefaultDeckPage Value, string Label)> starts = [];
         bool filling = false;
@@ -552,7 +556,8 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
         FillStarts();
         start.SelectionChanged += (_, _) => { if (!filling && start.SelectedIndex >= 0) Change(s => s.DefaultPage = starts[start.SelectedIndex].Value); };
         SectionTitle(Loc.T("显示的页面", "Pages shown"), help: () => Loc.T("除了在下面设置宽度与高度，也可以把鼠标移到展开面板的左右两边、底边或底角，直接拖动调整大小。",
-            "Besides setting the width and height below, you can point at the expanded panel's sides, bottom edge or bottom corners and drag them to resize it."));
+            "Besides setting the width and height below, you can point at the expanded panel's sides, bottom edge or bottom corners and drag them to resize it."),
+            description: Loc.T("打开或关闭页面，拖动把手排序，展开一行可调整它的尺寸。", "Turn pages on or off, drag a handle to reorder, open a row for its size."));
         // The rows are in the order of the page switch; dragging one by its handle moves its page there at once.
         var pages = new StackPanel();
         _pageRows.Clear();
@@ -574,12 +579,12 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
         UpdateDividers(pages);
         Group(pages);
         // Settings that apply across the expanded pages rather than to one of them.
-        SectionTitle(Loc.T("通用", "General"));
-        Group(Row(Loc.T("每次打开时显示", "Page shown on opening"), start),
-            Toggle(Loc.T("右键点击打开设置", "Right-click opens settings"), S.RightClickSettings, value => Change(s => s.RightClickSettings = value),
-                help: Loc.T("面板展开时，在面板内任意位置单击右键即可打开设置。", "When the panel is expanded, right-click anywhere inside it to open settings.")),
-            MouseWheelRow(),
-            ExpandPlaceRow());
+        SectionTitle(Loc.T("通用", "General"), description: Loc.T("展开面板如何打开以及如何响应操作。", "How the open island starts and answers the mouse."));
+        Group(Describe(Row(Loc.T("每次打开时显示", "Page shown on opening"), start), Loc.T("展开后首先看到的页面。", "The page you see first.")),
+            Describe(Toggle(Loc.T("右键点击打开设置", "Right-click opens settings"), S.RightClickSettings, value => Change(s => s.RightClickSettings = value),
+                help: Loc.T("面板展开时，在面板内任意位置单击右键即可打开设置。", "When the panel is expanded, right-click anywhere inside it to open settings.")), Loc.T("在面板内单击右键。", "Right-click inside the panel.")),
+            Describe(MouseWheelRow(), Loc.T("在展开的面板上滚动滚轮时。", "Rolling the wheel over the open island.")),
+            Describe(ExpandPlaceRow(), Loc.T("刘海比面板更宽时，面板展开的位置。", "Where it opens when the notch is wider.")));
     }
     private const double PageRowHeight = 44;
     private readonly List<(Border Row, StackPanel Sizes, Button Arrow)> _pageRows = [];
@@ -629,6 +634,29 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
     {
         _openSizes.Clear();
         foreach (var (row, sizes, arrow) in _pageRows) { sizes.Visibility = Visibility.Collapsed; PointArrow(arrow, false); row.Height = PageRowHeight; }
+    }
+    // A page's width and height side by side, then its quick sizes (DeckPages.QuickSize); a quick size sets both and rebuilds
+    // the page, so the sliders show it. The one matching the page's size is shown as chosen.
+    private void PageSizeControls(DeckPage page, string name)
+    {
+        var (width, height) = DeckPages.Size(S, page);
+        var (minWidth, maxWidth, minHeight, maxHeight) = DeckPages.Limits(S, page);
+        var dimensions = new Grid { Margin = new Thickness(0, 8, 0, 0) }; dimensions.ColumnDefinitions.Add(new()); dimensions.ColumnDefinitions.Add(new());
+        var wide = Dimension(Loc.T("宽度", "Width"), width, minWidth, maxWidth, value => Resize(s => DeckPages.SetSize(s, page, value, DeckPages.Size(s, page).Height), page));
+        var tall = Dimension(Loc.T("高度", "Height"), height, minHeight, maxHeight, value => Resize(s => DeckPages.SetSize(s, page, DeckPages.Size(s, page).Width, value), page));
+        wide.Margin = new Thickness(0, 0, 20, 0); tall.Margin = new Thickness(20, 0, 0, 0); Grid.SetColumn(tall, 1);
+        dimensions.Children.Add(wide); dimensions.Children.Add(tall);
+        Target.Children.Add(dimensions);
+        var sizes = KeepPreview(new UniformGrid { Columns = 3, Width = 292 });
+        foreach (var size in Enum.GetValues<PanelSize>())
+        {
+            var (presetWidth, presetHeight) = DeckPages.QuickSize(page, size);
+            var choice = new RadioButton { Style = (Style)FindResource("SettingsSegment"), Content = PanelSizes.Name(size), GroupName = "QuickSize" + page, IsChecked = (width, height) == (presetWidth, presetHeight) };
+            AutomationProperties.SetName(choice, Loc.T(name + "快捷尺寸 ", name + " quick size ") + PanelSizes.Name(size));
+            choice.Checked += (_, _) => { Resize(s => DeckPages.SetSize(s, page, presetWidth, presetHeight), page); ShowPage(2); };
+            sizes.Children.Add(choice);
+        }
+        QuickSizeRow(sizes);
     }
     private void QuickSizeRow(UniformGrid sizes)
     {
@@ -1241,13 +1269,13 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
 
     // The Collapsed view page is laid out in General's cards (Card): there a section title heads the card its next group
     // opens, and a group with no title of its own joins the card above it.
-    private bool CardPage => _page == 1;
-    private (string Title, string Description, FrameworkElement? Action)? _cardTitle;
+    private bool CardPage => _page is 1 or 2;
+    private (string Title, string Description, FrameworkElement? Action, Func<string>? Help)? _cardTitle;
     private StackPanel? _cardBody;
 
     private void SectionTitle(string title, FrameworkElement? action = null, Func<string>? help = null, string description = "")
     {
-        if (CardPage) { _cardTitle = (title, description, action); return; }
+        if (CardPage) { _cardTitle = (title, description, action, help); return; }
         var row = new DockPanel { Margin = new Thickness(0, 0, 0, 8) };
         if (action is not null) { DockPanel.SetDock(action, Dock.Right); action.VerticalAlignment = VerticalAlignment.Center; row.Children.Add(action); }
         var label = TextLine(title, 11, TextSecondary); label.VerticalAlignment = VerticalAlignment.Center;
@@ -1264,9 +1292,9 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
     {
         if (CardPage)
         {
-            if (_cardTitle is { } heading) { _cardTitle = null; _cardBody = Card(heading.Title, heading.Description, heading.Action, rows); }
+            if (_cardTitle is { } heading) { _cardTitle = null; _cardBody = Card(heading.Title, heading.Description, heading.Action, heading.Help, rows); }
             else if (_cardBody is { } body) CardRows(body, rows);
-            else _cardBody = Card("", "", null, rows);
+            else _cardBody = Card("", "", null, null, rows);
             return;
         }
         var panel = new StackPanel();

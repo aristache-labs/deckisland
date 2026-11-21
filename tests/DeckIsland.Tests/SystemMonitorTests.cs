@@ -326,6 +326,16 @@ static class SystemMonitorTests
             && DeckPages.MaxWidthOn(800, 2) == DeckPages.MinWidth);
         check("Pages: the usage page is never narrower than its columns need",
             DeckPages.Limits(sized, DeckPage.Usage).MinWidth == Math.Max(DeckPages.MinWidth, sized.MinimumWidth) && DeckPages.Limits(sized, DeckPage.Music).MinWidth == DeckPages.MinWidth);
+        DeckPage[] quick = [DeckPage.Widgets, DeckPage.Notifications, DeckPage.Reminders, DeckPage.Calls, DeckPage.Focus, DeckPage.Weather, DeckPage.Devices];
+        check("Pages: a page's Standard quick size is its default size, Compact and Spacious lie within its limits either side of it",
+            quick.All(page =>
+            {
+                var limits = DeckPages.Limits(settings, page);
+                var (compact, standard, spacious) = (DeckPages.QuickSize(page, PanelSize.Compact), DeckPages.QuickSize(page, PanelSize.Standard), DeckPages.QuickSize(page, PanelSize.Spacious));
+                bool Within((double Width, double Height) size) => size.Width >= limits.MinWidth && size.Width <= limits.MaxWidth && size.Height >= limits.MinHeight && size.Height <= limits.MaxHeight;
+                return standard == DeckPages.Size(new DeckSettings(), page) && Within(compact) && Within(spacious)
+                    && compact.Width <= standard.Width && compact.Height < standard.Height && spacious.Width > standard.Width && spacious.Height > standard.Height;
+            }));
         check("Pages: a shown page resolves to itself", DeckPages.Resolve(settings, DeckPage.Monitor) == DeckPage.Monitor);
         settings.UsagePage = false;
         check("Pages: a hidden page falls back to the first shown one", DeckPages.Resolve(settings, DeckPage.Usage) == DeckPage.Music);

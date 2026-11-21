@@ -310,13 +310,7 @@ public partial class SettingsWindow
             : Loc.T("未报告电量", "No battery reported") }
         .Concat(device.Charging ? [Loc.T("充电中", "Charging")] : []));
 
-    private void DeviceSizeControls()
-    {
-        var dimensions = new Grid { Margin = new Thickness(0, 8, 0, 0) }; dimensions.ColumnDefinitions.Add(new()); dimensions.ColumnDefinitions.Add(new());
-        var width = Dimension(Loc.T("宽度", "Width"), S.DevicesWidth, 440, 1200, value => Resize(s => s.DevicesWidth = value, DeckPage.Devices)); width.Margin = new Thickness(0, 0, 20, 0); dimensions.Children.Add(width);
-        var height = Dimension(Loc.T("高度", "Height"), S.DevicesHeight, 140, 400, value => Resize(s => s.DevicesHeight = value, DeckPage.Devices)); height.Margin = new Thickness(20, 0, 0, 0); Grid.SetColumn(height, 1); dimensions.Children.Add(height);
-        Target.Children.Add(dimensions);
-    }
+    private void DeviceSizeControls() => PageSizeControls(DeckPage.Devices, Loc.T("设备电量", "Device batteries"));
 
     // A device's ring in the settings' colors: the charge as an arc on a track, the device's icon inside.
     internal sealed class DeviceRing(string ink, string faint, string track) : FrameworkElement

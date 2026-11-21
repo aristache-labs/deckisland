@@ -23,20 +23,5 @@ public sealed partial class SettingsWindow
                 S.FocusHideOtherWidgets, value => Change(s => s.FocusHideOtherWidgets = value)));
     }
 
-    private void FocusSizeControls()
-    {
-        var dimensions = new Grid { Margin = new Thickness(0, 8, 0, 0) };
-        dimensions.ColumnDefinitions.Add(new());
-        dimensions.ColumnDefinitions.Add(new());
-        var width = Dimension(Loc.T("宽度", "Width"), S.FocusWidth, DeckPages.MinWidth, DeckPages.MaxWidth,
-            value => Resize(s => s.FocusWidth = value, DeckPage.Focus));
-        var height = Dimension(Loc.T("高度", "Height"), S.FocusHeight, DeckPages.MinHeight, DeckPages.MaxHeight,
-            value => Resize(s => s.FocusHeight = value, DeckPage.Focus));
-        width.Margin = new Thickness(0, 0, 20, 0);
-        height.Margin = new Thickness(20, 0, 0, 0);
-        Grid.SetColumn(height, 1);
-        dimensions.Children.Add(width);
-        dimensions.Children.Add(height);
-        Target.Children.Add(dimensions);
-    }
+    private void FocusSizeControls() => PageSizeControls(DeckPage.Focus, Loc.T("专注计时器", "Focus timer"));
 }

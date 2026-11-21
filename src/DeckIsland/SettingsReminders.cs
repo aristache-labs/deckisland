@@ -63,11 +63,5 @@ public sealed partial class SettingsWindow
             ChoiceRow(Loc.T("提示音", "Alert sound"), Loc.T("“重复”会一直响，直到你回应或推迟。", "Repeat keeps chiming until you answer or snooze."), SegmentBorder(sounds)));
     }
 
-    private void ReminderSizeControls()
-    {
-        Target.Children.Add(Dimension(Loc.T("宽度", "Width"), S.RemindersWidth, DeckPages.MinWidth, DeckPages.MaxWidth,
-            value => Resize(s => s.RemindersWidth = value, DeckPage.Reminders)));
-        Target.Children.Add(Dimension(Loc.T("高度", "Height"), S.RemindersHeight, DeckPages.MinHeight, DeckPages.MaxHeight,
-            value => Resize(s => s.RemindersHeight = value, DeckPage.Reminders)));
-    }
+    private void ReminderSizeControls() => PageSizeControls(DeckPage.Reminders, Loc.T("提醒", "Reminders"));
 }

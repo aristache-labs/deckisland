@@ -17,13 +17,7 @@ public sealed partial class SettingsWindow
         WidgetOptions();
     }
 
-    private void WidgetSizeControls()
-    {
-        Target.Children.Add(Dimension(Loc.T("宽度", "Width"), S.WidgetsWidth, DeckPages.MinWidth, DeckPages.MaxWidth,
-            value => Resize(s => s.WidgetsWidth = value, DeckPage.Widgets)));
-        Target.Children.Add(Dimension(Loc.T("高度", "Height"), S.WidgetsHeight, 220, DeckPages.MaxHeight,
-            value => Resize(s => s.WidgetsHeight = value, DeckPage.Widgets)));
-    }
+    private void WidgetSizeControls() => PageSizeControls(DeckPage.Widgets, WidgetLayout.Title);
 
     private ComboBox WidgetChoice(string label, IEnumerable<string> names, int selected)
     {

@@ -75,6 +75,19 @@ public static class DeckPages
         _ => (Math.Max(settings.Width, settings.MinimumWidth), settings.Height)
     };
 
+    // The quick sizes of the pages without sizes of their own (MusicSizes, MonitorSizes, ShelfSizes, the usage page's PresetSize):
+    // Standard is the page's default size, Compact smaller and Spacious larger, each within the page's limits.
+    public static (double Width, double Height) QuickSize(DeckPage page, PanelSize size) => (page, size) switch
+    {
+        (DeckPage.Widgets, PanelSize.Compact) => (460, 220), (DeckPage.Widgets, PanelSize.Spacious) => (700, 360),
+        (DeckPage.Notifications or DeckPage.Reminders, PanelSize.Compact) => (440, 200), (DeckPage.Notifications or DeckPage.Reminders, PanelSize.Spacious) => (620, 380),
+        (DeckPage.Calls, PanelSize.Compact) => (440, 160), (DeckPage.Calls, PanelSize.Spacious) => (560, 260),
+        (DeckPage.Focus, PanelSize.Compact) => (440, 140), (DeckPage.Focus, PanelSize.Spacious) => (560, 240),
+        (DeckPage.Weather, PanelSize.Compact) => (440, 180), (DeckPage.Weather, PanelSize.Spacious) => (620, 320),
+        (DeckPage.Devices, PanelSize.Compact) => (440, 160), (DeckPage.Devices, PanelSize.Spacious) => (620, 280),
+        _ => Size(new DeckSettings(), page)
+    };
+
     // The largest width and height among the shown pages (the usage page when none is): the window holds any of them, so
     // switching pages never resizes the window itself.
     public static (double Width, double Height) Largest(DeckSettings settings)
