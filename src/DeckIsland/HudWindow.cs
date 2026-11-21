@@ -48,13 +48,14 @@ internal sealed class HudWindow : Window
     private readonly Ellipse _dot = new() { Width = 9, Height = 9, StrokeThickness = 1.5, VerticalAlignment = VerticalAlignment.Center };
     private readonly TextBlock _figure = new() { FontSize = 12.5, VerticalAlignment = VerticalAlignment.Center };
     private string _key = "";
+    private readonly DockPanel _row;
 
     internal HudWindow()
     {
         WindowStyle = WindowStyle.None; AllowsTransparency = true; Background = Brushes.Transparent; ShowInTaskbar = false;
         Topmost = true; ShowActivated = false; ResizeMode = ResizeMode.NoResize; Focusable = false; Width = 300; Height = 38;
         SizeToContent = SizeToContent.Manual; Opacity = 0;
-        var row = new DockPanel { LastChildFill = true };
+        var row = _row = new DockPanel { LastChildFill = true };
         _icon.Margin = new Thickness(0, 0, 11, 0);
         DockPanel.SetDock(_icon, Dock.Left);
         row.Children.Add(_icon);
@@ -90,6 +91,11 @@ internal sealed class HudWindow : Window
         _icon.Data = Geometry.Parse(Icons[message.Icon]);
         _text.Text = message.Text;
         _bar.Visibility = message.Level is null ? Visibility.Collapsed : Visibility.Visible;
+        // Without text the bar is the readout and takes the whole row; with text it sits at the right.
+        bool textless = message.Text.Length == 0 && message.Level is not null;
+        _row.Children.Remove(_bar); _row.Children.Remove(_text);
+        if (textless) { _text.Visibility = Visibility.Collapsed; _row.Children.Add(_text); _row.Children.Add(_bar); DockPanel.SetDock(_bar, Dock.Left); _bar.HorizontalAlignment = HorizontalAlignment.Stretch; _bar.MinWidth = 0; }
+        else { _text.Visibility = Visibility.Visible; DockPanel.SetDock(_bar, Dock.Right); _bar.HorizontalAlignment = HorizontalAlignment.Left; _bar.MinWidth = 120; _row.Children.Add(_bar); _row.Children.Add(_text); }
         _dot.Visibility = message.On is null ? Visibility.Collapsed : Visibility.Visible;
         _figure.Visibility = message.Figure is null ? Visibility.Collapsed : Visibility.Visible;
         _figure.Text = message.Figure ?? "";
