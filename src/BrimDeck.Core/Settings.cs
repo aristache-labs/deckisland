@@ -57,8 +57,8 @@ public sealed record IgnoredMediaApp(string AppId = "", string Name = "", string
 public enum ProviderId { Claude, Codex, Antigravity, Cursor, GlmChina, NewApi, Sub2Api, Custom, ZCode = 10, GlmGlobal = 11, Dsh = 12, DeepSeek = 13, GrokBot = 14, Kimi = 15, KimiApi = 16, OpenCode = 17, OpenCodeGo = 18, OpenRouter = 19, Pi = 20, CodeAgent = 21, CommandCode = 22, CommandCodeApi = 23, WorkBuddy = 24, WorkBuddyAi = 25, MiMo = 26, MiMoApi = 27, MiMoTokenPlan = 28, MiMoLinked = 29, KimiPlatform = 30 }
 public enum SettingsTheme { System, Light, Dark }
 // Pages are saved as numbers, so new members go at the end; their order in the page switch is DeckSettings.PageOrder.
-public enum DeckPage { Usage, Music, Monitor, Clipboard, Devices, Weather, Focus, Reminders }
-public enum DefaultDeckPage { Last, Usage, Music, Monitor, Clipboard, Devices, Weather, Focus, Reminders }
+public enum DeckPage { Usage, Music, Monitor, Clipboard, Devices, Weather, Focus, Reminders, Widgets }
+public enum DefaultDeckPage { Last, Usage, Music, Monitor, Clipboard, Devices, Weather, Focus, Reminders, Widgets }
 // What the mouse wheel does over the expanded panel. Saved as numbers, so new members go at the end.
 public enum MouseWheelAction { None, Pages, Volume }
 // What a double click on an end of the collapsed notch or capsule does: turn its auto width on or off, or start moving it
@@ -706,6 +706,18 @@ public sealed class DeckSettings
     public bool WeatherFahrenheit { get; set; }
     public bool ColourfulWeatherCard { get; set; }
     public WeatherCity? WeatherCity { get; set; }
+    public bool WidgetsPage { get; set; }
+    public double WidgetsWidth { get; set; } = 540;
+    public double WidgetsHeight { get; set; } = 292;
+    public WidgetKind[] WidgetSlots { get => [.. _widgetSlots]; set => _widgetSlots = WidgetLayout.Normalize(value); }
+    private WidgetKind[] _widgetSlots = WidgetLayout.Normalize(null);
+    public bool NotchMinimal { get; set; }
+    public bool CapsuleMinimal { get; set; }
+    public CompactPart? NotchMinimalFirst { get; set; } = CompactPart.Clock;
+    public CompactPart? NotchMinimalSecond { get; set; } = CompactPart.Weather;
+    public CompactPart? CapsuleMinimalFirst { get; set; } = CompactPart.Clock;
+    public CompactPart? CapsuleMinimalSecond { get; set; } = CompactPart.Weather;
+    public bool Minimal(CompactStyle style) => style == CompactStyle.Notch ? NotchMinimal : style == CompactStyle.Capsule && CapsuleMinimal;
     public bool RemindersPage { get; set; }
     public ReminderSound ReminderSound { get; set; } = ReminderSound.Once;
     public List<Reminder> Reminders { get; set; } = [];
@@ -853,7 +865,7 @@ public sealed class DeckSettings
     // style; the two are shown independently, so either one keeps the data current.
     [JsonIgnore] public IReadOnlyList<AppEntry> ConfiguredApps => Apps.Where(app => app.Enabled).Take(AppPresets.MaximumShownApps).ToList();
     [JsonIgnore] public bool ShownAppsFull => ConfiguredApps.Count >= AppPresets.MaximumShownApps;
-    [JsonIgnore] public bool QuotaWanted => UsagePage || ShowsSummary(Style);
+    [JsonIgnore] public bool QuotaWanted => UsagePage || ShowsSummary(Style) || WidgetsPage && _widgetSlots.Contains(WidgetKind.Quotas);
     [JsonIgnore] public IReadOnlyList<AppEntry> EnabledApps => QuotaWanted ? ConfiguredApps : [];
     [JsonIgnore] public IReadOnlySet<ProviderId> RequiredProviders => EnabledApps.SelectMany(app => new[] { app.QuotaSource, app.UsageSource }).ToHashSet();
     [JsonIgnore] public IReadOnlyList<ProviderId> StatisticsProviders => EnabledApps.Select(app => app.UsageSource).Distinct().ToList();
@@ -950,6 +962,8 @@ public sealed class DeckSettings
         MusicHeight = double.IsFinite(MusicHeight) ? Math.Clamp(MusicHeight, DeckPages.MinHeight, DeckPages.MaxHeight) : 200;
         MonitorWidth = double.IsFinite(MonitorWidth) ? Math.Clamp(MonitorWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : MonitorSizes.Default.Width;
         if (WeatherCity is { Valid: false }) WeatherCity = null;
+        WidgetsWidth = double.IsFinite(WidgetsWidth) ? Math.Clamp(WidgetsWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : 540;
+        WidgetsHeight = double.IsFinite(WidgetsHeight) ? Math.Clamp(WidgetsHeight, 220, DeckPages.MaxHeight) : 292;
         Reminders = Reminder.Normalize(Reminders);
         if (!Enum.IsDefined(ReminderSound)) ReminderSound = ReminderSound.Once;
         RemindersWidth = double.IsFinite(RemindersWidth) ? Math.Clamp(RemindersWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : 490;

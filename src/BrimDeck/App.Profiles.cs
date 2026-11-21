@@ -58,7 +58,8 @@ public partial class App
 
     // The settings of every panel on screen; each profile once.
     internal IEnumerable<DeckSettings> ShownSettings => Decks.Select(deck => deck.PanelSettings).Distinct();
-    internal bool QuotaWantedAnywhere => ShownSettings.Any(settings => settings.QuotaWanted);
+    internal bool QuotaWantedAnywhere => Decks.Any(deck => deck.PanelSettings.UsagePage ||
+        deck.PanelSettings.ShowsSummary(deck.PanelSettings.Style) || deck.WidgetVisible(WidgetKind.Quotas));
     // The settings the usage is read with: the applications are shared, and they are read when any panel shows quotas.
     internal DeckSettings DataSettings()
     {

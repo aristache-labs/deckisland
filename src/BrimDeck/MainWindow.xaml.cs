@@ -533,7 +533,7 @@ public partial class MainWindow : Window
     }
     private CollapsedShape ShapeFor(CompactStyle style)
     {
-        double? wanted = Settings.CompactAutoWidth(style) && !double.IsNaN(_compactWanted) ? _compactWanted : null;
+        double? wanted = (Settings.Minimal(style) || Settings.CompactAutoWidth(style)) && !double.IsNaN(_compactWanted) ? _compactWanted : null;
         // The capsule keeps its place on the screen; docked with the bottom (MainWindow.Edge.cs) it is only seen from there.
         if (style == CompactStyle.Capsule && _frame.Edge != ScreenEdge.Top)
         {
@@ -693,6 +693,7 @@ public partial class MainWindow : Window
         System.Windows.Automation.AutomationProperties.SetName(AIUsageButton, Loc.T("AI 用量", "AI usage"));
         System.Windows.Automation.AutomationProperties.SetName(MonitorPageButton, Loc.T("系统监控", "System monitor"));
         UpdateShelfPageButton();
+        System.Windows.Automation.AutomationProperties.SetName(WidgetsPageButton, WidgetLayout.Title);
         System.Windows.Automation.AutomationProperties.SetName(RemindersPageButton, Loc.T("提醒", "Reminders"));
         System.Windows.Automation.AutomationProperties.SetName(FocusPageButton, Loc.T("专注计时器", "Focus timer"));
         System.Windows.Automation.AutomationProperties.SetName(WeatherPageButton, Loc.T("天气", "Weather"));
@@ -1057,6 +1058,9 @@ public partial class MainWindow : Window
         else RenderSyncButton();
         UpdateMusicTimer();
         UpdateMonitorDemand();
+        if (expanded && CurrentPage == DeckPage.Widgets) RenderWidgets();
+        UpdateWidgetTimer();
+        (_lead ?? this).ApplySyncSchedule();
         UpdateGrips();
         ApplyClickThrough();
     }

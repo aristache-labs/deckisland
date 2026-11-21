@@ -120,11 +120,11 @@ public partial class MainWindow
         return shown.Sum() + Math.Max(0, shown.Length - 1) * gap;
     }
     private FrameworkElement? _compactTransfer;
-    private FrameworkElement? TransferBadge(double scale)
+    private FrameworkElement? TransferBadge(double scale, bool allowed)
     {
         int count = !FocusCompactOnly && Settings.ShowsTransfer(EffectiveStyle) ? ShelfData.Files.Count : 0;
         _transferShown = count; _compactTransfer = null;
-        if (count == 0) return null;
+        if (!allowed || count == 0) return null;
         bool nested = Settings.QuotaRingStyle == QuotaRingStyle.Nested;
         double s = CompactMusicLayout.SafeScale(scale), gap = CompactMusicLayout.Whole(3 * s);
         double icon = nested ? CompactMusicLayout.StatusRingSize(Settings.QuotaRingStyle, s) : CompactMusicLayout.Whole(14 * s);

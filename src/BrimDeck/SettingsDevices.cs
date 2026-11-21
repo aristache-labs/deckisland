@@ -15,7 +15,7 @@ namespace BrimDeck;
 // button to forget it. Whether the page shows, and its size, are set with the other pages under 展开外观.
 public partial class SettingsWindow
 {
-    private const int DevicesSettingsPage = 12;
+    internal const int DevicesSettingsPage = 12;
     private const double DeviceRowHeight = 56;
 
     private void DevicesSettings()

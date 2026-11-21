@@ -75,7 +75,7 @@ public sealed partial class SettingsWindow
                     double shown = ShownWidth(style);
                     var limits = _app.PreviewDeck.CurrentCollapsedRanges(style, shown, S.NotchHeight);
                     SetCollapsedRange(width, limits.WidthMin, limits.WidthMax, shown);
-                    SetAutoWidth(auto, width, S.NotchAutoWidth);
+                    SetAutoWidth(auto, width, style);
                     SetCollapsedRange(offset, -Whole(limits.OffsetMax), Whole(limits.OffsetMax), S.NotchOffsetX);
                 };
                 Group(Rows(edge, AnchorRow(style), auto, across ? null : PartSpacingRow(style), width.Row, height.Row, offset.Row));
@@ -95,7 +95,7 @@ public sealed partial class SettingsWindow
                     double shown = ShownWidth(style);
                     var limits = _app.PreviewDeck.CurrentCollapsedRanges(style, shown, S.CapsuleHeight);
                     SetCollapsedRange(width, limits.WidthMin, limits.WidthMax, shown);
-                    SetAutoWidth(auto, width, S.CapsuleAutoWidth);
+                    SetAutoWidth(auto, width, style);
                     // The capsule can move down to the bottom of the monitor, over a bottom taskbar; the limit follows its height and the display.
                     SetCollapsedRange(top, CollapsedLimits.CapsuleTopMin, Whole(limits.TopMax), S.CapsuleTop);
                     SetCollapsedRange(offset, -Whole(limits.OffsetMax), Whole(limits.OffsetMax), S.CapsuleOffsetX);
@@ -173,8 +173,11 @@ public sealed partial class SettingsWindow
         return row;
     }
 
-    private void SetAutoWidth(FrameworkElement auto, SizeControl width, bool on)
+    private void SetAutoWidth(FrameworkElement auto, SizeControl width, CompactStyle style)
     {
+        bool minimal = S.Minimal(style);
+        bool on = minimal || S.CompactAutoWidth(style);
+        auto.IsEnabled = !minimal;
         _updatingCollapsedRanges = true;
         try { if (auto.Tag is CheckBox toggle) toggle.IsChecked = on; }
         finally { _updatingCollapsedRanges = false; }
@@ -186,7 +189,7 @@ public sealed partial class SettingsWindow
     {
         var shape = _app.PreviewDeck.Collapsed;
         // The surface is drawn at the scale (PanelScales); the setting is the width before it.
-        return S.CompactAutoWidth(style) && shape.Style == style ? shape.Surface.Width / _app.PreviewDeck.Scale : style == CompactStyle.Capsule ? S.CapsuleWidth : S.NotchWidth;
+        return (S.Minimal(style) || S.CompactAutoWidth(style)) && shape.Style == style ? shape.Surface.Width / _app.PreviewDeck.Scale : style == CompactStyle.Capsule ? S.CapsuleWidth : S.NotchWidth;
     }
 
     // The panel changed the collapsed size or switch from outside this window (a drag, a double click, or content that

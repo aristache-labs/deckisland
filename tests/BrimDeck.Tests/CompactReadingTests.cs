@@ -291,6 +291,14 @@ internal static class CompactReadingTests
             && Read("""{"Clock24Hour":false}""").TimeFormat == ClockTimeFormat.Hour12
             && Read("{}").TimeFormat == ClockTimeFormat.System
             && !Profiles.IsProfileKey(nameof(DeckSettings.TimeFormat)));
+        check("Widgets: four slots preserve positions; duplicates and unknown values become empty",
+            WidgetLayout.Normalize([WidgetKind.Focus, WidgetKind.Focus, (WidgetKind)99, WidgetKind.Quotas])
+                .SequenceEqual([WidgetKind.Focus, WidgetKind.Empty, WidgetKind.Empty, WidgetKind.Quotas])
+            && WidgetLayout.Normalize(null).Length == 4 && Profiles.IsProfileKey(nameof(DeckSettings.WidgetSlots)));
+        check("Minimal: activities replace resting parts in priority order and old settings use Full",
+            WidgetLayout.MinimalParts(true, true, true, CompactPart.Clock, CompactPart.Weather).SequenceEqual([CompactPart.Focus, CompactPart.Transfer])
+            && WidgetLayout.MinimalParts(false, false, false, CompactPart.Clock, CompactPart.Weather).SequenceEqual([CompactPart.Clock, CompactPart.Weather])
+            && !Read("{}").Minimal(CompactStyle.Notch) && !Read("{}").Minimal(CompactStyle.Capsule));
         CompactPart[] standard = [CompactPart.Rings, CompactPart.Music, CompactPart.Monitor, CompactPart.Transfer, CompactPart.Devices, CompactPart.Equalizer, CompactPart.Clock, CompactPart.Weather, CompactPart.Focus];
         check("Compact order: the default order appends Weather after the clock", new DeckSettings().NotchOrder.SequenceEqual(standard)
             && CompactParts.Default.SequenceEqual(standard));

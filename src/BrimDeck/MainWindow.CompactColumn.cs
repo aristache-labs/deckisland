@@ -30,9 +30,11 @@ public partial class MainWindow
         var shape = Collapsed; _compactRendered = shape;
         double scale = CompactMusicLayout.SafeScale(shape.Scale), dpi = VisualTreeHelper.GetDpi(this).DpiScaleX;
         double column = SnapDown(ColumnWidth(shape), dpi), room = SnapDown(CompactContentWidth(shape), dpi);
-        bool media = !FocusCompactOnly && Settings.ShowsMusic(EffectiveStyle) && _mediaTrack is { State: not MediaState.Stopped };
+        var minimal = MinimalParts();
+        bool Show(CompactPart part) => minimal is null || minimal.Contains(part);
+        bool media = !FocusCompactOnly && Show(CompactPart.Music) && Settings.ShowsMusic(EffectiveStyle) && _mediaTrack is { State: not MediaState.Stopped };
         bool cover = media && !PausedHides(PausedMusicHide.Cover), hideText = PausedHides(PausedMusicHide.Text);
-        bool equalizer = CompactEqualizerShown;
+        bool equalizer = Show(CompactPart.Equalizer) && CompactEqualizerShown;
         bool notice = media && !hideText && _trackNoticeUntil > DateTimeOffset.UtcNow;
         string text = "";
         if (media && !hideText)
@@ -44,17 +46,17 @@ public partial class MainWindow
                 text = CompactLyricText(_mediaTrack!, _compactLyric);
             }
         }
-        var apps = !FocusCompactOnly && Settings.ShowsSummary(EffectiveStyle) && !notice ? Settings.EnabledApps : [];
-        var clock = Settings.ShowsClock(EffectiveStyle) ? new ClockFace(Settings.ClockStyle, Settings.Uses24HourClock, Settings.ClockSeconds, ClockFace.Palette(Settings, CoverColor, Look), DateTime.Now, scale, Look) : null;
-        var transfer = TransferBadge(scale);
-        var devices = CompactDevices(scale);
-        var weather = CompactWeather(scale);
-        var focus = CompactFocus(scale);
+        var apps = !FocusCompactOnly && Show(CompactPart.Rings) && Settings.ShowsSummary(EffectiveStyle) && !notice ? Settings.EnabledApps : [];
+        var clock = Show(CompactPart.Clock) && Settings.ShowsClock(EffectiveStyle) ? new ClockFace(Settings.ClockStyle, Settings.Uses24HourClock, Settings.ClockSeconds, ClockFace.Palette(Settings, CoverColor, Look), DateTime.Now, scale, Look) : null;
+        var transfer = TransferBadge(scale, Show(CompactPart.Transfer));
+        var devices = Show(CompactPart.Devices) ? CompactDevices(scale) : null;
+        var weather = Show(CompactPart.Weather) ? CompactWeather(scale) : null;
+        var focus = Show(CompactPart.Focus) ? CompactFocus(scale) : null;
         var layout = CompactMusicLayout.Calculate(10000, scale, media, apps.Count, text.Length > 0, FixedFace(CompactMusicLayout.Gap(scale), clock?.ReservedWidth ?? 0, transfer?.Width ?? 0, devices?.PreferredWidth ?? 0), 0, equalizer, Settings.EqualizerBars, ring: QuotaRing.Diameter(Settings.QuotaRingStyle));
         // One strip per reading, each alone on its line and centred in it. The drives show no glyph here: each drive has a line with its
         // letter and its figures, stacked or side by side as chosen in the settings, so any number of drives stand one below the other.
         var strips = new List<MonitorStrip>();
-        if (!FocusCompactOnly && Settings.ShowsMonitor(EffectiveStyle))
+        if (!FocusCompactOnly && Show(CompactPart.Monitor) && Settings.ShowsMonitor(EffectiveStyle))
         {
             var colors = MonitorThemeColors.Strip(Settings, Look);
             _stripUnavailable = _stripAdmission.Hidden;
@@ -95,7 +97,7 @@ public partial class MainWindow
             System.Windows.Automation.AutomationProperties.SetName(image, _mediaTrack!.Caption);
             Add(image, layout.CoverSize);
         }
-        foreach (var part in Settings.CompactOrder(EffectiveStyle))
+        foreach (var part in minimal ?? Settings.CompactOrder(EffectiveStyle))
         {
             switch (part)
             {

@@ -87,7 +87,7 @@ public static class CollapsedGeometry
         double panelScale = 1, double? column = null, bool lineOverTaskbar = false)
     {
         double s = ValidScale(panelScale);
-        bool auto = contentWanted is not null;
+        bool auto = settings.Minimal(style) || contentWanted is not null;
         double wanted = contentWanted is { } given && double.IsFinite(given) ? Math.Max(0, given) : 0;
         double required = Finite(contentRequired);
         var (screen, area) = Sanitize(monitor, work);

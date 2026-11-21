@@ -61,6 +61,7 @@ public sealed partial class SettingsWindow
             Group(Toggle(Loc.T("显示播放进度", "Show playback progress"), S.MusicIndicatorProgress, v => Change(s => s.MusicIndicatorProgress = v)));
             return;
         }
+        MinimalSettings(style);
         // The rows are in the order the collapsed row shows the parts, left to right; only the cover keeps its place at the left.
         var rows = new StackPanel();
         _partOptions.Clear();

@@ -48,11 +48,11 @@ public partial class MainWindow
     private void UpdateDevicesDemand()
     {
         bool seen = IsVisible && !IsSuppressed && !DisplayPower.Off;
-        bool page = _expanded && CurrentPage == DeckPage.Devices && seen;
+        bool page = seen && (_expanded && CurrentPage == DeckPage.Devices || WidgetVisible(WidgetKind.Devices));
         // The collapsed part is read for while it is chosen, before it shows: it joins the row only once a device reports.
         bool strip = !_expanded && !FocusCompactOnly && Settings.ShowsDevices(EffectiveStyle) && seen && _alert is null;
         _app.PresentDevices(this, page, strip);
-        _app.PresentWeather(this, seen && (_expanded ? CurrentPage == DeckPage.Weather : Settings.ShowsWeather(EffectiveStyle) && _alert is null));
+        _app.PresentWeather(this, seen && (_expanded ? CurrentPage == DeckPage.Weather || Settings.WeatherEnabled && WidgetVisible(WidgetKind.Weather) : Settings.ShowsWeather(EffectiveStyle) && _alert is null));
         // Opened again, the page shows the readings as they are now, not as it left them. Devices that came or went while it was
         // closed (DevicesChanged skips the page then) can need another layout step: one device's layout puts every device in the
         // same place, so a second one found while the panel was closed was drawn over the first. The page is built again for the

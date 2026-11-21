@@ -169,6 +169,8 @@ public partial class MainWindow
     public void RenderUsage()
     {
         if (UsageContent is null) return;
+        WidgetsContent.Visibility = CurrentPage == DeckPage.Widgets ? Visibility.Visible : Visibility.Collapsed;
+        if (CurrentPage == DeckPage.Widgets) { RenderWidgets(); return; }
         RemindersContent.Visibility = CurrentPage == DeckPage.Reminders ? Visibility.Visible : Visibility.Collapsed;
         if (CurrentPage == DeckPage.Reminders) { FocusContent.Visibility = Visibility.Collapsed; RenderReminders(); return; }
         FocusContent.Visibility = CurrentPage == DeckPage.Focus ? Visibility.Visible : Visibility.Collapsed;

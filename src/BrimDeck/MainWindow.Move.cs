@@ -268,6 +268,7 @@ public partial class MainWindow
     private void GripDoubleClicked(CompactStyle style)
     {
         if (Settings.GripDoubleClick == GripDoubleClick.Move && Movable(style)) { EnterMoveMode(); return; }
+        if (Settings.Minimal(style)) return;
         var fitted = Settings.Copy();
         if (style == CompactStyle.Line) fitted.LineLength = CollapsedLimits.LineLengthDefault;
         else if (fitted.CompactAutoWidth(style)) { fitted.SetCompactWidth(style, Collapsed.Surface.Width / _scale); fitted.SetCompactAutoWidth(style, false); }

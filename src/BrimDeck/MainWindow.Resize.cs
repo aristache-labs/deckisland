@@ -294,6 +294,7 @@ public partial class MainWindow
         if (_resizeCompact)
         {
             var style = EffectiveStyle;
+            if (Settings.Minimal(style)) return;
             var (min, max) = CompactWidthRange(style);
             width = Math.Clamp(width, min, max);
             if (width == Collapsed.Surface.Width && !Settings.CompactAutoWidth(style)) return;

@@ -57,7 +57,8 @@ public partial class MainWindow
         // The power is read for a page that shows its line (a page too small for it, or with the setting off, reads none of it).
         bool power = page && _monitorView?.ShowsPower == true;
         _powerPage = power;
-        _app.PresentMonitor(this, page, strip, power, heldStrip, PageDemand());
+        bool widget = WidgetVisible(WidgetKind.Monitor) && IsVisible && !IsSuppressed && !DisplayPower.Off;
+        _app.PresentMonitor(this, page || widget, strip, power, heldStrip, widget ? ExpandedDemand.Cpu | ExpandedDemand.Gpu | ExpandedDemand.Memory : PageDemand());
         // Neither took readings while hidden: they show the current ones, or dashes once the sampler has paused, never the
         // figures they showed last time.
         if (page && !_monitorShowing) _monitorView?.Update(_app.Monitor?.Latest ?? WaitingSnapshot, motion: false);
@@ -65,6 +66,7 @@ public partial class MainWindow
         _monitorShowing = page; _stripShowing = strip;
         // The devices page and the collapsed battery reading ask on the same occasions.
         UpdateDevicesDemand();
+        UpdateWidgetTimer();
     }
     // The collapsed readings the row was last built without (StripAdmission.Hidden): the drives until their first figures, and for
     // good on a machine without them; and the temperatures and letters it was built with (StripAdmission.Layout).

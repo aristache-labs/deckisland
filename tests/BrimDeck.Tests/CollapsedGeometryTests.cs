@@ -8,6 +8,19 @@ internal static class CollapsedGeometryTests
         var monitor = new DipRect(0, 0, 1920, 1080);
         var work = new DipRect(0, 0, 1920, 1032);
         var defaults = new DeckSettings();
+        var minimal = new DeckSettings { NotchWidth = 610, CapsuleWidth = 570, NotchMinimal = true, CapsuleMinimal = true };
+        foreach (var style in new[] { CompactStyle.Notch, CompactStyle.Capsule })
+        {
+            var initial = CollapsedGeometry.Resolve(minimal, style, monitor, work);
+            var one = CollapsedGeometry.Resolve(minimal, style, monitor, work, contentWanted: 80);
+            var two = CollapsedGeometry.Resolve(minimal, style, monitor, work, contentWanted: 170);
+            var full = minimal.Copy();
+            full.NotchMinimal = full.CapsuleMinimal = false;
+            double saved = style == CompactStyle.Notch ? 610 : 570;
+            check($"Minimal {style} fits one or two items without changing the saved Full width",
+                initial.Surface.Width <= one.Surface.Width && one.Surface.Width < two.Surface.Width
+                && two.Surface.Width < saved && CollapsedGeometry.Resolve(full, style, monitor, work).Surface.Width == saved);
+        }
 
         var notch = CollapsedGeometry.Resolve(defaults, CompactStyle.Notch, monitor, work);
         check("Default notch is 238 x 32, centred, against the screen edge",
