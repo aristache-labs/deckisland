@@ -77,9 +77,12 @@ public partial class MainWindow
             window.CurrentPage = DeckPage.Colour;
             window.Settings.PageOrder = [DeckPage.Usage, DeckPage.Colour];
             window.OrderPageButtons();
-            PumpCapsule(() => window.PlacePageCapsule(), check);
-            check("Colour has its own page button and capsule position",
-                buttons.Children[1] == window.ColourPageButton && buttons.Children.IndexOf(window.ShelfPageButton) == -1
+            window.UpdateLayout();
+            window.PlacePageCapsule();
+            check("Colour has its own reorderable page button",
+                buttons.Children[1] == window.ColourPageButton && window.PageButton(DeckPage.Clipboard) == window.ShelfPageButton);
+            check("Colour receives the active page capsule",
+                window.PageCapsule.Width == window.ColourPageButton.ActualWidth
                 && Math.Abs((double)window.PageCapsuleShift.GetAnimationBaseValue(TranslateTransform.XProperty)
                     - window.ColourPageButton.TranslatePoint(new Point(), window.PageSwitch).X) < .5);
 

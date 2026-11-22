@@ -46,7 +46,7 @@ public partial class MainWindow
         if (_shelfSearching)
         {
             ShelfSearchButton.Visibility = Visibility.Collapsed;
-            double room = width - right - ApplicationPagesLeft(_header.Side);
+            double room = width - right - _header.Side;
             double boxWidth = Math.Min(ShelfLayout.SearchWidth(width), Math.Max(room, 1)), height = _header.SwitchHeight;
             var box = _searchBox ??= NewSearchBox();
             (box.Parent as Panel)?.Children.Remove(box);
@@ -60,7 +60,8 @@ public partial class MainWindow
                 StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round };
             var clear = new Border { Width = 20, Height = 20, Background = Brushes.Transparent, Child = cross, Cursor = Cursors.Hand,
                 HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 4, 0) };
-            AutomationProperties.SetName(clear, Loc.T("清空搜索", "Clear search"));
+            AutomationProperties.SetName(clear, Loc.T("清空或关闭搜索", "Clear or close search"));
+            clear.ToolTip = Loc.T("清空或关闭搜索", "Clear or close search");
             clear.MouseEnter += (_, _) => cross.Stroke = UI.Brush(Look.Primary);
             clear.MouseLeave += (_, _) => cross.Stroke = UI.Brush(Look.Tertiary);
             clear.MouseLeftButtonDown += (_, e) => e.Handled = true;
@@ -83,7 +84,9 @@ public partial class MainWindow
                 _ => Loc.T("搜索剪贴板与文件", "Search clipboard and files")
             };
             AutomationProperties.SetName(box, what);
-            var hint = Label(what, 12.5, Look.Tertiary, HorizontalAlignment.Left, left: 30);
+            var hint = Label(what, 12.5, Look.Tertiary, HorizontalAlignment.Stretch, left: 30);
+            hint.Margin = new Thickness(30, 0, 28, 0);
+            hint.TextTrimming = TextTrimming.CharacterEllipsis;
             hint.IsHitTestVisible = false; hint.Visibility = box.Text.Length == 0 ? Visibility.Visible : Visibility.Collapsed; hint.Tag = "hint";
             host.Children.Add(hint);
             ShelfToolbar.Children.Add(host);

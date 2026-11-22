@@ -36,7 +36,8 @@ static class ClipboardToolsTests
         string payload = Segment("{\"sub\":\"person\",\"exp\":1700000000}");
         check("JWT shows unverified header, payload and expiry", ClipboardDecode.Detect($"{header}.{payload}.YQ") is { Type: "JWT" } jwt
             && jwt.Result.Contains("Signature has not been verified.") && jwt.Result.Contains("2023-11-14")
-            && jwt.Result.Contains("HS256") && jwt.Result.Contains("person"));
+            && jwt.Token is { Expiry: "2023-11-14 22:13:20Z" } token
+            && token.Header.Contains("HS256") && token.Payload.Contains("person"));
         foreach (string input in new[] { "#123", "ff00aa", "rgb(2 3 4)", "946684799", "4133980800000", "{bad}",
             "YWJj", "/wAAAIE=", "password", "https://example.test/?keep=1#?utm_source=2", $"{header}.{payload}.", new string('é', 52_000) })
             check($"No decode chip for {input[..Math.Min(input.Length, 55)]}", ClipboardDecode.Detect(input) is null);

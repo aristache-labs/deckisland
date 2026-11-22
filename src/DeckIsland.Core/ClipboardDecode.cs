@@ -4,8 +4,12 @@ using System.Text.Json;
 
 namespace DeckIsland.Core;
 
+public sealed record DecodedJwt(string Header, string Payload, string Expiry);
+
 public sealed record ClipboardDecode(string Type, string Result, bool Tracking = false)
 {
+    public DecodedJwt? Token { get; init; }
+
     private const int MaxBytes = 100 * 1024;
     private static readonly UTF8Encoding Utf8 = new(false, true);
     private static readonly JsonSerializerOptions Indent = new() { WriteIndented = true };
@@ -90,7 +94,8 @@ public sealed record ClipboardDecode(string Type, string Result, bool Tracking =
             if (body.RootElement.TryGetProperty("exp", out var exp) && exp.ValueKind == JsonValueKind.Number
                 && exp.TryGetInt64(out long seconds) && seconds is >= -62135596800 and <= 253402300799)
                 expires = DateTimeOffset.FromUnixTimeSeconds(seconds).ToString("u", CultureInfo.InvariantCulture);
-            return new("JWT", $"Signature has not been verified.\nExpiry: {expires}\n\nHeader\n{Pretty(head.RootElement)}\n\nPayload\n{Pretty(body.RootElement)}");
+            var token = new DecodedJwt(Pretty(head.RootElement), Pretty(body.RootElement), expires);
+            return new("JWT", $"Signature has not been verified.\nExpiry: {expires}\n\nHeader\n{token.Header}\n\nPayload\n{token.Payload}") { Token = token };
         }
         catch (JsonException) { return null; }
     }

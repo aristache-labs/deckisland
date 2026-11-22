@@ -684,10 +684,16 @@ public partial class MainWindow
             if (i > 0) row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(layout.BlockGap) });
             row.ColumnDefinitions.Add(new ColumnDefinition());
         }
+        row.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        row.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        var decode = new ContentControl { Visibility = Visibility.Collapsed, HorizontalContentAlignment = HorizontalAlignment.Stretch };
+        Grid.SetRow(decode, 1);
+        Grid.SetColumnSpan(decode, row.ColumnDefinitions.Count);
+        row.Children.Add(decode);
         for (int i = 0; i < clips.Length; i++)
         {
             var block = ClipBlock(clips[i], layout, width);
-            var entry = WithClipboardDecode(block, clips[i]);
+            var entry = WithClipboardDecode(block, clips[i], decode);
             Grid.SetColumn(entry, 2 * i); row.Children.Add(entry);
         }
         return row;

@@ -1,3 +1,4 @@
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 
@@ -27,6 +28,10 @@ internal sealed class WheelGlide
         viewer.PreviewMouseWheel += (_, e) =>
         {
             if (Room < 1 || e.Delta == 0) return;
+            for (var element = e.OriginalSource as Visual; element is not null && element != viewer;
+                element = VisualTreeHelper.GetParent(element) as Visual)
+                if (element is ScrollViewer inner && inner.TemplatedParent is TextBox { IsReadOnly: true }
+                    && (e.Delta > 0 ? inner.VerticalOffset > 0 : inner.VerticalOffset < inner.ScrollableHeight)) return;
             e.Handled = true;
             To(Place - e.Delta / 120.0 * step);
         };
