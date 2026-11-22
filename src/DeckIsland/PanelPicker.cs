@@ -11,10 +11,11 @@ namespace DeckIsland;
 
 public partial class MainWindow
 {
+    // The same slim pill strip as the settings' PillChoice (SettingsMusic.PillTemplate): 26 high, 13 round, 14 to the side, 12.5 text.
     private Border PanelSegmentTrack(UIElement choices) => new()
     {
-        CornerRadius = new CornerRadius(Look.Corner(14)), Background = UI.Brush(Look.Fill),
-        BorderBrush = UI.Brush(Look.Outline), BorderThickness = new Thickness(1), Padding = new Thickness(2),
+        CornerRadius = new CornerRadius(16), Background = UI.Brush(Look.Fill),
+        BorderBrush = UI.Brush(Look.Outline), BorderThickness = new Thickness(1), Padding = new Thickness(3, 2, 1, 2),
         VerticalAlignment = VerticalAlignment.Center, Child = choices
     };
 
@@ -22,19 +23,22 @@ public partial class MainWindow
     {
         var button = new Button
         {
-            Style = (Style)FindResource("WidgetSurfaceButton"), Template = FlatPill(), Content = label,
-            Height = 24, Padding = new Thickness(9, 0, 9, 0), Margin = new Thickness(1, 0, 1, 0), FontSize = 11
+            Style = (Style)FindResource("WidgetSurfaceButton"), Template = FlatPill(), Content = label, Tag = false,
+            Height = 26, Padding = new Thickness(14, 0, 14, 0), Margin = new Thickness(0, 0, 2, 0), FontSize = 12.5, FontWeight = FontWeights.Medium
         };
         AutomationProperties.SetName(button, label);
         button.Click += (_, _) => choose();
+        button.MouseEnter += (_, _) => { if (button.Tag is false) button.Foreground = UI.Brush(Look.Primary); };
+        button.MouseLeave += (_, _) => { if (button.Tag is false) button.Foreground = UI.Brush(Look.Secondary); };
         return button;
     }
 
     private void StylePanelSegment(Button button, bool selected)
     {
+        button.Tag = selected;
         button.Background = selected ? UI.Brush(Look.Primary) : Brushes.Transparent;
         button.Foreground = UI.Brush(selected ? Look.Hex("surface") : Look.Secondary);
-        button.FontWeight = selected ? FontWeights.SemiBold : FontWeights.Normal;
+        button.FontWeight = selected ? FontWeights.SemiBold : FontWeights.Medium;
     }
 
     // A choice made inside the page instead of in a pop-up (which is a window of its own, that the pointer would leave the panel for):
@@ -115,9 +119,10 @@ public partial class MainWindow
                 {
                     Style = (Style)FindResource("WidgetSurfaceButton"), Template = StretchPill(),
                     Background = chosen ? UI.Brush(Look.FillSelected) : UI.Brush(Look.Fill),
-                    Height = 26, Padding = new Thickness(8, 0, 8, 0), Margin = new Thickness(0, 0, 4, 3),
+                    Height = 30, Padding = new Thickness(10, 0, 10, 0), Margin = new Thickness(0, 0, 6, 4),
                     Content = new DockPanel { Children = { check, PickerRowText(label, Look.Primary) } }
                 };
+                if (chosen) ((TextBlock)((DockPanel)row.Content).Children[1]).FontWeight = FontWeights.SemiBold;
                 AutomationProperties.SetName(row, label);
                 row.Click += (_, _) => { ClosePanelPicker(host); pick(index); };
                 list.Children.Add(row);

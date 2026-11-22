@@ -29,9 +29,9 @@ public partial class MainWindow
         if (Settings.UsagePage) header = header.WithControlsOf(CachedUsageHeader());
         ApplyHeader(header with { Row = Math.Max(header.Row, header.Height) });
         ColourContent.Margin = new Thickness(header.Side, 8, header.Side, 16);
+        ShowHeaderPin(header);
         var previous = ColourContent.Children.OfType<ColourPanel>().FirstOrDefault();
         if (previous?.Appearance == (Look.Generation, Loc.Language)) return;
-        if (previous is not null) _toolPins.RemoveAll(item => item.Button == previous.Pin);
         ColourContent.Children.Clear();
         ColourContent.Children.Add(new ColourPanel(this, previous));
     }
@@ -61,7 +61,6 @@ public partial class MainWindow
         private readonly List<Button> _sectionButtons = [];
         private int _section;
         public (int Generation, string Language) Appearance { get; }
-        public Button Pin { get; }
 
         public ColourPanel(MainWindow owner, ColourPanel? previous)
         {
@@ -89,16 +88,15 @@ public partial class MainWindow
                 _sectionButtons.Add(button);
                 sections.Children.Add(button);
             }
-            Pin = owner.ToolPinButton();
-            Pin.Margin = new Thickness(6, 0, 0, 0);
-            var controls = new StackPanel { Orientation = Orientation.Horizontal, Children = { segments, Pin } };
+            segments.HorizontalAlignment = HorizontalAlignment.Center;
             var title = Text(Loc.T("颜色", "Colour"), 14, Look.Primary);
             title.FontWeight = FontWeights.SemiBold;
             title.TextWrapping = TextWrapping.NoWrap;
             title.TextTrimming = TextTrimming.CharacterEllipsis;
             title.VerticalAlignment = VerticalAlignment.Center;
-            var header = new DockPanel { Margin = new Thickness(0, 0, 0, 8), Children = { controls, title } };
-            SetDock(controls, DockSide.Right);
+            // The title at the left, the sections centred; the pin is in the panel's header, beside the gear.
+            title.HorizontalAlignment = HorizontalAlignment.Left;
+            var header = new Grid { Margin = new Thickness(0, 0, 0, 8), Children = { title, segments } };
             SetDock(header, DockSide.Top);
             Children.Add(header);
             var input = InputRow(_entry, "", Loc.T("取色", "Pick color"));
@@ -216,6 +214,12 @@ public partial class MainWindow
                 CornerRadius = new CornerRadius(Look.Corner(7)), Background = UI.Brush(Look.Fill),
                 BorderThickness = new Thickness(1), BorderBrush = UI.Brush(Look.Hex("outline")), Child = field
             };
+            if (field == _entry)
+            {
+                // A colour value is short (#RRGGBB, rgb(…)): a fitted field with the pick button right beside it, not a full-width bar.
+                chrome.Width = 170;
+                row.HorizontalAlignment = HorizontalAlignment.Left;
+            }
             field.IsKeyboardFocusWithinChanged += (_, _) =>
                 chrome.BorderBrush = UI.Brush(field.IsKeyboardFocusWithin ? Look.Accent : Look.Hex("outline"));
             if (compact)

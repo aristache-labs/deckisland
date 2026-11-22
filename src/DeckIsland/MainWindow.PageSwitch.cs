@@ -38,6 +38,7 @@ public partial class MainWindow
         { EasingFunction = Soft.Follow, FillBehavior = System.Windows.Media.Animation.FillBehavior.Stop });
     }
     private bool _capsulePending;
+
     // The page buttons take the header's button height, and the capsule under the chosen one takes it in the same step: PlacePageCapsule,
     // which RefreshStatus runs before ApplyHeader, would otherwise leave it at the size tier left behind until the next refresh.
     private void FitPageButtons(PanelHeader header)

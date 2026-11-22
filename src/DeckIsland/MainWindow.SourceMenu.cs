@@ -13,6 +13,40 @@ public partial class MainWindow
     private PointerPressObserver? _sourceMenuPress;
     private DateTimeOffset? _sourceMenuOutsideAt;
     private Rect _sourceMenuBounds = Rect.Empty;
+    // The menu machinery below serves one open drop-down at a time: the music page's source menu, or a converter picker
+    // (ShowAnchoredMenu). It keeps the panel open while the pointer is over the menu, a window of its own.
+    private FrameworkElement? _anchorElement;
+    private DeckPage _menuPage = DeckPage.Music;
+    private FrameworkElement _menuAnchor { get => _anchorElement ?? MediaSourceButton; set => _anchorElement = value; }
+    private ContextMenu? AnchorMenu { get => _menuAnchor.ContextMenu; set => _menuAnchor.ContextMenu = value; }
+
+    // A classic drop-down under `anchor`, as wide as it, drawn over the panel and past its edge if it needs to.
+    private void ShowAnchoredMenu(FrameworkElement anchor, IReadOnlyList<(string Label, bool Chosen)> items, Action<int> pick)
+    {
+        if (AnchorMenu is { IsOpen: true } && ReferenceEquals(_menuAnchor, anchor)) { CloseSourceMenu(); return; }
+        CloseSourceMenu();
+        var menu = new ContextMenu { Style = (Style)FindResource("MediaSourceMenu"), IsTextSearchEnabled = true };
+        MenuItem? chosen = null;
+        for (int i = 0; i < items.Count; i++)
+        {
+            int index = i;
+            var (label, on) = items[i];
+            var item = new MenuItem { Style = (Style)FindResource("MediaSourceMenuItem"), IsCheckable = true, IsChecked = on, Tag = "single",
+                Header = new TextBlock { Text = label, FontSize = 12.5, Foreground = UI.Brush(Look.Primary), TextTrimming = TextTrimming.CharacterEllipsis, VerticalAlignment = VerticalAlignment.Center } };
+            TextSearch.SetText(item, label);
+            System.Windows.Automation.AutomationProperties.SetName(item, label);
+            item.Click += (_, _) => { CloseSourceMenu(); pick(index); };
+            menu.Items.Add(item);
+            if (on) chosen = item;
+        }
+        WatchSourceMenu(menu);
+        _menuAnchor = anchor; _menuPage = CurrentPage; AnchorMenu = menu;
+        menu.PlacementTarget = anchor; menu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+        UI.Scale(menu, _scale); menu.VerticalOffset = 4 * _scale;
+        menu.Width = Math.Max(150, anchor.ActualWidth); menu.MaxHeight = 300;
+        menu.Opened += (_, _) => chosen?.BringIntoView();
+        menu.IsOpen = true;
+    }
 
     private void ResizeSourceMenu(ContextMenu menu)
     {
@@ -54,7 +88,7 @@ public partial class MainWindow
     }
     private void UpdateSourceMenuTitles(bool scrolls)
     {
-        if (MediaSourceButton.ContextMenu is not { IsOpen: true } menu) return;
+        if (AnchorMenu is not { IsOpen: true } menu) return;
         foreach (var item in menu.Items.OfType<MenuItem>())
             if (item.Header is Grid row && row.Children[1] is MusicMarquee title) title.SetScrolling(scrolls);
     }
@@ -62,10 +96,10 @@ public partial class MainWindow
     private void WatchSourceMenu(ContextMenu menu)
     {
         PopupMotion.Attach(menu, () => menu.Template?.FindName("Chrome", menu) as UIElement);
-        SizeChangedEventHandler resized = (_, _) => { if (menu.IsOpen) ResizeSourceMenu(menu); };
+        SizeChangedEventHandler resized = (_, _) => { if (menu.IsOpen && ReferenceEquals(_menuAnchor, MediaSourceButton)) ResizeSourceMenu(menu); };
         menu.Opened += (_, _) =>
         {
-            if (!ReferenceEquals(MediaSourceButton.ContextMenu, menu)) { menu.IsOpen = false; return; }
+            if (!ReferenceEquals(AnchorMenu, menu)) { menu.IsOpen = false; return; }
             _hover.Stop(); _leave.Stop(); _sourceMenuOutsideAt = null;
             UpdateSourceMenuTitles(TextScrolls);
             ContentCanvas.SizeChanged += resized;
@@ -73,7 +107,7 @@ public partial class MainWindow
             _sourceMenuPress?.Dispose();
             _sourceMenuPress = new PointerPressObserver(Dispatcher, point =>
             {
-                if (!_app.Exiting && ReferenceEquals(MediaSourceButton.ContextMenu, menu)) CheckSourceMenuPointer(point, pressed: true);
+                if (!_app.Exiting && ReferenceEquals(AnchorMenu, menu)) CheckSourceMenuPointer(point, pressed: true);
             });
             _sourceMenuWatch.Start();
         };
@@ -86,7 +120,7 @@ public partial class MainWindow
         menu.Closed += (_, _) =>
         {
             ContentCanvas.SizeChanged -= resized;
-            if (!ReferenceEquals(MediaSourceButton.ContextMenu, menu)) return;
+            if (!ReferenceEquals(AnchorMenu, menu)) return;
             _sourceMenuWatch.Stop(); _sourceMenuPress?.Dispose(); _sourceMenuPress = null; _sourceMenuOutsideAt = null;
             if (!_expanded || _app.Exiting) return;
             _pointerInside = ScreenBounds(Island).Contains(WindowsHost.Cursor());
@@ -106,11 +140,11 @@ public partial class MainWindow
 
     internal void CheckSourceMenuPointer(Point screenPoint, bool pressed = false, DateTimeOffset? now = null)
     {
-        if (MediaSourceButton.ContextMenu is not { } menu || !menu.IsOpen && !pressed) return;
-        if (!_expanded || !IsVisible || !IsMusicPage) { CloseSourceMenu(); return; }
+        if (AnchorMenu is not { } menu || !menu.IsOpen && !pressed) return;
+        if (!_expanded || !IsVisible || CurrentPage != _menuPage) { CloseSourceMenu(); return; }
         var bounds = ScreenBounds(menu);
         if (!bounds.IsEmpty) _sourceMenuBounds = bounds;
-        var anchor = ScreenBounds(MediaSourceButton);
+        var anchor = ScreenBounds(_menuAnchor);
         bool inPanel = ScreenBounds(Island).Contains(screenPoint);
         bool inMenu = _sourceMenuBounds.Contains(screenPoint), inAnchor = anchor.Contains(screenPoint);
         if (pressed)
@@ -144,7 +178,7 @@ public partial class MainWindow
 
     private void CloseSourceMenu()
     {
-        if (MediaSourceButton.ContextMenu is { IsOpen: true } menu) menu.IsOpen = false;
+        if (AnchorMenu is { IsOpen: true } menu) menu.IsOpen = false;
         _sourceMenuWatch.Stop(); _sourceMenuPress?.Dispose(); _sourceMenuPress = null; _sourceMenuOutsideAt = null;
     }
 }

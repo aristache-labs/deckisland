@@ -46,6 +46,7 @@ public partial class MainWindow
         if (!double.IsFinite(ContentCanvas.Height)) return;
         var header = PanelHeader.For(30, 18);
         ApplyHeader(Settings.UsagePage ? header.WithControlsOf(CachedUsageHeader()) : header);
+        ShowHeaderPin(header);
         // Equal insets on the sides and bottom let the frame's lower corners share the panel's curve.
         TerminalContent.Margin = new Thickness(header.Side, 0, header.Side, header.Side);
         var appearance = (Look.Generation, Loc.Language);
@@ -73,9 +74,7 @@ public partial class MainWindow
         restart.ToolTip = Loc.T("用当前设置重新启动终端", "Restart the terminal with the current settings");
         restart.Click += (_, _) => { CloseTerminal(); RenderTerminal(); };
         restart.HorizontalAlignment = HorizontalAlignment.Left;
-        var pin = ToolPinButton();
-        pin.Margin = new Thickness(8, 0, 0, 0);
-        var right = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Children = { restart, pin } };
+        var right = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Children = { restart } };
         var top = new Grid { Margin = new Thickness(0, 0, 0, 8), Children = { title, right } };
         // The frame the terminal's window is laid over; its colour is the terminal's, so the rounded corners show around it.
         _terminalFrame = new Border { Background = UI.Brush(TerminalBackground) };

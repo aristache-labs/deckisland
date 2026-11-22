@@ -164,7 +164,7 @@ public partial class MainWindow
     // an open menu or the detail popup keeps the wheel to itself as well.
     private void PanelWheel(object sender, MouseWheelEventArgs e)
     {
-        if (Settings.MouseWheel == MouseWheelAction.None || !_expanded || _preview || _detailPopup is not null || MediaSourceButton.ContextMenu?.IsOpen == true) return;
+        if (Settings.MouseWheel == MouseWheelAction.None || !_expanded || _preview || _detailPopup is not null || AnchorMenu?.IsOpen == true) return;
         if (Settings.MouseWheel == MouseWheelAction.Volume) { WheelVolume(e.Delta); e.Handled = true; return; }
         var shown = DeckPages.Visible(Settings);
         if (shown.Count < 2) return;
@@ -213,8 +213,10 @@ public partial class MainWindow
         _header = header;
         ToolbarRow.Height = new GridLength(header.Row);
         Toolbar.Height = header.Height;
+        _headerSide = header.Side;
         PageSwitch.Margin = new Thickness(header.Side, 0, header.Side, 0);
         FitPageButtons(header);
+        KeepHeaderGap();
         foreach (var button in new[] { AIUsageButton, MonitorPageButton, MusicPageButton, ShelfPageButton, DevicesPageButton, WeatherPageButton, FocusPageButton, WidgetsPageButton, RemindersPageButton, NotificationsPageButton, CallsPageButton, ScratchpadPageButton, ConverterPageButton, TerminalPageButton, ColourPageButton })
         {
             // A local corner for these two buttons only; PanelIconButton keeps its 5 DIP corner elsewhere.
@@ -226,6 +228,30 @@ public partial class MainWindow
         if (SettingsButton.Parent is FrameworkElement right) right.Margin = new Thickness(0, 0, header.RightMargin, 0);
         ApplicationPages.Margin = new Thickness(ApplicationPagesLeft(header.Side), 0, 0, 0);
     }
+    // The page switch never runs under the buttons at the right of the header (the pin and the gear, or the gear alone): it stays
+    // centred while that leaves a gap, moves left of centre when it would not, and shrinks as a whole when even that is too narrow.
+    private double _headerSide;
+    private bool _headerGapWatched;
+    private const double HeaderGap = 10;
+
+    private void KeepHeaderGap()
+    {
+        if (!_headerGapWatched && SettingsButton.Parent is FrameworkElement watched)
+        {
+            _headerGapWatched = true;
+            SizeChangedEventHandler again = (_, _) => KeepHeaderGap();
+            Toolbar.SizeChanged += again; watched.SizeChanged += again; PageSwitch.SizeChanged += again;
+        }
+        if (SettingsButton.Parent is not FrameworkElement right || Toolbar.ActualWidth <= 0 || PageSwitch.ActualWidth <= 0) return;
+        double side = _headerSide, width = Toolbar.ActualWidth, natural = PageSwitch.ActualWidth;
+        double reserve = right.IsVisible ? right.ActualWidth + right.Margin.Right + HeaderGap : side;
+        double room = Math.Max(1, width - side - reserve);
+        double scale = Math.Min(1, room / natural);
+        PageSwitch.LayoutTransform = scale < 1 ? new ScaleTransform(scale, scale) : Transform.Identity;
+        double shown = natural * scale;
+        bool centredFits = (width + shown) / 2 <= width - reserve;
+        PageSwitch.Margin = new Thickness(side, 0, centredFits && PageSwitch.HorizontalAlignment == HorizontalAlignment.Center ? side : reserve, 0);
+    }
     private void RenderPageSwitch()
     {
         SetValue(SuppressMusicToolTipsProperty, IsMusicPage);
@@ -235,8 +261,10 @@ public partial class MainWindow
         // The music and clipboard pages keep their menu in the middle; the usage page, with its application tabs, keeps it at the left.
         PageSwitch.HorizontalAlignment = IsUsagePage && ApplicationPages.Visibility == Visibility.Visible
             ? HorizontalAlignment.Left : HorizontalAlignment.Center;
+        KeepHeaderGap();
         OrderPageButtons();
         if (!IsShelfPage) { ShelfToolbar.Visibility = Visibility.Collapsed; ShelfSearchButton.Visibility = Visibility.Collapsed; }
+        if (CurrentPage is not (DeckPage.Converter or DeckPage.Terminal or DeckPage.Colour)) ToolPinSlot.Visibility = Visibility.Collapsed;
         foreach (var (button, page) in new[] { (AIUsageButton, DeckPage.Usage), (MusicPageButton, DeckPage.Music), (MonitorPageButton, DeckPage.Monitor), (ShelfPageButton, DeckPage.Clipboard), (DevicesPageButton, DeckPage.Devices), (WeatherPageButton, DeckPage.Weather), (FocusPageButton, DeckPage.Focus), (WidgetsPageButton, DeckPage.Widgets), (RemindersPageButton, DeckPage.Reminders), (NotificationsPageButton, DeckPage.Notifications), (CallsPageButton, DeckPage.Calls), (ScratchpadPageButton, DeckPage.Scratchpad), (ConverterPageButton, DeckPage.Converter), (TerminalPageButton, DeckPage.Terminal), (ColourPageButton, DeckPage.Colour) })
         {
             bool current = CurrentPage == page || page == DeckPage.Widgets && CurrentPage == DeckPage.Reminders;
@@ -251,7 +279,7 @@ public partial class MainWindow
         MediaSourceButton.Visibility = IsMusicPage && (_mediaTrack is not null || entry) ? Visibility.Visible : Visibility.Collapsed;
         MediaSourceButton.IsEnabled = !alone || _media?.RestartingNetease != true;
         // An open menu keeps its rows; only the entry's availability follows the restart.
-        if (MediaSourceButton.ContextMenu is { IsOpen: true } open)
+        if (AnchorMenu is { IsOpen: true } open)
             foreach (var item in open.Items.OfType<MenuItem>().Where(item => Equals(item.Tag, "action"))) item.IsEnabled = _media?.RestartingNetease != true;
         AutomationProperties.SetName(MediaSourceButton, alone ? FullControlButtonLabel : Loc.T("切换播放来源", "Switch playback source"));
         MediaSourceLabel.Text = _mediaTrack is { } playing ? Loc.Label(playing.Source) : alone ? FullControlButtonLabel : "";
@@ -385,7 +413,7 @@ public partial class MainWindow
     }
     private void MediaSource_Click(object sender, RoutedEventArgs e)
     {
-        if (MediaSourceButton.ContextMenu?.IsOpen == true) { CloseSourceMenu(); return; }
+        if (AnchorMenu?.IsOpen == true) { CloseSourceMenu(); return; }
         if (_mediaTrack is null) { if (FullControlEntryShown) _ = StartNeteaseFullControl(); return; }
         var menu = new ContextMenu { Style = (Style)FindResource("MediaSourceMenu") };
         menu.SetValue(SuppressMusicToolTipsProperty, true);
@@ -423,7 +451,7 @@ public partial class MainWindow
             entry.Click += (_, _) => { CloseSourceMenu(); _ = StartNeteaseFullControl(); }; menu.Items.Add(entry);
         }
         WatchSourceMenu(menu);
-        MediaSourceButton.ContextMenu = menu; menu.PlacementTarget = MediaSourceButton; menu.Placement = PlacementMode.Bottom;
+        _menuAnchor = MediaSourceButton; _menuPage = DeckPage.Music; AnchorMenu = menu; menu.PlacementTarget = MediaSourceButton; menu.Placement = PlacementMode.Bottom;
         // A pop-up is not part of the panel's visual tree, so it takes the panel's scale itself.
         UI.Scale(menu, _scale); menu.VerticalOffset = 6 * _scale; ResizeSourceMenu(menu); menu.IsOpen = true;
     }

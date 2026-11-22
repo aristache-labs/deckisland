@@ -17,6 +17,8 @@ public partial class MainWindow
     private readonly List<(Path Glyph, Button Button)> _toolPins = [];
     private const string PinGlyph = "M9.6,1.6 L14.4,6.4 L12.2,7.3 L9.3,10.2 L9.7,12.8 L8.4,14.1 L1.9,7.6 L3.2,6.3 L5.8,6.7 L8.7,3.8 Z M5.1,10.9 L1.6,14.4";
 
+    private const string ToolPinBare = "bare";
+
     private bool ToolPinHolds => _colourPicking || _toolPinned
         && CurrentPage is DeckPage.Scratchpad or DeckPage.Converter or DeckPage.Terminal or DeckPage.Colour;
 
@@ -41,7 +43,8 @@ public partial class MainWindow
     {
         glyph.Stroke = UI.Brush(_toolPinned ? Look.Primary : Look.Secondary);
         glyph.Fill = _toolPinned ? UI.Brush(Look.Primary) : Brushes.Transparent;
-        button.Background = UI.Brush(Look.Hex(_toolPinned ? "fillSelected" : "fill"));
+        // A pin in the header, beside the settings gear, is bare like the gear: the filled glyph alone tells it is on.
+        button.Background = Equals(button.Tag, ToolPinBare) ? Brushes.Transparent : UI.Brush(Look.Hex(_toolPinned ? "fillSelected" : "fill"));
         string label = _toolPinned ? Loc.T("取消固定", "Unpin") : Loc.T("固定，保持打开", "Pin open");
         AutomationProperties.SetName(button, label);
         button.ToolTip = _toolPinned ? Loc.T("已固定：移开鼠标时不会收起", "Pinned: stays open when the pointer leaves") : Loc.T("固定：移开鼠标时保持打开", "Pin: stay open when the pointer leaves");

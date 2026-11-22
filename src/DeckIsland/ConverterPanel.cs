@@ -30,6 +30,21 @@ public partial class MainWindow
         Closed += (_, _) => _app.Rates.Changed -= changed;
     }
 
+    // The pin of the Converter, Terminal and Colour tabs, one button in the panel's header left of the settings gear, bare and
+    // as big as the gear. RenderPageSwitch hides it on the other tabs.
+    private void ShowHeaderPin(PanelHeader header)
+    {
+        if (ToolPinSlot.Child is not Button pin)
+        {
+            pin = ToolPinButton();
+            pin.Tag = ToolPinBare;
+            ToolPinSlot.Child = pin;
+            SetToolPin(_toolPinned);
+        }
+        pin.Width = pin.Height = header.SettingsHeight;
+        ToolPinSlot.Visibility = Visibility.Visible;
+    }
+
     private void ConverterPage_Click(object sender, RoutedEventArgs e) => SelectPage(DeckPage.Converter);
 
     private DeckSettings Shared => _app.Settings;
@@ -44,6 +59,7 @@ public partial class MainWindow
         var header = PanelHeader.For(30, 18);
         if (Settings.UsagePage) header = header.WithControlsOf(CachedUsageHeader());
         ApplyHeader(header with { Row = Math.Max(header.Row, header.Height) });
+        ShowHeaderPin(header);
         ConverterContent.Margin = new Thickness(header.Side, 0, header.Side, Math.Max(12, header.Side - 4));
         if (Shared.ConverterMode == ConverterMode.Currency) RefreshRates();
         var (from, to) = ConverterPair();
@@ -87,14 +103,14 @@ public partial class MainWindow
         // the rates' date share one line under them, clear of the header.
         _converterAmount = new TextBox
         {
-            Text = s.ConverterAmount, FontSize = 22, FontWeight = FontWeights.SemiBold, Foreground = UI.Brush(Look.Primary), CaretBrush = UI.Brush(Look.Primary),
+            Text = s.ConverterAmount, FontSize = 18, FontWeight = FontWeights.SemiBold, Foreground = UI.Brush(Look.Primary), CaretBrush = UI.Brush(Look.Primary),
             SelectionBrush = UI.Brush(Look.Accent), Background = Brushes.Transparent, BorderThickness = new Thickness(0), Padding = new Thickness(0), Margin = new Thickness(-2, 0, 0, 0),
             VerticalContentAlignment = VerticalAlignment.Center, FocusVisualStyle = null, Height = ConverterValueHeight
         };
         AutomationProperties.SetName(_converterAmount, Loc.T("数量", "Amount"));
         TakeKeyboardOnClick(_converterAmount);
         _converterAmount.TextChanged += (_, _) => { _app.ChangeShared(settings => settings.ConverterAmount = _converterAmount.Text.Length <= 40 ? _converterAmount.Text : settings.ConverterAmount); UpdateConversion(); };
-        _converterResult = WeatherText("", 22);
+        _converterResult = WeatherText("", 18);
         _converterResult.FontWeight = FontWeights.SemiBold;
         _converterResult.Height = ConverterValueHeight;
         _converterResult.LineHeight = ConverterValueHeight; _converterResult.LineStackingStrategy = LineStackingStrategy.BlockLineHeight;
@@ -110,31 +126,28 @@ public partial class MainWindow
         cards.ColumnDefinitions.Add(new ColumnDefinition());
         cards.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         cards.ColumnDefinitions.Add(new ColumnDefinition());
-        var leftCard = ConverterCard(_converterAmount, SideLabel(currency, from), () => PickConverterSide(fromSide: true));
-        var rightCard = ConverterCard(_converterResult, SideLabel(currency, to), () => PickConverterSide(fromSide: false));
+        var leftCard = ConverterCard(_converterAmount, SideLabel(currency, from), anchor => PickConverterSide(anchor, fromSide: true));
+        var rightCard = ConverterCard(_converterResult, SideLabel(currency, to), anchor => PickConverterSide(anchor, fromSide: false));
         Grid.SetColumn(swap, 1); Grid.SetColumn(rightCard, 2);
         cards.Children.Add(leftCard); cards.Children.Add(swap); cards.Children.Add(rightCard);
 
-        var controls = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
-        controls.Children.Add(ModeSwitch(currency));
+        // Under the cards, centred: the unit category, then the mode switch; the rates' date under them.
+
+        var controls = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center };
         if (!currency)
         {
-            var category = PickerChip(UnitConversion.Name(s.ConverterUnitCategory), PickUnitCategory);
-            category.Height = 24; category.Margin = new Thickness(8, 0, 0, 0);
+            var category = CategoryChip(UnitConversion.Name(s.ConverterUnitCategory));
+            category.Margin = new Thickness(0, 0, 8, 0);
             controls.Children.Add(category);
         }
+        controls.Children.Add(ModeSwitch(currency));
         _converterNote = WeatherText("", 11.5);
         _converterNote.Foreground = UI.Brush(Look.Secondary);
-        _converterNote.Margin = new Thickness(12, 0, 2, 0);
-        _converterNote.TextAlignment = TextAlignment.Right;
-        var footer = new DockPanel { Margin = new Thickness(0, 10, 0, 0), LastChildFill = true };
-        var pin = ToolPinButton();
-        pin.Width = pin.Height = 24; pin.Margin = new Thickness(8, 0, 0, 0);
-        DockPanel.SetDock(controls, System.Windows.Controls.Dock.Left);
-        DockPanel.SetDock(pin, System.Windows.Controls.Dock.Right);
-        footer.Children.Add(controls); footer.Children.Add(pin); footer.Children.Add(_converterNote);
+        _converterNote.TextAlignment = TextAlignment.Center;
+        _converterNote.Margin = new Thickness(0, 6, 0, 0);
+        var footer = new StackPanel { Margin = new Thickness(0, 12, 0, 0), Children = { controls, _converterNote } };
 
-        var body = new Grid { Margin = new Thickness(0, 8, 0, 0) };
+        var body = new Grid { Margin = new Thickness(0, 18, 0, 0) };
         body.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         body.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         Grid.SetRow(footer, 1);
@@ -145,10 +158,10 @@ public partial class MainWindow
         UpdateConversion();
     }
 
-    private const double ConverterValueHeight = 32;
+    private const double ConverterValueHeight = 28;
 
     // A side: its value on top and, under it, the full-width picker of its unit or currency, the name at the left and the chevron at the right.
-    private Border ConverterCard(FrameworkElement value, string label, Action open)
+    private Border ConverterCard(FrameworkElement value, string label, Action<FrameworkElement> open)
     {
         var text = PickerRowText(label, Look.Primary);
         text.FontSize = 12;
@@ -160,7 +173,7 @@ public partial class MainWindow
         var picker = new Button { Style = (Style)FindResource("WidgetSurfaceButton"), Template = StretchPill(), Background = UI.Brush(Look.Hex("fillSelected")), Height = 26,
             Padding = new Thickness(10, 0, 10, 0), Margin = new Thickness(0, 6, 0, 0), Content = row };
         AutomationProperties.SetName(picker, label);
-        picker.Click += (_, _) => open();
+        picker.Click += (_, _) => open(picker);
         return new Border { CornerRadius = new CornerRadius(12), Background = UI.Brush(Look.Hex("fill")), Padding = new Thickness(12, 8, 10, 10),
             Child = new StackPanel { Children = { value, picker } } };
     }
@@ -198,6 +211,20 @@ public partial class MainWindow
         var units = Segment(Loc.T("单位", "Units"), !currency, ConverterMode.Units);
         var money = Segment(Loc.T("货币", "Currency"), currency, ConverterMode.Currency);
         return PanelSegmentTrack(new StackPanel { Orientation = Orientation.Horizontal, Children = { units, money } });
+    }
+
+    // The unit category as one more pill in the mode switch's own track, so the two read as the same control family.
+    private Border CategoryChip(string label)
+    {
+        var chevron = new Path { Data = Geometry.Parse("M0,0 L3.5,3.5 L7,0"), Stroke = UI.Brush(Look.Secondary), StrokeThickness = 1.4, Margin = new Thickness(8, 1, 0, 0),
+            VerticalAlignment = VerticalAlignment.Center, StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round };
+        Border? track = null;
+        var button = PanelSegment(label, () => { if (track is not null) PickUnitCategory(track); });
+        button.Content = new StackPanel { Orientation = Orientation.Horizontal, Children = { new TextBlock { Text = label, VerticalAlignment = VerticalAlignment.Center }, chevron } };
+        button.Padding = new Thickness(14, 0, 12, 0);
+        StylePanelSegment(button, false);
+        button.Foreground = UI.Brush(Look.Primary); button.Tag = null; // always reads as a value, not an unchosen option
+        return track = PanelSegmentTrack(button);
     }
 
     private string SideLabel(bool currency, string id)
@@ -262,7 +289,9 @@ public partial class MainWindow
         return CurrencySymbols.Value.TryGetValue(code, out var symbol) && symbol != code && symbol.Length <= 3 ? symbol + number : $"{number} {code}";
     }
 
-    private void PickConverterSide(bool fromSide)
+    // The pickers drop down under their button as a classic menu, over the panel and past its edge if needed; typing a
+    // letter jumps to the first matching row (the currency list is long).
+    private void PickConverterSide(FrameworkElement anchor, bool fromSide)
     {
         if (_converterBody is null) return;
         var s = Shared;
@@ -271,7 +300,7 @@ public partial class MainWindow
         if (s.ConverterMode == ConverterMode.Units)
         {
             var units = UnitConversion.In(s.ConverterUnitCategory);
-            ShowPanelPicker(ConverterContent, Loc.T("单位", "Unit"), [.. units.Select(unit => (unit.Label, unit.Id == current))], index =>
+            ShowAnchoredMenu(anchor, [.. units.Select(unit => (unit.Label, unit.Id == current))], index =>
             {
                 _app.ChangeShared(settings => { if (fromSide) settings.ConverterUnitFrom = units[index].Id; else settings.ConverterUnitTo = units[index].Id; });
                 RenderConverter();
@@ -280,18 +309,18 @@ public partial class MainWindow
         }
         var codes = _app.Rates.Codes;
         if (codes.Count == 0) return;
-        ShowPanelPicker(ConverterContent, Loc.T("货币", "Currency"), [.. codes.Select(code => (CurrencyLabel(code), code == current))], index =>
+        ShowAnchoredMenu(anchor, [.. codes.Select(code => (CurrencyLabel(code), code == current))], index =>
         {
             _app.ChangeShared(settings => { if (fromSide) settings.ConverterCurrencyFrom = codes[index]; else settings.ConverterCurrencyTo = codes[index]; });
             RenderConverter();
-        }, search: true);
+        });
     }
 
-    private void PickUnitCategory()
+    private void PickUnitCategory(FrameworkElement anchor)
     {
         if (_converterBody is null) return;
         var categories = Enum.GetValues<UnitCategory>();
-        ShowPanelPicker(ConverterContent, Loc.T("类别", "Category"), [.. categories.Select(category => (UnitConversion.Name(category), category == Shared.ConverterUnitCategory))], index =>
+        ShowAnchoredMenu(anchor, [.. categories.Select(category => (UnitConversion.Name(category), category == Shared.ConverterUnitCategory))], index =>
         {
             // Another category's units mean nothing here: the new one opens on its own pair.
             _app.ChangeShared(settings => { settings.ConverterUnitCategory = categories[index]; settings.ConverterUnitFrom = ""; settings.ConverterUnitTo = ""; });
