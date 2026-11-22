@@ -43,14 +43,20 @@ public partial class MainWindow
                     int at = clips.IndexOf(clip);
                     var row = layout.ClipView == ClipView.Three
                         ? ClipRowThree(clip, layout, at > 0 ? clips[at - 1].Id : null, at >= 0 && at < clips.Count - 1 ? clips[at + 1].Id : null) : ClipRow(clip, layout);
-                    row.Margin = new Thickness(0);
-                    JoinPicked(row, clip.Id, clips.Select(entry => entry.Id));
-                    return WithClipboardDecode(row, clip);
+                    row.Margin = new Thickness(0, 2, 0, 2);
+                    var entry = WithClipboardDecode(row, clip);
+                    if (at <= 0 || layout.ClipView == ClipView.Three) return entry;
+                    var separator = new Border
+                    {
+                        Height = 1, Background = UI.Brush(Look.Hex("outline")),
+                        Margin = new Thickness(8, 0, 5, 0), IsHitTestVisible = false
+                    };
+                    return new StackPanel { Children = { separator, entry } };
                 },
                 (item, row) => ForgetRow(((ClipEntry)item).Id, row))
             { ItemsSource = clips, Margin = new Thickness(-8, 0, 0, 0) };
         }
-        _ = new WheelGlide(list.Viewer, WheelStep(layout.ClipView switch { ClipView.Blocks => layout.BlockHeight + layout.BlockGap, ClipView.Three => layout.ThreeRow, _ => layout.Row }));
+        _ = new WheelGlide(list.Viewer, WheelStep(layout.ClipView switch { ClipView.Blocks => layout.BlockHeight + layout.BlockGap, ClipView.Three => layout.ThreeRow + 4, _ => layout.Row + 5 }));
         Fade(PassWheel(list.Viewer), ShelfSide.Clipboard, _clipOffset);
         return list;
     }
@@ -590,7 +596,8 @@ public partial class MainWindow
         var rest = UI.Brush(Look.Fill);
         // The block's own fill at rest, kept on it for the row's lighting to go back to (AttachRow, FlashEnded).
         bool picked = _picked.Contains(clip.Id);
-        var frame = new Border { Height = layout.BlockHeight, CornerRadius = new CornerRadius(corner), Background = picked ? PickedFill : rest, Cursor = Cursors.Hand, Tag = rest };
+        var frame = new Border { Height = layout.BlockHeight, CornerRadius = new CornerRadius(corner), Background = picked ? PickedFill : rest,
+            BorderBrush = UI.Brush(Look.Hex("outline")), BorderThickness = new Thickness(1), Cursor = Cursors.Hand, Tag = rest };
         var body = new Grid();
         body.RowDefinitions.Add(new RowDefinition());
         body.RowDefinitions.Add(new RowDefinition { Height = new GridLength(layout.BlockFoot) });

@@ -48,6 +48,7 @@ public partial class MainWindow
         private readonly TextBlock _status;
         private readonly TextBlock _empty;
         private readonly Button _clear, _delete;
+        private const string PickerGlyph = "M2,10 V13 H5 L12,6 M2,10 L9,3 M8,2 L13,7";
         private const string CopyGlyph = "M6,5 H12 V13 H5 V6 M5,10 H2 V2 H9 V5";
         private readonly StackPanel _values = new(), _contrast = new(), _harmonies = new();
         private readonly StackPanel[] _views;
@@ -76,14 +77,15 @@ public partial class MainWindow
             AutomationProperties.SetLiveSetting(_status, AutomationLiveSetting.Polite);
 
             var sections = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
-            var segments = new Border { CornerRadius = new CornerRadius(13), Background = UI.Brush(Look.Hex("fill")), Padding = new Thickness(2), Child = sections };
+            var segments = new Border { CornerRadius = new CornerRadius(Look.Corner(8)), Background = UI.Brush(Look.Hex("fill")), Padding = new Thickness(3), Child = sections };
             var names = new[] { Loc.T("数值", "Values"), Loc.T("对比度", "Contrast"), Loc.T("配色", "Harmonies") };
             for (int i = 0; i < names.Length; i++)
             {
                 int section = i;
                 var button = ActionButton(names[i], () => SelectSection(section));
-                button.Margin = new Thickness(0);
-                button.Padding = new Thickness(7, 3, 7, 3);
+                button.Margin = new Thickness(1, 0, 1, 0);
+                button.Height = 24;
+                button.Padding = new Thickness(9, 0, 9, 0);
                 button.FontSize = 11;
                 _sectionButtons.Add(button);
                 sections.Children.Add(button);
@@ -104,17 +106,17 @@ public partial class MainWindow
             SetDock(input, DockSide.Top);
             Children.Add(input);
             var formatHint = Text(Loc.T("十六进制、RGB、HSL、OKLCH 或 CSS 颜色名", "HEX, RGB, HSL, OKLCH or a CSS colour name"), 11, Look.Tertiary);
-            var help = new DockPanel { Margin = new Thickness(0, 4, 0, 4), Children = { _status, formatHint } };
+            var help = new DockPanel { Margin = new Thickness(0, 6, 0, 10), Children = { _status, formatHint } };
             SetDock(_status, DockSide.Right);
             SetDock(help, DockSide.Top);
             Children.Add(help);
-            _clear = IconButton("M3,3 L11,11 M11,3 L3,11", Loc.T("清除当前颜色", "Clear current colour"), () => _entry.Clear());
+            _clear = IconButton("M3,3 L11,11 M11,3 L3,11", Loc.T("清除当前颜色", "Clear current colour"), () => _entry.Clear(), size: 10);
             _delete = IconButton("M3,4 H11 M5,4 V2 H9 V4 M4,4 L5,12 H9 L10,4 M7,6 V10",
                 Loc.T("删除最近颜色", "Delete recent colours"), () =>
                 {
                     _app.ChangeShared(settings => settings.RecentColours = []);
                     Recent();
-                });
+                }, size: 14);
             var footerActions = new StackPanel { Orientation = Orientation.Horizontal, Children = { _clear, _delete } };
             SetDock(footerActions, DockSide.Right);
             var recentScroll = new ScrollViewer
@@ -122,7 +124,7 @@ public partial class MainWindow
                 Content = _recent, HorizontalScrollBarVisibility = ScrollBarVisibility.Hidden,
                 VerticalScrollBarVisibility = ScrollBarVisibility.Disabled
             };
-            var footer = new DockPanel { MinHeight = 30, Margin = new Thickness(0, 8, 0, 0), Children = { footerActions, recentScroll } };
+            var footer = new DockPanel { MinHeight = 30, Margin = new Thickness(9, 8, 9, 0), Children = { footerActions, recentScroll } };
             SetDock(footer, DockSide.Bottom);
             Children.Add(footer);
             _empty = Text(Loc.T("从屏幕取色或输入颜色。", "Pick a colour from the screen or type one."),
@@ -161,7 +163,7 @@ public partial class MainWindow
             {
                 Text = value, MaxLength = 256, Height = 30, Padding = new Thickness(8, 0, 8, 0),
                 VerticalContentAlignment = VerticalAlignment.Center,
-                Background = UI.Brush(Look.Hex("fill")), Foreground = UI.Brush(Look.Primary),
+                Background = Brushes.Transparent, Foreground = UI.Brush(Look.Primary),
                 CaretBrush = UI.Brush(Look.Primary), BorderThickness = new Thickness(0)
             };
             AutomationProperties.SetName(field, name);
@@ -175,9 +177,18 @@ public partial class MainWindow
         {
             var actions = new StackPanel { Orientation = Orientation.Horizontal };
             if (apply.Length > 0) actions.Children.Add(ActionButton(apply, () => Commit(field)));
-            var picker = compact
-                ? IconButton("M2,10 V13 H5 L12,6 M2,10 L9,3 M8,2 L13,7", sample)
-                : ActionButton(sample);
+            var picker = compact ? IconButton(PickerGlyph, sample) : ActionButton(sample);
+            if (!compact)
+            {
+                string ink = Look.Hex("onAccent");
+                var glyph = ButtonGlyph(PickerGlyph, 12, ink);
+                glyph.Margin = new Thickness(0, 0, 7, 0);
+                var caption = new TextBlock { Text = sample, Foreground = UI.Brush(ink), FontSize = 12, FontWeight = FontWeights.SemiBold };
+                picker.Content = new StackPanel { Orientation = Orientation.Horizontal, Children = { glyph, caption } };
+                picker.Background = UI.Brush(Look.Accent);
+                picker.Padding = new Thickness(11, 0, 11, 0);
+                AutomationProperties.SetName(picker, sample);
+            }
             picker.Height = 30;
             picker.VerticalAlignment = VerticalAlignment.Center;
             picker.Margin = new Thickness(8, 0, 0, 0);
@@ -203,6 +214,13 @@ public partial class MainWindow
                 DockPanel.SetDock(_swatch, DockSide.Left);
                 row.Children.Add(_swatch);
             }
+            var chrome = new Border
+            {
+                CornerRadius = new CornerRadius(Look.Corner(7)), Background = UI.Brush(Look.Fill),
+                BorderThickness = new Thickness(1), BorderBrush = UI.Brush(Look.Hex("outline")), Child = field
+            };
+            field.IsKeyboardFocusWithinChanged += (_, _) =>
+                chrome.BorderBrush = UI.Brush(field.IsKeyboardFocusWithin ? Look.Accent : Look.Hex("outline"));
             if (compact)
             {
                 row.Width = 128;
@@ -214,9 +232,9 @@ public partial class MainWindow
                 void UpdateHint() => placeholder.Visibility = field.Text.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
                 field.TextChanged += (_, _) => UpdateHint();
                 UpdateHint();
-                row.Children.Add(new Grid { Children = { field, placeholder } });
+                row.Children.Add(new Grid { Children = { chrome, placeholder } });
             }
-            else row.Children.Add(field);
+            else row.Children.Add(chrome);
             return row;
         }
 
@@ -224,7 +242,7 @@ public partial class MainWindow
         {
             var button = new Button
             {
-                Content = label, Style = (Style)_owner.FindResource("WidgetSurfaceButton"), Template = FlatPill(),
+                Content = label, Style = (Style)_owner.FindResource("PanelSourceButton"), Width = double.NaN, Height = double.NaN,
                 Background = UI.Brush(Look.Hex("fill")), Foreground = UI.Brush(Look.Primary),
                 Margin = new Thickness(4, 1, 0, 1), Padding = new Thickness(8, 4, 8, 4)
             };
@@ -232,23 +250,26 @@ public partial class MainWindow
             return button;
         }
 
-        private Button IconButton(string geometry, string label, Action? action = null)
+        private Button IconButton(string geometry, string label, Action? action = null, double size = 12)
         {
             var button = ActionButton("", action);
             button.Width = button.Height = 26;
             button.Padding = new Thickness(0);
+            button.Background = Brushes.Transparent;
             button.VerticalAlignment = VerticalAlignment.Center;
             button.ToolTip = label;
             AutomationProperties.SetName(button, label);
-            button.Content = new PathGlyph
-            {
-                Data = Geometry.Parse(geometry), Width = 12, Height = 12, Stretch = Stretch.Uniform,
-                Stroke = UI.Brush(Look.Secondary), StrokeThickness = 1.35,
-                StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round,
-                StrokeLineJoin = PenLineJoin.Round
-            };
+            button.Content = ButtonGlyph(geometry, size, Look.Secondary);
             return button;
         }
+
+        private static PathGlyph ButtonGlyph(string geometry, double size, string colour) => new()
+        {
+            Data = Geometry.Parse(geometry), Width = size, Height = size, Stretch = Stretch.Uniform,
+            Stroke = UI.Brush(colour), StrokeThickness = 1.35, VerticalAlignment = VerticalAlignment.Center,
+            StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round,
+            StrokeLineJoin = PenLineJoin.Round
+        };
 
         private void Commit(TextBox field)
         {
@@ -271,7 +292,7 @@ public partial class MainWindow
         {
             _recent.Children.Clear();
             foreach (string hex in _app.Settings.RecentColours)
-                if (CssColour.TryParse(hex, out var colour)) _recent.Children.Add(Swatch(colour, () => Choose(_entry, colour), compact: true));
+                if (CssColour.TryParse(hex, out var colour)) _recent.Children.Add(RecentSwatch(colour));
             _delete.IsEnabled = _recent.Children.Count != 0;
             _delete.Opacity = _delete.IsEnabled ? 1 : .4;
             if (!_delete.IsEnabled)
@@ -315,7 +336,7 @@ public partial class MainWindow
                 var code = Text(value, 12, Look.Primary);
                 code.FontFamily = new FontFamily("Consolas");
                 code.VerticalAlignment = VerticalAlignment.Center;
-                var row = new DockPanel { MinHeight = 28, Children = { copy, label, code } };
+                var row = new DockPanel { MinHeight = 28, Margin = new Thickness(0, 0, 0, 4), Children = { copy, label, code } };
                 SetDock(copy, DockSide.Right);
                 _values.Children.Add(row);
             }
@@ -441,22 +462,23 @@ public partial class MainWindow
             _harmonies.Children.Add(ColourCard(row));
         }
 
-        private Button Swatch(CssColour colour, Action select, bool compact = false)
+        private Button RecentSwatch(CssColour colour)
         {
-            var button = ActionButton(colour.Hex, select);
+            var button = ActionButton("", () => Choose(_entry, colour));
+            button.Background = Brushes.Transparent;
+            button.Padding = new Thickness(0);
+            button.Width = button.Height = 24;
+            button.Margin = new Thickness(0, 0, 6, 0);
             button.ToolTip = colour.Hex;
             AutomationProperties.SetName(button, $"{Loc.T("使用", "Use")} {colour.Hex}");
             var swatch = new Border
             {
-                Width = 18, Height = 18, CornerRadius = new CornerRadius(3),
-                Background = BrushFor(colour),
-                BorderBrush = UI.Brush(Look.Hex("outline")), BorderThickness = new Thickness(1)
+                Width = 24, Height = 24, CornerRadius = new CornerRadius(Look.Corner(7)),
+                Background = BrushFor(colour), BorderBrush = UI.Brush(Look.Hex("outline")), BorderThickness = new Thickness(1)
             };
-            button.Content = compact ? swatch : new StackPanel
-            {
-                Orientation = Orientation.Horizontal,
-                Children = { swatch, new TextBlock { Text = colour.Hex, Margin = new Thickness(5, 0, 0, 0) } }
-            };
+            button.MouseEnter += (_, _) => swatch.BorderBrush = UI.Brush(Look.Primary);
+            button.MouseLeave += (_, _) => swatch.BorderBrush = UI.Brush(Look.Hex("outline"));
+            button.Content = swatch;
             return button;
         }
     }

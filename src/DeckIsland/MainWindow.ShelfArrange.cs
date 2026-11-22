@@ -347,9 +347,12 @@ public partial class MainWindow
         // IslandContent). The card's fill beneath is opaque, so ClearType is safe: the text looks as it does side by side.
         RenderOptions.SetClearTypeHint(body, ClearTypeHint.Enabled); RenderOptions.SetClearTypeHint(strip, ClearTypeHint.Enabled);
         var fill = new SolidColorBrush(); var rim = new SolidColorBrush();
+        // Follow the outer panel's curve at the inset bottom edge, for both the front card and the peek tab.
+        double topRadius = Look.Corner(8);
+        double bottomRadius = Math.Max(topRadius, PanelRadius / _scale - Math.Min(layout.CardSide, layout.CardBottom));
         var card = new Border
         {
-            CornerRadius = new CornerRadius(Look.Corner(8)), Background = fill, BorderBrush = rim, BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(topRadius, topRadius, bottomRadius, bottomRadius), Background = fill, BorderBrush = rim, BorderThickness = new Thickness(1),
             HorizontalAlignment = left || Settings.ShelfSameSideStack ? HorizontalAlignment.Left : HorizontalAlignment.Right,
             Child = new Grid { ClipToBounds = true, Children = { body, strip } }
         };

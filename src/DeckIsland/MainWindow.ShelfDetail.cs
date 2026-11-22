@@ -261,7 +261,9 @@ public partial class MainWindow
     {
         bool wide = ShelfLayout.DetailSide(ContentCanvas.Width);
         var grid = new Grid();
-        FrameworkElement content = side == ShelfSide.Clipboard ? ClipDetail((ClipEntry)Find(side, id)!, layout) : FileDetail((TransferFile)Find(side, id)!, layout);
+        FrameworkElement content = side == ShelfSide.Clipboard
+            ? ClipDetailWithDecode((ClipEntry)Find(side, id)!, layout)
+            : FileDetail((TransferFile)Find(side, id)!, layout);
         var facts = side == ShelfSide.Clipboard ? ClipFacts((ClipEntry)Find(side, id)!) : FileFacts((TransferFile)Find(side, id)!);
         var actions = side == ShelfSide.Clipboard ? ClipActions((ClipEntry)Find(side, id)!) : FileActions((TransferFile)Find(side, id)!);
         if (wide)

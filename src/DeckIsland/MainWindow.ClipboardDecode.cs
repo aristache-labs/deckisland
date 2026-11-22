@@ -84,6 +84,34 @@ public partial class MainWindow
         return wrapper;
     }
 
+    private FrameworkElement ClipDetailWithDecode(ClipEntry entry, ShelfLayout layout)
+    {
+        var original = ClipDetail(entry, layout);
+        if (!CanDecodeClipboard || entry.Kind == ClipKind.Image || ClipboardDecode.Detect(entry.Text) is not { } value)
+            return original;
+
+        var host = new ContentControl { Content = original, HorizontalContentAlignment = HorizontalAlignment.Stretch,
+            VerticalContentAlignment = VerticalAlignment.Stretch };
+        void Close() => host.Content = original;
+        var chip = DecodeButton(value.Type);
+        chip.HorizontalAlignment = HorizontalAlignment.Left;
+        chip.Margin = new Thickness(0, 0, 0, 6);
+        chip.ToolTip = $"{Loc.T("查看解码结果", "Show decoded")} {value.Type}";
+        AutomationProperties.SetName(chip, chip.ToolTip.ToString());
+        chip.Click += (_, _) =>
+        {
+            if (!CanDecodeClipboard) return;
+            if (host.Content != original) { Close(); return; }
+            host.Content = PassWheel(new ScrollViewer
+            {
+                Content = DecodeCard(value, Close), Focusable = false,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto
+            });
+        };
+        DockPanel.SetDock(chip, DockSide.Top);
+        return new DockPanel { Children = { chip, host } };
+    }
+
     private FrameworkElement DecodeCard(ClipboardDecode value, Action close)
     {
         var title = DecodeLabel(value.Type, Look.Secondary);
