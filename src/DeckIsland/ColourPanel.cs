@@ -28,7 +28,7 @@ public partial class MainWindow
         var header = PanelHeader.For(30, 18);
         if (Settings.UsagePage) header = header.WithControlsOf(CachedUsageHeader());
         ApplyHeader(header with { Row = Math.Max(header.Row, header.Height) });
-        ColourContent.Margin = new Thickness(header.Side, 8, header.Side, 16);
+        ColourContent.Margin = new Thickness(header.Side, 20, header.Side, 16);
         ShowHeaderPin(header);
         var previous = ColourContent.Children.OfType<ColourPanel>().FirstOrDefault();
         if (previous?.Appearance == (Look.Generation, Loc.Language)) return;
@@ -88,22 +88,17 @@ public partial class MainWindow
                 _sectionButtons.Add(button);
                 sections.Children.Add(button);
             }
-            segments.HorizontalAlignment = HorizontalAlignment.Center;
-            var title = Text(Loc.T("颜色", "Colour"), 14, Look.Primary);
-            title.FontWeight = FontWeights.SemiBold;
-            title.TextWrapping = TextWrapping.NoWrap;
-            title.TextTrimming = TextTrimming.CharacterEllipsis;
-            title.VerticalAlignment = VerticalAlignment.Center;
-            // The title at the left, the sections centred; the pin is in the panel's header, beside the gear.
-            title.HorizontalAlignment = HorizontalAlignment.Left;
-            var header = new Grid { Margin = new Thickness(0, 0, 0, 8), Children = { title, segments } };
-            SetDock(header, DockSide.Top);
-            Children.Add(header);
+            // No title row (the page switch names the tab): the value, the pick button and, at the right, the sections share the top line.
+            // The pin is in the panel's header, beside the gear.
             var input = InputRow(_entry, "", Loc.T("取色", "Pick color"));
-            SetDock(input, DockSide.Top);
-            Children.Add(input);
+            input.Margin = new Thickness(0);
+            segments.Margin = new Thickness(12, 0, 0, 0);
+            var top = new DockPanel { Children = { segments, input } };
+            SetDock(segments, DockSide.Right);
+            SetDock(top, DockSide.Top);
+            Children.Add(top);
             var formatHint = Text(Loc.T("十六进制、RGB、HSL、OKLCH 或 CSS 颜色名", "HEX, RGB, HSL, OKLCH or a CSS colour name"), 11, Look.Tertiary);
-            var help = new DockPanel { Margin = new Thickness(0, 6, 0, 10), Children = { _status, formatHint } };
+            var help = new DockPanel { Margin = new Thickness(0, 11, 0, 10), Children = { _status, formatHint } };
             SetDock(_status, DockSide.Right);
             SetDock(help, DockSide.Top);
             Children.Add(help);

@@ -74,8 +74,9 @@ public partial class MainWindow
         restart.ToolTip = Loc.T("用当前设置重新启动终端", "Restart the terminal with the current settings");
         restart.Click += (_, _) => { CloseTerminal(); RenderTerminal(); };
         restart.HorizontalAlignment = HorizontalAlignment.Left;
-        var right = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Children = { restart } };
-        var top = new Grid { Margin = new Thickness(0, 0, 0, 8), Children = { title, right } };
+        title.VerticalAlignment = VerticalAlignment.Center;
+        restart.Margin = new Thickness(10, 0, 0, 0);
+        var top = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 8), Children = { title, restart } };
         // The frame the terminal's window is laid over; its colour is the terminal's, so the rounded corners show around it.
         _terminalFrame = new Border { Background = UI.Brush(TerminalBackground) };
         _terminalFrame.SizeChanged += (_, _) => PlaceTerminal();
