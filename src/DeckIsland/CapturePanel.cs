@@ -145,8 +145,7 @@ public partial class MainWindow
         FrameworkElement[] actions = _captureVideoMode ? [.. videoActions, mic, sound] : [shot, region];
         var centre = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
         for (int i = 0; i < actions.Length; i++) { actions[i].Margin = new Thickness(i == 0 ? 0 : 8, 0, 0, 0); centre.Children.Add(actions[i]); }
-        _captureStatus.HorizontalAlignment = HorizontalAlignment.Right; _captureStatus.Margin = new Thickness(8, 0, 10, 0);
-        var cells = new FrameworkElement?[] { modeTrack, null, centre, _captureStatus, picker };
+        var cells = new FrameworkElement?[] { modeTrack, null, centre, null, picker };
         for (int i = 0; i < cells.Length; i++)
         {
             if (cells[i] is not { } cell) continue;
@@ -177,7 +176,9 @@ public partial class MainWindow
         _captureSelected.IntersectWith(files.Select(f => f.FullName));
         var selectBar = CaptureSelectBar(files);
         DockPanel.SetDock(selectBar, DockSide.Right);
-        var filterRow = new DockPanel { Margin = new Thickness(0, 4, 0, 8), Children = { PanelSegmentTrack(filters), layoutTrack, selectBar, new Border() } };
+        var filterRow = new DockPanel { Margin = new Thickness(0, 4, 0, 8), Children = { PanelSegmentTrack(filters), layoutTrack, selectBar, _captureStatus } };
+        // The note of the last action, centred in the room between the filter and Select.
+        _captureStatus.HorizontalAlignment = HorizontalAlignment.Center; _captureStatus.Margin = new Thickness(10, 0, 10, 0);
         DockPanel.SetDock(filterRow.Children[0], DockSide.Left);
         DockPanel.SetDock(layoutTrack, DockSide.Right);
         DockPanel.SetDock(filterRow, DockSide.Top);
