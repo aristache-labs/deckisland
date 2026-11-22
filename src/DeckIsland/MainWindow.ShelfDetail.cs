@@ -24,13 +24,13 @@ public partial class MainWindow
     {
         ShelfToolbar.Children.Clear();
         ShelfToolbar.Visibility = Visibility.Visible;
-        double right = PanelHeader.RightButtonsMargin + PanelHeader.SettingsWidth + 6;
+        double right = HeaderEdge - HeaderGap + 6;
         if (_shelfDetail is { } detail)
         {
             ShelfSearchButton.Visibility = Visibility.Collapsed;
             var list = DetailList(detail.Side);
             int at = list.IndexOf(detail.Id);
-            var left = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(_header.Side - 6, 0, 0, 0) };
+            var left = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(HeaderEdge - 6, 0, 0, 0) };
             var back = ToolbarGlyph("M 5,0 L 0,5 L 5,10", Loc.T("返回", "Back"), CloseDetail);
             left.Children.Add(back);
             left.Children.Add(Label(DetailKind(detail.Side, detail.Id), 13, Look.Primary, HorizontalAlignment.Left, left: 4));
@@ -43,14 +43,15 @@ public partial class MainWindow
             ShelfToolbar.Children.Add(left); ShelfToolbar.Children.Add(arrows);
             return;
         }
-        if (_shelfSearching)
-        {
-            ShelfSearchButton.Visibility = Visibility.Collapsed;
-            double room = width - right - _header.Side;
-            double boxWidth = Math.Min(ShelfLayout.SearchWidth(width), Math.Max(room, 1)), height = _header.SwitchHeight;
+        // The search opens from the first column's title row (ShelfSearchEntry); the header keeps the gear and the pin only.
+        ShelfSearchButton.Visibility = Visibility.Collapsed;
+    }
+    // The open search box, at the right of the first column's title row, where "Search" was.
+    private Grid ShelfSearchHost(double boxWidth, double height)
+    {
             var box = _searchBox ??= NewSearchBox();
             (box.Parent as Panel)?.Children.Remove(box);
-            var host = new Grid { Width = boxWidth, Height = height, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, right, 0) };
+            var host = new Grid { Width = boxWidth, Height = height, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 4, 0) };
             box.FontSize = 12.5; box.Padding = new Thickness(26, 0, 28, 0); box.VerticalContentAlignment = VerticalAlignment.Center;
             host.Children.Add(box);
             // "×" at the right: it empties the box, or closes the search when the box is already empty.
@@ -89,10 +90,22 @@ public partial class MainWindow
             hint.TextTrimming = TextTrimming.CharacterEllipsis;
             hint.IsHitTestVisible = false; hint.Visibility = box.Text.Length == 0 ? Visibility.Visible : Visibility.Collapsed; hint.Tag = "hint";
             host.Children.Add(hint);
-            ShelfToolbar.Children.Add(host);
-            return;
-        }
-        ShelfSearchButton.Visibility = Visibility.Visible;
+        return host;
+    }
+    // "Search" with its icon, at the right of the first column's title row.
+    private const double SearchEntryWidth = 70;
+    private Button ShelfSearchEntry(double size)
+    {
+        var icon = new Path { Data = Geometry.Parse("M 10.5,3.5 A 7,7 0 1 1 10.5,17.5 A 7,7 0 1 1 10.5,3.5 Z M 15.6,15.6 L 21,21"), StrokeThickness = 2,
+            Stretch = Stretch.Uniform, Width = 12, Height = 12, VerticalAlignment = VerticalAlignment.Center };
+        var button = new Button { Style = (Style)FindResource("PanelGlyphButton"), Width = double.NaN, Padding = new Thickness(6, 0, 6, 0), Margin = new Thickness(0, 0, 4, 0), VerticalAlignment = VerticalAlignment.Center };
+        var text = Label(Loc.T("搜索", "Search"), size, Look.Secondary, HorizontalAlignment.Left, left: 5);
+        icon.SetBinding(Shape.StrokeProperty, new System.Windows.Data.Binding(nameof(Foreground)) { Source = button });
+        text.SetBinding(TextBlock.ForegroundProperty, new System.Windows.Data.Binding(nameof(Foreground)) { Source = button });
+        button.Content = new StackPanel { Orientation = Orientation.Horizontal, Children = { icon, text } };
+        AutomationProperties.SetName(button, ShelfSearchName);
+        button.Click += ShelfSearch_Click;
+        return button;
     }
     private Button ToolbarGlyph(string data, string name, Action click)
     {

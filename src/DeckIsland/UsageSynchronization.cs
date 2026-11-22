@@ -65,7 +65,8 @@ public partial class MainWindow
     {
         bool paused = !_details && !Settings.UsageAutoSync;
         AIUsageButton.Visibility = Settings.UsagePage && !_details ? Visibility.Visible : Visibility.Collapsed;
-        SyncButton.Visibility = Settings.UsagePage && IsUsagePage ? Visibility.Visible : Visibility.Collapsed;
+        // Syncing is in the quota settings now (SettingsWindow.Pages); the header keeps the gear and the pin only.
+        SyncButton.Visibility = Visibility.Collapsed;
         SyncButton.Foreground = UI.Brush(paused ? Look.Hex("danger") : Look.Secondary);
         SyncSlash.Visibility = paused ? Visibility.Visible : Visibility.Collapsed;
         var tip = _details ? Refreshing ? Loc.T("正在同步用量与模型消耗…", "Syncing usage and model consumption…") : Loc.T("立即同步用量与模型消耗", "Sync usage and model consumption now")

@@ -19,8 +19,7 @@ public partial class MainWindow
 
     private const string ToolPinBare = "bare";
 
-    private bool ToolPinHolds => _colourPicking || _toolPinned
-        && CurrentPage is DeckPage.Scratchpad or DeckPage.Converter or DeckPage.Terminal or DeckPage.Colour or DeckPage.Capture;
+    private bool ToolPinHolds => _colourPicking || _toolPinned;
 
     private Button ToolPinButton()
     {

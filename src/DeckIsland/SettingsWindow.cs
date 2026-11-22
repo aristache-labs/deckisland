@@ -894,6 +894,11 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
         Group(Toggle(Loc.T("同步 WSL 中的用量统计", "Include usage from WSL"), S.IncludeWsl, v => Change(s => s.IncludeWsl = v), help:
             Loc.T("开启后，会读取已安装的 WSL 子系统中 Claude Code 和 Codex CLI 的会话记录，并计入 Token 用量与费用统计。读取时会唤醒尚未运行的 WSL 子系统，默认关闭。",
                 "When on, the Claude Code and Codex CLI session records inside installed WSL distributions are read and counted in token usage and cost. Reading wakes a distribution that is not running, so this is off by default.")));
+        SectionTitle(Loc.T("同步", "Sync"), description: Loc.T("额度和用量多久读取一次。", "How often quotas and usage are read."));
+        var syncNow = ActionButton(Loc.T("立即同步", "Sync now"), () => _app.Deck.SyncNow());
+        syncNow.HorizontalAlignment = HorizontalAlignment.Left;
+        syncNow.Margin = new Thickness(0, 8, 0, 0);
+        Group(Toggle(Loc.T("每 60 秒自动同步", "Sync automatically every 60 seconds"), S.UsageAutoSync, v => Change(s => s.UsageAutoSync = v)), syncNow);
         QuotaRingSection();
         SectionTitle(Loc.T("应用", "Apps"), description: Loc.T("看板上的每一列：配额来源、统计应用、名称和颜色。", "Each column of the panel: its quota source, usage app, name and colors."));
         _appRows = new StackPanel();

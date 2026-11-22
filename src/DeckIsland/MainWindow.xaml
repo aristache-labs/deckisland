@@ -219,8 +219,10 @@
                     <Viewbox Width="15" Height="15"><Canvas Width="24" Height="24"><Path Data="M 10.5,3.5 A 7,7 0 1 1 10.5,17.5 A 7,7 0 1 1 10.5,3.5 Z M 15.6,15.6 L 21,21" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/></Canvas></Viewbox>
                   </Button>
                   <Border x:Name="ToolPinSlot" Margin="0,0,3,0" VerticalAlignment="Center" Visibility="Collapsed"/>
-                  <Button x:Name="SettingsButton" Style="{StaticResource PanelSettingsButton}" Content="&#xE713;" FontFamily="{StaticResource FontIconMdl2}" FontSize="16" Click="Settings_Click"/>
                 </StackPanel>
+                <!-- The settings gear at the left, mirroring the pin at the right, so the page switch between them stays centred. -->
+                <Button x:Name="SettingsButton" Style="{StaticResource PanelSettingsButton}" Content="&#xE713;" FontFamily="{StaticResource FontIconMdl2}" FontSize="16" Click="Settings_Click"
+                        HorizontalAlignment="Left" VerticalAlignment="Top"/>
               </Grid>
               <Border x:Name="ReminderAlertContent" Visibility="Collapsed"/>
           </Grid>

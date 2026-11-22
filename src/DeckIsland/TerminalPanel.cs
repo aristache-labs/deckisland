@@ -48,7 +48,8 @@ public partial class MainWindow
         ApplyHeader(Settings.UsagePage ? header.WithControlsOf(CachedUsageHeader()) : header);
         ShowHeaderPin(header);
         // Equal insets on the sides and bottom let the frame's lower corners share the panel's curve.
-        TerminalContent.Margin = new Thickness(header.Side, 0, header.Side, header.Side);
+        // A gap under the header, so the title and the restart button do not crowd the page switch.
+        TerminalContent.Margin = new Thickness(header.Side, 8, header.Side, header.Side);
         var appearance = (Look.Generation, Loc.Language);
         if (_terminalAppearance != appearance || _terminalBody is null || !TerminalContent.Children.Contains(_terminalBody))
         {

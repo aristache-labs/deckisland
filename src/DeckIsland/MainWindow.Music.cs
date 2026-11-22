@@ -200,7 +200,9 @@ public partial class MainWindow
     }
     private void DevicesPage_Click(object sender, RoutedEventArgs e) => SelectPage(DeckPage.Devices);
     // Where the usage page's application tabs start: after the page switch, which holds one 28 DIP button per shown page.
-    private double ApplicationPagesLeft(double side) { int pages = DeckPages.Visible(Settings).Count; return side + (pages <= 1 ? 36 : 72 + 29 * (pages - 2)); }
+    private double ApplicationPagesLeft() { int pages = DeckPages.Visible(Settings).Count; return HeaderEdge + (pages <= 1 ? 36 : 72 + 29 * (pages - 2)) * TabBarScales.Factor(Settings); }
+    // From either edge of the header to the page switch: the gear (left) or the pin (right), at the tab bar's size, their margin and a gap.
+    private double HeaderEdge => PanelHeader.RightButtonsMargin + PanelHeader.SettingsWidth * TabBarScales.Factor(Settings) + HeaderGap;
     // The header shared by both pages (see PanelHeader). Its row holds the page's top margin, so the clock, the switch and the
     // right group are centred on one line, and the switch and the gear line up with the page's content edges. Toolbar's own
     // height replaces its binding to the row: the music page takes the usage page's controls (PanelHeader.WithControlsOf), so
@@ -225,12 +227,15 @@ public partial class MainWindow
         }
         PageCapsule.CornerRadius = new CornerRadius(Look.Corner(PanelHeader.ButtonRadius));
         SettingsButton.Height = 24;
-        if (SettingsButton.Parent is FrameworkElement right)
+        SettingsButton.Margin = new Thickness(PanelHeader.RightButtonsMargin, PanelHeader.RightButtonsTop, 0, 0);
+        if (ToolPinSlot.Parent is FrameworkElement right)
         {
             right.VerticalAlignment = VerticalAlignment.Top;
             right.Margin = new Thickness(0, PanelHeader.RightButtonsTop, PanelHeader.RightButtonsMargin, 0);
         }
-        ApplicationPages.Margin = new Thickness(ApplicationPagesLeft(header.Side), 0, 0, 0);
+        // The pin on every page, at the right, as big as the gear at the left.
+        ShowHeaderPin(header);
+        ApplicationPages.Margin = new Thickness(ApplicationPagesLeft(), 0, 0, 0);
     }
     // The page switch never runs under the buttons at the right of the header (the pin and the gear, or the gear alone): it stays
     // centred while that leaves a gap, moves left of centre when it would not, and shrinks as a whole when even that is too narrow.
@@ -240,26 +245,26 @@ public partial class MainWindow
 
     private void KeepHeaderGap()
     {
-        if (!_headerGapWatched && SettingsButton.Parent is FrameworkElement watched)
+        if (!_headerGapWatched)
         {
             _headerGapWatched = true;
             SizeChangedEventHandler again = (_, _) => KeepHeaderGap();
-            Toolbar.SizeChanged += again; watched.SizeChanged += again; PageSwitch.SizeChanged += again;
+            Toolbar.SizeChanged += again; PageSwitch.SizeChanged += again;
         }
-        if (SettingsButton.Parent is not FrameworkElement right || Toolbar.ActualWidth <= 0 || PageSwitch.ActualWidth <= 0) return;
-        double side = _headerSide, width = Toolbar.ActualWidth, natural = PageSwitch.ActualWidth;
-        // The pin and the gear follow the tab bar's size setting too.
+        // The gear (left) and the pin (right) follow the tab bar's size setting too.
         double factor = TabBarScales.Factor(Settings);
-        right.LayoutTransform = factor != 1 ? new ScaleTransform(factor, factor) : Transform.Identity;
-        double reserve = right.IsVisible ? right.ActualWidth * factor + right.Margin.Right + HeaderGap : side;
-        // The switch is centred while the right group leaves room for that; on a panel just wide enough for both it moves left
-        // of centre, and it shrinks only on a panel narrower than that (which no page's size allows, DeckPages.Limits).
-        double room = Math.Max(1, width - side - reserve);
-        double scale = Math.Min(factor, room / natural);
+        Transform scaled = factor != 1 ? new ScaleTransform(factor, factor) : Transform.Identity;
+        SettingsButton.LayoutTransform = scaled;
+        if (ToolPinSlot.Parent is FrameworkElement right) right.LayoutTransform = scaled;
+        if (Toolbar.ActualWidth <= 0 || PageSwitch.ActualWidth <= 0) return;
+        // The same room on both sides, so the switch stays centred on every page; it shrinks only on a panel narrower than the
+        // header, which no page's size allows (DeckPages.Limits).
+        double edge = HeaderEdge, width = Toolbar.ActualWidth, natural = PageSwitch.ActualWidth;
+        double scale = Math.Min(factor, Math.Max(1, width - 2 * edge) / natural);
         PageSwitch.LayoutTransform = scale != 1 ? new ScaleTransform(scale, scale) : Transform.Identity;
-        bool centredFits = (width + natural * scale) / 2 <= width - reserve;
         PageSwitch.VerticalAlignment = VerticalAlignment.Top;
-        PageSwitch.Margin = new Thickness(side, PanelHeader.ControlsTop, centredFits && PageSwitch.HorizontalAlignment == HorizontalAlignment.Center ? side : reserve, 0);
+        PageSwitch.Margin = new Thickness(edge, PanelHeader.ControlsTop, edge, 0);
+        ModelToolbar.Margin = new Thickness(edge, 0, edge, 0);
     }
     private void RenderPageSwitch()
     {
@@ -273,7 +278,6 @@ public partial class MainWindow
         KeepHeaderGap();
         OrderPageButtons();
         if (!IsShelfPage) { ShelfToolbar.Visibility = Visibility.Collapsed; ShelfSearchButton.Visibility = Visibility.Collapsed; }
-        if (CurrentPage is not (DeckPage.Scratchpad or DeckPage.Converter or DeckPage.Terminal or DeckPage.Colour or DeckPage.Capture)) ToolPinSlot.Visibility = Visibility.Collapsed;
         foreach (var (button, page) in new[] { (AIUsageButton, DeckPage.Usage), (MusicPageButton, DeckPage.Music), (MonitorPageButton, DeckPage.Monitor), (ShelfPageButton, DeckPage.Clipboard), (DevicesPageButton, DeckPage.Devices), (WeatherPageButton, DeckPage.Weather), (FocusPageButton, DeckPage.Focus), (WidgetsPageButton, DeckPage.Widgets), (RemindersPageButton, DeckPage.Reminders), (NotificationsPageButton, DeckPage.Notifications), (CallsPageButton, DeckPage.Calls), (ScratchpadPageButton, DeckPage.Scratchpad), (ConverterPageButton, DeckPage.Converter), (TerminalPageButton, DeckPage.Terminal), (ColourPageButton, DeckPage.Colour), (CapturePageButton, DeckPage.Capture) })
         {
             bool current = CurrentPage == page || page == DeckPage.Widgets && CurrentPage == DeckPage.Reminders;
@@ -282,7 +286,7 @@ public partial class MainWindow
         }
         PlacePageCapsule();
         UpdateShelfPageButton();
-        ApplicationPages.Margin = new Thickness(ApplicationPagesLeft(_header.Side), 0, 0, 0);
+        ApplicationPages.Margin = new Thickness(ApplicationPagesLeft(), 0, 0, 0);
         // With the entry switched on the source menu has one more row. Without a source that row stands alone in the button.
         bool entry = FullControlEntryShown, alone = entry && _mediaTrack is null;
         MediaSourceButton.Visibility = IsMusicPage && (_mediaTrack is not null || entry) ? Visibility.Visible : Visibility.Collapsed;
