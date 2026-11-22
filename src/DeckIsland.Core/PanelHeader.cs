@@ -7,7 +7,7 @@ namespace DeckIsland.Core;
 // they sit on whole DIPs.
 // Side: the inset of the switch's left edge and of the gear's visible right edge. It is the page's content margin, so the
 // header lines up with the content below, but at least CornerClear, which keeps the switch clear of a rounded top corner.
-// SwitchHeight: 28, or 24 in a row below 36. ButtonHeight: each button inside the switch. SwitchTop: from the panel's top
+// SwitchHeight: 28, or 24 in a row below 32. ButtonHeight: each button inside the switch. SwitchTop: from the panel's top
 // edge to the switch. RightMargin: the right group's margin that puts the gear's ink at Side. SettingsHeight: the settings
 // button, 24, or 20 in a row below 32, which keeps its hover background inside a rounded top corner.
 public sealed record PanelHeader(double Row, double Height, double Side, double SwitchHeight, double ButtonHeight, double SwitchTop,
@@ -22,6 +22,10 @@ public sealed record PanelHeader(double Row, double Height, double Side, double 
     public const double CornerClear = PanelRadius - SwitchRadius;
     // The gear glyph (Segoe MDL2 Assets U+E713 at 16) fills its 16 DIP box (ink 0.05 to 15.95), which is centred in the
     // 28 DIP settings button.
+    // Where the switch and the right group (pin, gear) sit on every page, whatever its band and content inset, so they do not
+    // move when the page changes: the switch's top, the 24 DIP buttons' top (centred on the 28 DIP switch) and the gear's
+    // right margin (its ink CornerClear from the edge).
+    public const double ControlsTop = 2, RightButtonsTop = 4, RightButtonsMargin = 10;
     public const double SettingsWidth = 28, SettingsRadius = 6, GearSize = 16, GearInset = (SettingsWidth - GearSize) / 2;
 
     public static PanelHeader For(double row, double side)
@@ -29,7 +33,9 @@ public sealed record PanelHeader(double Row, double Height, double Side, double 
         row = double.IsFinite(row) ? Math.Max(0, Math.Round(row)) : 0;
         side = double.IsFinite(side) ? Math.Round(side) : 0;
         double height = row - row % 2, inset = Math.Max(side, CornerClear);
-        double switchHeight = height >= 36 ? 28 : 24;
+        // One switch size on every page, so it does not change when the page does; only a band under 32 (a panel too short for
+        // any quick size) has no room for it.
+        double switchHeight = height >= 32 ? 28 : 24;
         return new(row, height, inset, switchHeight, switchHeight - 2 * SwitchPadding, Math.Max(0, (height - switchHeight) / 2),
             inset - GearInset, height >= 32 ? 24 : 20);
     }

@@ -224,15 +224,19 @@ public partial class MainWindow
             if (button.Template?.FindName("Chrome", button) is Border chrome) chrome.CornerRadius = new CornerRadius(Look.Corner(PanelHeader.ButtonRadius));
         }
         PageCapsule.CornerRadius = new CornerRadius(Look.Corner(PanelHeader.ButtonRadius));
-        SettingsButton.Height = header.SettingsHeight;
-        if (SettingsButton.Parent is FrameworkElement right) right.Margin = new Thickness(0, 0, header.RightMargin, 0);
+        SettingsButton.Height = 24;
+        if (SettingsButton.Parent is FrameworkElement right)
+        {
+            right.VerticalAlignment = VerticalAlignment.Top;
+            right.Margin = new Thickness(0, PanelHeader.RightButtonsTop, PanelHeader.RightButtonsMargin, 0);
+        }
         ApplicationPages.Margin = new Thickness(ApplicationPagesLeft(header.Side), 0, 0, 0);
     }
     // The page switch never runs under the buttons at the right of the header (the pin and the gear, or the gear alone): it stays
     // centred while that leaves a gap, moves left of centre when it would not, and shrinks as a whole when even that is too narrow.
     private double _headerSide;
     private bool _headerGapWatched;
-    private const double HeaderGap = 10, MaxSwitchGrow = 1.25;
+    private const double HeaderGap = 10;
 
     private void KeepHeaderGap()
     {
@@ -244,16 +248,19 @@ public partial class MainWindow
         }
         if (SettingsButton.Parent is not FrameworkElement right || Toolbar.ActualWidth <= 0 || PageSwitch.ActualWidth <= 0) return;
         double side = _headerSide, width = Toolbar.ActualWidth, natural = PageSwitch.ActualWidth;
-        double reserve = right.IsVisible ? right.ActualWidth + right.Margin.Right + HeaderGap : side;
+        // The pin and the gear follow the tab bar's size setting too.
+        double factor = TabBarScales.Factor(Settings);
+        right.LayoutTransform = factor != 1 ? new ScaleTransform(factor, factor) : Transform.Identity;
+        double reserve = right.IsVisible ? right.ActualWidth * factor + right.Margin.Right + HeaderGap : side;
         // The switch keeps the same room on both sides, so it stays centred and does not move between pages of other widths.
-        // It shrinks only where the panel is too narrow, and grows (up to MaxSwitchGrow) as far as the band's height allows.
+        // It shrinks only where the panel is too narrow; otherwise it is the same size on every page.
         bool centred = PageSwitch.HorizontalAlignment == HorizontalAlignment.Center;
         double edge = centred ? Math.Max(side, reserve) : side;
         double room = Math.Max(1, width - edge - (centred ? edge : reserve));
-        double grow = PageSwitch.ActualHeight > 0 ? Math.Clamp(Toolbar.ActualHeight / PageSwitch.ActualHeight, 1, MaxSwitchGrow) : 1;
-        double scale = Math.Min(grow, room / natural);
+        double scale = Math.Min(factor, room / natural);
         PageSwitch.LayoutTransform = scale != 1 ? new ScaleTransform(scale, scale) : Transform.Identity;
-        PageSwitch.Margin = new Thickness(side, 0, centred ? side : reserve, 0);
+        PageSwitch.VerticalAlignment = VerticalAlignment.Top;
+        PageSwitch.Margin = new Thickness(side, PanelHeader.ControlsTop, centred ? side : reserve, 0);
     }
     private void RenderPageSwitch()
     {

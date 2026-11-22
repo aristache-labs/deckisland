@@ -27,7 +27,7 @@ public partial class MainWindow
             FocusContent.Visibility = RemindersContent.Visibility = NotificationsContent.Visibility = CallsContent.Visibility = ConverterContent.Visibility = TerminalContent.Visibility = Visibility.Collapsed;
         ModelToolbar.Visibility = ApplicationPages.Visibility = Visibility.Collapsed;
         if (!double.IsFinite(ContentCanvas.Height)) return;
-        var header = PanelHeader.For(30, 18);
+        var header = PanelHeader.For(32, 18);
         ApplyHeader(Settings.UsagePage ? header.WithControlsOf(CachedUsageHeader()) : header);
         ScratchpadContent.Margin = new Thickness(header.Side, 0, header.Side, 12);
         ShowHeaderPin(header);

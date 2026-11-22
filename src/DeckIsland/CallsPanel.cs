@@ -84,7 +84,7 @@ public partial class MainWindow
         ModelToolbar.Visibility = ApplicationPages.Visibility = Visibility.Collapsed;
         double height = ContentCanvas.Height;
         if (!double.IsFinite(height)) return;
-        var header = PanelHeader.For(30, 18);
+        var header = PanelHeader.For(32, 18);
         ApplyHeader(Settings.UsagePage ? header.WithControlsOf(CachedUsageHeader()) : header);
         CallsContent.Margin = new Thickness(header.Side, 0, header.Side, 12);
         double width = Math.Max(0, ContentCanvas.Width - header.Side * 2);

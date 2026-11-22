@@ -24,7 +24,7 @@ public partial class MainWindow
     {
         ShelfToolbar.Children.Clear();
         ShelfToolbar.Visibility = Visibility.Visible;
-        double right = _header.RightMargin + PanelHeader.SettingsWidth + 6;
+        double right = PanelHeader.RightButtonsMargin + PanelHeader.SettingsWidth + 6;
         if (_shelfDetail is { } detail)
         {
             ShelfSearchButton.Visibility = Visibility.Collapsed;

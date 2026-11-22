@@ -68,7 +68,7 @@ public partial class MainWindow
             if (page != DeckPage.Capture) PageContent(page).Visibility = Visibility.Collapsed;
         ModelToolbar.Visibility = ApplicationPages.Visibility = Visibility.Collapsed;
         if (!double.IsFinite(ContentCanvas.Height)) return;
-        var header = PanelHeader.For(30, 18);
+        var header = PanelHeader.For(32, 18);
         if (Settings.UsagePage) header = header.WithControlsOf(CachedUsageHeader());
         ApplyHeader(header with { Row = Math.Max(header.Row, header.Height) });
         CaptureContent.Margin = new Thickness(header.Side, 14, header.Side, 12);

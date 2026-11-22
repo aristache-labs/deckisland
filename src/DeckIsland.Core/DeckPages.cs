@@ -39,7 +39,7 @@ public static class DeckPages
     public static double MaxWidthOn(double workWidth, double scale = 1) => Math.Max(MinWidth, Math.Min(MaxWidth, Math.Floor((workWidth - 24) / scale)));
 
     public static (double MinWidth, double MaxWidth, double MinHeight, double MaxHeight) Limits(DeckSettings settings, DeckPage page)
-        => (page == DeckPage.Usage ? Math.Max(MinWidth, settings.MinimumWidth) : MinWidth, MaxWidth, page == DeckPage.Widgets ? 220 : MinHeight, MaxHeight);
+        => (Math.Max(page == DeckPage.Usage ? Math.Max(MinWidth, settings.MinimumWidth) : MinWidth, Math.Min(MaxWidth, SwitchWidth(settings))), MaxWidth, page == DeckPage.Widgets ? 220 : MinHeight, MaxHeight);
 
     // Sets a page's size, as dragging an edge of the open panel does; the values are kept within the page's limits.
     public static void SetSize(DeckSettings settings, DeckPage page, double width, double height)
@@ -67,7 +67,14 @@ public static class DeckPages
         }
     }
 
-    public static (double Width, double Height) Size(DeckSettings settings, DeckPage page) => page switch
+    // A page is never narrower than its limits allow (Limits), so a size saved before the page switch grew still holds it.
+    public static (double Width, double Height) Size(DeckSettings settings, DeckPage page)
+    {
+        var (width, height) = Saved(settings, page);
+        return (Math.Max(width, Limits(settings, page).MinWidth), height);
+    }
+
+    private static (double Width, double Height) Saved(DeckSettings settings, DeckPage page) => page switch
     {
         DeckPage.Widgets => (settings.WidgetsWidth, settings.WidgetsHeight),
         DeckPage.Notifications => (settings.NotificationsWidth, settings.NotificationsHeight),
@@ -95,7 +102,7 @@ public static class DeckPages
     // The page switch's buttons (28 DIP and a 1 DIP gap each) centred with the right group's room (pin and settings buttons,
     // gaps) on both sides: no quick size is narrower, so the switch is never shrunk and stays centred.
     // shortcut: mirrors MainWindow.xaml's button sizes; update it with them.
-    public static double SwitchWidth(DeckSettings settings) => Math.Max(1, Visible(settings).Count) * 29 + 4 + 2 * 80;
+    public static double SwitchWidth(DeckSettings settings) => Math.Ceiling((Math.Max(1, Visible(settings).Count) * 29 + 4) * TabBarScales.Factor(settings)) + 2 * 80;
     public static (double Width, double Height) QuickSize(DeckSettings settings, DeckPage page, PanelSize size, double workWidth, double workHeight, double scale = 1)
     {
         var (compact, standard) = Reference(settings, page);

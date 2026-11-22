@@ -41,7 +41,7 @@ public partial class MainWindow
             ToolPinSlot.Child = pin;
             SetToolPin(_toolPinned);
         }
-        pin.Width = pin.Height = header.SettingsHeight;
+        pin.Width = pin.Height = 24;
         ToolPinSlot.Visibility = Visibility.Visible;
     }
 
@@ -56,7 +56,7 @@ public partial class MainWindow
             FocusContent.Visibility = RemindersContent.Visibility = NotificationsContent.Visibility = CallsContent.Visibility = ScratchpadContent.Visibility = TerminalContent.Visibility = Visibility.Collapsed;
         ModelToolbar.Visibility = ApplicationPages.Visibility = Visibility.Collapsed;
         if (!double.IsFinite(ContentCanvas.Height)) return;
-        var header = PanelHeader.For(30, 18);
+        var header = PanelHeader.For(32, 18);
         if (Settings.UsagePage) header = header.WithControlsOf(CachedUsageHeader());
         ApplyHeader(header with { Row = Math.Max(header.Row, header.Height) });
         ShowHeaderPin(header);
@@ -154,7 +154,7 @@ public partial class MainWindow
         body.Children.Add(cards); body.Children.Add(footer);
         _converterBody = body;
         ConverterContent.Children.Add(new Viewbox { Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, VerticalAlignment = VerticalAlignment.Top,
-            Child = new Border { Width = Math.Max(300, ContentCanvas.Width - PanelHeader.For(30, 18).Side * 2), Child = body } });
+            Child = new Border { Width = Math.Max(300, ContentCanvas.Width - PanelHeader.For(32, 18).Side * 2), Child = body } });
         UpdateConversion();
     }
 

@@ -44,7 +44,7 @@ public partial class MainWindow
             FocusContent.Visibility = RemindersContent.Visibility = NotificationsContent.Visibility = CallsContent.Visibility = ScratchpadContent.Visibility = ConverterContent.Visibility = Visibility.Collapsed;
         ModelToolbar.Visibility = ApplicationPages.Visibility = Visibility.Collapsed;
         if (!double.IsFinite(ContentCanvas.Height)) return;
-        var header = PanelHeader.For(30, 18);
+        var header = PanelHeader.For(32, 18);
         ApplyHeader(Settings.UsagePage ? header.WithControlsOf(CachedUsageHeader()) : header);
         ShowHeaderPin(header);
         // Equal insets on the sides and bottom let the frame's lower corners share the panel's curve.

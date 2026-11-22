@@ -295,6 +295,13 @@ public static class AppPresets
 
 public enum PanelSize { Compact, Standard, Spacious }
 
+// The page switch's size setting (DeckSettings.TabBarScale), in percent. Above Max it would not fit the header band.
+public static class TabBarScales
+{
+    public const int Default = 100, Min = 80, Max = 125;
+    public static double Factor(DeckSettings settings) => Math.Clamp(settings.TabBarScale, Min, Max) / 100d;
+}
+
 // Quick sizes depend on the number of enabled applications at the moment they are chosen; the stored width
 // and height do not move afterwards. One to four applications use the values settled with the user; more
 // applications extend the same pattern per column, capped at the 1200 DIP maximum width.
@@ -752,6 +759,8 @@ public sealed class DeckSettings
     // How round the island, the open panel and the cards are, in percent: 0 is square, 50 the shapes as drawn before the setting
     // existed, 100 as round as the shape allows.
     public int CornerPercent { get; set; } = 50;
+    // The page switch at the top of the open panel, in percent of its own size (TabBarScales).
+    public int TabBarScale { get; set; } = TabBarScales.Default;
     // The Notifications tab of the open panel (the last 24 things the island said) and how it dates them: the time of day or the time since.
     public bool NotificationsPage { get; set; } = true;
     public double NotificationsWidth { get; set; } = 490;
@@ -1070,6 +1079,7 @@ public sealed class DeckSettings
         WidgetsWidth = double.IsFinite(WidgetsWidth) ? Math.Clamp(WidgetsWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : 540;
         WidgetsHeight = double.IsFinite(WidgetsHeight) ? Math.Clamp(WidgetsHeight, 220, DeckPages.MaxHeight) : 292;
         CornerPercent = Math.Clamp(CornerPercent, 0, 100);
+        TabBarScale = Math.Clamp(TabBarScale, TabBarScales.Min, TabBarScales.Max);
         if (!Enum.IsDefined(MusicProgressLook)) MusicProgressLook = MusicProgressStyle.Wave;
         if (!Enum.IsDefined(MusicBackground)) MusicBackground = MusicCardBackground.AlbumColours;
         CallsWidth = double.IsFinite(CallsWidth) ? Math.Clamp(CallsWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : DefaultCallsWidth;

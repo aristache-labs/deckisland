@@ -325,7 +325,7 @@ static class SystemMonitorTests
             && DeckPages.MaxWidthOn(3840) == DeckPages.MaxWidth && DeckPages.MaxWidthOn(1280) == 1200 && DeckPages.MaxWidthOn(1366) == 1200 && DeckPages.MaxWidthOn(1366, 1.5) == 894
             && DeckPages.MaxWidthOn(800, 2) == DeckPages.MinWidth);
         check("Pages: the usage page is never narrower than its columns need",
-            DeckPages.Limits(sized, DeckPage.Usage).MinWidth == Math.Max(DeckPages.MinWidth, sized.MinimumWidth) && DeckPages.Limits(sized, DeckPage.Music).MinWidth == DeckPages.MinWidth);
+            DeckPages.Limits(sized, DeckPage.Usage).MinWidth == Math.Max(Math.Max(DeckPages.MinWidth, sized.MinimumWidth), DeckPages.SwitchWidth(sized)) && DeckPages.Limits(sized, DeckPage.Music).MinWidth == Math.Max(DeckPages.MinWidth, DeckPages.SwitchWidth(sized)));
         (double Width, double Height) Quick(DeckPage page, PanelSize size, double scale = 1, double workWidth = DeckPages.ReferenceWorkWidth, double workHeight = DeckPages.ReferenceWorkHeight)
             => DeckPages.QuickSize(settings, page, size, workWidth, workHeight, scale);
         check("Pages: on the reference work area Compact is a page's default size, Standard larger, Spacious about 800 wide and as tall as allowed",

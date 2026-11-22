@@ -6,7 +6,7 @@ internal static class PanelHeaderTests
     {
         // Music page at the three presets and the largest panel: row Toolbar + Top, switch at Side, gear's ink at Side.
         var expected = new (double Density, double Row, double Side, double Switch, double Top, double Right, double Settings)[]
-        { (0, 32, 16, 24, 4, 10, 24), (1, 44, 20, 28, 8, 14, 24), (2, 50, 24, 28, 11, 18, 24), (3, 52, 28, 28, 12, 22, 24) };
+        { (0, 32, 16, 28, 2, 10, 24), (1, 44, 20, 28, 8, 14, 24), (2, 50, 24, 28, 11, 18, 24), (3, 52, 28, 28, 12, 22, 24) };
         foreach (var e in expected)
         {
             var c = MusicMetrics.At(e.Density);
@@ -21,7 +21,7 @@ internal static class PanelHeaderTests
 
         // Usage tiers: toolbar 40/36/36/32/28, content EdgeInset 6 + ColumnPad 20/14/10/10/8.
         var usage = new (double Row, double Side, double Header, double Switch, double Top, double Right, double Settings)[]
-        { (40, 26, 26, 28, 6, 20, 24), (36, 20, 20, 28, 4, 14, 24), (36, 16, 16, 28, 4, 10, 24), (32, 16, 16, 24, 4, 10, 24), (28, 14, 16, 24, 2, 10, 20) };
+        { (40, 26, 26, 28, 6, 20, 24), (36, 20, 20, 28, 4, 14, 24), (36, 16, 16, 28, 4, 10, 24), (32, 16, 16, 28, 2, 10, 24), (28, 14, 16, 24, 2, 10, 20) };
         foreach (var e in usage)
         {
             var h = PanelHeader.For(e.Row, e.Side);
@@ -77,8 +77,8 @@ internal static class PanelHeaderTests
             usageHeaders.All(u => musicHeaders.All(m => m.WithControlsOf(u) is var w && w.Row == m.Row && w.Side == m.Side && w.RightMargin == m.RightMargin)));
         var user = PanelHeader.For(32, 16);
         var userMusic = PanelHeader.Music(MusicMetrics.At(1)).WithControlsOf(user);
-        check("Floating, both pages' switches sit 10 DIPs below the edge (4 hanging)",
-            userMusic.SwitchTop + CollapsedLimits.FloatingHeaderExtra == 10 && user.SwitchTop + CollapsedLimits.FloatingHeaderExtra == 10 && userMusic.SwitchTop == 4);
+        check("Floating, both pages' switches sit 8 DIPs below the edge (2 hanging)",
+            userMusic.SwitchTop + CollapsedLimits.FloatingHeaderExtra == 8 && user.SwitchTop + CollapsedLimits.FloatingHeaderExtra == 8 && userMusic.SwitchTop == 2);
         var mixed = usageHeaders.SelectMany(u => musicHeaders.Select(m => m.WithControlsOf(u))).ToList();
         check("Under a rounded top corner the music header with the usage page's controls keeps clear of the curve, hanging and floating",
             mixed.All(Clear) && mixed.All(ClearFloating));
