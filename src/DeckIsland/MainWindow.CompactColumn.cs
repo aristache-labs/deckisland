@@ -55,7 +55,7 @@ public partial class MainWindow
         var devices = Show(CompactPart.Devices) ? CompactDevices(scale) : null;
         var weather = Show(CompactPart.Weather) ? CompactWeather(scale, vertical: true) : null;
         // The date (Minimal only) takes the focus slot: a running session leaves Minimal showing only the session.
-        var focus = Show(CompactPart.Focus) ? CompactFocus(scale) : CompactDate(scale);
+        var focus = CaptureBadge(scale) ?? (Show(CompactPart.Focus) ? CompactFocus(scale) : CompactDate(scale));
         var layout = CompactMusicLayout.Calculate(10000, scale, media, apps.Count, text.Length > 0, FixedFace(CompactMusicLayout.Gap(scale), clock?.ReservedWidth ?? 0, transfer?.Width ?? 0, devices?.PreferredWidth ?? 0), 0, equalizer, Settings.EqualizerBars, ring: QuotaRing.Diameter(Settings.QuotaRingStyle));
         // One strip per reading, each alone on its line and centred in it. The drives show no glyph here: each drive has a line with its
         // letter and its figures, stacked or side by side as chosen in the settings, so any number of drives stand one below the other.

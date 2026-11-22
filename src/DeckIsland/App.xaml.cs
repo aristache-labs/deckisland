@@ -137,6 +137,7 @@ public partial class App : Application
         WindowDrags = new WindowDrags();
         Shelf = new ShelfService(folder, Dispatcher); Shelf.Apply(Settings);
         ClipboardSync = new ClipboardSyncService(this, folder); ClipboardSync.Apply();
+        InitializeCapture();
         Deck = new MainWindow(this); MainWindow = Deck;
         Displays = Native.Displays.Current(); AssignDisplays();
         // From here each step is on its own (Step): the app keeps running after an error at the start, and one step failing
@@ -629,6 +630,8 @@ public partial class App : Application
     {
         if (Exiting) return;
         Exiting = true; Lifetime.Cancel(); _settingsWindow?.RememberSize(); FlushSettings();
+        // A recording is finished so its file plays (the encoder writes the index at the end).
+        if (Recording is not null) _ = StopRecording();
         _settingsWindow?.Hide();
         var decks = Decks.ToList();
         int waiting = decks.Count;

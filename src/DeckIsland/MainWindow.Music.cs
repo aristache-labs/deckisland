@@ -152,7 +152,7 @@ public partial class MainWindow
     }
     // The page chosen on another display's panel (App.PageChosen).
     internal void FollowPage(DeckPage page) { if (CurrentPage != page) SelectPage(page, remember: false); }
-    private FrameworkElement PageContent(DeckPage page) => page switch { DeckPage.Music => MusicContent, DeckPage.Monitor => MonitorContent, DeckPage.Clipboard => ShelfContent, DeckPage.Devices => DevicesContent, DeckPage.Weather => WeatherContent, DeckPage.Focus => FocusContent, DeckPage.Widgets => WidgetsContent, DeckPage.Reminders => RemindersContent, DeckPage.Notifications => NotificationsContent, DeckPage.Calls => CallsContent, DeckPage.Scratchpad => ScratchpadContent, DeckPage.Converter => ConverterContent, DeckPage.Terminal => TerminalContent, DeckPage.Colour => ColourContent, _ => UsageContent };
+    private FrameworkElement PageContent(DeckPage page) => page switch { DeckPage.Music => MusicContent, DeckPage.Monitor => MonitorContent, DeckPage.Clipboard => ShelfContent, DeckPage.Devices => DevicesContent, DeckPage.Weather => WeatherContent, DeckPage.Focus => FocusContent, DeckPage.Widgets => WidgetsContent, DeckPage.Reminders => RemindersContent, DeckPage.Notifications => NotificationsContent, DeckPage.Calls => CallsContent, DeckPage.Scratchpad => ScratchpadContent, DeckPage.Converter => ConverterContent, DeckPage.Terminal => TerminalContent, DeckPage.Colour => ColourContent, DeckPage.Capture => CaptureContent, _ => UsageContent };
     private void ShowPage(DeckPage page, bool animatePage)
     {
         // The music page keeps what it built while another page shows (RenderMusic's key), so switching back does not build it again.
@@ -264,8 +264,8 @@ public partial class MainWindow
         KeepHeaderGap();
         OrderPageButtons();
         if (!IsShelfPage) { ShelfToolbar.Visibility = Visibility.Collapsed; ShelfSearchButton.Visibility = Visibility.Collapsed; }
-        if (CurrentPage is not (DeckPage.Converter or DeckPage.Terminal or DeckPage.Colour)) ToolPinSlot.Visibility = Visibility.Collapsed;
-        foreach (var (button, page) in new[] { (AIUsageButton, DeckPage.Usage), (MusicPageButton, DeckPage.Music), (MonitorPageButton, DeckPage.Monitor), (ShelfPageButton, DeckPage.Clipboard), (DevicesPageButton, DeckPage.Devices), (WeatherPageButton, DeckPage.Weather), (FocusPageButton, DeckPage.Focus), (WidgetsPageButton, DeckPage.Widgets), (RemindersPageButton, DeckPage.Reminders), (NotificationsPageButton, DeckPage.Notifications), (CallsPageButton, DeckPage.Calls), (ScratchpadPageButton, DeckPage.Scratchpad), (ConverterPageButton, DeckPage.Converter), (TerminalPageButton, DeckPage.Terminal), (ColourPageButton, DeckPage.Colour) })
+        if (CurrentPage is not (DeckPage.Scratchpad or DeckPage.Converter or DeckPage.Terminal or DeckPage.Colour or DeckPage.Capture)) ToolPinSlot.Visibility = Visibility.Collapsed;
+        foreach (var (button, page) in new[] { (AIUsageButton, DeckPage.Usage), (MusicPageButton, DeckPage.Music), (MonitorPageButton, DeckPage.Monitor), (ShelfPageButton, DeckPage.Clipboard), (DevicesPageButton, DeckPage.Devices), (WeatherPageButton, DeckPage.Weather), (FocusPageButton, DeckPage.Focus), (WidgetsPageButton, DeckPage.Widgets), (RemindersPageButton, DeckPage.Reminders), (NotificationsPageButton, DeckPage.Notifications), (CallsPageButton, DeckPage.Calls), (ScratchpadPageButton, DeckPage.Scratchpad), (ConverterPageButton, DeckPage.Converter), (TerminalPageButton, DeckPage.Terminal), (ColourPageButton, DeckPage.Colour), (CapturePageButton, DeckPage.Capture) })
         {
             bool current = CurrentPage == page || page == DeckPage.Widgets && CurrentPage == DeckPage.Reminders;
             button.Visibility = DeckPages.Shown(Settings, page) && (page != DeckPage.Reminders || !Settings.WidgetsPage) ? Visibility.Visible : Visibility.Collapsed;
@@ -1293,7 +1293,7 @@ public partial class MainWindow
         var devices = Show(CompactPart.Devices) ? CompactDevices(scale) : null;
         var weather = Show(CompactPart.Weather) ? CompactWeather(scale) : null;
         // The date (Minimal only) takes the focus slot: a running session leaves Minimal showing only the session.
-        var focus = Show(CompactPart.Focus) ? CompactFocus(scale) : CompactDate(scale);
+        var focus = CaptureBadge(scale) ?? (Show(CompactPart.Focus) ? CompactFocus(scale) : CompactDate(scale));
         int spacing = Settings.CompactPartSpacing(EffectiveStyle);
         double unit = CompactMusicLayout.PartGap(scale, spacing);
         double devicesWidth = devices is null ? 0 : DevicePixels.Up(devices.PreferredWidth, dpi);

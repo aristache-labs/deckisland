@@ -161,6 +161,7 @@ public partial class MainWindow : Window
         InitializeDevices();
         InitializeWeather();
         InitializeFocus();
+        InitializeCapture();
         InitializeQuotaAgentPresence();
         InitializeReminders();
         InitializeNotifications();
@@ -721,6 +722,7 @@ public partial class MainWindow : Window
         System.Windows.Automation.AutomationProperties.SetName(ConverterPageButton, Loc.T("换算", "Converter"));
         System.Windows.Automation.AutomationProperties.SetName(TerminalPageButton, Loc.T("终端", "Terminal"));
         System.Windows.Automation.AutomationProperties.SetName(ColourPageButton, Loc.T("颜色", "Colour"));
+        System.Windows.Automation.AutomationProperties.SetName(CapturePageButton, Loc.T("截图与录屏", "Capture"));
         System.Windows.Automation.AutomationProperties.SetName(RemindersPageButton, Loc.T("提醒", "Reminders"));
         System.Windows.Automation.AutomationProperties.SetName(FocusPageButton, Loc.T("专注计时器", "Focus timer"));
         System.Windows.Automation.AutomationProperties.SetName(WeatherPageButton, Loc.T("天气", "Weather"));

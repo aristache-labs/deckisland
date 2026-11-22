@@ -467,7 +467,10 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
                 Loc.T("面板圆角的程度。", "How round the island's corners are.")),
             // The surface's transparency (DeckSettings.SurfaceTransparency).
             Describe(InlineSlider(Loc.T("背景透明度", "Background transparency"), S.SurfaceTransparency, 0, DeckSettings.MaxSurfaceTransparency, 5, "%",
-                value => Change(s => s.SurfaceTransparency = (int)value)), Loc.T("面板背后透出多少。", "How much shows through the panel.")));
+                value => Change(s => s.SurfaceTransparency = (int)value)), Loc.T("面板背后透出多少。", "How much shows through the panel.")),
+            Describe(Toggle(Loc.T("在屏幕共享和录屏中隐藏 DeckIsland", "Hide DeckIsland from screen sharing and recordings"), S.HideFromCapture,
+                value => { Change(s => s.HideFromCapture = value); _app.ApplyCaptureExclusion(); }),
+                Loc.T("截图、录屏和共享屏幕时不显示它的窗口（Windows 10 2004 及以上）。", "Its windows are left out of screenshots, recordings and shared screens (Windows 10 2004 or later).")));
 
         // The interface font (UiFonts, Fonts): "Default" keeps the app's own fonts. The installed families are listed when the list is
         // opened and not before, and the choice reaches every window at once (Fonts.Use) without a restart; this window is built again,
@@ -571,6 +574,7 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
                     DeckPage.Converter => (DefaultDeckPage.Converter, Loc.T("换算", "Converter")),
                     DeckPage.Terminal => (DefaultDeckPage.Terminal, Loc.T("终端", "Terminal")),
                     DeckPage.Colour => (DefaultDeckPage.Colour, Loc.T("颜色", "Colour")),
+                    DeckPage.Capture => (DefaultDeckPage.Capture, Loc.T("截图与录屏", "Capture")),
                     DeckPage.Focus => (DefaultDeckPage.Focus, Loc.T("专注计时器", "Focus timer")),
                     DeckPage.Weather => (DefaultDeckPage.Weather, Loc.T("天气", "Weather")),
                     DeckPage.Devices => (DefaultDeckPage.Devices, Loc.T("设备电量", "Device batteries")),
@@ -603,6 +607,8 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
                 DeckPage.Converter => SizeRow(Loc.T("显示换算", "Show Converter"), Loc.T("换算", "Converter"), page, S.ConverterPage, value => { Change(s => s.ConverterPage = value); FillStarts(); }, Collect(ConverterSizeControls), pages, FillStarts),
                 DeckPage.Colour => SizeRow(Loc.T("显示颜色", "Show Colour"), Loc.T("颜色", "Colour"), page, S.ColourTool,
                     value => { Change(s => s.ColourTool = value); FillStarts(); }, Collect(() => PageSizeControls(DeckPage.Colour, Loc.T("颜色", "Colour"))), pages, FillStarts),
+                DeckPage.Capture => SizeRow(Loc.T("显示截图与录屏", "Show Capture"), Loc.T("截图与录屏", "Capture"), page, S.CapturePage,
+                    value => { Change(s => s.CapturePage = value); FillStarts(); }, Collect(() => PageSizeControls(DeckPage.Capture, Loc.T("截图与录屏", "Capture"))), pages, FillStarts),
                 DeckPage.Terminal => SizeRow(Loc.T("显示终端", "Show Terminal"), Loc.T("终端", "Terminal"), page, S.TerminalPage, value => { Change(s => s.TerminalPage = value); FillStarts(); }, Collect(TerminalSizeControls), pages, FillStarts),
                 DeckPage.Focus => SizeRow(Loc.T("显示专注计时器", "Show Focus timer"), Loc.T("专注计时器", "Focus timer"), page, S.FocusPage, value => { Change(s => s.FocusPage = value); FillStarts(); }, Collect(FocusSizeControls), pages, FillStarts),
                 DeckPage.Weather => SizeRow(Loc.T("显示天气", "Show weather"), Loc.T("天气", "weather"), page, S.WeatherPage, value => { Change(s => s.WeatherPage = value); FillStarts(); }, Collect(WeatherSizeControls), pages, FillStarts),
@@ -754,7 +760,7 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
                 case 2:s.UsagePage=true;s.MusicPage=defaults.MusicPage;s.DefaultPage=defaults.DefaultPage;s.RightClickSettings=defaults.RightClickSettings;s.Width=defaults.Width;s.Height=defaults.Height;s.QuickSize=null;s.MusicWidth=defaults.MusicWidth;s.MusicHeight=defaults.MusicHeight;s.MouseWheel=defaults.MouseWheel;s.ExpandAtPointer=defaults.ExpandAtPointer;
                     s.MonitorPage=defaults.MonitorPage;s.MonitorWidth=defaults.MonitorWidth;s.MonitorHeight=defaults.MonitorHeight;s.PageOrder=defaults.PageOrder;
                     s.ClipboardPage=defaults.ClipboardPage;s.ClipboardWidth=defaults.ClipboardWidth;s.ClipboardHeight=defaults.ClipboardHeight;
-                    s.WidgetsPage=defaults.WidgetsPage;s.WidgetsWidth=defaults.WidgetsWidth;s.WidgetsHeight=defaults.WidgetsHeight;s.RemindersPage=defaults.RemindersPage;s.NotificationsPage=defaults.NotificationsPage;s.CallsPage=defaults.CallsPage;s.CallsWidth=defaults.CallsWidth;s.CallsHeight=defaults.CallsHeight;s.ScratchpadPage=defaults.ScratchpadPage;s.ScratchpadWidth=defaults.ScratchpadWidth;s.ScratchpadHeight=defaults.ScratchpadHeight;s.ConverterPage=defaults.ConverterPage;s.ConverterWidth=defaults.ConverterWidth;s.ConverterHeight=defaults.ConverterHeight;s.ColourTool=defaults.ColourTool;s.ColourWidth=defaults.ColourWidth;s.ColourHeight=defaults.ColourHeight;s.TerminalPage=defaults.TerminalPage;s.TerminalWidth=defaults.TerminalWidth;s.TerminalHeight=defaults.TerminalHeight;s.NotificationsWidth=defaults.NotificationsWidth;s.NotificationsHeight=defaults.NotificationsHeight;s.RemindersWidth=defaults.RemindersWidth;s.RemindersHeight=defaults.RemindersHeight;
+                    s.WidgetsPage=defaults.WidgetsPage;s.WidgetsWidth=defaults.WidgetsWidth;s.WidgetsHeight=defaults.WidgetsHeight;s.RemindersPage=defaults.RemindersPage;s.NotificationsPage=defaults.NotificationsPage;s.CallsPage=defaults.CallsPage;s.CallsWidth=defaults.CallsWidth;s.CallsHeight=defaults.CallsHeight;s.ScratchpadPage=defaults.ScratchpadPage;s.ScratchpadWidth=defaults.ScratchpadWidth;s.ScratchpadHeight=defaults.ScratchpadHeight;s.ConverterPage=defaults.ConverterPage;s.ConverterWidth=defaults.ConverterWidth;s.ConverterHeight=defaults.ConverterHeight;s.ColourTool=defaults.ColourTool;s.ColourWidth=defaults.ColourWidth;s.ColourHeight=defaults.ColourHeight;s.CapturePage=defaults.CapturePage;s.CaptureWidth=defaults.CaptureWidth;s.CaptureHeight=defaults.CaptureHeight;s.TerminalPage=defaults.TerminalPage;s.TerminalWidth=defaults.TerminalWidth;s.TerminalHeight=defaults.TerminalHeight;s.NotificationsWidth=defaults.NotificationsWidth;s.NotificationsHeight=defaults.NotificationsHeight;s.RemindersWidth=defaults.RemindersWidth;s.RemindersHeight=defaults.RemindersHeight;
                     s.FocusPage=defaults.FocusPage;s.FocusWidth=defaults.FocusWidth;s.FocusHeight=defaults.FocusHeight;
                     s.WeatherPage=defaults.WeatherPage;s.WeatherWidth=defaults.WeatherWidth;s.WeatherHeight=defaults.WeatherHeight;
                     s.DevicesPage=defaults.DevicesPage;s.DevicesWidth=defaults.DevicesWidth;s.DevicesHeight=defaults.DevicesHeight;break;

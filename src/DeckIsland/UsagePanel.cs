@@ -171,6 +171,8 @@ public partial class MainWindow
         if (UsageContent is null) return;
         ColourContent.Visibility = CurrentPage == DeckPage.Colour ? Visibility.Visible : Visibility.Collapsed;
         if (CurrentPage == DeckPage.Colour) { RenderColour(); return; }
+        CaptureContent.Visibility = CurrentPage == DeckPage.Capture ? Visibility.Visible : Visibility.Collapsed;
+        if (CurrentPage == DeckPage.Capture) { RenderCapture(); return; }
         WidgetsContent.Visibility = CurrentPage == DeckPage.Widgets ? Visibility.Visible : Visibility.Collapsed;
         if (CurrentPage == DeckPage.Widgets) { RenderWidgets(); return; }
         ScratchpadContent.Visibility = CurrentPage == DeckPage.Scratchpad ? Visibility.Visible : Visibility.Collapsed;

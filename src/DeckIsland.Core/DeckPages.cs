@@ -6,7 +6,7 @@ public static class DeckPages
 {
     // The page switch, left to right, until the order is changed in the settings (DeckSettings.PageOrder). The clipboard comes
     // before the devices, as their groups do in the settings' list.
-    public static readonly IReadOnlyList<DeckPage> Order = [DeckPage.Usage, DeckPage.Music, DeckPage.Monitor, DeckPage.Clipboard, DeckPage.Devices, DeckPage.Weather, DeckPage.Focus, DeckPage.Reminders, DeckPage.Widgets, DeckPage.Notifications, DeckPage.Calls, DeckPage.Scratchpad, DeckPage.Converter, DeckPage.Terminal, DeckPage.Colour];
+    public static readonly IReadOnlyList<DeckPage> Order = [DeckPage.Usage, DeckPage.Music, DeckPage.Monitor, DeckPage.Clipboard, DeckPage.Devices, DeckPage.Weather, DeckPage.Focus, DeckPage.Reminders, DeckPage.Widgets, DeckPage.Notifications, DeckPage.Calls, DeckPage.Scratchpad, DeckPage.Converter, DeckPage.Terminal, DeckPage.Colour, DeckPage.Capture];
     // Each known page once, in the saved order; a page missing from the file takes its default place after the others.
     public static List<DeckPage> Normalize(IEnumerable<DeckPage>? order) => [.. (order ?? []).Where(page => Enum.IsDefined(page)).Concat(Order).Distinct()];
 
@@ -14,7 +14,7 @@ public static class DeckPages
     {
         DeckPage.Usage => settings.UsagePage, DeckPage.Music => settings.MusicPage, DeckPage.Monitor => settings.MonitorPage, DeckPage.Devices => settings.DevicesPage,
         DeckPage.Clipboard => settings.ClipboardPage, DeckPage.Weather => settings.WeatherEnabled && settings.WeatherPage, DeckPage.Focus => settings.FocusPage, DeckPage.Reminders => settings.RemindersPage, DeckPage.Widgets => settings.WidgetsPage, DeckPage.Notifications => settings.NotificationsPage, DeckPage.Calls => settings.CallsPage,
-        DeckPage.Scratchpad => settings.ScratchpadPage, DeckPage.Converter => settings.ConverterPage, DeckPage.Terminal => settings.TerminalPage, DeckPage.Colour => settings.ColourTool, _ => false
+        DeckPage.Scratchpad => settings.ScratchpadPage, DeckPage.Converter => settings.ConverterPage, DeckPage.Terminal => settings.TerminalPage, DeckPage.Colour => settings.ColourTool, DeckPage.Capture => settings.CapturePage, _ => false
     };
 
     public static IReadOnlyList<DeckPage> Visible(DeckSettings settings) => settings.PageOrder.Where(page => Shown(settings, page)).ToList();
@@ -29,7 +29,7 @@ public static class DeckPages
     {
         DefaultDeckPage.Usage => DeckPage.Usage, DefaultDeckPage.Music => DeckPage.Music, DefaultDeckPage.Monitor => DeckPage.Monitor, DefaultDeckPage.Devices => DeckPage.Devices,
         DefaultDeckPage.Clipboard => DeckPage.Clipboard, DefaultDeckPage.Weather => DeckPage.Weather, DefaultDeckPage.Focus => DeckPage.Focus, DefaultDeckPage.Reminders => DeckPage.Reminders, DefaultDeckPage.Widgets => DeckPage.Widgets, DefaultDeckPage.Notifications => DeckPage.Notifications, DefaultDeckPage.Calls => DeckPage.Calls,
-        DefaultDeckPage.Scratchpad => DeckPage.Scratchpad, DefaultDeckPage.Converter => DeckPage.Converter, DefaultDeckPage.Terminal => DeckPage.Terminal, DefaultDeckPage.Colour => DeckPage.Colour, _ => null
+        DefaultDeckPage.Scratchpad => DeckPage.Scratchpad, DefaultDeckPage.Converter => DeckPage.Converter, DefaultDeckPage.Terminal => DeckPage.Terminal, DefaultDeckPage.Colour => DeckPage.Colour, DefaultDeckPage.Capture => DeckPage.Capture, _ => null
     };
 
     // Every page's size lies within these; the usage page is also at least as wide as its columns need (MinimumWidth).
@@ -55,6 +55,7 @@ public static class DeckPages
             case DeckPage.Converter: settings.ConverterWidth = width; settings.ConverterHeight = height; break;
             case DeckPage.Terminal: settings.TerminalWidth = width; settings.TerminalHeight = height; break;
             case DeckPage.Colour: settings.ColourWidth = width; settings.ColourHeight = height; break;
+            case DeckPage.Capture: settings.CaptureWidth = width; settings.CaptureHeight = height; break;
             case DeckPage.Music: settings.MusicWidth = width; settings.MusicHeight = height; break;
             case DeckPage.Monitor: settings.MonitorWidth = width; settings.MonitorHeight = height; break;
             case DeckPage.Reminders: settings.RemindersWidth = width; settings.RemindersHeight = height; break;
@@ -75,6 +76,7 @@ public static class DeckPages
         DeckPage.Converter => (settings.ConverterWidth, settings.ConverterHeight),
         DeckPage.Terminal => (settings.TerminalWidth, settings.TerminalHeight),
         DeckPage.Colour => (settings.ColourWidth, settings.ColourHeight),
+        DeckPage.Capture => (settings.CaptureWidth, settings.CaptureHeight),
         DeckPage.Music => (settings.MusicWidth, settings.MusicHeight),
         DeckPage.Monitor => (settings.MonitorWidth, settings.MonitorHeight),
         DeckPage.Reminders => (settings.RemindersWidth, settings.RemindersHeight),
@@ -92,7 +94,7 @@ public static class DeckPages
         (DeckPage.Widgets, PanelSize.Compact) => (460, 220), (DeckPage.Widgets, PanelSize.Spacious) => (700, 360),
         (DeckPage.Notifications or DeckPage.Reminders, PanelSize.Compact) => (440, 200), (DeckPage.Notifications or DeckPage.Reminders, PanelSize.Spacious) => (620, 380),
         (DeckPage.Calls, PanelSize.Compact) => (440, 160), (DeckPage.Calls, PanelSize.Spacious) => (560, 260),
-        (DeckPage.Scratchpad or DeckPage.Terminal or DeckPage.Colour, PanelSize.Compact) => (480, 200), (DeckPage.Scratchpad or DeckPage.Terminal or DeckPage.Colour, PanelSize.Spacious) => (760, 380),
+        (DeckPage.Scratchpad or DeckPage.Terminal or DeckPage.Colour or DeckPage.Capture, PanelSize.Compact) => (480, 200), (DeckPage.Scratchpad or DeckPage.Terminal or DeckPage.Colour or DeckPage.Capture, PanelSize.Spacious) => (760, 380),
         (DeckPage.Converter, PanelSize.Compact) => (440, 170), (DeckPage.Converter, PanelSize.Spacious) => (620, 240),
         (DeckPage.Focus, PanelSize.Compact) => (440, 140), (DeckPage.Focus, PanelSize.Spacious) => (560, 240),
         (DeckPage.Weather, PanelSize.Compact) => (440, 180), (DeckPage.Weather, PanelSize.Spacious) => (620, 320),

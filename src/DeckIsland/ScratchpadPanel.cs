@@ -29,6 +29,7 @@ public partial class MainWindow
         var header = PanelHeader.For(30, 18);
         ApplyHeader(Settings.UsagePage ? header.WithControlsOf(CachedUsageHeader()) : header);
         ScratchpadContent.Margin = new Thickness(header.Side, 0, header.Side, 12);
+        ShowHeaderPin(header);
         var appearance = (Look.Generation, Loc.Language);
         if (_scratchAppearance == appearance && _scratchBody is not null && ScratchpadContent.Children.Contains(_scratchBody)) return;
         _scratchAppearance = appearance;
@@ -42,10 +43,9 @@ public partial class MainWindow
         var language = _app.Settings.ScratchpadLanguage;
         var title = WeatherText(Loc.T("代码草稿", "Code scratchpad"), 14);
         title.FontWeight = FontWeights.SemiBold;
-        var chip = PickerChip(Scratchpad.Name(language), PickScratchLanguage);
-        var pin = ToolPinButton();
-        pin.Margin = new Thickness(8, 0, 0, 0);
-        var right = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Children = { chip, pin } };
+        // The pin is in the panel's header, beside the gear (ShowHeaderPin).
+        var right = CategoryChip(Scratchpad.Name(language), PickScratchLanguage);
+        right.HorizontalAlignment = HorizontalAlignment.Right;
         var top = new Grid { Margin = new Thickness(0, 0, 0, 8), Children = { title, right } };
 
         var editor = new TextEditor
@@ -70,7 +70,9 @@ public partial class MainWindow
         void Placeholder() => placeholder.Visibility = editor.Document.TextLength == 0 ? Visibility.Visible : Visibility.Collapsed;
         editor.TextChanged += (_, _) => Placeholder();
         Placeholder();
-        var frame = new Border { CornerRadius = new CornerRadius(10), Background = UI.Brush(Look.Hex("fill")), Padding = new Thickness(8, 8, 6, 6), Child = new Grid { Children = { editor, placeholder } } };
+        // The bottom corners follow the panel's, less the gap to its edge, so the two curves run side by side.
+        double bottom = Math.Max(10, Corner(PanelHeader.PanelRadius) - Math.Max(_header.Side, 12));
+        var frame = new Border { CornerRadius = new CornerRadius(10, 10, bottom, bottom), Background = UI.Brush(Look.Hex("fill")), Padding = new Thickness(8, 8, 6, 6), Child = new Grid { Children = { editor, placeholder } } };
 
         var body = new Grid();
         body.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -82,11 +84,11 @@ public partial class MainWindow
         ScratchpadContent.Children.Add(body);
     }
 
-    private void PickScratchLanguage()
+    private void PickScratchLanguage(FrameworkElement anchor)
     {
         if (_scratchBody is null) return;
         var languages = Enum.GetValues<ScratchLanguage>();
-        ShowPanelPicker(ScratchpadContent, Loc.T("语言", "Language"), [.. languages.Select(language => (Scratchpad.Name(language), language == _app.Settings.ScratchpadLanguage))],
+        ShowAnchoredMenu(anchor, [.. languages.Select(language => (Scratchpad.Name(language), language == _app.Settings.ScratchpadLanguage))],
             index => SwitchScratchLanguage(languages[index]));
     }
 

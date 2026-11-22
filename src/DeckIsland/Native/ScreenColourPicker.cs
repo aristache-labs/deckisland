@@ -193,6 +193,8 @@ internal static class ScreenColourPicker
         }
     }
 
+    internal static BitmapSource Capture(int left, int top, int width, int height) => Capture(new Area { Left = left, Top = top, Right = left + width, Bottom = top + height });
+
     private static BitmapSource Capture(Area area)
     {
         nint screen = GetDC(0);

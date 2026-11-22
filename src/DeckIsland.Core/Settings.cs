@@ -57,8 +57,8 @@ public sealed record IgnoredMediaApp(string AppId = "", string Name = "", string
 public enum ProviderId { Claude, Codex, Antigravity, Cursor, GlmChina, NewApi, Sub2Api, Custom, ZCode = 10, GlmGlobal = 11, Dsh = 12, DeepSeek = 13, GrokBot = 14, Kimi = 15, KimiApi = 16, OpenCode = 17, OpenCodeGo = 18, OpenRouter = 19, Pi = 20, CodeAgent = 21, CommandCode = 22, CommandCodeApi = 23, WorkBuddy = 24, WorkBuddyAi = 25, MiMo = 26, MiMoApi = 27, MiMoTokenPlan = 28, MiMoLinked = 29, KimiPlatform = 30 }
 public enum SettingsTheme { System, Light, Dark }
 // Pages are saved as numbers, so new members go at the end; their order in the page switch is DeckSettings.PageOrder.
-public enum DeckPage { Usage, Music, Monitor, Clipboard, Devices, Weather, Focus, Reminders, Widgets, Notifications, Calls, Scratchpad, Converter, Terminal, Colour }
-public enum DefaultDeckPage { Last, Usage, Music, Monitor, Clipboard, Devices, Weather, Focus, Reminders, Widgets, Notifications, Calls, Scratchpad, Converter, Terminal, Colour }
+public enum DeckPage { Usage, Music, Monitor, Clipboard, Devices, Weather, Focus, Reminders, Widgets, Notifications, Calls, Scratchpad, Converter, Terminal, Colour, Capture }
+public enum DefaultDeckPage { Last, Usage, Music, Monitor, Clipboard, Devices, Weather, Focus, Reminders, Widgets, Notifications, Calls, Scratchpad, Converter, Terminal, Colour, Capture }
 // What the mouse wheel does over the expanded panel. Saved as numbers, so new members go at the end.
 public enum MouseWheelAction { None, Pages, Volume }
 // What a double click on an end of the collapsed notch or capsule does: turn its auto width on or off, or start moving it
@@ -784,6 +784,17 @@ public sealed class DeckSettings
     public string ConverterAmount { get; set; } = "100";
     // The Terminal tab: a shell inside the notch, kept running while the notch is closed.
     public bool ColourTool { get; set; }
+    // The Capture tab: screenshots and screen recordings.
+    public bool CapturePage { get; set; } = true;
+    private const double DefaultCaptureWidth = 600, DefaultCaptureHeight = 300;
+    public double CaptureWidth { get; set; } = DefaultCaptureWidth;
+    public double CaptureHeight { get; set; } = DefaultCaptureHeight;
+    public int CaptureFps { get; set; } = 30;
+    public bool CaptureMic { get; set; }
+    public bool CaptureSystemAudio { get; set; } = true;
+    public bool CaptureToShelf { get; set; }
+    // Settings → Display: every DeckIsland window is left out of screen sharing and recordings (WDA_EXCLUDEFROMCAPTURE).
+    public bool HideFromCapture { get; set; }
     private const double DefaultColourWidth = 600, DefaultColourHeight = 310;
     public double ColourWidth { get; set; } = DefaultColourWidth;
     public double ColourHeight { get; set; } = DefaultColourHeight;
@@ -1077,6 +1088,9 @@ public sealed class DeckSettings
         ConverterAmount = (ConverterAmount ?? "").Length <= 40 ? ConverterAmount ?? "" : "100";
         ColourWidth = double.IsFinite(ColourWidth) ? Math.Clamp(ColourWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : DefaultColourWidth;
         ColourHeight = double.IsFinite(ColourHeight) ? Math.Clamp(ColourHeight, DeckPages.MinHeight, DeckPages.MaxHeight) : DefaultColourHeight;
+        CaptureWidth = double.IsFinite(CaptureWidth) ? Math.Clamp(CaptureWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : DefaultCaptureWidth;
+        CaptureHeight = double.IsFinite(CaptureHeight) ? Math.Clamp(CaptureHeight, DeckPages.MinHeight, DeckPages.MaxHeight) : DefaultCaptureHeight;
+        if (CaptureFps is not (30 or 60)) CaptureFps = 30;
         TerminalWidth = double.IsFinite(TerminalWidth) ? Math.Clamp(TerminalWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : DefaultTerminalWidth;
         TerminalHeight = double.IsFinite(TerminalHeight) ? Math.Clamp(TerminalHeight, DeckPages.MinHeight, DeckPages.MaxHeight) : DefaultTerminalHeight;
         if (!Enum.IsDefined(TerminalShell)) TerminalShell = TerminalShell.PowerShell7;

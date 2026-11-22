@@ -136,7 +136,7 @@ public partial class MainWindow
         var controls = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center };
         if (!currency)
         {
-            var category = CategoryChip(UnitConversion.Name(s.ConverterUnitCategory));
+            var category = CategoryChip(UnitConversion.Name(s.ConverterUnitCategory), PickUnitCategory);
             category.Margin = new Thickness(0, 0, 8, 0);
             controls.Children.Add(category);
         }
@@ -213,13 +213,14 @@ public partial class MainWindow
         return PanelSegmentTrack(new StackPanel { Orientation = Orientation.Horizontal, Children = { units, money } });
     }
 
-    // The unit category as one more pill in the mode switch's own track, so the two read as the same control family.
-    private Border CategoryChip(string label)
+    // The unit category as one more pill in the mode switch's own track, so the two read as the same control family; the
+    // Scratchpad's language uses the same chip. open gets the track, under which the menu drops.
+    private Border CategoryChip(string label, Action<FrameworkElement> open)
     {
         var chevron = new Path { Data = Geometry.Parse("M0,0 L3.5,3.5 L7,0"), Stroke = UI.Brush(Look.Secondary), StrokeThickness = 1.4, Margin = new Thickness(8, 1, 0, 0),
             VerticalAlignment = VerticalAlignment.Center, StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round };
         Border? track = null;
-        var button = PanelSegment(label, () => { if (track is not null) PickUnitCategory(track); });
+        var button = PanelSegment(label, () => { if (track is not null) open(track); });
         button.Content = new StackPanel { Orientation = Orientation.Horizontal, Children = { new TextBlock { Text = label, VerticalAlignment = VerticalAlignment.Center }, chevron } };
         button.Padding = new Thickness(14, 0, 12, 0);
         StylePanelSegment(button, false);
