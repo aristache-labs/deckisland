@@ -28,7 +28,7 @@ public partial class SettingsWindow
         var sizes = KeepPreview(new UniformGrid { Columns = 3, Width = 292 });
         foreach (var size in Enum.GetValues<PanelSize>())
         {
-            var (w, h) = ShelfSizes.For(size);
+            var (w, h) = Quick(DeckPage.Clipboard, size);
             var choice = new RadioButton { Style = (Style)FindResource("SettingsSegment"), Content = PanelSizes.Name(size), GroupName = "ShelfSize", IsChecked = (S.ClipboardWidth, S.ClipboardHeight) == (w, h) };
             AutomationProperties.SetName(choice, Loc.T("剪贴板与文件中转快捷尺寸 ", "Clipboard and file transfer quick size ") + PanelSizes.Name(size));
             choice.Checked += (_, _) => { Resize(s => { s.ClipboardWidth = w; s.ClipboardHeight = h; }, DeckPage.Clipboard); ShowPage(2); };

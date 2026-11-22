@@ -689,13 +689,19 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
         var sizes = KeepPreview(new UniformGrid { Columns = 3, Width = 292 });
         foreach (var size in Enum.GetValues<PanelSize>())
         {
-            var (presetWidth, presetHeight) = DeckPages.QuickSize(page, size);
+            var (presetWidth, presetHeight) = Quick(page, size);
             var choice = new RadioButton { Style = (Style)FindResource("SettingsSegment"), Content = PanelSizes.Name(size), GroupName = "QuickSize" + page, IsChecked = (width, height) == (presetWidth, presetHeight) };
             AutomationProperties.SetName(choice, Loc.T(name + "快捷尺寸 ", name + " quick size ") + PanelSizes.Name(size));
             choice.Checked += (_, _) => { Resize(s => DeckPages.SetSize(s, page, presetWidth, presetHeight), page); ShowPage(2); };
             sizes.Children.Add(choice);
         }
         QuickSizeRow(sizes);
+    }
+    // A page's quick size on the monitor the panel is on, at the panel's scale.
+    private (double Width, double Height) Quick(DeckPage page, PanelSize size)
+    {
+        var work = _app.PreviewDeck.WorkDip;
+        return DeckPages.QuickSize(S, page, size, work.Width, work.Height, PanelScales.Factor(S));
     }
     private void QuickSizeRow(UniformGrid sizes)
     {
@@ -720,9 +726,9 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
         var sizes = KeepPreview(new UniformGrid { Columns = 3, Width = 292 });
         foreach (var size in Enum.GetValues<PanelSize>())
         {
-            var (presetWidth, presetHeight) = S.PresetSize(size);
+            var (presetWidth, presetHeight) = Quick(DeckPage.Usage, size);
             var choice = new RadioButton { Style = (Style)FindResource("SettingsSegment"), Content = PanelSizes.Name(size), GroupName = "PanelSize",
-                IsChecked = (S.QuickSize ?? S.CurrentPreset) == size };
+                IsChecked = S.QuickSize is { } quick ? quick == size : (S.Width, S.Height) == (presetWidth, presetHeight) };
             AutomationProperties.SetName(choice, Loc.T("快捷尺寸 ", "Quick size ") + PanelSizes.Name(size));
             // The chosen size is written once; removing or adding applications later leaves it untouched.
             choice.Checked += (_, _) => { Resize(s => { s.Width = presetWidth; s.Height = presetHeight; s.QuickSize = size; }); ShowPage(2); };

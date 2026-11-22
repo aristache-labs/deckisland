@@ -231,7 +231,7 @@ try
     Check("Width below the per-column minimum is raised", narrow.Width == narrow.MinimumWidth);
     var four = new DeckSettings(); foreach (var app in four.Apps) app.Enabled = true;
     var two = Only(ProviderId.Claude, ProviderId.Codex);
-    Check("Quick sizes never drop below the minimum width", Enum.GetValues<PanelSize>().All(size => four.PresetSize(size).Width >= four.MinimumWidth && two.PresetSize(size).Width >= two.MinimumWidth));
+    Check("Quick sizes never drop below the minimum width", Enum.GetValues<PanelSize>().All(size => DeckPages.QuickSize(four, DeckPage.Usage, size, 1366, 728).Width >= four.MinimumWidth && DeckPages.QuickSize(two, DeckPage.Usage, size, 1366, 728, 1.5).Width >= two.MinimumWidth));
     var chosen = new DeckSettings { QuickSize = PanelSize.Spacious, Width = 1100, Height = 310 };
     chosen.SetEnabled(ProviderId.Cursor, false);
     Check("A chosen quick size keeps its width after the application count changes", chosen.Width == 1100 && chosen.QuickSize == PanelSize.Spacious);

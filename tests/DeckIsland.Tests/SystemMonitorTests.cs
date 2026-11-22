@@ -311,7 +311,7 @@ static class SystemMonitorTests
     private static void Pages(Action<string, bool> check)
     {
         var settings = new DeckSettings();
-        check("Pages: monitor comes after usage and music, the clipboard after it, then the devices page", DeckPages.Visible(settings).SequenceEqual([DeckPage.Usage, DeckPage.Music, DeckPage.Monitor, DeckPage.Clipboard, DeckPage.Devices, DeckPage.Notifications, DeckPage.Calls, DeckPage.Scratchpad, DeckPage.Converter, DeckPage.Terminal]));
+        check("Pages: monitor comes after usage and music, the clipboard after it, then the devices page", DeckPages.Visible(settings).SequenceEqual([DeckPage.Usage, DeckPage.Music, DeckPage.Monitor, DeckPage.Clipboard, DeckPage.Devices, DeckPage.Notifications, DeckPage.Calls, DeckPage.Scratchpad, DeckPage.Converter, DeckPage.Terminal, DeckPage.Capture]));
         var sized = new DeckSettings();
         DeckPages.SetSize(sized, DeckPage.Music, 700, 300); DeckPages.SetSize(sized, DeckPage.Monitor, 800, 320); DeckPages.SetSize(sized, DeckPage.Usage, 900, 260);
         check("Pages: a drag sets the size of the page it is on and of no other",
@@ -326,24 +326,31 @@ static class SystemMonitorTests
             && DeckPages.MaxWidthOn(800, 2) == DeckPages.MinWidth);
         check("Pages: the usage page is never narrower than its columns need",
             DeckPages.Limits(sized, DeckPage.Usage).MinWidth == Math.Max(DeckPages.MinWidth, sized.MinimumWidth) && DeckPages.Limits(sized, DeckPage.Music).MinWidth == DeckPages.MinWidth);
-        DeckPage[] quick = [DeckPage.Widgets, DeckPage.Notifications, DeckPage.Reminders, DeckPage.Calls, DeckPage.Focus, DeckPage.Weather, DeckPage.Devices, DeckPage.Scratchpad, DeckPage.Converter, DeckPage.Terminal];
-        check("Pages: a page's Standard quick size is its default size, Compact and Spacious lie within its limits either side of it",
-            quick.All(page =>
+        (double Width, double Height) Quick(DeckPage page, PanelSize size, double scale = 1, double workWidth = DeckPages.ReferenceWorkWidth, double workHeight = DeckPages.ReferenceWorkHeight)
+            => DeckPages.QuickSize(settings, page, size, workWidth, workHeight, scale);
+        check("Pages: on the reference work area Compact is a page's default size, Standard larger, Spacious about 800 wide and as tall as allowed",
+            DeckPages.Order.Where(page => page != DeckPage.Usage).All(page =>
+            {
+                var (compact, standard, spacious) = (Quick(page, PanelSize.Compact), Quick(page, PanelSize.Standard), Quick(page, PanelSize.Spacious));
+                return compact == DeckPages.Size(new DeckSettings(), page) && standard.Width > compact.Width && standard.Height > compact.Height
+                    && spacious.Width >= Math.Max(800, standard.Width) && spacious.Height == DeckPages.MaxHeight;
+            }) && Quick(DeckPage.Music, PanelSize.Standard) == MusicSizes.For(PanelSize.Spacious) && Quick(DeckPage.Capture, PanelSize.Spacious) == (800, DeckPages.MaxHeight));
+        check("Pages: quick sizes follow the work area and the scale, within the page's limits",
+            DeckPages.Order.All(page => Enum.GetValues<PanelSize>().All(size =>
             {
                 var limits = DeckPages.Limits(settings, page);
-                var (compact, standard, spacious) = (DeckPages.QuickSize(page, PanelSize.Compact), DeckPages.QuickSize(page, PanelSize.Standard), DeckPages.QuickSize(page, PanelSize.Spacious));
-                bool Within((double Width, double Height) size) => size.Width >= limits.MinWidth && size.Width <= limits.MaxWidth && size.Height >= limits.MinHeight && size.Height <= limits.MaxHeight;
-                return standard == DeckPages.Size(new DeckSettings(), page) && Within(compact) && Within(spacious)
-                    && compact.Width <= standard.Width && compact.Height < standard.Height && spacious.Width > standard.Width && spacious.Height > standard.Height;
-            }));
+                return new[] { Quick(page, size, 1.5), Quick(page, size, 1, 3840, 2112), Quick(page, size, 1, 1366, 728) }.All(s =>
+                    s.Width >= limits.MinWidth && s.Width <= limits.MaxWidth && s.Height >= limits.MinHeight && s.Height <= limits.MaxHeight);
+            })) && Quick(DeckPage.Capture, PanelSize.Standard, 1, 3840, 2112).Width == 1200 && Quick(DeckPage.Capture, PanelSize.Standard, 1.5).Width < 760
+            && Quick(DeckPage.Capture, PanelSize.Spacious, 1, 1366, 728).Width <= DeckPages.MaxWidthOn(1366));
         check("Pages: a shown page resolves to itself", DeckPages.Resolve(settings, DeckPage.Monitor) == DeckPage.Monitor);
         settings.UsagePage = false;
         check("Pages: a hidden page falls back to the first shown one", DeckPages.Resolve(settings, DeckPage.Usage) == DeckPage.Music);
         settings.MonitorPage = false;
         check("Pages: the music page alone", DeckPages.Resolve(settings, DeckPage.Monitor) == DeckPage.Music);
-        settings.MusicPage = false; settings.ClipboardPage = false; settings.DevicesPage = false; settings.NotificationsPage = false; settings.CallsPage = false; settings.ScratchpadPage = settings.ConverterPage = settings.TerminalPage = false;
+        settings.MusicPage = false; settings.ClipboardPage = false; settings.DevicesPage = false; settings.NotificationsPage = false; settings.CallsPage = false; settings.ScratchpadPage = settings.ConverterPage = settings.TerminalPage = settings.CapturePage = false;
         check("Pages: with every page off the usage page says so", DeckPages.Resolve(settings, DeckPage.Music) == DeckPage.Usage && DeckPages.Visible(settings).Count == 0);
-        var ordered = new DeckSettings { PageOrder = [DeckPage.Devices, DeckPage.Monitor, DeckPage.Usage, DeckPage.Music], ClipboardPage = false, NotificationsPage = false, CallsPage = false, ScratchpadPage = false, ConverterPage = false, TerminalPage = false };
+        var ordered = new DeckSettings { PageOrder = [DeckPage.Devices, DeckPage.Monitor, DeckPage.Usage, DeckPage.Music], ClipboardPage = false, NotificationsPage = false, CallsPage = false, ScratchpadPage = false, ConverterPage = false, TerminalPage = false, CapturePage = false };
         check("Pages: the switch follows the chosen order", DeckPages.Visible(ordered).SequenceEqual([DeckPage.Devices, DeckPage.Monitor, DeckPage.Usage, DeckPage.Music]));
         ordered.MonitorPage = false;
         check("Pages: a hidden page falls back to the first shown one in the chosen order", DeckPages.Resolve(ordered, DeckPage.Monitor) == DeckPage.Devices && DeckPages.Visible(ordered).SequenceEqual([DeckPage.Devices, DeckPage.Usage, DeckPage.Music]));
@@ -365,7 +372,7 @@ static class SystemMonitorTests
             && DeckPages.Opening(DefaultDeckPage.Usage) == DeckPage.Usage && DeckPages.Opening(DefaultDeckPage.Music) == DeckPage.Music);
         var sizes = new DeckSettings { Width = 500, Height = 150, MusicWidth = 700, MusicHeight = 180, MonitorWidth = 600, MonitorHeight = 300, ClipboardWidth = 480, ClipboardHeight = 160 };
         check("Pages: the window holds the largest shown page", DeckPages.Largest(sizes) == (700, 300));
-        sizes.MusicPage = false; sizes.MonitorPage = false; sizes.ClipboardPage = false; sizes.DevicesPage = false; sizes.NotificationsPage = false; sizes.CallsPage = false; sizes.ScratchpadPage = sizes.ConverterPage = sizes.TerminalPage = false;
+        sizes.MusicPage = false; sizes.MonitorPage = false; sizes.ClipboardPage = false; sizes.DevicesPage = false; sizes.NotificationsPage = false; sizes.CallsPage = false; sizes.ScratchpadPage = sizes.ConverterPage = sizes.TerminalPage = sizes.CapturePage = false;
         check("Pages: only shown pages size the window", DeckPages.Largest(sizes) == (Math.Max(500, sizes.MinimumWidth), 150));
         var saved = new DeckSettings { MonitorWidth = 5000, MonitorHeight = double.NaN, MonitorInterval = 9, MonitorPalette = (MonitorPalette)42, MonitorSort = (ProcessSort)7, LastPage = (DeckPage)99 };
         saved.Normalize();

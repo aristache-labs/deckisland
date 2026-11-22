@@ -319,20 +319,15 @@ public static class PanelSizes
     public static string Name(PanelSize size) => size switch { PanelSize.Compact => Loc.T("紧凑", "Compact"), PanelSize.Spacious => Loc.T("宽敞", "Spacious"), _ => Loc.T("标准", "Standard") };
 }
 
-// The system monitor page's quick sizes. Unlike the usage page's they do not depend on the applications.
-// The clipboard and file transfer page's sizes, the same as the system monitor's.
+// The clipboard and file transfer page's default size, the same as the system monitor's; the quick sizes are DeckPages.QuickSize.
 public static class ShelfSizes
 {
     public static readonly (double Width, double Height) Default = (620, 220);
-    public static (double Width, double Height) For(PanelSize size) => size switch
-    { PanelSize.Compact => (480, 160), PanelSize.Spacious => (860, 320), _ => Default };
 }
 
 public static class MonitorSizes
 {
     public static readonly (double Width, double Height) Default = (620, 220);
-    public static (double Width, double Height) For(PanelSize size) => size switch
-    { PanelSize.Compact => (480, 160), PanelSize.Spacious => (860, 320), _ => Default };
 }
 
 public sealed class DeckSettings
@@ -982,13 +977,6 @@ public sealed class DeckSettings
     [JsonIgnore] public IReadOnlySet<ProviderId> RequiredProviders => EnabledApps.SelectMany(app => new[] { app.QuotaSource, app.UsageSource }).ToHashSet();
     [JsonIgnore] public IReadOnlyList<ProviderId> StatisticsProviders => EnabledApps.Select(app => app.UsageSource).Distinct().ToList();
     [JsonIgnore] public double MinimumWidth => Math.Clamp(Math.Max(440, AppPresets.MinimumColumnWidth * Math.Max(1, ConfiguredApps.Count) + 40), 440, 1200);
-    public (double Width, double Height) PresetSize(PanelSize size)
-    {
-        var (width, height) = PanelSizes.For(size, ConfiguredApps.Count);
-        return (Math.Max(width, MinimumWidth), height);
-    }
-    // The quick size whose width and height equal the current ones, if any.
-    [JsonIgnore] public PanelSize? CurrentPreset => Enum.GetValues<PanelSize>().Cast<PanelSize?>().FirstOrDefault(size => PresetSize(size!.Value) == (Width, Height));
     public AppEntry? Entry(ProviderId id) => Apps.FirstOrDefault(app => app.QuotaSource == id);
     public AppEntry? Entry(Guid instanceId) => Apps.FirstOrDefault(app => app.InstanceId == instanceId);
     public bool Enabled(ProviderId id) => RequiredProviders.Contains(id);

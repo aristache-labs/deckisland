@@ -87,19 +87,41 @@ public static class DeckPages
         _ => (Math.Max(settings.Width, settings.MinimumWidth), settings.Height)
     };
 
-    // The quick sizes of the pages without sizes of their own (MusicSizes, MonitorSizes, ShelfSizes, the usage page's PresetSize):
-    // Standard is the page's default size, Compact smaller and Spacious larger, each within the page's limits.
-    public static (double Width, double Height) QuickSize(DeckPage page, PanelSize size) => (page, size) switch
+    // The quick sizes, as shares of the work area of the panel's monitor so they scale with its resolution and Windows scale.
+    // The shares were taken on the reference work area: there Compact is the page's default size, Standard the old spacious
+    // size, and Spacious about 800 DIP wide and the full height the page allows. Each is kept within the page's limits.
+    public const double ReferenceWorkWidth = 1920, ReferenceWorkHeight = 1032, SpaciousWidth = 800;
+    public static (double Width, double Height) QuickSize(DeckSettings settings, DeckPage page, PanelSize size, double workWidth, double workHeight, double scale = 1)
     {
-        (DeckPage.Widgets, PanelSize.Compact) => (460, 220), (DeckPage.Widgets, PanelSize.Spacious) => (700, 360),
-        (DeckPage.Notifications or DeckPage.Reminders, PanelSize.Compact) => (440, 200), (DeckPage.Notifications or DeckPage.Reminders, PanelSize.Spacious) => (620, 380),
-        (DeckPage.Calls, PanelSize.Compact) => (440, 160), (DeckPage.Calls, PanelSize.Spacious) => (560, 260),
-        (DeckPage.Scratchpad or DeckPage.Terminal or DeckPage.Colour or DeckPage.Capture, PanelSize.Compact) => (480, 200), (DeckPage.Scratchpad or DeckPage.Terminal or DeckPage.Colour or DeckPage.Capture, PanelSize.Spacious) => (760, 380),
-        (DeckPage.Converter, PanelSize.Compact) => (440, 170), (DeckPage.Converter, PanelSize.Spacious) => (620, 240),
-        (DeckPage.Focus, PanelSize.Compact) => (440, 140), (DeckPage.Focus, PanelSize.Spacious) => (560, 240),
-        (DeckPage.Weather, PanelSize.Compact) => (440, 180), (DeckPage.Weather, PanelSize.Spacious) => (620, 320),
-        (DeckPage.Devices, PanelSize.Compact) => (440, 160), (DeckPage.Devices, PanelSize.Spacious) => (620, 280),
-        _ => Size(new DeckSettings(), page)
+        var (compact, standard) = Reference(settings, page);
+        var (width, height) = size switch
+        {
+            PanelSize.Compact => compact,
+            PanelSize.Standard => standard,
+            _ => (Math.Max(SpaciousWidth, standard.Width), ReferenceWorkHeight)
+        };
+        var (minWidth, maxWidth, minHeight, maxHeight) = Limits(settings, page);
+        maxWidth = Math.Max(minWidth, Math.Min(maxWidth, MaxWidthOn(workWidth, scale)));
+        return (Math.Clamp(Math.Round(width / ReferenceWorkWidth * workWidth / scale), minWidth, maxWidth),
+            Math.Clamp(Math.Round(height / ReferenceWorkHeight * workHeight / scale), minHeight, maxHeight));
+    }
+
+    // Compact and Standard on the reference work area: the page's default size and the larger size the page had before.
+    private static ((double Width, double Height) Compact, (double Width, double Height) Standard) Reference(DeckSettings settings, DeckPage page) => page switch
+    {
+        DeckPage.Usage => (PanelSizes.For(PanelSize.Standard, settings.ConfiguredApps.Count), PanelSizes.For(PanelSize.Spacious, settings.ConfiguredApps.Count)),
+        DeckPage.Music => (MusicSizes.For(PanelSize.Standard), MusicSizes.For(PanelSize.Spacious)),
+        _ => (Size(new DeckSettings(), page), page switch
+        {
+            DeckPage.Monitor or DeckPage.Clipboard => (860, 320),
+            DeckPage.Widgets => (700, 360),
+            DeckPage.Notifications or DeckPage.Reminders => (620, 380),
+            DeckPage.Calls => (560, 260),
+            DeckPage.Scratchpad or DeckPage.Terminal or DeckPage.Colour or DeckPage.Capture => (760, 380),
+            DeckPage.Converter or DeckPage.Weather => (620, page == DeckPage.Weather ? 320 : 240),
+            DeckPage.Focus => (560, 240),
+            _ => (620, 280)
+        })
     };
 
     // The largest width and height among the shown pages (the usage page when none is): the window holds any of them, so

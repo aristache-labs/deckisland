@@ -141,11 +141,14 @@ public partial class MainWindow
         var modeTrack = PanelSegmentTrack(modes);
         modeTrack.Margin = new Thickness(0, 0, 10, 0);
         FrameworkElement picker = _captureVideoMode ? videoChip : screenChip;
-        picker.Width = 170; picker.Margin = new Thickness(0);
-        FrameworkElement[] actions = _captureVideoMode ? [.. videoActions, mic, sound] : [shot, region];
+        picker.MaxWidth = 200; picker.Margin = new Thickness(0);
+        // Tighter than the converter's chip: less room between the edges and the name and chevron.
+        if (picker is Border { Child: Button inner }) inner.Padding = new Thickness(9, 0, 7, 0);
+        // While recording only Pause and Stop show: the sound and the screens are fixed until it ends.
+        FrameworkElement[] actions = !_captureVideoMode ? [shot, region] : recording is null ? [.. videoActions, mic, sound] : videoActions;
         var centre = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
         for (int i = 0; i < actions.Length; i++) { actions[i].Margin = new Thickness(i == 0 ? 0 : 8, 0, 0, 0); centre.Children.Add(actions[i]); }
-        var cells = new FrameworkElement?[] { modeTrack, null, centre, null, picker };
+        var cells = new FrameworkElement?[] { modeTrack, null, centre, null, recording is null || !_captureVideoMode ? picker : null };
         for (int i = 0; i < cells.Length; i++)
         {
             if (cells[i] is not { } cell) continue;
