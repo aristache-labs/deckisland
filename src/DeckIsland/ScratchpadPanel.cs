@@ -13,6 +13,7 @@ public partial class MainWindow
 {
     private TextEditor? _scratchEditor;
     private Grid? _scratchBody;
+    private Border? _scratchFrame;
     private (int Generation, string Language) _scratchAppearance;
 
     private void InitializeScratchpad() { }
@@ -31,7 +32,7 @@ public partial class MainWindow
         ScratchpadContent.Margin = new Thickness(header.Side, 0, header.Side, 12);
         ShowHeaderPin(header);
         var appearance = (Look.Generation, Loc.Language);
-        if (_scratchAppearance == appearance && _scratchBody is not null && ScratchpadContent.Children.Contains(_scratchBody)) return;
+        if (_scratchAppearance == appearance && _scratchBody is not null && ScratchpadContent.Children.Contains(_scratchBody)) { FitScratchCorners(); return; }
         _scratchAppearance = appearance;
         ScratchpadContent.Children.Clear();
         BuildScratchpad();
@@ -46,7 +47,7 @@ public partial class MainWindow
         // The pin is in the panel's header, beside the gear (ShowHeaderPin).
         var right = CategoryChip(Scratchpad.Name(language), PickScratchLanguage);
         right.HorizontalAlignment = HorizontalAlignment.Right;
-        var top = new Grid { Margin = new Thickness(0, 0, 0, 8), Children = { title, right } };
+        var top = new Grid { Margin = new Thickness(0, 10, 0, 10), Children = { title, right } };
 
         var editor = new TextEditor
         {
@@ -71,8 +72,7 @@ public partial class MainWindow
         editor.TextChanged += (_, _) => Placeholder();
         Placeholder();
         // The bottom corners follow the panel's, less the gap to its edge, so the two curves run side by side.
-        double bottom = Math.Max(10, Corner(PanelHeader.PanelRadius) - Math.Max(_header.Side, 12));
-        var frame = new Border { CornerRadius = new CornerRadius(10, 10, bottom, bottom), Background = UI.Brush(Look.Hex("fill")), Padding = new Thickness(8, 8, 6, 6), Child = new Grid { Children = { editor, placeholder } } };
+        var frame = _scratchFrame = new Border { Background = UI.Brush(Look.Hex("fill")), Padding = new Thickness(8, 8, 6, 6), Child = new Grid { Children = { editor, placeholder } } };
 
         var body = new Grid();
         body.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -81,7 +81,17 @@ public partial class MainWindow
         body.Children.Add(top);
         body.Children.Add(frame);
         _scratchEditor = editor; _scratchBody = body;
+        FitScratchCorners();
         ScratchpadContent.Children.Add(body);
+    }
+
+    // Read on every render, so a change of the panel's corners in the settings reaches the editor without rebuilding it.
+    private void FitScratchCorners()
+    {
+        if (_scratchFrame is null) return;
+        double panel = Corner(PanelHeader.PanelRadius), top = Math.Min(10, panel);
+        double bottom = Math.Max(top, panel - Math.Max(_header.Side, 12));
+        _scratchFrame.CornerRadius = new CornerRadius(top, top, bottom, bottom);
     }
 
     private void PickScratchLanguage(FrameworkElement anchor)
