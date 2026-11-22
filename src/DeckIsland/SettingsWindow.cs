@@ -463,7 +463,7 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
             Describe(Row(Loc.T("主题", "Theme"), ThemeCards()), Loc.T("跟随 Windows，或选择一种。", "Follow Windows or pick one.")),
             Describe(Row(Loc.T("语言", "Language"), language), Loc.T("DeckIsland 各处使用的语言。", "Used everywhere in DeckIsland.")),
             Describe(Row(Loc.T("缩放", "Scale"), scale), Loc.T("面板收起和展开时的大小。", "The island's size, collapsed and expanded.")),
-            Describe(InlineSlider(Loc.T("顶部菜单大小", "Tab bar size"), S.TabBarScale, TabBarScales.Min, TabBarScales.Max, 5, "%", v => Change(s => s.TabBarScale = (int)v), keepPreview: true),
+            Describe(InlineSlider(Loc.T("顶部菜单大小", "Tab bar size"), S.TabBarScale, TabBarScales.Min, TabBarScales.Max, 5, "%", v => { Change(s => s.TabBarScale = (int)v); _preview = true; _app.PreviewDeck.Preview(true); }, keepPreview: true),
                 Loc.T("展开面板顶部页面切换的大小。", "The size of the page switch at the top of the open panel.")),
             Describe(InlineSlider(Loc.T("圆角", "Corner roundness"), S.CornerPercent, 0, 100, 5, "%", v => Change(s => s.CornerPercent = (int)v), keepPreview: true),
                 Loc.T("面板圆角的程度。", "How round the island's corners are.")),

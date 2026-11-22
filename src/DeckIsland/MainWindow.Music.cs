@@ -252,15 +252,14 @@ public partial class MainWindow
         double factor = TabBarScales.Factor(Settings);
         right.LayoutTransform = factor != 1 ? new ScaleTransform(factor, factor) : Transform.Identity;
         double reserve = right.IsVisible ? right.ActualWidth * factor + right.Margin.Right + HeaderGap : side;
-        // The switch keeps the same room on both sides, so it stays centred and does not move between pages of other widths.
-        // It shrinks only where the panel is too narrow; otherwise it is the same size on every page.
-        bool centred = PageSwitch.HorizontalAlignment == HorizontalAlignment.Center;
-        double edge = centred ? Math.Max(side, reserve) : side;
-        double room = Math.Max(1, width - edge - (centred ? edge : reserve));
+        // The switch is centred while the right group leaves room for that; on a panel just wide enough for both it moves left
+        // of centre, and it shrinks only on a panel narrower than that (which no page's size allows, DeckPages.Limits).
+        double room = Math.Max(1, width - side - reserve);
         double scale = Math.Min(factor, room / natural);
         PageSwitch.LayoutTransform = scale != 1 ? new ScaleTransform(scale, scale) : Transform.Identity;
+        bool centredFits = (width + natural * scale) / 2 <= width - reserve;
         PageSwitch.VerticalAlignment = VerticalAlignment.Top;
-        PageSwitch.Margin = new Thickness(side, PanelHeader.ControlsTop, centred ? side : reserve, 0);
+        PageSwitch.Margin = new Thickness(side, PanelHeader.ControlsTop, centredFits && PageSwitch.HorizontalAlignment == HorizontalAlignment.Center ? side : reserve, 0);
     }
     private void RenderPageSwitch()
     {

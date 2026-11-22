@@ -325,7 +325,7 @@ static class SystemMonitorTests
             && DeckPages.MaxWidthOn(3840) == DeckPages.MaxWidth && DeckPages.MaxWidthOn(1280) == 1200 && DeckPages.MaxWidthOn(1366) == 1200 && DeckPages.MaxWidthOn(1366, 1.5) == 894
             && DeckPages.MaxWidthOn(800, 2) == DeckPages.MinWidth);
         check("Pages: the usage page is never narrower than its columns need",
-            DeckPages.Limits(sized, DeckPage.Usage).MinWidth == Math.Max(Math.Max(DeckPages.MinWidth, sized.MinimumWidth), DeckPages.SwitchWidth(sized)) && DeckPages.Limits(sized, DeckPage.Music).MinWidth == Math.Max(DeckPages.MinWidth, DeckPages.SwitchWidth(sized)));
+            DeckPages.Limits(sized, DeckPage.Usage).MinWidth == Math.Max(Math.Max(DeckPages.MinWidth, sized.MinimumWidth), DeckPages.SwitchWidth(sized, DeckPage.Usage)) && DeckPages.Limits(sized, DeckPage.Music).MinWidth == Math.Max(DeckPages.MinWidth, DeckPages.SwitchWidth(sized, DeckPage.Music)));
         (double Width, double Height) Quick(DeckPage page, PanelSize size, double scale = 1, double workWidth = DeckPages.ReferenceWorkWidth, double workHeight = DeckPages.ReferenceWorkHeight)
             => DeckPages.QuickSize(settings, page, size, workWidth, workHeight, scale);
         check("Pages: on the reference work area Compact is a page's default size, Standard larger, Spacious about 800 wide and as tall as allowed",
@@ -333,7 +333,7 @@ static class SystemMonitorTests
             {
                 var (compact, standard, spacious) = (Quick(page, PanelSize.Compact), Quick(page, PanelSize.Standard), Quick(page, PanelSize.Spacious));
                 var standardSize = DeckPages.Size(new DeckSettings(), page);
-                return compact == (Math.Max(standardSize.Width, DeckPages.SwitchWidth(settings)), standardSize.Height) && standard.Width > compact.Width && standard.Height > compact.Height
+                return compact == (Math.Max(standardSize.Width, DeckPages.SwitchWidth(settings, page)), standardSize.Height) && standard.Width > compact.Width && standard.Height > compact.Height
                     && spacious.Width >= Math.Max(800, standard.Width) && spacious.Height == DeckPages.MaxHeight;
             }) && Quick(DeckPage.Music, PanelSize.Standard) == MusicSizes.For(PanelSize.Spacious) && Quick(DeckPage.Capture, PanelSize.Spacious) == (800, DeckPages.MaxHeight));
         check("Pages: quick sizes follow the work area and the scale, within the page's limits",
@@ -341,7 +341,7 @@ static class SystemMonitorTests
             {
                 var limits = DeckPages.Limits(settings, page);
                 return new[] { Quick(page, size, 1.5), Quick(page, size, 1, 3840, 2112), Quick(page, size, 1, 1366, 728) }.All(s =>
-                    s.Width >= Math.Max(limits.MinWidth, DeckPages.SwitchWidth(settings)) && s.Width >= limits.MinWidth && s.Width <= limits.MaxWidth && s.Height >= limits.MinHeight && s.Height <= limits.MaxHeight);
+                    s.Width >= Math.Max(limits.MinWidth, DeckPages.SwitchWidth(settings, page)) && s.Width >= limits.MinWidth && s.Width <= limits.MaxWidth && s.Height >= limits.MinHeight && s.Height <= limits.MaxHeight);
             })) && Quick(DeckPage.Capture, PanelSize.Standard, 1, 3840, 2112).Width == 1200 && Quick(DeckPage.Capture, PanelSize.Standard, 1.5).Width < 760
             && Quick(DeckPage.Capture, PanelSize.Spacious, 1, 1366, 728).Width <= DeckPages.MaxWidthOn(1366));
         check("Pages: a shown page resolves to itself", DeckPages.Resolve(settings, DeckPage.Monitor) == DeckPage.Monitor);

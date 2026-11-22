@@ -39,7 +39,7 @@ public static class DeckPages
     public static double MaxWidthOn(double workWidth, double scale = 1) => Math.Max(MinWidth, Math.Min(MaxWidth, Math.Floor((workWidth - 24) / scale)));
 
     public static (double MinWidth, double MaxWidth, double MinHeight, double MaxHeight) Limits(DeckSettings settings, DeckPage page)
-        => (Math.Max(page == DeckPage.Usage ? Math.Max(MinWidth, settings.MinimumWidth) : MinWidth, Math.Min(MaxWidth, SwitchWidth(settings))), MaxWidth, page == DeckPage.Widgets ? 220 : MinHeight, MaxHeight);
+        => (Math.Max(page == DeckPage.Usage ? Math.Max(MinWidth, settings.MinimumWidth) : MinWidth, Math.Min(MaxWidth, SwitchWidth(settings, page))), MaxWidth, page == DeckPage.Widgets ? 220 : MinHeight, MaxHeight);
 
     // Sets a page's size, as dragging an edge of the open panel does; the values are kept within the page's limits.
     public static void SetSize(DeckSettings settings, DeckPage page, double width, double height)
@@ -99,10 +99,16 @@ public static class DeckPages
     // size, and Spacious about 800 DIP wide and the full height the page allows. Each is kept within the page's limits.
     // The reference is a 1920 x 1200 monitor at the Windows 125 % scale, less the taskbar, in DIP.
     public const double ReferenceWorkWidth = 1536, ReferenceWorkHeight = 922, SpaciousWidth = 800;
-    // The page switch's buttons (28 DIP and a 1 DIP gap each) centred with the right group's room (pin and settings buttons,
-    // gaps) on both sides: no quick size is narrower, so the switch is never shrunk and stays centred.
-    // shortcut: mirrors MainWindow.xaml's button sizes; update it with them.
-    public static double SwitchWidth(DeckSettings settings) => Math.Ceiling((Math.Max(1, Visible(settings).Count) * 29 + 4) * TabBarScales.Factor(settings)) + 2 * 80;
+    // The header's width on a page: the left inset, the page switch's buttons (28 DIP and a 1 DIP gap each), the gap before
+    // the right group, the pin (the tool pages only) and the gear, and the gear's margin, at the tab bar's size. No page is
+    // narrower, so the switch is never shrunk. shortcut: mirrors MainWindow.xaml's button sizes; update it with them.
+    public static double SwitchWidth(DeckSettings settings, DeckPage page)
+    {
+        double factor = TabBarScales.Factor(settings);
+        bool pin = page is DeckPage.Scratchpad or DeckPage.Converter or DeckPage.Terminal or DeckPage.Colour or DeckPage.Capture;
+        return Math.Ceiling(PanelHeader.CornerClear + (Math.Max(1, Visible(settings).Count) * 29 + 4) * factor + 10
+            + (PanelHeader.SettingsWidth + (pin ? 30 : 0)) * factor + PanelHeader.RightButtonsMargin);
+    }
     public static (double Width, double Height) QuickSize(DeckSettings settings, DeckPage page, PanelSize size, double workWidth, double workHeight, double scale = 1)
     {
         var (compact, standard) = Reference(settings, page);
@@ -113,7 +119,6 @@ public static class DeckPages
             _ => (Math.Max(SpaciousWidth, standard.Width), ReferenceWorkHeight)
         };
         var (minWidth, maxWidth, minHeight, maxHeight) = Limits(settings, page);
-        minWidth = Math.Max(minWidth, SwitchWidth(settings));
         maxWidth = Math.Max(minWidth, Math.Min(maxWidth, MaxWidthOn(workWidth, scale)));
         return (Math.Clamp(Math.Round(width / ReferenceWorkWidth * workWidth / scale), minWidth, maxWidth),
             Math.Clamp(Math.Round(height / ReferenceWorkHeight * workHeight / scale), minHeight, maxHeight));

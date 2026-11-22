@@ -1,0 +1,107 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v10.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v10.0": {
+      "DeckIsland.Tests/1.0.0": {
+        "dependencies": {
+          "DeckIsland.Core": "1.0.0"
+        },
+        "runtime": {
+          "DeckIsland.Tests.dll": {}
+        }
+      },
+      "Acornima/1.7.0": {
+        "runtime": {
+          "lib/net8.0/Acornima.dll": {
+            "assemblyVersion": "1.7.0.0",
+            "fileVersion": "1.7.0.0"
+          }
+        }
+      },
+      "BouncyCastle.Cryptography/2.7.0": {
+        "runtime": {
+          "lib/net6.0/BouncyCastle.Cryptography.dll": {
+            "assemblyVersion": "2.0.0.0",
+            "fileVersion": "2.7.0.16391"
+          }
+        }
+      },
+      "Jint/4.16.3": {
+        "dependencies": {
+          "Acornima": "1.7.0"
+        },
+        "runtime": {
+          "lib/net10.0/Jint.dll": {
+            "assemblyVersion": "4.16.3.0",
+            "fileVersion": "4.16.3.0"
+          }
+        }
+      },
+      "ZstdSharp.Port/0.8.8": {
+        "runtime": {
+          "lib/net9.0/ZstdSharp.dll": {
+            "assemblyVersion": "0.8.8.0",
+            "fileVersion": "0.8.8.0"
+          }
+        }
+      },
+      "DeckIsland.Core/1.0.0": {
+        "dependencies": {
+          "BouncyCastle.Cryptography": "2.7.0",
+          "Jint": "4.16.3",
+          "ZstdSharp.Port": "0.8.8"
+        },
+        "runtime": {
+          "DeckIsland.Core.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "DeckIsland.Tests/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Acornima/1.7.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-a2I4O4qkuAdB0oSaGz6/k0n/bXxMbGcLBra5dNTTVSLmTwM7uORA8ebpOrNMmDfFWOMwvuaRL6gPprRV4HTV0w==",
+      "path": "acornima/1.7.0",
+      "hashPath": "acornima.1.7.0.nupkg.sha512"
+    },
+    "BouncyCastle.Cryptography/2.7.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-U+12df8UEWHgBi04YVf/Lgi2dy3SItlIYvHjjEVa/BngCQIzDCDRBk50DDByCfDvSbe5pRNFr3b7UrVK2kMcLw==",
+      "path": "bouncycastle.cryptography/2.7.0",
+      "hashPath": "bouncycastle.cryptography.2.7.0.nupkg.sha512"
+    },
+    "Jint/4.16.3": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-QRO8CtC9rB/FRgchClX0DEHsBmUSDehIxxEv5QX5qlmujB2HMmOIUMruysKnQA0v+0QtU9cwp0XbiPbpJ3eiwA==",
+      "path": "jint/4.16.3",
+      "hashPath": "jint.4.16.3.nupkg.sha512"
+    },
+    "ZstdSharp.Port/0.8.8": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-UIDFkA5DC3en3tOJ3Mof11yBx9kUQLsaeo/oFdvN6Bbkr9E9+VCqfIadHci8cu+I51K2Sl7XYWVl2R/mA75NBQ==",
+      "path": "zstdsharp.port/0.8.8",
+      "hashPath": "zstdsharp.port.0.8.8.nupkg.sha512"
+    },
+    "DeckIsland.Core/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}
