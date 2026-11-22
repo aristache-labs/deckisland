@@ -232,7 +232,7 @@ public partial class MainWindow
     // centred while that leaves a gap, moves left of centre when it would not, and shrinks as a whole when even that is too narrow.
     private double _headerSide;
     private bool _headerGapWatched;
-    private const double HeaderGap = 10;
+    private const double HeaderGap = 10, MaxSwitchGrow = 1.25;
 
     private void KeepHeaderGap()
     {
@@ -245,12 +245,15 @@ public partial class MainWindow
         if (SettingsButton.Parent is not FrameworkElement right || Toolbar.ActualWidth <= 0 || PageSwitch.ActualWidth <= 0) return;
         double side = _headerSide, width = Toolbar.ActualWidth, natural = PageSwitch.ActualWidth;
         double reserve = right.IsVisible ? right.ActualWidth + right.Margin.Right + HeaderGap : side;
-        double room = Math.Max(1, width - side - reserve);
-        double scale = Math.Min(1, room / natural);
-        PageSwitch.LayoutTransform = scale < 1 ? new ScaleTransform(scale, scale) : Transform.Identity;
-        double shown = natural * scale;
-        bool centredFits = (width + shown) / 2 <= width - reserve;
-        PageSwitch.Margin = new Thickness(side, 0, centredFits && PageSwitch.HorizontalAlignment == HorizontalAlignment.Center ? side : reserve, 0);
+        // The switch keeps the same room on both sides, so it stays centred and does not move between pages of other widths.
+        // It shrinks only where the panel is too narrow, and grows (up to MaxSwitchGrow) as far as the band's height allows.
+        bool centred = PageSwitch.HorizontalAlignment == HorizontalAlignment.Center;
+        double edge = centred ? Math.Max(side, reserve) : side;
+        double room = Math.Max(1, width - edge - (centred ? edge : reserve));
+        double grow = PageSwitch.ActualHeight > 0 ? Math.Clamp(Toolbar.ActualHeight / PageSwitch.ActualHeight, 1, MaxSwitchGrow) : 1;
+        double scale = Math.Min(grow, room / natural);
+        PageSwitch.LayoutTransform = scale != 1 ? new ScaleTransform(scale, scale) : Transform.Identity;
+        PageSwitch.Margin = new Thickness(side, 0, centred ? side : reserve, 0);
     }
     private void RenderPageSwitch()
     {

@@ -92,9 +92,10 @@ public static class DeckPages
     // size, and Spacious about 800 DIP wide and the full height the page allows. Each is kept within the page's limits.
     // The reference is a 1920 x 1200 monitor at the Windows 125 % scale, less the taskbar, in DIP.
     public const double ReferenceWorkWidth = 1536, ReferenceWorkHeight = 922, SpaciousWidth = 800;
-    // The page switch's buttons (28 DIP each) and the room either side of it (the settings button, the gaps): no quick size
-    // is narrower, so the switch is never shrunk to fit. shortcut: mirrors MainWindow.xaml's button width; update it with it.
-    public static double SwitchWidth(DeckSettings settings) => Math.Max(1, Visible(settings).Count) * 28 + 84;
+    // The page switch's buttons (28 DIP and a 1 DIP gap each) centred with the right group's room (pin and settings buttons,
+    // gaps) on both sides: no quick size is narrower, so the switch is never shrunk and stays centred.
+    // shortcut: mirrors MainWindow.xaml's button sizes; update it with them.
+    public static double SwitchWidth(DeckSettings settings) => Math.Max(1, Visible(settings).Count) * 29 + 4 + 2 * 80;
     public static (double Width, double Height) QuickSize(DeckSettings settings, DeckPage page, PanelSize size, double workWidth, double workHeight, double scale = 1)
     {
         var (compact, standard) = Reference(settings, page);

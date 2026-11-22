@@ -229,6 +229,7 @@ public partial class MainWindow
                 placeholder.VerticalAlignment = VerticalAlignment.Center;
                 placeholder.Margin = new Thickness(7, 0, 0, 0);
                 placeholder.IsHitTestVisible = false;
+                placeholder.TextWrapping = TextWrapping.NoWrap;
                 void UpdateHint() => placeholder.Visibility = field.Text.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
                 field.TextChanged += (_, _) => UpdateHint();
                 UpdateHint();
