@@ -86,37 +86,60 @@ public partial class MainWindow
         _captureVideoScreen = Math.Clamp(_captureVideoScreen, 0, displays.Count);
         var root = new DockPanel();
 
-        // One choice of screens for both screenshots and recordings: all of them (one wide picture, or a video file per screen) or one.
+        // Two rows on one grid: the label, the screen picker (the same width in both, so they line up), the row's own options,
+        // then its actions at the right edge. A rule divides them from the list below.
         var screens = new List<string> { Loc.T("所有屏幕", "All screens") };
         screens.AddRange(displays.Select(d => Native.Displays.Label(d, displays)));
         var screenChip = CategoryChip(screens[_captureScreen], anchor => ShowAnchoredMenu(anchor,
             [.. screens.Select((label, i) => (label, i == _captureScreen))], index => { _captureScreen = index; _captureAppearance = default; RenderCapture(); }));
         var shot = CaptureAction(CameraGlyph, Loc.T("截图", "Capture"), () => _ = TakeScreenshot(displays));
         var region = CaptureAction(RegionGlyph, Loc.T("区域", "Region"), () => _ = TakeRegion(displays));
-        // What the last action did ("Saved and copied", an error) shows at the end of this row for a few seconds.
-        _captureStatus = new TextBlock { Text = _captureMessage, FontSize = 11, Foreground = UI.Brush(Look.Secondary), VerticalAlignment = VerticalAlignment.Center,
-            TextTrimming = TextTrimming.CharacterEllipsis, MaxWidth = 260 };
+        // What the last action did ("Saved and copied", an error), for a few seconds, just left of the row's actions.
+        _captureStatus = new TextBlock { Text = _captureMessage, FontSize = 11, Foreground = UI.Brush(Look.Tertiary), VerticalAlignment = VerticalAlignment.Center,
+            TextTrimming = TextTrimming.CharacterEllipsis, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(8, 0, 10, 0) };
         AutomationProperties.SetLiveSetting(_captureStatus, AutomationLiveSetting.Polite);
-        AddCaptureRow(root, Loc.T("截图", "Screenshot"), screenChip, shot, region, _captureStatus);
 
-        // Video: display, 30/60, microphone, system sound, Record.
         var recording = _app.Recording;
         var rates = new StackPanel { Orientation = Orientation.Horizontal };
         foreach (int fps in new[] { 30, 60 })
         {
-            var button = PanelSegment(fps.ToString(), () => { _app.ChangeShared(s => s.CaptureFps = fps); _captureAppearance = default; RenderCapture(); });
+            var button = PanelSegment(fps + " fps", () => { _app.ChangeShared(s => s.CaptureFps = fps); _captureAppearance = default; RenderCapture(); });
             StylePanelSegment(button, Settings.CaptureFps == fps);
+            button.Padding = new Thickness(11, 0, 11, 0);
             rates.Children.Add(button);
         }
+        var rateTrack = PanelSegmentTrack(rates);
         var mic = CaptureToggle(MicGlyph, Loc.T("麦克风", "Microphone"), Settings.CaptureMic, on => _app.ChangeShared(s => s.CaptureMic = on));
         var sound = CaptureToggle(SpeakerGlyph, Loc.T("系统声音", "System audio"), Settings.CaptureSystemAudio, on => _app.ChangeShared(s => s.CaptureSystemAudio = on));
-        var record = CaptureAction("", recording is null ? Loc.T("录制", "Record") : StopLabel(recording), () => _ = ToggleRecording(displays), filled: true);
-        _captureRecordLabel = recording is null ? null : (TextBlock)((StackPanel)record.Content).Children[^1];
-        foreach (var part in new FrameworkElement[] { rates, mic, sound }) part.IsEnabled = recording is null;
         var videoChip = CategoryChip(screens[_captureVideoScreen], anchor => ShowAnchoredMenu(anchor,
             [.. screens.Select((label, i) => (label, i == _captureVideoScreen))], index => { _captureVideoScreen = index; _captureAppearance = default; RenderCapture(); }));
-        videoChip.IsEnabled = recording is null;
-        AddCaptureRow(root, Loc.T("视频", "Video"), videoChip, PanelSegmentTrack(rates), mic, sound, record);
+        foreach (var part in new FrameworkElement[] { videoChip, rateTrack, mic, sound }) part.IsEnabled = recording is null;
+        // Idle: Record. While recording: Pause (or Resume) and Stop, which counts the time beside a red dot.
+        FrameworkElement[] videoActions;
+        if (recording is null)
+        {
+            videoActions = [CaptureAction("", Loc.T("录制", "Record"), () => _ = ToggleRecording(displays), filled: true, dot: Look.Hex("surface"))];
+            _captureRecordLabel = null;
+        }
+        else
+        {
+            var pause = CaptureAction(recording.Paused ? "M7,5 L18,12 L7,19 Z" : "M8,5 V19 M16,5 V19", recording.Paused ? Loc.T("继续", "Resume") : Loc.T("暂停", "Pause"), _app.PauseRecording);
+            var stop = CaptureAction("", StopLabel(recording), () => _ = ToggleRecording(displays), filled: true, dot: recording.Paused ? Look.Secondary : "#E5484D");
+            _captureRecordLabel = (TextBlock)((StackPanel)stop.Content).Children[^1];
+            Typography.SetNumeralAlignment(_captureRecordLabel, FontNumeralAlignment.Tabular);
+            videoActions = [pause, stop];
+        }
+
+        var top = new Grid { Margin = new Thickness(0, 0, 0, 2) };
+        foreach (var width in new[] { new GridLength(84), new GridLength(240), GridLength.Auto, new GridLength(1, GridUnitType.Star), GridLength.Auto })
+            top.ColumnDefinitions.Add(new ColumnDefinition { Width = width });
+        CaptureRow(top, 0, Loc.T("截图", "Screenshot"), screenChip, [], _captureStatus, [shot, region]);
+        CaptureRow(top, 1, Loc.T("视频", "Video"), videoChip, [rateTrack, mic, sound], null, videoActions);
+        DockPanel.SetDock(top, DockSide.Top);
+        root.Children.Add(top);
+        var rule = new Border { Height = 1, Background = UI.Brush(Look.Outline), Margin = new Thickness(0, 6, 0, 10) };
+        DockPanel.SetDock(rule, DockSide.Top);
+        root.Children.Add(rule);
 
         // The filter and the status.
         var filters = new StackPanel { Orientation = Orientation.Horizontal };
@@ -163,13 +186,26 @@ public partial class MainWindow
         return root;
     }
 
-    private void AddCaptureRow(DockPanel root, string label, params FrameworkElement[] parts)
+    // One row of the grid above the list: label, picker, the row's options, an optional note, and its actions at the right.
+    private void CaptureRow(Grid grid, int row, string label, FrameworkElement picker, FrameworkElement[] options, FrameworkElement? note, FrameworkElement[] actions)
     {
-        var row = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 8) };
-        row.Children.Add(new TextBlock { Text = label, Width = 78, FontSize = 12.5, Foreground = UI.Brush(Look.Secondary), VerticalAlignment = VerticalAlignment.Center });
-        foreach (var part in parts) { part.Margin = new Thickness(0, 0, 8, 0); part.VerticalAlignment = VerticalAlignment.Center; row.Children.Add(part); }
-        DockPanel.SetDock(row, DockSide.Top);
-        root.Children.Add(row);
+        grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        var name = new TextBlock { Text = label, FontSize = 12.5, FontWeight = FontWeights.Medium, Foreground = UI.Brush(Look.Secondary), VerticalAlignment = VerticalAlignment.Center };
+        picker.Margin = new Thickness(0, 0, 10, 0);
+        picker.VerticalAlignment = VerticalAlignment.Center;
+        var middle = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+        foreach (var option in options) { option.Margin = new Thickness(0, 0, 8, 0); option.VerticalAlignment = VerticalAlignment.Center; middle.Children.Add(option); }
+        var right = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+        for (int i = 0; i < actions.Length; i++) { actions[i].Margin = new Thickness(i == 0 ? 0 : 8, 0, 0, 0); right.Children.Add(actions[i]); }
+        var cells = new FrameworkElement?[] { name, picker, middle, note, right };
+        for (int column = 0; column < cells.Length; column++)
+        {
+            if (cells[column] is not { } cell) continue;
+            Grid.SetRow(cell, row); Grid.SetColumn(cell, column);
+            if (cell != note) cell.Margin = new Thickness(cell.Margin.Left, row == 0 ? 0 : 8, cell.Margin.Right, 0);
+            else cell.Margin = new Thickness(note!.Margin.Left, row == 0 ? 0 : 8, note.Margin.Right, 0);
+            grid.Children.Add(cell);
+        }
     }
 
     private static PathGlyph CaptureGlyph(string data, double size, string colour) => new()
@@ -179,16 +215,16 @@ public partial class MainWindow
     };
 
     // A pill with an optional glyph; filled is the light Record button.
-    private Button CaptureAction(string glyph, string label, Action action, bool filled = false)
+    private Button CaptureAction(string glyph, string label, Action action, bool filled = false, string? dot = null)
     {
         string ink = filled ? Look.Hex("surface") : Look.Primary;
         var content = new StackPanel { Orientation = Orientation.Horizontal };
-        if (filled) content.Children.Add(new System.Windows.Shapes.Ellipse { Width = 9, Height = 9, Fill = UI.Brush(_app.Recording is null ? "#E5484D" : ink), Margin = new Thickness(0, 0, 7, 0), VerticalAlignment = VerticalAlignment.Center });
+        if (dot is not null) content.Children.Add(new System.Windows.Shapes.Ellipse { Width = 9, Height = 9, Fill = UI.Brush(dot), Margin = new Thickness(0, 0, 7, 0), VerticalAlignment = VerticalAlignment.Center });
         else if (glyph.Length > 0) { var path = CaptureGlyph(glyph, 13, ink); path.Margin = new Thickness(0, 0, 7, 0); content.Children.Add(path); }
         content.Children.Add(new TextBlock { Text = label, FontSize = 12.5, FontWeight = FontWeights.Medium, Foreground = UI.Brush(ink), VerticalAlignment = VerticalAlignment.Center });
         var button = new Button
         {
-            Style = (Style)FindResource("WidgetSurfaceButton"), Template = FlatPill(), Height = 28, Padding = new Thickness(13, 0, 14, 0),
+            Style = (Style)FindResource("WidgetSurfaceButton"), Template = FlatPill(), Height = 32, MinWidth = 92, Padding = new Thickness(14, 0, 15, 0),
             Background = UI.Brush(filled ? Look.Primary : Look.Fill), Content = content
         };
         AutomationProperties.SetName(button, label);
@@ -200,7 +236,7 @@ public partial class MainWindow
     {
         var button = new Button
         {
-            Style = (Style)FindResource("WidgetSurfaceButton"), Template = FlatPill(), Width = 28, Height = 28,
+            Style = (Style)FindResource("WidgetSurfaceButton"), Template = FlatPill(), Width = 32, Height = 32,
             Background = UI.Brush(on ? Look.FillSelected : Look.Fill), ToolTip = label
         };
         // Off reads as off, not as disabled: the glyph in red with a slash through it.
@@ -460,7 +496,7 @@ public partial class MainWindow
         Button Small(string label, Action action, bool strong = false)
         {
             var button = CaptureAction("", label, action);
-            button.Height = 26; button.Padding = new Thickness(11, 0, 11, 0); button.Margin = new Thickness(6, 0, 0, 0);
+            button.Height = 30; button.MinWidth = 0; button.Padding = new Thickness(12, 0, 12, 0); button.Margin = new Thickness(6, 0, 0, 0);
             if (strong) ((TextBlock)((StackPanel)button.Content).Children[^1]).Foreground = UI.Brush("#E5484D");
             return button;
         }
