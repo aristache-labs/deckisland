@@ -58,6 +58,8 @@ public enum ProviderId { Claude, Codex, Antigravity, Cursor, GlmChina, NewApi, S
 public enum SettingsTheme { System, Light, Dark }
 // Pages are saved as numbers, so new members go at the end; their order in the page switch is DeckSettings.PageOrder.
 public enum DeckPage { Usage, Music, Monitor, Clipboard, Devices, Weather, Focus, Reminders, Widgets, Notifications, Calls, Scratchpad, Converter, Terminal, Colour, Capture }
+// How the Capture tab lists past captures: cards that wrap, one line each, or one row of cards that scrolls sideways.
+public enum CaptureLayout { Grid, List, Row }
 public enum DefaultDeckPage { Last, Usage, Music, Monitor, Clipboard, Devices, Weather, Focus, Reminders, Widgets, Notifications, Calls, Scratchpad, Converter, Terminal, Colour, Capture }
 // What the mouse wheel does over the expanded panel. Saved as numbers, so new members go at the end.
 public enum MouseWheelAction { None, Pages, Volume }
@@ -793,6 +795,7 @@ public sealed class DeckSettings
     public bool CaptureMic { get; set; }
     public bool CaptureSystemAudio { get; set; } = true;
     public bool CaptureToShelf { get; set; }
+    public CaptureLayout CaptureLayout { get; set; } = CaptureLayout.Grid;
     // Settings → Display: every DeckIsland window is left out of screen sharing and recordings (WDA_EXCLUDEFROMCAPTURE).
     public bool HideFromCapture { get; set; }
     private const double DefaultColourWidth = 600, DefaultColourHeight = 310;
@@ -1091,6 +1094,7 @@ public sealed class DeckSettings
         CaptureWidth = double.IsFinite(CaptureWidth) ? Math.Clamp(CaptureWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : DefaultCaptureWidth;
         CaptureHeight = double.IsFinite(CaptureHeight) ? Math.Clamp(CaptureHeight, DeckPages.MinHeight, DeckPages.MaxHeight) : DefaultCaptureHeight;
         if (CaptureFps is not (30 or 60)) CaptureFps = 30;
+        if (!Enum.IsDefined(CaptureLayout)) CaptureLayout = CaptureLayout.Grid;
         TerminalWidth = double.IsFinite(TerminalWidth) ? Math.Clamp(TerminalWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : DefaultTerminalWidth;
         TerminalHeight = double.IsFinite(TerminalHeight) ? Math.Clamp(TerminalHeight, DeckPages.MinHeight, DeckPages.MaxHeight) : DefaultTerminalHeight;
         if (!Enum.IsDefined(TerminalShell)) TerminalShell = TerminalShell.PowerShell7;

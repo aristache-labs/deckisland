@@ -115,18 +115,42 @@ public partial class MainWindow
         _captureStatus = new TextBlock { Text = _captureMessage, FontSize = 11, Foreground = UI.Brush(Look.Secondary), VerticalAlignment = VerticalAlignment.Center,
             TextTrimming = TextTrimming.CharacterEllipsis, Margin = new Thickness(10, 0, 0, 0) };
         AutomationProperties.SetLiveSetting(_captureStatus, AutomationLiveSetting.Polite);
-        var filterRow = new DockPanel { Margin = new Thickness(0, 4, 0, 8), Children = { PanelSegmentTrack(filters), _captureStatus } };
+        // The layout of the list, at the right: grid, one line each, or one row.
+        var layouts = new StackPanel { Orientation = Orientation.Horizontal };
+        foreach (var (layout, glyph, name) in new[] {
+            (CaptureLayout.Grid, "M3,3 H10 V10 H3 Z M14,3 H21 V10 H14 Z M3,14 H10 V21 H3 Z M14,14 H21 V21 H14 Z", Loc.T("网格", "Grid")),
+            (CaptureLayout.List, "M3,5 H6 M9,5 H21 M3,12 H6 M9,12 H21 M3,19 H6 M9,19 H21", Loc.T("单行", "One line")),
+            (CaptureLayout.Row, "M2,6 H8 V18 H2 Z M10,6 H16 V18 H10 Z M18,6 H22 M18,18 H22", Loc.T("横排", "Row")) })
+        {
+            var button = PanelSegment("", () => { _app.ChangeShared(s => s.CaptureLayout = layout); _captureAppearance = default; RenderCapture(); });
+            StylePanelSegment(button, Settings.CaptureLayout == layout);
+            button.Padding = new Thickness(9, 0, 9, 0);
+            button.Content = CaptureGlyph(glyph, 12, Settings.CaptureLayout == layout ? Look.Hex("surface") : Look.Secondary);
+            button.ToolTip = name;
+            AutomationProperties.SetName(button, name);
+            layouts.Children.Add(button);
+        }
+        var layoutTrack = PanelSegmentTrack(layouts);
+        layoutTrack.Margin = new Thickness(8, 0, 0, 0);
+        var filterRow = new DockPanel { Margin = new Thickness(0, 4, 0, 8), Children = { PanelSegmentTrack(filters), layoutTrack, _captureStatus } };
         DockPanel.SetDock(filterRow.Children[0], DockSide.Left);
+        DockPanel.SetDock(layoutTrack, DockSide.Right);
         DockPanel.SetDock(filterRow, DockSide.Top);
         root.Children.Add(filterRow);
 
         // The captures, newest first.
-        var cards = new WrapPanel();
+        var mode = Settings.CaptureLayout;
+        Panel cards = mode switch { CaptureLayout.List => new StackPanel(), CaptureLayout.Row => new StackPanel { Orientation = Orientation.Horizontal }, _ => new WrapPanel() };
         var files = CaptureFiles(_captureFilter);
-        foreach (var file in files) cards.Children.Add(CaptureCard(file));
+        foreach (var file in files) cards.Children.Add(CaptureCard(file, mode == CaptureLayout.List));
         if (files.Count == 0)
             cards.Children.Add(new TextBlock { Text = Loc.T("还没有截图或录屏。", "No captures yet."), FontSize = 12.5, Foreground = UI.Brush(Look.Secondary), Margin = new Thickness(2, 8, 0, 0) });
-        root.Children.Add(new ScrollViewer { Content = cards, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled });
+        bool sideways = mode == CaptureLayout.Row;
+        var scroll = new ScrollViewer { Content = cards, VerticalScrollBarVisibility = sideways ? ScrollBarVisibility.Disabled : ScrollBarVisibility.Auto,
+            HorizontalScrollBarVisibility = sideways ? ScrollBarVisibility.Auto : ScrollBarVisibility.Disabled };
+        // The wheel moves a row sideways.
+        if (sideways) scroll.PreviewMouseWheel += (_, e) => { scroll.ScrollToHorizontalOffset(scroll.HorizontalOffset - e.Delta / 2.0); e.Handled = true; };
+        root.Children.Add(scroll);
         return root;
     }
 
@@ -295,7 +319,8 @@ public partial class MainWindow
         return [.. shots.Concat(videos).OrderByDescending(f => f.LastWriteTime).Take(40)];
     }
 
-    private Border CaptureCard(FileInfo file)
+    // A card (thumbnail over its date and size), or with line a single row: small thumbnail, date, size and length.
+    private Border CaptureCard(FileInfo file, bool line)
     {
         bool video = file.Extension.Equals(".mp4", StringComparison.OrdinalIgnoreCase);
         var picture = new Image { Stretch = Stretch.UniformToFill };
@@ -312,17 +337,35 @@ public partial class MainWindow
             if (RecycleBin.Send(file.FullName)) _app.CaptureSaved();
             else CaptureSays(Loc.T("无法删除", "Not deleted"));
         };
-        var thumb = new Border { Height = 70, CornerRadius = new CornerRadius(8, 8, 0, 0), ClipToBounds = true, Background = UI.Brush(Look.FillSelected),
-            Child = new Grid { Children = { picture, lengthTag, delete } } };
-        thumb.Clip = new RectangleGeometry(new Rect(0, 0, 124, 70), 8, 8);
+        double thumbWidth = line ? 64 : 124, thumbHeight = line ? 36 : 70;
+        var thumb = new Border { Width = thumbWidth, Height = thumbHeight, ClipToBounds = true, Background = UI.Brush(Look.FillSelected),
+            Child = new Grid { Children = { picture } } };
+        thumb.Clip = new RectangleGeometry(new Rect(0, 0, thumbWidth, thumbHeight), line ? 5 : 7, line ? 5 : 7);
+        if (!line) ((Grid)thumb.Child).Children.Add(lengthTag);
         string when = file.LastWriteTime.Date == DateTime.Today ? Loc.T("今天 ", "Today ") + file.LastWriteTime.ToString("HH:mm") : file.LastWriteTime.ToString("d MMM HH:mm");
         var info = new StackPanel { Margin = new Thickness(8, 6, 8, 7), Children =
         {
             new TextBlock { Text = when, FontSize = 11.5, FontWeight = FontWeights.SemiBold, Foreground = UI.Brush(Look.Primary) },
             new TextBlock { Text = SizeText(file.Length), FontSize = 10.5, Foreground = UI.Brush(Look.Secondary) }
         } };
-        var card = new Border { Width = 124, Margin = new Thickness(0, 0, 8, 8), CornerRadius = new CornerRadius(8), Background = UI.Brush(Look.Fill), Cursor = Cursors.Hand,
-            Child = new StackPanel { Children = { thumb, info } }, ToolTip = file.Name };
+        // An outline around each capture, so neighbouring pictures do not run together.
+        var body = new Grid();
+        if (line)
+        {
+            thumb.Margin = new Thickness(6, 5, 0, 5);
+            info.Orientation = Orientation.Horizontal; info.VerticalAlignment = VerticalAlignment.Center; info.Margin = new Thickness(10, 0, 30, 0);
+            foreach (TextBlock text in info.Children) { text.Margin = new Thickness(0, 0, 12, 0); text.VerticalAlignment = VerticalAlignment.Center; }
+            length.Foreground = UI.Brush(Look.Secondary); length.Margin = new Thickness(0);
+            if (video) info.Children.Add(length);
+            delete.VerticalAlignment = VerticalAlignment.Center; delete.Background = Brushes.Transparent; delete.Content = CaptureGlyph(DeleteGlyph, 11, Look.Secondary);
+            body.Children.Add(new DockPanel { Children = { thumb, info } });
+        }
+        else body.Children.Add(new StackPanel { Children = { thumb, info } });
+        body.Children.Add(delete);
+        var card = new Border { Width = line ? double.NaN : 126, Margin = line ? new Thickness(0, 0, 4, 6) : new Thickness(0, 0, 8, 8), CornerRadius = new CornerRadius(8),
+            Background = UI.Brush(Look.Fill), BorderBrush = UI.Brush(Look.Outline), BorderThickness = new Thickness(1), Padding = line ? new Thickness(0) : new Thickness(0),
+            Cursor = Cursors.Hand, Child = body, ToolTip = file.Name };
+        if (!line) thumb.Margin = new Thickness(0);
         AutomationProperties.SetName(card, file.Name);
         card.MouseEnter += (_, _) => delete.Visibility = Visibility.Visible;
         card.MouseLeave += (_, _) => delete.Visibility = Visibility.Hidden;
