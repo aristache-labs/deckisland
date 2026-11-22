@@ -70,7 +70,9 @@ public partial class MainWindow
             _against = Field(Loc.T("对比颜色", "Second colour"), previous?._against.Text ?? "");
             _against.FontSize = 11;
             _secondColour = InputRow(_against, "", Loc.T("取对比色", "Pick contrast colour"), compact: true);
-            var custom = new StackPanel { Children = { ContrastLine(_secondColour, _customResult), _customAdjustment } };
+            // The suggestion follows the badges on the same line, as on the white and black rows.
+            _customAdjustment.Margin = new Thickness(12, 0, 0, 0); _customAdjustment.VerticalAlignment = VerticalAlignment.Center;
+            var custom = new WrapPanel { Children = { ContrastLine(_secondColour, _customResult), _customAdjustment } };
             _values.Margin = new Thickness(0, 9, 0, 0);
             _contrast.Children.Add(_standardContrast);
             _contrast.Children.Add(ContrastCard(custom, _customApply));
@@ -221,6 +223,8 @@ public partial class MainWindow
             {
                 row.Width = 108;
                 row.Margin = new Thickness(0, 0, 6, 0);
+                // As tall as the contrast samples beside it, so this row is as tall as the white and black rows.
+                field.Height = picker.Height = 24;
                 var placeholder = Text(Loc.T("第二种颜色", "Second colour"), 11, Look.Tertiary);
                 placeholder.VerticalAlignment = VerticalAlignment.Center;
                 placeholder.Margin = new Thickness(7, 0, 0, 0);
@@ -472,8 +476,7 @@ public partial class MainWindow
             var row = new WrapPanel();
             var label = Text(title, 12, Look.Secondary);
             label.Width = 108;
-            label.LineHeight = 42;
-            label.LineStackingStrategy = LineStackingStrategy.BlockLineHeight;
+            label.VerticalAlignment = VerticalAlignment.Center;
             row.Children.Add(label);
             foreach (double offset in offsets)
             {
@@ -485,12 +488,14 @@ public partial class MainWindow
                 button.Background = Brushes.Transparent;
                 button.ToolTip = related.Hex;
                 AutomationProperties.SetName(button, $"{Loc.T("使用", "Use")} {related.Hex}");
-                var sample = new Border { Background = BrushFor(related), Width = 66, Height = 25, CornerRadius = new CornerRadius(6) };
-                var value = Text(related.Hex, 10, Look.Secondary);
-                value.TextAlignment = TextAlignment.Center;
-                value.FontFamily = new FontFamily("Consolas");
-                value.Margin = new Thickness(0, 3, 0, 0);
-                button.Content = new StackPanel { Children = { sample, value } };
+                // The code is written on the colour, in black or white, whichever reads better on it.
+                var value = new TextBlock
+                {
+                    Text = related.Hex, FontSize = 10, FontFamily = new FontFamily("Consolas"),
+                    Foreground = related.Contrast(White) >= related.Contrast(Black) ? Brushes.White : Brushes.Black,
+                    HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center
+                };
+                button.Content = new Border { Background = BrushFor(related), Width = 66, Height = 25, CornerRadius = new CornerRadius(6), Child = value };
                 row.Children.Add(button);
             }
             _harmonies.Children.Add(ColourCard(row));
