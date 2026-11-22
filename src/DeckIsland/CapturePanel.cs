@@ -26,7 +26,8 @@ public partial class MainWindow
     private const string StopGlyph = "M3.5,3.5 H10.5 V10.5 H3.5 Z";
     private const string Off = "#E5484D";
     private const string DeleteGlyph = "M3,4 H11 M5,4 V2 H9 V4 M4,4 L5,12 H9 L10,4 M7,6 V10";
-    private int _captureScreen, _captureFilter;
+    // What each section takes: 0 is every screen, then each display. Screenshots and recordings choose apart.
+    private int _captureScreen, _captureVideoScreen, _captureFilter;
     // Select mode: clicking a capture marks it instead of opening it; Delete sends the marked ones to the Recycle Bin.
     private bool _captureSelecting;
     private readonly HashSet<string> _captureSelected = new(StringComparer.OrdinalIgnoreCase);
@@ -82,6 +83,7 @@ public partial class MainWindow
     {
         var displays = Native.Displays.Current();
         _captureScreen = Math.Clamp(_captureScreen, 0, displays.Count);
+        _captureVideoScreen = Math.Clamp(_captureVideoScreen, 0, displays.Count);
         var root = new DockPanel();
 
         // One choice of screens for both screenshots and recordings: all of them (one wide picture, or a video file per screen) or one.
@@ -95,7 +97,7 @@ public partial class MainWindow
         _captureStatus = new TextBlock { Text = _captureMessage, FontSize = 11, Foreground = UI.Brush(Look.Secondary), VerticalAlignment = VerticalAlignment.Center,
             TextTrimming = TextTrimming.CharacterEllipsis, MaxWidth = 260 };
         AutomationProperties.SetLiveSetting(_captureStatus, AutomationLiveSetting.Polite);
-        AddCaptureRow(root, Loc.T("屏幕", "Screen"), screenChip, shot, region, _captureStatus);
+        AddCaptureRow(root, Loc.T("截图", "Screenshot"), screenChip, shot, region, _captureStatus);
 
         // Video: display, 30/60, microphone, system sound, Record.
         var recording = _app.Recording;
@@ -111,7 +113,10 @@ public partial class MainWindow
         var record = CaptureAction("", recording is null ? Loc.T("录制", "Record") : StopLabel(recording), () => _ = ToggleRecording(displays), filled: true);
         _captureRecordLabel = recording is null ? null : (TextBlock)((StackPanel)record.Content).Children[^1];
         foreach (var part in new FrameworkElement[] { rates, mic, sound }) part.IsEnabled = recording is null;
-        AddCaptureRow(root, Loc.T("视频", "Video"), PanelSegmentTrack(rates), mic, sound, record);
+        var videoChip = CategoryChip(screens[_captureVideoScreen], anchor => ShowAnchoredMenu(anchor,
+            [.. screens.Select((label, i) => (label, i == _captureVideoScreen))], index => { _captureVideoScreen = index; _captureAppearance = default; RenderCapture(); }));
+        videoChip.IsEnabled = recording is null;
+        AddCaptureRow(root, Loc.T("视频", "Video"), videoChip, PanelSegmentTrack(rates), mic, sound, record);
 
         // The filter and the status.
         var filters = new StackPanel { Orientation = Orientation.Horizontal };
@@ -278,7 +283,7 @@ public partial class MainWindow
         {
             if (_app.Recording is not null) { await _app.StopRecording(); CaptureSays(Loc.T("录屏已保存", "Recording saved")); return; }
             if (displays.Count == 0) return;
-            await _app.StartRecording(_captureScreen == 0 || _captureScreen > displays.Count ? displays : [displays[_captureScreen - 1]]);
+            await _app.StartRecording(_captureVideoScreen == 0 || _captureVideoScreen > displays.Count ? displays : [displays[_captureVideoScreen - 1]]);
             CaptureSays("");
         }
         // Any failure to start or finish is shown, not left to end the app later as an unobserved task.

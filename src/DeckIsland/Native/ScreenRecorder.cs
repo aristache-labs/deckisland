@@ -103,6 +103,8 @@ internal sealed class ScreenRecorder
 
     public static async Task<ScreenRecorder> Start(IReadOnlyList<DisplayInfo> displays, string path, RecordingOptions options)
     {
+        // Hiding the border needs the user's consent once (GraphicsCaptureAccess, Borderless); without it Windows keeps the border.
+        if (!options.Border) await Task.Run(AskBorderless);
         var recorder = new ScreenRecorder(displays, path, options);
         try { await recorder.Begin(); }
         catch { await recorder.Stop(); throw; }
@@ -350,6 +352,42 @@ internal sealed class ScreenRecorder
         try { Vtable<PutBool>(third, 7)(third, 0); }
         finally { Marshal.Release(third); }
     }
+
+    // GraphicsCaptureAccess.RequestAccessAsync(Borderless), through its interfaces (the projection this app builds against predates
+    // it). The package must declare graphicsCaptureWithoutBorder (scripts/notifications/AppxManifest.xml). Any failure leaves the border.
+    private static void AskBorderless()
+    {
+        nint name = 0, statics = 0, operation = 0, info = 0;
+        try
+        {
+            const string Class = "Windows.Graphics.Capture.GraphicsCaptureAccess";
+            if (WindowsCreateString(Class, Class.Length, out name) != 0) return;
+            var staticsGuid = new Guid("743ed370-06ec-5040-a58a-901f0f757095");
+            if (RoGetActivationFactory(name, ref staticsGuid, out statics) != 0) return;
+            if (Vtable<RequestAccess>(statics, 6)(statics, 0 /* Borderless */, out operation) != 0) return;
+            var infoGuid = new Guid("00000036-0000-0000-C000-000000000046");
+            if (Marshal.QueryInterface(operation, in infoGuid, out info) != 0) return;
+            // Waits while Windows asks; Started is 0.
+            for (int waited = 0; waited < 120_000; waited += 50)
+            {
+                if (Vtable<GetInt>(info, 7)(info, out int status) != 0 || status != 0) break;
+                Thread.Sleep(50);
+            }
+        }
+        finally
+        {
+            if (info != 0) Marshal.Release(info);
+            if (operation != 0) Marshal.Release(operation);
+            if (statics != 0) Marshal.Release(statics);
+            if (name != 0) WindowsDeleteString(name);
+        }
+    }
+
+    [UnmanagedFunctionPointer(CallingConvention.StdCall)] private delegate int RequestAccess(nint self, int kind, out nint operation);
+    [UnmanagedFunctionPointer(CallingConvention.StdCall)] private delegate int GetInt(nint self, out int value);
+    [DllImport("combase.dll", CharSet = CharSet.Unicode)] private static extern int WindowsCreateString(string text, int length, out nint hstring);
+    [DllImport("combase.dll")] private static extern int WindowsDeleteString(nint hstring);
+    [DllImport("combase.dll")] private static extern int RoGetActivationFactory(nint classId, ref Guid iid, out nint factory);
 
     private static (IDirect3DDevice Device, nint D3dDevice, nint Context) CreateDevice()
     {

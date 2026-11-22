@@ -1,13 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- A sparse package: it gives DeckIsland.exe a package identity, with the program itself staying where it is
      (register.ps1 passes its folder as the external location). The identity is what lets Windows grant the
-     userNotificationListener capability, which the island's "Mirror notifications" needs. -->
+     userNotificationListener capability, which the island's "Mirror notifications" needs, and graphicsCaptureWithoutBorder,
+     which lets the Capture tab record without Windows' yellow border (Windows asks the user once). -->
 <Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
          xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
          xmlns:uap10="http://schemas.microsoft.com/appx/manifest/uap/windows10/10"
+         xmlns:uap11="http://schemas.microsoft.com/appx/manifest/uap/windows10/11"
          xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
-         IgnorableNamespaces="uap uap10 rescap">
-  <Identity Name="DeckIsland.Notifications" Publisher="CN=DeckIsland Dev" Version="1.0.0.0" ProcessorArchitecture="x64" />
+         IgnorableNamespaces="uap uap10 uap11 rescap">
+  <Identity Name="DeckIsland.Notifications" Publisher="CN=DeckIsland Dev" Version="1.0.1.0" ProcessorArchitecture="x64" />
   <Properties>
     <DisplayName>DeckIsland</DisplayName>
     <PublisherDisplayName>DeckIsland</PublisherDisplayName>
@@ -25,6 +27,7 @@
     </Application>
   </Applications>
   <Capabilities>
+    <uap11:Capability Name="graphicsCaptureWithoutBorder" />
     <rescap:Capability Name="runFullTrust" />
     <rescap:Capability Name="userNotificationListener" />
   </Capabilities>
