@@ -1,3 +1,5 @@
+using System.IO;
+using DeckIsland.Core;
 using System.Windows;
 using System.Windows.Threading;
 using DeckIsland.Native;
@@ -29,15 +31,13 @@ public partial class App
 
     internal void CaptureSaved() => CapturesChanged?.Invoke();
 
-    internal async Task StartRecording(DisplayInfo display)
+    internal async Task StartRecording(IReadOnlyList<DisplayInfo> displays)
     {
-        if (Recording is not null) return;
+        if (Recording is not null || displays.Count == 0) return;
         _recordHold = HoldCaptureExclusion();
-        try
-        {
-            Recording = await ScreenRecorder.Start(display.Handle, ScreenShots.NewPath(ScreenShots.VideoFolder, "Recording", ".mp4"),
-                Settings.CaptureFps, Settings.CaptureSystemAudio, Settings.CaptureMic);
-        }
+        double bits = Settings.CaptureQuality switch { CaptureQuality.Low => 0.04, CaptureQuality.High => 0.14, _ => 0.08 };
+        var options = new RecordingOptions(Settings.CaptureFps, Settings.CaptureMaxHeight, bits, Settings.CaptureSystemAudio, Settings.CaptureMic, Settings.CaptureBorder);
+        try { Recording = await ScreenRecorder.Start(displays, ScreenShots.NewPath(ScreenShots.VideoFolder, "Recording", ".mp4"), options); }
         catch
         {
             _recordHold.Dispose(); _recordHold = null;
@@ -57,11 +57,15 @@ public partial class App
     internal async Task StopRecording()
     {
         if (Recording is not { } recording) return;
+        Recording = null;
         _recordTick.Stop();
-        try { await recording.Stop(); }
+        try
+        {
+            await recording.Stop();
+            if (Settings.CaptureToShelf && File.Exists(recording.Path)) Shelf.AddFiles([recording.Path], null);
+        }
         finally
         {
-            Recording = null;
             _recordHold?.Dispose(); _recordHold = null;
             RecordingChanged?.Invoke(true);
             CapturesChanged?.Invoke();

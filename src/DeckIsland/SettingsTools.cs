@@ -37,6 +37,39 @@ public sealed partial class SettingsWindow
                 Loc.T("换算经过的货币，也是默认货币。", "The pivot for every pair, and the default.")));
     }
 
+    // The Capture tab's options as one compact card, like the widgets' option cards: the tab's switch in the header, the three
+    // choices side by side, then the switches in two columns.
+    private void CaptureSettings()
+    {
+        CaptureImageFormat[] formats = [CaptureImageFormat.Png, CaptureImageFormat.Jpeg];
+        var format = ProfileCombo(Loc.T("截图格式", "Screenshot format"), [Loc.T("PNG（无损）", "PNG (lossless)"), Loc.T("JPEG（更小）", "JPEG (smaller)")],
+            Array.IndexOf(formats, S.CaptureImageFormat), index => Change(s => s.CaptureImageFormat = formats[index]), width: 210);
+        int[] heights = [0, 1440, 1080, 720];
+        var resolution = ProfileCombo(Loc.T("录屏分辨率", "Recording resolution"), [Loc.T("屏幕原始大小", "Screens' own size"), "1440p", "1080p", "720p"],
+            Math.Max(0, Array.IndexOf(heights, S.CaptureMaxHeight)), index => Change(s => s.CaptureMaxHeight = heights[index]), width: 210);
+        CaptureQuality[] qualities = [CaptureQuality.Low, CaptureQuality.Standard, CaptureQuality.High];
+        var quality = ProfileCombo(Loc.T("录屏质量", "Recording quality"), [Loc.T("低（文件小）", "Low (small files)"), Loc.T("标准", "Standard"), Loc.T("高", "High")],
+            Array.IndexOf(qualities, S.CaptureQuality), index => Change(s => s.CaptureQuality = qualities[index]), width: 210);
+        var enabled = HeaderSwitch(Loc.T("截图与录屏标签页", "Capture tab"), S.CapturePage, value => Change(s => s.CapturePage = value));
+        _cardBody = null;
+        Target.Children.Add(OptionsCard(Loc.T("截图与录屏", "Capture"),
+            Loc.T("截图存到“图片\\屏幕截图”，录屏存到“视频\\DeckIsland\\Recordings”。", "Screenshots go to Pictures\\Screenshots, recordings to Videos\\DeckIsland\\Recordings."), enabled,
+            Columns(
+                Field(Loc.T("截图格式", "Screenshot format"), format, Loc.T("PNG 保留每个像素，JPEG 小得多。", "PNG keeps every pixel; JPEG is much smaller.")),
+                Field(Loc.T("录屏分辨率", "Recording resolution"), resolution, Loc.T("多块屏幕录在同一个视频里。", "Several screens go into one video.")),
+                Field(Loc.T("录屏质量", "Recording quality"), quality, Loc.T("MP4 · H.264 视频 · AAC 48 kHz 声音。", "MP4 · H.264 video · AAC 48 kHz sound."))),
+            Rule(),
+            Columns(
+                SwitchRow(Loc.T("复制到剪贴板", "Copy to the clipboard"), Loc.T("截图也会出现在剪贴板历史里。", "Screenshots also show in the clipboard history."),
+                    S.CaptureCopy, value => Change(s => s.CaptureCopy = value)),
+                SwitchRow(Loc.T("添加到中转站", "Add to the Shelf"), Loc.T("截图和录屏放进文件中转。", "Screenshots and recordings go to the file transfer."),
+                    S.CaptureToShelf, value => Change(s => s.CaptureToShelf = value))),
+            Columns(
+                SwitchRow(Loc.T("显示录制边框", "Show the capture border"), Loc.T("录制时的黄色边框；关闭需要 Windows 11。", "The yellow border while recording; hiding it needs Windows 11."),
+                    S.CaptureBorder, value => Change(s => s.CaptureBorder = value)),
+                new Border())));
+    }
+
     private static readonly string[] CommonCurrencies = ["AUD", "BRL", "CAD", "CHF", "CNY", "CZK", "DKK", "EUR", "GBP", "HKD", "HUF", "INR", "JPY", "KRW", "MXN", "NOK", "NZD", "PLN", "RON", "SEK", "SGD", "TRY", "USD", "ZAR"];
 
     private void TerminalSettings()

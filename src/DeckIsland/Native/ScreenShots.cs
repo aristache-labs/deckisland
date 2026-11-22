@@ -44,12 +44,12 @@ internal static class ScreenShots
 
     public static BitmapSource Grab(Rect pixels) => ScreenColourPicker.Capture((int)pixels.Left, (int)pixels.Top, (int)pixels.Width, (int)pixels.Height);
 
-    public static string Save(BitmapSource image)
+    public static string Save(BitmapSource image, bool jpeg)
     {
         string folder = ShotFolder;
         Directory.CreateDirectory(folder);
-        string path = NewPath(folder, "Screenshot", ".png");
-        var encoder = new PngBitmapEncoder();
+        string path = NewPath(folder, "Screenshot", jpeg ? ".jpg" : ".png");
+        BitmapEncoder encoder = jpeg ? new JpegBitmapEncoder { QualityLevel = 92 } : new PngBitmapEncoder();
         encoder.Frames.Add(BitmapFrame.Create(image));
         using (var file = File.Create(path)) encoder.Save(file);
         return path;

@@ -24,16 +24,18 @@ public partial class MainWindow
     private const string SpeakerGlyph = "M4,9 H8 L13,5 V19 L8,15 H4 Z M16.5,9 A4,4 0 0 1 16.5,15 M19,6.5 A7.5,7.5 0 0 1 19,17.5";
     private const string PauseGlyph = "M5,3 V11 M9,3 V11";
     private const string StopGlyph = "M3.5,3.5 H10.5 V10.5 H3.5 Z";
+    private const string Off = "#E5484D";
     private const string DeleteGlyph = "M3,4 H11 M5,4 V2 H9 V4 M4,4 L5,12 H9 L10,4 M7,6 V10";
-    private int _captureScreen, _captureDisplay, _captureFilter;
+    private int _captureScreen, _captureFilter;
     // Select mode: clicking a capture marks it instead of opening it; Delete sends the marked ones to the Recycle Bin.
     private bool _captureSelecting;
     private readonly HashSet<string> _captureSelected = new(StringComparer.OrdinalIgnoreCase);
     private TextBlock? _captureSelectedCount;
     private (int Generation, string Language, int Version, int Width) _captureAppearance;
     private int _capturesVersion;
-    private TextBlock? _captureStatus, _captureBadgeTime;
+    private TextBlock? _captureStatus, _captureBadgeTime, _captureRecordLabel;
     private string _captureMessage = "";
+    private int _captureMessageVersion;
 
     private void CapturePage_Click(object sender, RoutedEventArgs e) => SelectPage(DeckPage.Capture);
 
@@ -42,6 +44,7 @@ public partial class MainWindow
         void Recording(bool rebuild)
         {
             if (_captureBadgeTime is not null && _app.Recording is { } recording) _captureBadgeTime.Text = CaptureTime(recording.Elapsed);
+            if (_captureRecordLabel is not null && _app.Recording is { } running) _captureRecordLabel.Text = StopLabel(running);
             if (!rebuild) return;
             RenderCompact();
             if (_expanded && CurrentPage == DeckPage.Capture) { _captureAppearance = default; RenderCapture(); }
@@ -51,6 +54,8 @@ public partial class MainWindow
         _app.CapturesChanged += Files;
         Closed += (_, _) => { _app.RecordingChanged -= Recording; _app.CapturesChanged -= Files; };
     }
+
+    private static string StopLabel(ScreenRecorder recording) => Loc.T("停止 ", "Stop · ") + CaptureTime(recording.Elapsed);
 
     private static string CaptureTime(TimeSpan time) => time.TotalHours >= 1 ? time.ToString(@"h\:mm\:ss") : time.ToString(@"mm\:ss");
 
@@ -77,22 +82,23 @@ public partial class MainWindow
     {
         var displays = Native.Displays.Current();
         _captureScreen = Math.Clamp(_captureScreen, 0, displays.Count);
-        _captureDisplay = Math.Clamp(_captureDisplay, 0, Math.Max(0, displays.Count - 1));
         var root = new DockPanel();
 
-        // Screenshot: which screens, Capture, Region.
+        // One choice of screens for both screenshots and recordings: all of them (one wide picture, or a video file per screen) or one.
         var screens = new List<string> { Loc.T("所有屏幕", "All screens") };
         screens.AddRange(displays.Select(d => Native.Displays.Label(d, displays)));
         var screenChip = CategoryChip(screens[_captureScreen], anchor => ShowAnchoredMenu(anchor,
             [.. screens.Select((label, i) => (label, i == _captureScreen))], index => { _captureScreen = index; _captureAppearance = default; RenderCapture(); }));
         var shot = CaptureAction(CameraGlyph, Loc.T("截图", "Capture"), () => _ = TakeScreenshot(displays));
         var region = CaptureAction(RegionGlyph, Loc.T("区域", "Region"), () => _ = TakeRegion(displays));
-        AddCaptureRow(root, Loc.T("截图", "Screenshot"), screenChip, shot, region);
+        // What the last action did ("Saved and copied", an error) shows at the end of this row for a few seconds.
+        _captureStatus = new TextBlock { Text = _captureMessage, FontSize = 11, Foreground = UI.Brush(Look.Secondary), VerticalAlignment = VerticalAlignment.Center,
+            TextTrimming = TextTrimming.CharacterEllipsis, MaxWidth = 260 };
+        AutomationProperties.SetLiveSetting(_captureStatus, AutomationLiveSetting.Polite);
+        AddCaptureRow(root, Loc.T("屏幕", "Screen"), screenChip, shot, region, _captureStatus);
 
         // Video: display, 30/60, microphone, system sound, Record.
         var recording = _app.Recording;
-        var displayChip = CategoryChip(displays.Count > 0 ? Native.Displays.Label(displays[_captureDisplay], displays) : "—", anchor => ShowAnchoredMenu(anchor,
-            [.. displays.Select((d, i) => (Native.Displays.Label(d, displays), i == _captureDisplay))], index => { _captureDisplay = index; _captureAppearance = default; RenderCapture(); }));
         var rates = new StackPanel { Orientation = Orientation.Horizontal };
         foreach (int fps in new[] { 30, 60 })
         {
@@ -102,9 +108,10 @@ public partial class MainWindow
         }
         var mic = CaptureToggle(MicGlyph, Loc.T("麦克风", "Microphone"), Settings.CaptureMic, on => _app.ChangeShared(s => s.CaptureMic = on));
         var sound = CaptureToggle(SpeakerGlyph, Loc.T("系统声音", "System audio"), Settings.CaptureSystemAudio, on => _app.ChangeShared(s => s.CaptureSystemAudio = on));
-        var record = CaptureAction("", recording is null ? Loc.T("录制", "Record") : Loc.T("停止", "Stop"), () => _ = ToggleRecording(displays), filled: true);
-        foreach (var part in new FrameworkElement[] { displayChip, rates, mic, sound }) part.IsEnabled = recording is null;
-        AddCaptureRow(root, Loc.T("视频", "Video"), displayChip, PanelSegmentTrack(rates), mic, sound, record);
+        var record = CaptureAction("", recording is null ? Loc.T("录制", "Record") : StopLabel(recording), () => _ = ToggleRecording(displays), filled: true);
+        _captureRecordLabel = recording is null ? null : (TextBlock)((StackPanel)record.Content).Children[^1];
+        foreach (var part in new FrameworkElement[] { rates, mic, sound }) part.IsEnabled = recording is null;
+        AddCaptureRow(root, Loc.T("视频", "Video"), PanelSegmentTrack(rates), mic, sound, record);
 
         // The filter and the status.
         var filters = new StackPanel { Orientation = Orientation.Horizontal };
@@ -116,9 +123,6 @@ public partial class MainWindow
             StylePanelSegment(button, i == _captureFilter);
             filters.Children.Add(button);
         }
-        _captureStatus = new TextBlock { Text = _captureMessage, FontSize = 11, Foreground = UI.Brush(Look.Secondary), VerticalAlignment = VerticalAlignment.Center,
-            TextTrimming = TextTrimming.CharacterEllipsis, Margin = new Thickness(10, 0, 0, 0) };
-        AutomationProperties.SetLiveSetting(_captureStatus, AutomationLiveSetting.Polite);
         // The layout of the list, at the right, as one button with a menu (Explorer's View).
         var layoutTrack = CategoryChip(CaptureLayoutName(Settings.CaptureLayout), anchor => ShowAnchoredMenu(anchor,
             [.. Enum.GetValues<CaptureLayout>().Select(layout => (CaptureLayoutName(layout), layout == Settings.CaptureLayout))],
@@ -128,8 +132,7 @@ public partial class MainWindow
         _captureSelected.IntersectWith(files.Select(f => f.FullName));
         var selectBar = CaptureSelectBar(files);
         DockPanel.SetDock(selectBar, DockSide.Right);
-        var filterRow = new DockPanel { Margin = new Thickness(0, 4, 0, 8), Children = { PanelSegmentTrack(filters), layoutTrack, selectBar, _captureStatus } };
-        if (_captureSelecting) _captureStatus.Visibility = Visibility.Collapsed;
+        var filterRow = new DockPanel { Margin = new Thickness(0, 4, 0, 8), Children = { PanelSegmentTrack(filters), layoutTrack, selectBar, new Border() } };
         DockPanel.SetDock(filterRow.Children[0], DockSide.Left);
         DockPanel.SetDock(layoutTrack, DockSide.Right);
         DockPanel.SetDock(filterRow, DockSide.Top);
@@ -193,8 +196,12 @@ public partial class MainWindow
         var button = new Button
         {
             Style = (Style)FindResource("WidgetSurfaceButton"), Template = FlatPill(), Width = 28, Height = 28,
-            Background = UI.Brush(on ? Look.FillSelected : Look.Fill), Content = CaptureGlyph(glyph, 13, on ? Look.Primary : Look.Tertiary), ToolTip = label
+            Background = UI.Brush(on ? Look.FillSelected : Look.Fill), ToolTip = label
         };
+        // Off reads as off, not as disabled: the glyph in red with a slash through it.
+        var icon = new Grid { Width = 14, Height = 14, Children = { CaptureGlyph(glyph, 14, on ? Look.Primary : Off) } };
+        if (!on) icon.Children.Add(CaptureGlyph("M3,3 L21,21", 14, Off));
+        button.Content = icon;
         AutomationProperties.SetName(button, label);
         AutomationProperties.SetHelpText(button, on ? Loc.T("开", "On") : Loc.T("关", "Off"));
         button.Click += (_, _) => { change(!on); _captureAppearance = default; RenderCapture(); };
@@ -205,6 +212,9 @@ public partial class MainWindow
     {
         _captureMessage = text;
         if (_captureStatus is not null) _captureStatus.Text = text;
+        if (text.Length == 0) return;
+        int version = ++_captureMessageVersion;
+        _ = Task.Delay(4000).ContinueWith(_ => { if (version == _captureMessageVersion) CaptureSays(""); }, TaskScheduler.FromCurrentSynchronizationContext());
     }
 
     // ---- Screenshots ----
@@ -249,11 +259,14 @@ public partial class MainWindow
 
     private void KeepShot(BitmapSource image)
     {
-        string path = ScreenShots.Save(image);
-        try { Clipboard.SetImage(image); }
-        catch (System.Runtime.InteropServices.COMException) { } // the clipboard was busy; the file is saved anyway
+        string path = ScreenShots.Save(image, Settings.CaptureImageFormat == CaptureImageFormat.Jpeg);
+        if (Settings.CaptureCopy)
+        {
+            try { Clipboard.SetImage(image); }
+            catch (System.Runtime.InteropServices.COMException) { } // the clipboard was busy; the file is saved anyway
+        }
         if (Settings.CaptureToShelf) _app.Shelf.AddFiles([path], null);
-        CaptureSays(Loc.T("已保存并复制", "Saved and copied") + " · " + System.IO.Path.GetFileName(path));
+        CaptureSays((Settings.CaptureCopy ? Loc.T("已保存并复制", "Saved and copied") : Loc.T("已保存", "Saved")) + " · " + System.IO.Path.GetFileName(path));
         _app.CaptureSaved();
     }
 
@@ -265,10 +278,11 @@ public partial class MainWindow
         {
             if (_app.Recording is not null) { await _app.StopRecording(); CaptureSays(Loc.T("录屏已保存", "Recording saved")); return; }
             if (displays.Count == 0) return;
-            await _app.StartRecording(displays[_captureDisplay]);
+            await _app.StartRecording(_captureScreen == 0 || _captureScreen > displays.Count ? displays : [displays[_captureScreen - 1]]);
             CaptureSays("");
         }
-        catch (Exception ex) when (ex is System.Runtime.InteropServices.COMException or IOException or UnauthorizedAccessException or InvalidOperationException or ArgumentException)
+        // Any failure to start or finish is shown, not left to end the app later as an unobserved task.
+        catch (Exception ex) when (ex is not OutOfMemoryException)
         {
             CaptureSays(Loc.T("录屏失败：", "Recording failed: ") + ex.Message);
         }
@@ -314,7 +328,7 @@ public partial class MainWindow
             try { return Directory.Exists(folder) ? new DirectoryInfo(folder).EnumerateFiles(pattern) : []; }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return []; }
         }
-        var shots = filter == 2 ? [] : Of(ScreenShots.ShotFolder, "*.png");
+        var shots = filter == 2 ? [] : Of(ScreenShots.ShotFolder, "*.png").Concat(Of(ScreenShots.ShotFolder, "*.jpg"));
         var videos = filter == 1 ? [] : Of(ScreenShots.VideoFolder, "*.mp4");
         // shortcut: only the newest 40 are listed; a gallery with paging would be needed for more.
         return [.. shots.Concat(videos).OrderByDescending(f => f.LastWriteTime).Take(40)];

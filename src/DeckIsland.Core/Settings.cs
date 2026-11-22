@@ -60,6 +60,9 @@ public enum SettingsTheme { System, Light, Dark }
 public enum DeckPage { Usage, Music, Monitor, Clipboard, Devices, Weather, Focus, Reminders, Widgets, Notifications, Calls, Scratchpad, Converter, Terminal, Colour, Capture }
 // How the Capture tab lists past captures, as Explorer's View menu: Grid (small icons), List (one line, in columns), Details (one row each, with columns), Tiles.
 public enum CaptureLayout { Grid, List, Details, Tiles }
+public enum CaptureImageFormat { Png, Jpeg }
+// The bit rate a recording is encoded at, per pixel and frame (CaptureQualities).
+public enum CaptureQuality { Low, Standard, High }
 public enum DefaultDeckPage { Last, Usage, Music, Monitor, Clipboard, Devices, Weather, Focus, Reminders, Widgets, Notifications, Calls, Scratchpad, Converter, Terminal, Colour, Capture }
 // What the mouse wheel does over the expanded panel. Saved as numbers, so new members go at the end.
 public enum MouseWheelAction { None, Pages, Volume }
@@ -795,6 +798,13 @@ public sealed class DeckSettings
     public bool CaptureMic { get; set; }
     public bool CaptureSystemAudio { get; set; } = true;
     public bool CaptureToShelf { get; set; }
+    public bool CaptureCopy { get; set; } = true;
+    public CaptureImageFormat CaptureImageFormat { get; set; } = CaptureImageFormat.Png;
+    // The most a recording is encoded at, by height; 0 keeps the screens' own size.
+    public int CaptureMaxHeight { get; set; }
+    public CaptureQuality CaptureQuality { get; set; } = CaptureQuality.Standard;
+    // Windows' yellow border around what is being recorded; turning it off needs Windows 11.
+    public bool CaptureBorder { get; set; } = true;
     public CaptureLayout CaptureLayout { get; set; } = CaptureLayout.Grid;
     // Settings → Display: every DeckIsland window is left out of screen sharing and recordings (WDA_EXCLUDEFROMCAPTURE).
     public bool HideFromCapture { get; set; }
@@ -1095,6 +1105,9 @@ public sealed class DeckSettings
         CaptureHeight = double.IsFinite(CaptureHeight) ? Math.Clamp(CaptureHeight, DeckPages.MinHeight, DeckPages.MaxHeight) : DefaultCaptureHeight;
         if (CaptureFps is not (30 or 60)) CaptureFps = 30;
         if (!Enum.IsDefined(CaptureLayout)) CaptureLayout = CaptureLayout.Grid;
+        if (!Enum.IsDefined(CaptureImageFormat)) CaptureImageFormat = CaptureImageFormat.Png;
+        if (!Enum.IsDefined(CaptureQuality)) CaptureQuality = CaptureQuality.Standard;
+        if (CaptureMaxHeight is not (0 or 1440 or 1080 or 720)) CaptureMaxHeight = 0;
         TerminalWidth = double.IsFinite(TerminalWidth) ? Math.Clamp(TerminalWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : DefaultTerminalWidth;
         TerminalHeight = double.IsFinite(TerminalHeight) ? Math.Clamp(TerminalHeight, DeckPages.MinHeight, DeckPages.MaxHeight) : DefaultTerminalHeight;
         if (!Enum.IsDefined(TerminalShell)) TerminalShell = TerminalShell.PowerShell7;

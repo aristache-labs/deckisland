@@ -21,6 +21,7 @@ public sealed partial class SettingsWindow
         ScratchpadSettings();
         ConverterSettings();
         TerminalSettings();
+        CaptureSettings();
     }
 
     private void WidgetSizeControls() => PageSizeControls(DeckPage.Widgets, WidgetLayout.Title);
