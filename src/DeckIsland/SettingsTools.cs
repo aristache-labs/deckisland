@@ -50,6 +50,9 @@ public sealed partial class SettingsWindow
         CaptureQuality[] qualities = [CaptureQuality.Low, CaptureQuality.Standard, CaptureQuality.High];
         var quality = ProfileCombo(Loc.T("录屏质量", "Recording quality"), [Loc.T("低（文件小）", "Low (small files)"), Loc.T("标准", "Standard"), Loc.T("高", "High")],
             Array.IndexOf(qualities, S.CaptureQuality), index => Change(s => s.CaptureQuality = qualities[index]), width: 210);
+        int[] rates = [30, 60];
+        var fps = ProfileCombo(Loc.T("录屏帧率", "Recording frame rate"), ["30 fps", "60 fps"],
+            Math.Max(0, Array.IndexOf(rates, S.CaptureFps)), index => Change(s => s.CaptureFps = rates[index]), width: 210);
         var enabled = HeaderSwitch(Loc.T("截图与录屏标签页", "Capture tab"), S.CapturePage, value => Change(s => s.CapturePage = value));
         _cardBody = null;
         Target.Children.Add(OptionsCard(Loc.T("截图与录屏", "Capture"),
@@ -58,6 +61,9 @@ public sealed partial class SettingsWindow
                 Field(Loc.T("截图格式", "Screenshot format"), format, Loc.T("PNG 保留每个像素，JPEG 小得多。", "PNG keeps every pixel; JPEG is much smaller.")),
                 Field(Loc.T("录屏分辨率", "Recording resolution"), resolution, Loc.T("多块屏幕录在同一个视频里。", "Several screens go into one video.")),
                 Field(Loc.T("录屏质量", "Recording quality"), quality, Loc.T("MP4 · H.264 视频 · AAC 48 kHz 声音。", "MP4 · H.264 video · AAC 48 kHz sound."))),
+            Columns(
+                Field(Loc.T("录屏帧率", "Recording frame rate"), fps, Loc.T("60 fps 更流畅，文件更大。", "60 fps is smoother, with bigger files.")),
+                new Border(), new Border()),
             Rule(),
             Columns(
                 SwitchRow(Loc.T("复制到剪贴板", "Copy to the clipboard"), Loc.T("截图也会出现在剪贴板历史里。", "Screenshots also show in the clipboard history."),

@@ -100,20 +100,11 @@ public partial class MainWindow
         AutomationProperties.SetLiveSetting(_captureStatus, AutomationLiveSetting.Polite);
 
         var recording = _app.Recording;
-        var rates = new StackPanel { Orientation = Orientation.Horizontal };
-        foreach (int fps in new[] { 30, 60 })
-        {
-            var button = PanelSegment(fps + " fps", () => { _app.ChangeShared(s => s.CaptureFps = fps); _captureAppearance = default; RenderCapture(); });
-            StylePanelSegment(button, Settings.CaptureFps == fps);
-            button.Padding = new Thickness(11, 0, 11, 0);
-            rates.Children.Add(button);
-        }
-        var rateTrack = PanelSegmentTrack(rates);
         var mic = CaptureToggle(MicGlyph, Loc.T("麦克风", "Microphone"), Settings.CaptureMic, on => _app.ChangeShared(s => s.CaptureMic = on));
         var sound = CaptureToggle(SpeakerGlyph, Loc.T("系统声音", "System audio"), Settings.CaptureSystemAudio, on => _app.ChangeShared(s => s.CaptureSystemAudio = on));
         var videoChip = CategoryChip(screens[_captureVideoScreen], anchor => ShowAnchoredMenu(anchor,
             [.. screens.Select((label, i) => (label, i == _captureVideoScreen))], index => { _captureVideoScreen = index; _captureAppearance = default; RenderCapture(); }));
-        foreach (var part in new FrameworkElement[] { videoChip, rateTrack, mic, sound }) part.IsEnabled = recording is null;
+        foreach (var part in new FrameworkElement[] { videoChip, mic, sound }) part.IsEnabled = recording is null;
         // Idle: Record. While recording: Pause (or Resume) and Stop, which counts the time beside a red dot.
         FrameworkElement[] videoActions;
         if (recording is null)
@@ -134,7 +125,7 @@ public partial class MainWindow
         foreach (var width in new[] { new GridLength(84), new GridLength(240), GridLength.Auto, new GridLength(1, GridUnitType.Star), GridLength.Auto })
             top.ColumnDefinitions.Add(new ColumnDefinition { Width = width });
         CaptureRow(top, 0, Loc.T("截图", "Screenshot"), screenChip, [], _captureStatus, [shot, region]);
-        CaptureRow(top, 1, Loc.T("视频", "Video"), videoChip, [rateTrack, mic, sound], null, videoActions);
+        CaptureRow(top, 1, Loc.T("视频", "Video"), videoChip, [mic, sound], null, videoActions);
         DockPanel.SetDock(top, DockSide.Top);
         root.Children.Add(top);
         var rule = new Border { Height = 1, Background = UI.Brush(Look.Outline), Margin = new Thickness(0, 6, 0, 10) };
