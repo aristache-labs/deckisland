@@ -90,7 +90,8 @@ public partial class MainWindow
         // Two rows on one grid: the label, the screen picker (the same width in both, so they line up), the row's own options,
         // then its actions at the right edge. A rule divides them from the list below.
         var screens = new List<string> { Loc.T("所有屏幕", "All screens") };
-        screens.AddRange(displays.Select(d => Native.Displays.Label(d, displays)));
+        // Short names (no resolution), so the picker stays narrow.
+        screens.AddRange(displays.Select(d => displays.Count(o => o.Name == d.Name) > 1 ? $"{d.Name} {d.Device.Replace(@"\\.\DISPLAY", "")}" : d.Name));
         var screenChip = CategoryChip(screens[_captureScreen], anchor => ShowAnchoredMenu(anchor,
             [.. screens.Select((label, i) => (label, i == _captureScreen))], index => { _captureScreen = index; _captureAppearance = default; RenderCapture(); }));
         var shot = CaptureAction(CameraGlyph, Loc.T("截图", "Capture"), () => _ = TakeScreenshot(displays));
@@ -123,12 +124,10 @@ public partial class MainWindow
         }
 
         var top = new Grid { Margin = new Thickness(0, 0, 0, 2) };
-        // Left column: the section switch, with the screen picker under it (both as wide as the wider one). Beside them, centred:
-        // the section's actions (Capture and Region, or Record and then mic and speaker). The status note sits under them at the right.
-        top.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        top.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        top.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        top.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        // One row: the section switch at the left, the section's actions centred (Record or Pause and Stop, then mic and
+        // speaker; or Capture and Region), the screen picker at the right with the status note just before it.
+        foreach (var width in new[] { GridLength.Auto, new GridLength(1, GridUnitType.Star), GridLength.Auto, new GridLength(1, GridUnitType.Star), GridLength.Auto })
+            top.ColumnDefinitions.Add(new ColumnDefinition { Width = width });
         // One section at a time, switched at the left: Screenshot or Video. A running recording keeps Video shown.
         if (recording is not null) _captureVideoMode = true;
         var modes = new StackPanel { Orientation = Orientation.Horizontal };
@@ -140,16 +139,19 @@ public partial class MainWindow
             modes.Children.Add(button);
         }
         var modeTrack = PanelSegmentTrack(modes);
+        modeTrack.Margin = new Thickness(0, 0, 10, 0);
         FrameworkElement picker = _captureVideoMode ? videoChip : screenChip;
+        picker.Width = 170; picker.Margin = new Thickness(0);
         FrameworkElement[] actions = _captureVideoMode ? [.. videoActions, mic, sound] : [shot, region];
-        var centre = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
-        for (int i = 0; i < actions.Length; i++) { actions[i].Margin = new Thickness(i == 0 ? 0 : 8, 0, 0, 0); actions[i].VerticalAlignment = VerticalAlignment.Center; centre.Children.Add(actions[i]); }
-        picker.Margin = new Thickness(0, 8, 0, 0);
-        _captureStatus.HorizontalAlignment = HorizontalAlignment.Right; _captureStatus.Margin = new Thickness(12, 8, 0, 0);
-        Grid.SetColumn(centre, 1);
-        Grid.SetRow(picker, 1);
-        Grid.SetRow(_captureStatus, 1); Grid.SetColumn(_captureStatus, 1);
-        top.Children.Add(modeTrack); top.Children.Add(centre); top.Children.Add(picker); top.Children.Add(_captureStatus);
+        var centre = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+        for (int i = 0; i < actions.Length; i++) { actions[i].Margin = new Thickness(i == 0 ? 0 : 8, 0, 0, 0); centre.Children.Add(actions[i]); }
+        _captureStatus.HorizontalAlignment = HorizontalAlignment.Right; _captureStatus.Margin = new Thickness(8, 0, 10, 0);
+        var cells = new FrameworkElement?[] { modeTrack, null, centre, _captureStatus, picker };
+        for (int i = 0; i < cells.Length; i++)
+        {
+            if (cells[i] is not { } cell) continue;
+            cell.VerticalAlignment = VerticalAlignment.Center; Grid.SetColumn(cell, i); top.Children.Add(cell);
+        }
         DockPanel.SetDock(top, DockSide.Top);
         root.Children.Add(top);
         var rule = new Border { Height = 1, Background = UI.Brush(Look.Outline), Margin = new Thickness(0, 6, 0, 10) };
