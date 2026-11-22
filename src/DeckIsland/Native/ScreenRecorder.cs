@@ -35,7 +35,7 @@ internal sealed class ScreenRecorder
     private readonly Queue<(MediaStreamSourceSampleRequest Request, MediaStreamSourceSampleRequestDeferral Deferral)> _audioRequests = new();
     private (MediaStreamSourceSampleRequest Request, MediaStreamSourceSampleRequestDeferral Deferral, long Since)? _videoRequest;
     private Held? _last;
-    private TimeSpan _lastStamp = TimeSpan.MinValue, _pausedTotal, _pausedAt;
+    private TimeSpan _lastStamp = TimeSpan.FromDays(-1), _pausedTotal, _pausedAt;
     private long _audioFrames;
     private bool _stopping;
     private Task _transcode = Task.CompletedTask, _audioLoop = Task.CompletedTask;
@@ -75,7 +75,7 @@ internal sealed class ScreenRecorder
         _source.CanSeek = false;
         _source.Starting += (_, e) => e.Request.SetActualStartPosition(TimeSpan.Zero);
         _source.SampleRequested += SampleRequested;
-        _pool.FrameArrived += (_, _) => FrameArrived();
+        _pool.FrameArrived += (_, _) => { try { FrameArrived(); } catch (Exception ex) when (ex is COMException or ArgumentException or ObjectDisposedException or InvalidOperationException) { } };
     }
 
     public static async Task<ScreenRecorder> Start(IntPtr monitor, string path, int fps, bool system, bool mic)
@@ -106,7 +106,11 @@ internal sealed class ScreenRecorder
         _transcode = prepared.TranscodeAsync().AsTask().ContinueWith(async done => { await file.DisposeAsync(); await done; }).Unwrap();
         if (_mixer is not null) _audioLoop = Task.Run(AudioLoop);
         // A still screen sends no frames; the last one is sent again so the sound keeps going.
-        _stall = new Timer(_ => ResendLast(), null, 100, 100);
+        _stall = new Timer(_ =>
+        {
+            // A timer callback that throws ends the process; a failed resend only skips a frame.
+            try { ResendLast(); } catch (Exception ex) when (ex is COMException or ArgumentException or ObjectDisposedException or InvalidOperationException) { }
+        }, null, 100, 100);
     }
 
     public void Pause(bool pause)

@@ -26,7 +26,11 @@ public partial class MainWindow
     private const string StopGlyph = "M3.5,3.5 H10.5 V10.5 H3.5 Z";
     private const string DeleteGlyph = "M3,4 H11 M5,4 V2 H9 V4 M4,4 L5,12 H9 L10,4 M7,6 V10";
     private int _captureScreen, _captureDisplay, _captureFilter;
-    private (int Generation, string Language, int Version) _captureAppearance;
+    // Select mode: clicking a capture marks it instead of opening it; Delete sends the marked ones to the Recycle Bin.
+    private bool _captureSelecting;
+    private readonly HashSet<string> _captureSelected = new(StringComparer.OrdinalIgnoreCase);
+    private TextBlock? _captureSelectedCount;
+    private (int Generation, string Language, int Version, int Width) _captureAppearance;
     private int _capturesVersion;
     private TextBlock? _captureStatus, _captureBadgeTime;
     private string _captureMessage = "";
@@ -62,7 +66,7 @@ public partial class MainWindow
         ApplyHeader(header with { Row = Math.Max(header.Row, header.Height) });
         CaptureContent.Margin = new Thickness(header.Side, 14, header.Side, 12);
         ShowHeaderPin(header);
-        var appearance = (Look.Generation, Loc.Language, _capturesVersion);
+        var appearance = (Look.Generation, Loc.Language, _capturesVersion, (int)ContentCanvas.Width);
         if (_captureAppearance == appearance && CaptureContent.Children.Count > 0) return;
         _captureAppearance = appearance;
         CaptureContent.Children.Clear();
@@ -115,42 +119,39 @@ public partial class MainWindow
         _captureStatus = new TextBlock { Text = _captureMessage, FontSize = 11, Foreground = UI.Brush(Look.Secondary), VerticalAlignment = VerticalAlignment.Center,
             TextTrimming = TextTrimming.CharacterEllipsis, Margin = new Thickness(10, 0, 0, 0) };
         AutomationProperties.SetLiveSetting(_captureStatus, AutomationLiveSetting.Polite);
-        // The layout of the list, at the right: grid, one line each, or one row.
-        var layouts = new StackPanel { Orientation = Orientation.Horizontal };
-        foreach (var (layout, glyph, name) in new[] {
-            (CaptureLayout.Grid, "M3,3 H10 V10 H3 Z M14,3 H21 V10 H14 Z M3,14 H10 V21 H3 Z M14,14 H21 V21 H14 Z", Loc.T("网格", "Grid")),
-            (CaptureLayout.List, "M3,5 H6 M9,5 H21 M3,12 H6 M9,12 H21 M3,19 H6 M9,19 H21", Loc.T("单行", "One line")),
-            (CaptureLayout.Row, "M2,6 H8 V18 H2 Z M10,6 H16 V18 H10 Z M18,6 H22 M18,18 H22", Loc.T("横排", "Row")) })
-        {
-            var button = PanelSegment("", () => { _app.ChangeShared(s => s.CaptureLayout = layout); _captureAppearance = default; RenderCapture(); });
-            StylePanelSegment(button, Settings.CaptureLayout == layout);
-            button.Padding = new Thickness(9, 0, 9, 0);
-            button.Content = CaptureGlyph(glyph, 12, Settings.CaptureLayout == layout ? Look.Hex("surface") : Look.Secondary);
-            button.ToolTip = name;
-            AutomationProperties.SetName(button, name);
-            layouts.Children.Add(button);
-        }
-        var layoutTrack = PanelSegmentTrack(layouts);
+        // The layout of the list, at the right, as one button with a menu (Explorer's View).
+        var layoutTrack = CategoryChip(CaptureLayoutName(Settings.CaptureLayout), anchor => ShowAnchoredMenu(anchor,
+            [.. Enum.GetValues<CaptureLayout>().Select(layout => (CaptureLayoutName(layout), layout == Settings.CaptureLayout))],
+            index => { _app.ChangeShared(s => s.CaptureLayout = (CaptureLayout)index); _captureAppearance = default; RenderCapture(); }));
         layoutTrack.Margin = new Thickness(8, 0, 0, 0);
-        var filterRow = new DockPanel { Margin = new Thickness(0, 4, 0, 8), Children = { PanelSegmentTrack(filters), layoutTrack, _captureStatus } };
+        var files = CaptureFiles(_captureFilter);
+        _captureSelected.IntersectWith(files.Select(f => f.FullName));
+        var selectBar = CaptureSelectBar(files);
+        DockPanel.SetDock(selectBar, DockSide.Right);
+        var filterRow = new DockPanel { Margin = new Thickness(0, 4, 0, 8), Children = { PanelSegmentTrack(filters), layoutTrack, selectBar, _captureStatus } };
+        if (_captureSelecting) _captureStatus.Visibility = Visibility.Collapsed;
         DockPanel.SetDock(filterRow.Children[0], DockSide.Left);
         DockPanel.SetDock(layoutTrack, DockSide.Right);
         DockPanel.SetDock(filterRow, DockSide.Top);
         root.Children.Add(filterRow);
 
-        // The captures, newest first.
+        // The captures, newest first, in as many columns as the page's width holds, so both sides are filled.
         var mode = Settings.CaptureLayout;
-        Panel cards = mode switch { CaptureLayout.List => new StackPanel(), CaptureLayout.Row => new StackPanel { Orientation = Orientation.Horizontal }, _ => new WrapPanel() };
-        var files = CaptureFiles(_captureFilter);
-        foreach (var file in files) cards.Children.Add(CaptureCard(file, mode == CaptureLayout.List));
-        if (files.Count == 0)
-            cards.Children.Add(new TextBlock { Text = Loc.T("还没有截图或录屏。", "No captures yet."), FontSize = 12.5, Foreground = UI.Brush(Look.Secondary), Margin = new Thickness(2, 8, 0, 0) });
-        bool sideways = mode == CaptureLayout.Row;
-        var scroll = new ScrollViewer { Content = cards, VerticalScrollBarVisibility = sideways ? ScrollBarVisibility.Disabled : ScrollBarVisibility.Auto,
-            HorizontalScrollBarVisibility = sideways ? ScrollBarVisibility.Auto : ScrollBarVisibility.Disabled };
-        // The wheel moves a row sideways.
-        if (sideways) scroll.PreviewMouseWheel += (_, e) => { scroll.ScrollToHorizontalOffset(scroll.HorizontalOffset - e.Delta / 2.0); e.Handled = true; };
-        root.Children.Add(scroll);
+        double room = Math.Max(200, ContentCanvas.Width - CaptureContent.Margin.Left - CaptureContent.Margin.Right - 12);
+        int columns = mode switch
+        {
+            CaptureLayout.Details => 1,
+            CaptureLayout.List => Math.Max(1, (int)(room / 190)),
+            CaptureLayout.Tiles => Math.Max(1, (int)(room / 250)),
+            _ => Math.Max(2, (int)(room / 140))
+        };
+        var cards = new System.Windows.Controls.Primitives.UniformGrid { Columns = columns, VerticalAlignment = VerticalAlignment.Top };
+        foreach (var file in files) cards.Children.Add(CaptureCard(file, mode));
+        // The last row is filled out so its cards keep the others' width.
+        while (files.Count > 0 && cards.Children.Count % columns != 0) cards.Children.Add(new FrameworkElement());
+        UIElement list = files.Count > 0 ? cards
+            : new TextBlock { Text = Loc.T("还没有截图或录屏。", "No captures yet."), FontSize = 12.5, Foreground = UI.Brush(Look.Secondary), Margin = new Thickness(2, 8, 0, 0) };
+        root.Children.Add(new ScrollViewer { Content = list, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled });
         return root;
     }
 
@@ -319,16 +320,27 @@ public partial class MainWindow
         return [.. shots.Concat(videos).OrderByDescending(f => f.LastWriteTime).Take(40)];
     }
 
-    // A card (thumbnail over its date and size), or with line a single row: small thumbnail, date, size and length.
-    private Border CaptureCard(FileInfo file, bool line)
+    private static string CaptureLayoutName(CaptureLayout layout) => layout switch
+    {
+        CaptureLayout.List => Loc.T("列表", "List"),
+        CaptureLayout.Details => Loc.T("详细信息", "Details"),
+        CaptureLayout.Tiles => Loc.T("平铺", "Tiles"),
+        _ => Loc.T("小图标", "Small icons")
+    };
+
+    // One capture in the chosen layout. Grid: the picture over its date and size. List: a small picture and the date on one line.
+    // Details: one row with date, kind, size and length in columns. Tiles: a picture at the left, its details beside it.
+    private Border CaptureCard(FileInfo file, CaptureLayout mode)
     {
         bool video = file.Extension.Equals(".mp4", StringComparison.OrdinalIgnoreCase);
+        bool grid = mode == CaptureLayout.Grid;
         var picture = new Image { Stretch = Stretch.UniformToFill };
         var length = new TextBlock { FontSize = 10.5, Foreground = Brushes.White, Margin = new Thickness(6, 2, 6, 2) };
         var lengthTag = new Border { Background = new SolidColorBrush(Color.FromArgb(170, 0, 0, 0)), CornerRadius = new CornerRadius(7), Child = length,
             HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Bottom, Margin = new Thickness(6), Visibility = Visibility.Collapsed };
-        var delete = new Button { Style = (Style)FindResource("PanelIconButton"), Width = 22, Height = 22, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Top,
-            Margin = new Thickness(4), Background = new SolidColorBrush(Color.FromArgb(170, 0, 0, 0)), Content = CaptureGlyph(DeleteGlyph, 11, "#FFFFFF"),
+        var delete = new Button { Style = (Style)FindResource("PanelIconButton"), Width = 22, Height = 22, HorizontalAlignment = HorizontalAlignment.Right,
+            VerticalAlignment = grid ? VerticalAlignment.Top : VerticalAlignment.Center, Margin = new Thickness(4),
+            Background = grid ? new SolidColorBrush(Color.FromArgb(170, 0, 0, 0)) : Brushes.Transparent, Content = CaptureGlyph(DeleteGlyph, 11, grid ? "#FFFFFF" : Look.Secondary),
             ToolTip = Loc.T("移到回收站", "Move to Recycle Bin"), Visibility = Visibility.Hidden };
         AutomationProperties.SetName(delete, Loc.T("移到回收站", "Move to Recycle Bin"));
         delete.Click += (_, e) =>
@@ -337,45 +349,136 @@ public partial class MainWindow
             if (RecycleBin.Send(file.FullName)) _app.CaptureSaved();
             else CaptureSays(Loc.T("无法删除", "Not deleted"));
         };
-        double thumbWidth = line ? 64 : 124, thumbHeight = line ? 36 : 70;
-        var thumb = new Border { Width = thumbWidth, Height = thumbHeight, ClipToBounds = true, Background = UI.Brush(Look.FillSelected),
-            Child = new Grid { Children = { picture } } };
-        thumb.Clip = new RectangleGeometry(new Rect(0, 0, thumbWidth, thumbHeight), line ? 5 : 7, line ? 5 : 7);
-        if (!line) ((Grid)thumb.Child).Children.Add(lengthTag);
+        var (thumbWidth, thumbHeight) = mode switch { CaptureLayout.List => (32.0, 20.0), CaptureLayout.Details => (40.0, 24.0), CaptureLayout.Tiles => (88.0, 50.0), _ => (double.NaN, 70.0) };
+        var thumb = new Border { Width = thumbWidth, Height = thumbHeight, Background = UI.Brush(Look.FillSelected), Child = new Grid { Children = { picture } } };
+        double round = grid ? 7 : 4;
+        thumb.SizeChanged += (_, e) => thumb.Clip = new RectangleGeometry(new Rect(e.NewSize), round, round);
+        if (grid) ((Grid)thumb.Child).Children.Add(lengthTag);
         string when = file.LastWriteTime.Date == DateTime.Today ? Loc.T("今天 ", "Today ") + file.LastWriteTime.ToString("HH:mm") : file.LastWriteTime.ToString("d MMM HH:mm");
-        var info = new StackPanel { Margin = new Thickness(8, 6, 8, 7), Children =
+        TextBlock Line(string text, double size, string colour, bool strong = false) => new()
         {
-            new TextBlock { Text = when, FontSize = 11.5, FontWeight = FontWeights.SemiBold, Foreground = UI.Brush(Look.Primary) },
-            new TextBlock { Text = SizeText(file.Length), FontSize = 10.5, Foreground = UI.Brush(Look.Secondary) }
-        } };
-        // An outline around each capture, so neighbouring pictures do not run together.
-        var body = new Grid();
-        if (line)
+            Text = text, FontSize = size, Foreground = UI.Brush(colour), FontWeight = strong ? FontWeights.SemiBold : FontWeights.Normal,
+            TextTrimming = TextTrimming.CharacterEllipsis, VerticalAlignment = VerticalAlignment.Center
+        };
+        string kind = video ? Loc.T("录屏", "Recording") : Loc.T("截图", "Screenshot");
+        // Outside the grid the length stands in the text, not in the tag over the picture.
+        if (!grid) lengthTag.Child = null;
+        if (!grid) { length.Foreground = UI.Brush(Look.Secondary); length.Margin = new Thickness(0); length.FontSize = 11; length.VerticalAlignment = VerticalAlignment.Center; }
+        FrameworkElement content;
+        switch (mode)
         {
-            thumb.Margin = new Thickness(6, 5, 0, 5);
-            info.Orientation = Orientation.Horizontal; info.VerticalAlignment = VerticalAlignment.Center; info.Margin = new Thickness(10, 0, 30, 0);
-            foreach (TextBlock text in info.Children) { text.Margin = new Thickness(0, 0, 12, 0); text.VerticalAlignment = VerticalAlignment.Center; }
-            length.Foreground = UI.Brush(Look.Secondary); length.Margin = new Thickness(0);
-            if (video) info.Children.Add(length);
-            delete.VerticalAlignment = VerticalAlignment.Center; delete.Background = Brushes.Transparent; delete.Content = CaptureGlyph(DeleteGlyph, 11, Look.Secondary);
-            body.Children.Add(new DockPanel { Children = { thumb, info } });
+            case CaptureLayout.List:
+                thumb.Margin = new Thickness(6, 5, 8, 5);
+                content = new DockPanel { Children = { thumb, Line(when, 11.5, Look.Primary, strong: true) }, Margin = new Thickness(0, 0, 26, 0) };
+                break;
+            case CaptureLayout.Details:
+            {
+                thumb.Margin = new Thickness(6, 4, 10, 4);
+                var row = new Grid { Margin = new Thickness(0, 0, 30, 0) };
+                foreach (var width in new[] { GridLength.Auto, new GridLength(2, GridUnitType.Star), new GridLength(1.4, GridUnitType.Star), new GridLength(1, GridUnitType.Star), new GridLength(1, GridUnitType.Star) })
+                    row.ColumnDefinitions.Add(new ColumnDefinition { Width = width });
+                var cells = new FrameworkElement[] { thumb, Line(when, 11.5, Look.Primary, strong: true), Line(kind, 11, Look.Secondary), Line(SizeText(file.Length), 11, Look.Secondary), length };
+                for (int i = 0; i < cells.Length; i++) { Grid.SetColumn(cells[i], i); row.Children.Add(cells[i]); }
+                content = row;
+                break;
+            }
+            case CaptureLayout.Tiles:
+            {
+                thumb.Margin = new Thickness(6, 6, 10, 6);
+                var text = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 26, 0),
+                    Children = { Line(when, 12, Look.Primary, strong: true), Line(kind + " · " + SizeText(file.Length), 11, Look.Secondary) } };
+                if (video) text.Children.Add(length);
+                content = new DockPanel { Children = { thumb, text } };
+                break;
+            }
+            default:
+                content = new StackPanel { Children = { thumb, new StackPanel { Margin = new Thickness(8, 6, 8, 7),
+                    Children = { Line(when, 11.5, Look.Primary, strong: true), Line(SizeText(file.Length), 10.5, Look.Secondary) } } } };
+                break;
         }
-        else body.Children.Add(new StackPanel { Children = { thumb, info } });
-        body.Children.Add(delete);
-        var card = new Border { Width = line ? double.NaN : 126, Margin = line ? new Thickness(0, 0, 4, 6) : new Thickness(0, 0, 8, 8), CornerRadius = new CornerRadius(8),
-            Background = UI.Brush(Look.Fill), BorderBrush = UI.Brush(Look.Outline), BorderThickness = new Thickness(1), Padding = line ? new Thickness(0) : new Thickness(0),
-            Cursor = Cursors.Hand, Child = body, ToolTip = file.Name };
-        if (!line) thumb.Margin = new Thickness(0);
+        // An outline around each capture, so neighbouring pictures do not run together.
+        var body = new Grid { Children = { content, delete } };
+        var card = new Border { Margin = grid ? new Thickness(0, 0, 8, 8) : new Thickness(0, 0, 6, 6), CornerRadius = new CornerRadius(8),
+            Background = UI.Brush(Look.Fill), BorderBrush = UI.Brush(Look.Outline), BorderThickness = new Thickness(1), Cursor = Cursors.Hand, Child = body, ToolTip = file.Name };
+        bool line = !grid;
         AutomationProperties.SetName(card, file.Name);
-        card.MouseEnter += (_, _) => delete.Visibility = Visibility.Visible;
+        var check = new Border { Width = 18, Height = 18, CornerRadius = new CornerRadius(9), Margin = new Thickness(5), HorizontalAlignment = HorizontalAlignment.Left,
+            VerticalAlignment = line ? VerticalAlignment.Center : VerticalAlignment.Top, BorderBrush = Brushes.White, BorderThickness = new Thickness(1.5),
+            IsHitTestVisible = false, Visibility = _captureSelecting ? Visibility.Visible : Visibility.Collapsed,
+            Child = new PathGlyph { Data = Geometry.Parse("M1.5,5.2 L4,7.7 L8.5,2.5"), Stroke = Brushes.White, StrokeThickness = 1.6, Width = 9, Height = 9, Stretch = Stretch.Uniform,
+                StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round } };
+        body.Children.Add(check);
+        void ShowMark()
+        {
+            bool on = _captureSelected.Contains(file.FullName);
+            check.Background = on ? UI.Brush(Look.Accent) : new SolidColorBrush(Color.FromArgb(110, 0, 0, 0));
+            ((PathGlyph)check.Child).Visibility = on ? Visibility.Visible : Visibility.Hidden;
+            card.BorderBrush = UI.Brush(on ? Look.Accent : Look.Outline);
+        }
+        if (_captureSelecting) ShowMark();
+        card.MouseEnter += (_, _) => { if (!_captureSelecting) delete.Visibility = Visibility.Visible; };
         card.MouseLeave += (_, _) => delete.Visibility = Visibility.Hidden;
         card.MouseLeftButtonUp += (_, _) =>
         {
+            if (_captureSelecting)
+            {
+                if (!_captureSelected.Add(file.FullName)) _captureSelected.Remove(file.FullName);
+                ShowMark();
+                UpdateCaptureSelection();
+                return;
+            }
             try { Process.Start(new ProcessStartInfo(file.FullName) { UseShellExecute = true }); }
             catch (System.ComponentModel.Win32Exception ex) { CaptureSays(ex.Message); }
         };
         _ = LoadCaptureThumb(file.FullName, video, picture, length, lengthTag);
         return card;
+    }
+
+    // "Select" when browsing; while selecting, the count, All, Delete and Cancel.
+    private StackPanel CaptureSelectBar(IReadOnlyList<FileInfo> files)
+    {
+        var bar = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(8, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
+        Button Small(string label, Action action, bool strong = false)
+        {
+            var button = CaptureAction("", label, action);
+            button.Height = 26; button.Padding = new Thickness(11, 0, 11, 0); button.Margin = new Thickness(6, 0, 0, 0);
+            if (strong) ((TextBlock)((StackPanel)button.Content).Children[^1]).Foreground = UI.Brush("#E5484D");
+            return button;
+        }
+        void Again() { _captureAppearance = default; RenderCapture(); }
+        if (!_captureSelecting)
+        {
+            var select = Small(Loc.T("选择", "Select"), () => { _captureSelecting = true; _captureSelected.Clear(); Again(); });
+            select.IsEnabled = files.Count > 0;
+            bar.Children.Add(select);
+            return bar;
+        }
+        _captureSelectedCount = new TextBlock { FontSize = 11.5, Foreground = UI.Brush(Look.Secondary), VerticalAlignment = VerticalAlignment.Center };
+        bar.Children.Add(_captureSelectedCount);
+        bar.Children.Add(Small(Loc.T("全选", "All"), () =>
+        {
+            if (_captureSelected.Count == files.Count) _captureSelected.Clear(); else _captureSelected.UnionWith(files.Select(f => f.FullName));
+            Again();
+        }));
+        bar.Children.Add(Small(Loc.T("删除", "Delete"), DeleteSelectedCaptures, strong: true));
+        bar.Children.Add(Small(Loc.T("取消", "Cancel"), () => { _captureSelecting = false; _captureSelected.Clear(); Again(); }));
+        UpdateCaptureSelection();
+        return bar;
+    }
+
+    private void UpdateCaptureSelection()
+    {
+        if (_captureSelectedCount is not null) _captureSelectedCount.Text = Loc.T($"已选 {_captureSelected.Count} 项", $"{_captureSelected.Count} selected");
+    }
+
+    private void DeleteSelectedCaptures()
+    {
+        if (_captureSelected.Count == 0) return;
+        int failed = _captureSelected.Count(path => !RecycleBin.Send(path));
+        _captureSelecting = false;
+        _captureSelected.Clear();
+        CaptureSays(failed == 0 ? "" : Loc.T($"{failed} 项无法删除", $"{failed} not deleted"));
+        _app.CaptureSaved();
     }
 
     private static string SizeText(long bytes) => bytes >= 1 << 20 ? $"{bytes / (double)(1 << 20):0} MB" : $"{Math.Max(1, bytes / 1024)} KB";

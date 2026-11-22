@@ -58,8 +58,8 @@ public enum ProviderId { Claude, Codex, Antigravity, Cursor, GlmChina, NewApi, S
 public enum SettingsTheme { System, Light, Dark }
 // Pages are saved as numbers, so new members go at the end; their order in the page switch is DeckSettings.PageOrder.
 public enum DeckPage { Usage, Music, Monitor, Clipboard, Devices, Weather, Focus, Reminders, Widgets, Notifications, Calls, Scratchpad, Converter, Terminal, Colour, Capture }
-// How the Capture tab lists past captures: cards that wrap, one line each, or one row of cards that scrolls sideways.
-public enum CaptureLayout { Grid, List, Row }
+// How the Capture tab lists past captures, as Explorer's View menu: Grid (small icons), List (one line, in columns), Details (one row each, with columns), Tiles.
+public enum CaptureLayout { Grid, List, Details, Tiles }
 public enum DefaultDeckPage { Last, Usage, Music, Monitor, Clipboard, Devices, Weather, Focus, Reminders, Widgets, Notifications, Calls, Scratchpad, Converter, Terminal, Colour, Capture }
 // What the mouse wheel does over the expanded panel. Saved as numbers, so new members go at the end.
 public enum MouseWheelAction { None, Pages, Volume }
