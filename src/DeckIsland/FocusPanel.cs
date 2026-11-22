@@ -24,7 +24,8 @@ public partial class MainWindow
 
     private void FocusPage_Click(object sender, RoutedEventArgs e) => SelectPage(DeckPage.Focus);
 
-    private bool FocusCompactOnly => Settings.FocusSimplifiesCompact(EffectiveStyle) && _app.FocusSession.Phase != FocusPhase.Idle;
+    // A screen recording also leaves the collapsed island showing only its badge (CaptureBadge).
+    private bool FocusCompactOnly => _app.Recording is not null || Settings.FocusSimplifiesCompact(EffectiveStyle) && _app.FocusSession.Phase != FocusPhase.Idle;
 
     private void FocusChanged(bool rebuild)
     {

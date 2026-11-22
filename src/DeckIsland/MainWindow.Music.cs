@@ -250,6 +250,7 @@ public partial class MainWindow
             _headerGapWatched = true;
             SizeChangedEventHandler again = (_, _) => KeepHeaderGap();
             Toolbar.SizeChanged += again; PageSwitch.SizeChanged += again;
+            if (ToolPinSlot.Parent is FrameworkElement watched) watched.SizeChanged += again;
         }
         // The gear (left) and the pin (right) follow the tab bar's size setting too.
         double factor = TabBarScales.Factor(Settings);
@@ -259,7 +260,10 @@ public partial class MainWindow
         if (Toolbar.ActualWidth <= 0 || PageSwitch.ActualWidth <= 0) return;
         // The same room on both sides, so the switch stays centred on every page; it shrinks only on a panel narrower than the
         // header, which no page's size allows (DeckPages.Limits).
-        double edge = HeaderEdge, width = Toolbar.ActualWidth, natural = PageSwitch.ActualWidth;
+        // The right group also holds the clipboard's search button beside the pin; both sides keep the wider room.
+        double rightEdge = ToolPinSlot.Parent is FrameworkElement group && group.ActualWidth > 0
+            ? group.ActualWidth * factor + PanelHeader.RightButtonsMargin + HeaderGap : 0;
+        double edge = Math.Max(HeaderEdge, rightEdge), width = Toolbar.ActualWidth, natural = PageSwitch.ActualWidth;
         double scale = Math.Min(factor, Math.Max(1, width - 2 * edge) / natural);
         PageSwitch.LayoutTransform = scale != 1 ? new ScaleTransform(scale, scale) : Transform.Identity;
         PageSwitch.VerticalAlignment = VerticalAlignment.Top;
@@ -1278,7 +1282,7 @@ public partial class MainWindow
         double contentWidth = CompactContentWidth(shape);
         if (_hudMessage is { } hud) { RenderCompactHud(hud, scale, contentWidth); return; }
         var minimal = MinimalParts();
-        bool Show(CompactPart part) => minimal is null || minimal.Contains(part);
+        bool Show(CompactPart part) => _app.Recording is null && (minimal is null || minimal.Contains(part));
         bool media = !FocusCompactOnly && Show(CompactPart.Music) && Settings.ShowsMusic(EffectiveStyle) && _mediaTrack is { State: not MediaState.Stopped };
         bool showCover = Settings.MusicCompactCover && !PausedHides(PausedMusicHide.Cover), hideText = PausedHides(PausedMusicHide.Text);
         bool equalizer = Show(CompactPart.Equalizer) && CompactEqualizerShown;

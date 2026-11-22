@@ -36,6 +36,7 @@ public partial class MainWindow
     private (int Generation, string Language, int Version, int Width) _captureAppearance;
     private int _capturesVersion;
     private TextBlock? _captureStatus, _captureBadgeTime, _captureRecordLabel;
+    private FrameworkElement? _captureBadge;
     private string _captureMessage = "";
     private int _captureMessageVersion;
 
@@ -102,25 +103,33 @@ public partial class MainWindow
         AutomationProperties.SetLiveSetting(_captureStatus, AutomationLiveSetting.Polite);
 
         var recording = _app.Recording;
-        var mic = CaptureToggle(MicGlyph, Loc.T("麦克风", "Microphone"), Settings.CaptureMic, on => _app.ChangeShared(s => s.CaptureMic = on));
-        var sound = CaptureToggle(SpeakerGlyph, Loc.T("系统声音", "System audio"), Settings.CaptureSystemAudio, on => _app.ChangeShared(s => s.CaptureSystemAudio = on));
+        // Both can be switched while recording: the setting changes and the running recording mutes or unmutes that source.
+        var mic = CaptureToggle(MicGlyph, Loc.T("麦克风", "Microphone"), Settings.CaptureMic, on => { _app.ChangeShared(s => s.CaptureMic = on); _app.Recording?.SetMic(on); });
+        var sound = CaptureToggle(SpeakerGlyph, Loc.T("系统声音", "System audio"), Settings.CaptureSystemAudio, on => { _app.ChangeShared(s => s.CaptureSystemAudio = on); _app.Recording?.SetSystemAudio(on); });
         var videoChip = CategoryChip(screens[_captureVideoScreen], anchor => ShowAnchoredMenu(anchor,
             [.. screens.Select((label, i) => (label, i == _captureVideoScreen))], index => { _captureVideoScreen = index; _captureAppearance = default; RenderCapture(); }));
-        foreach (var part in new FrameworkElement[] { videoChip, mic, sound }) part.IsEnabled = recording is null;
-        // Idle: Record. While recording: Pause (or Resume) and Stop, which counts the time beside a red dot.
-        FrameworkElement[] videoActions;
-        if (recording is null)
+        // The screen is fixed once recording: the picker stays in view but cannot change it.
+        videoChip.IsEnabled = recording is null;
+        // Record turns into Stop with the time, at the width it always has, so nothing beside it moves. Pause (or Resume) hangs
+        // off its left side without taking room in the row.
+        var record = recording is null
+            ? CaptureAction("", Loc.T("录制", "Record"), () => _ = ToggleRecording(displays), filled: true, dot: Look.Hex("surface"))
+            : CaptureAction("", Loc.T("停止 ", "Stop · ") + "00:00:00", () => _ = ToggleRecording(displays), filled: true, dot: recording.Paused ? Look.Secondary : Off);
+        var widest = recording is null ? CaptureAction("", Loc.T("停止 ", "Stop · ") + "00:00:00", () => { }, filled: true, dot: Off) : record;
+        widest.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        record.MinWidth = Math.Ceiling(widest.DesiredSize.Width);
+        _captureRecordLabel = null;
+        FrameworkElement recordSlot = record;
+        if (recording is not null)
         {
-            videoActions = [CaptureAction("", Loc.T("录制", "Record"), () => _ = ToggleRecording(displays), filled: true, dot: Look.Hex("surface"))];
-            _captureRecordLabel = null;
-        }
-        else
-        {
-            var pause = CaptureAction(recording.Paused ? "M7,5 L18,12 L7,19 Z" : "M8,5 V19 M16,5 V19", recording.Paused ? Loc.T("继续", "Resume") : Loc.T("暂停", "Pause"), _app.PauseRecording);
-            var stop = CaptureAction("", StopLabel(recording), () => _ = ToggleRecording(displays), filled: true, dot: recording.Paused ? Look.Secondary : "#E5484D");
-            _captureRecordLabel = (TextBlock)((StackPanel)stop.Content).Children[^1];
+            _captureRecordLabel = (TextBlock)((StackPanel)record.Content).Children[^1];
             Typography.SetNumeralAlignment(_captureRecordLabel, FontNumeralAlignment.Tabular);
-            videoActions = [pause, stop];
+            _captureRecordLabel.Text = StopLabel(recording);
+            var pause = CaptureAction(recording.Paused ? "M7,5 L18,12 L7,19 Z" : "M8,5 V19 M16,5 V19", recording.Paused ? Loc.T("继续", "Resume") : Loc.T("暂停", "Pause"), _app.PauseRecording);
+            pause.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            pause.HorizontalAlignment = HorizontalAlignment.Left;
+            pause.Margin = new Thickness(-Math.Ceiling(pause.DesiredSize.Width) - 8, 0, 0, 0);
+            recordSlot = new Grid { Children = { record, pause } };
         }
 
         var top = new Grid { Margin = new Thickness(0, 0, 0, 2) };
@@ -144,11 +153,10 @@ public partial class MainWindow
         picker.MaxWidth = 200; picker.Margin = new Thickness(0);
         // Tighter than the converter's chip: less room between the edges and the name and chevron.
         if (picker is Border { Child: Button inner }) inner.Padding = new Thickness(9, 0, 7, 0);
-        // While recording only Pause and Stop show: the sound and the screens are fixed until it ends.
-        FrameworkElement[] actions = !_captureVideoMode ? [shot, region] : recording is null ? [.. videoActions, mic, sound] : videoActions;
+        FrameworkElement[] actions = !_captureVideoMode ? [shot, region] : [recordSlot, mic, sound];
         var centre = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
         for (int i = 0; i < actions.Length; i++) { actions[i].Margin = new Thickness(i == 0 ? 0 : 8, 0, 0, 0); centre.Children.Add(actions[i]); }
-        var cells = new FrameworkElement?[] { modeTrack, null, centre, null, recording is null || !_captureVideoMode ? picker : null };
+        var cells = new FrameworkElement?[] { modeTrack, null, centre, null, picker };
         for (int i = 0; i < cells.Length; i++)
         {
             if (cells[i] is not { } cell) continue;
@@ -331,7 +339,7 @@ public partial class MainWindow
     // The collapsed island's part while recording: a red dot, the time, pause and stop. It takes the focus timer's place.
     private FrameworkElement? CaptureBadge(double scale)
     {
-        _captureBadgeTime = null;
+        _captureBadgeTime = null; _captureBadge = null;
         if (_app.Recording is not { } recording) return null;
         var time = WeatherText(CaptureTime(recording.Elapsed), CompactMusicLayout.CollapsedTextSize(Settings.QuotaRingStyle, scale, 11));
         Typography.SetNumeralAlignment(time, FontNumeralAlignment.Tabular);
@@ -342,6 +350,9 @@ public partial class MainWindow
         _captureBadgeTime = time;
         var dot = new System.Windows.Shapes.Ellipse { Width = 7 * scale, Height = 7 * scale, Fill = UI.Brush(recording.Paused ? Look.Secondary : "#E5484D"),
             Margin = new Thickness(0, 0, 5 * scale, 0), VerticalAlignment = VerticalAlignment.Center };
+        if (!recording.Paused)
+            dot.BeginAnimation(UIElement.OpacityProperty, new System.Windows.Media.Animation.DoubleAnimation(1, 0.3, TimeSpan.FromMilliseconds(800))
+                { AutoReverse = true, RepeatBehavior = System.Windows.Media.Animation.RepeatBehavior.Forever, EasingFunction = new System.Windows.Media.Animation.SineEase() });
         Button Small(string glyph, string label, Action action)
         {
             var button = new Button { Style = (Style)FindResource("PanelIconButton"), Width = 18 * scale, Height = 18 * scale, Margin = new Thickness(3 * scale, 0, 0, 0),
@@ -356,7 +367,16 @@ public partial class MainWindow
         host.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
         host.Width = Math.Ceiling(host.DesiredSize.Width + 4 * scale);
         host.Height = Math.Ceiling(host.DesiredSize.Height);
+        _captureBadge = host;
         return host;
+    }
+
+    // Whether the pointer is over the recording badge's span of the collapsed island (not its ends).
+    private bool OverRecordingBadge()
+    {
+        if (_app.Recording is null || _expanded || _captureBadge is not { IsVisible: true } badge || PresentationSource.FromVisual(badge) is null) return false;
+        double x = badge.PointFromScreen(WindowsHost.Cursor()).X;
+        return x >= 0 && x <= badge.ActualWidth;
     }
 
     // ---- Past captures ----

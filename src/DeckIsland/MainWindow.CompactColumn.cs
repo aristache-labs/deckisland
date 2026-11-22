@@ -32,7 +32,7 @@ public partial class MainWindow
         double column = SnapDown(ColumnWidth(shape), dpi), room = SnapDown(CompactContentWidth(shape), dpi);
         if (_hudMessage is { } hud) { RenderHudColumn(hud, scale, dpi, column, room); return; }
         var minimal = MinimalParts();
-        bool Show(CompactPart part) => minimal is null || minimal.Contains(part);
+        bool Show(CompactPart part) => _app.Recording is null && (minimal is null || minimal.Contains(part));
         bool media = !FocusCompactOnly && Show(CompactPart.Music) && Settings.ShowsMusic(EffectiveStyle) && _mediaTrack is { State: not MediaState.Stopped };
         bool cover = media && !PausedHides(PausedMusicHide.Cover), hideText = PausedHides(PausedMusicHide.Text);
         bool equalizer = Show(CompactPart.Equalizer) && CompactEqualizerShown;

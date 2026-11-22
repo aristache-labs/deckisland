@@ -131,6 +131,8 @@ public partial class MainWindow : Window
         {
             _hover!.Stop();
             if (IsSuppressed || !_pointerInside) return;
+            // While recording, only the island's ends (outside the badge) open it; the pointer is checked again until it leaves.
+            if (OverRecordingBadge()) { _hover.Interval = TimeSpan.FromMilliseconds(100); _hover.Start(); return; }
             OpenAtPointer();
         });
         _leave = new(Dispatcher, () => CheckPointerExit(WindowsHost.Cursor()));

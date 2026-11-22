@@ -35,7 +35,11 @@ internal sealed class ScreenRecorder
     private readonly MediaStreamSource _source;
     private readonly List<WasapiCapture> _captures = [];
     private readonly List<BufferedWaveProvider> _buffers = [];
-    private readonly MixingSampleProvider? _mixer;
+    private readonly MixingSampleProvider _mixer;
+    // Each sound source can be turned on and off while recording; a source is opened the first time it is on, then only muted.
+    private WasapiCapture? _systemCapture, _micCapture;
+    private volatile bool _systemOn, _micOn;
+    private bool _begun;
     private readonly Stopwatch _clock = new();
     private readonly TimeSpan _frameGap;
     private readonly object _gate = new();
@@ -87,14 +91,11 @@ internal sealed class ScreenRecorder
             _screens.Add(screen);
         }
         _video = new VideoStreamDescriptor(VideoEncodingProperties.CreateUncompressed(MediaEncodingSubtypes.Bgra8, (uint)_width, (uint)_height));
-        if (options.SystemAudio || options.Mic)
-        {
-            _mixer = new MixingSampleProvider(WaveFormat.CreateIeeeFloatWaveFormat(Rate, Channels)) { ReadFully = true };
-            if (options.SystemAudio) AddAudio(new WasapiLoopbackCapture());
-            if (options.Mic) AddAudio(new WasapiCapture());
-            _source = new MediaStreamSource(_video, new AudioStreamDescriptor(AudioEncodingProperties.CreatePcm(Rate, Channels, 16)));
-        }
-        else _source = new MediaStreamSource(_video);
+        // The sound track is always there (silent while both are off), so either can be turned on mid-recording.
+        _mixer = new MixingSampleProvider(WaveFormat.CreateIeeeFloatWaveFormat(Rate, Channels)) { ReadFully = true };
+        SetSystemAudio(options.SystemAudio);
+        SetMic(options.Mic);
+        _source = new MediaStreamSource(_video, new AudioStreamDescriptor(AudioEncodingProperties.CreatePcm(Rate, Channels, 16)));
         _source.BufferTime = TimeSpan.Zero;
         _source.CanSeek = false;
         _source.Starting += (_, e) => e.Request.SetActualStartPosition(TimeSpan.Zero);
@@ -126,17 +127,17 @@ internal sealed class ScreenRecorder
         profile.Video.FrameRate.Numerator = (uint)_options.Fps; profile.Video.FrameRate.Denominator = 1;
         profile.Video.PixelAspectRatio.Numerator = profile.Video.PixelAspectRatio.Denominator = 1;
         profile.Video.Bitrate = (uint)Math.Clamp(width * (double)height * _options.Fps * _options.BitsPerPixel, 2_000_000, 80_000_000);
-        profile.Audio = _mixer is null ? null : AudioEncodingProperties.CreateAac(Rate, Channels, 192_000);
+        profile.Audio = AudioEncodingProperties.CreateAac(Rate, Channels, 192_000);
         Directory.CreateDirectory(System.IO.Path.GetDirectoryName(Path)!);
         var file = new FileStream(Path, FileMode.Create, FileAccess.ReadWrite, FileShare.Read);
         var transcoder = new MediaTranscoder { HardwareAccelerationEnabled = true };
         var prepared = await transcoder.PrepareMediaStreamSourceTranscodeAsync(_source, file.AsRandomAccessStream(), profile);
         if (!prepared.CanTranscode) { await file.DisposeAsync(); throw new InvalidOperationException("The encoder refused: " + prepared.FailureReason); }
         _clock.Start();
-        foreach (var capture in _captures) capture.StartRecording();
+        lock (_gate) { _begun = true; foreach (var capture in _captures) capture.StartRecording(); }
         foreach (var screen in _screens) screen.Session.StartCapture();
         _transcode = prepared.TranscodeAsync().AsTask().ContinueWith(async done => { await file.DisposeAsync(); await done; }).Unwrap();
-        if (_mixer is not null) _audioLoop = Task.Run(AudioLoop);
+        _audioLoop = Task.Run(AudioLoop);
         // A still screen sends no frames; the last picture is sent again so the sound keeps going.
         _stall = new Timer(_ =>
         {
@@ -167,6 +168,7 @@ internal sealed class ScreenRecorder
         }
         _stall?.Dispose();
         _audioWanted.Release();
+        lock (_gate) _begun = false;
         foreach (var screen in _screens) { try { screen.Session.Dispose(); } catch (Exception ex) when (ex is COMException or ObjectDisposedException) { } }
         foreach (var capture in _captures) { try { capture.StopRecording(); } catch (Exception ex) when (ex is COMException or InvalidOperationException) { } }
         try { await _audioLoop; await _transcode; }
@@ -183,17 +185,25 @@ internal sealed class ScreenRecorder
         }
     }
 
-    private void AddAudio(WasapiCapture capture)
+    public void SetSystemAudio(bool on) { _systemOn = on; if (on) lock (_gate) _systemCapture ??= AddAudio(new WasapiLoopbackCapture(), () => _systemOn); }
+
+    public void SetMic(bool on) { _micOn = on; if (on) lock (_gate) _micCapture ??= AddAudio(new WasapiCapture(), () => _micOn); }
+
+    // Called under _gate (or from the constructor): a source added after the start starts at once.
+    private WasapiCapture? AddAudio(WasapiCapture capture, Func<bool> on)
     {
+        if (_stopping) { capture.Dispose(); return null; }
         var buffer = new BufferedWaveProvider(capture.WaveFormat) { ReadFully = true, DiscardOnBufferOverflow = true, BufferDuration = TimeSpan.FromSeconds(1) };
-        capture.DataAvailable += (_, e) => { if (!Paused) buffer.AddSamples(e.Buffer, 0, e.BytesRecorded); };
+        capture.DataAvailable += (_, e) => { if (!Paused && on()) buffer.AddSamples(e.Buffer, 0, e.BytesRecorded); };
         ISampleProvider samples = buffer.ToSampleProvider();
         if (samples.WaveFormat.Channels == 1) samples = new MonoToStereoSampleProvider(samples);
         else if (samples.WaveFormat.Channels > 2) samples = new MultiplexingSampleProvider([samples], 2);
         if (samples.WaveFormat.SampleRate != Rate) samples = new WdlResamplingSampleProvider(samples, Rate);
-        _mixer!.AddMixerInput(samples);
+        _mixer.AddMixerInput(samples);
         _captures.Add(capture);
         _buffers.Add(buffer);
+        if (_begun) capture.StartRecording();
+        return capture;
     }
 
     private void SampleRequested(MediaStreamSource sender, MediaStreamSourceSampleRequestedEventArgs e)
@@ -275,7 +285,7 @@ internal sealed class ScreenRecorder
             var end = TimeSpan.FromSeconds((_audioFrames + Chunk) / (double)Rate);
             while (Elapsed < end && !_stopping) await Task.Delay(5);
             if (_stopping) { next.Request.Sample = null; next.Deferral.Complete(); _audioWanted.Release(); continue; }
-            _mixer!.Read(floats, 0, floats.Length);
+            _mixer.Read(floats, 0, floats.Length);
             var bytes = new byte[floats.Length * 2];
             for (int i = 0; i < floats.Length; i++)
                 BitConverter.TryWriteBytes(bytes.AsSpan(i * 2), (short)Math.Clamp(floats[i] * 32767f, short.MinValue, short.MaxValue));

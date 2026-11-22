@@ -48,7 +48,7 @@ public partial class MainWindow
     private int _transferShown = -1;
 
     // The details replace the page switch and the clock with their own header.
-    internal bool ShelfHidesSwitch => _shelfDetail is not null;
+    internal bool ShelfHidesSwitch => _shelfSearching || _shelfDetail is not null;
     // The panel stays open while a menu of the page is open, while the user types in it, and while files are dragged over it.
     // Typing needs the foreground. Window.IsActive is false when Deactivated runs, but WPF clears the keyboard focus only on
     // WM_KILLFOCUS, which can come later: the search box still held it there and kept the panel open after a press elsewhere.
@@ -404,27 +404,13 @@ public partial class MainWindow
         // Stacked, a click on the title brings the other card forward (MainWindow.ShelfArrange.cs); it looks as it does side by side.
         if (layout.Stacked) SwitchTitle(title, side);
         tabs.Children.Add(title);
-        bool searchHere = side == ShelfSide.Clipboard || Settings.ShelfShown == ShelfShown.Files;
-        if (_shelfSearching && searchHere)
-        {
-            // The box takes what the title leaves, up to its usual width.
-            double free = width - TextWidth(name, layout.Title, FontWeights.SemiBold) - 90;
-            buttons.Children.Add(ShelfSearchHost(Math.Clamp(ShelfLayout.SearchWidth(width), 120, Math.Max(120, free)), 26));
-        }
         if (Searching)
         {
             int found = side == ShelfSide.Clipboard ? VisibleClips().Count : VisibleFiles().Count;
             tabs.Children.Add(Label(Loc.T($"{found} 个结果", found == 1 ? "1 result" : $"{found} results"), layout.Aux, Look.Tertiary, HorizontalAlignment.Left, left: 10));
             return row;
         }
-        if (_shelfSearching) return row;
         double buttonsWidth = 0;
-        // The search, on the first column shown, at the right of its title row.
-        if (searchHere)
-        {
-            buttons.Children.Add(ShelfSearchEntry(layout.Aux));
-            buttonsWidth += SearchEntryWidth;
-        }
         if (side == ShelfSide.Clipboard)
         {
             // "清除" takes away at once what the filter shown holds (Shelf.Clear): in "全部" all that is not kept; in a category of the
