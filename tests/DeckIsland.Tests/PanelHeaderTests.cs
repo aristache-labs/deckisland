@@ -61,6 +61,9 @@ internal static class PanelHeaderTests
         check("A floating panel's header keeps clear of the curve at every size, with the switch at least 8 DIPs below the edge", headers.All(ClearFloating));
         check("The previous header (switch at (10, 4)) was 2.6 DIPs from the curve, which the check rejects",
             Math.Abs(PanelHeader.CornerGap(24, 10, 4, 8) - 2.58) < .01 && PanelHeader.CornerGap(24, 10, 0, 8) < 0);
+        check("Native terminal corners fit inside the frame at small and large radii",
+            new[] { 0d, 6, 12, 24, 40 }.All(radius => PanelHeader.CornerGap(radius, 8,
+                Math.Max(6, Math.Ceiling(PanelHeader.SquareCornerInset(radius, 8)) + 1), 0) >= 0));
 
         // The usage page keeps its own header (78d0a03: settings 28x24 with a 6 DIP corner; ba20473: switch 28, or 24 in a row below
         // 36). The music page takes the usage page's controls, so they keep their distance from the panel's top edge when the page

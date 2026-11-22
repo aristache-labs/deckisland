@@ -46,6 +46,13 @@ public sealed record PanelHeader(double Row, double Height, double Side, double 
         SettingsHeight = usage.SettingsHeight
     };
 
+    // The minimum distance from the adjacent edge that keeps a square corner inside a rounded one.
+    public static double SquareCornerInset(double radius, double side)
+    {
+        double offset = Math.Max(0, radius - side);
+        return radius - Math.Sqrt(Math.Max(0, radius * radius - offset * offset));
+    }
+
     // The space between a rounded rectangle and the outline of a panel corner of the given radius, for a rectangle x and y
     // from the panel's edges with corners of radius r. A negative value means the panel clips the rectangle.
     public static double CornerGap(double radius, double x, double y, double r)

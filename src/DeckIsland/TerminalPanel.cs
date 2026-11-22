@@ -46,7 +46,8 @@ public partial class MainWindow
         if (!double.IsFinite(ContentCanvas.Height)) return;
         var header = PanelHeader.For(30, 18);
         ApplyHeader(Settings.UsagePage ? header.WithControlsOf(CachedUsageHeader()) : header);
-        TerminalContent.Margin = new Thickness(header.Side, 0, header.Side, 12);
+        // Equal insets on the sides and bottom let the frame's lower corners share the panel's curve.
+        TerminalContent.Margin = new Thickness(header.Side, 0, header.Side, header.Side);
         var appearance = (Look.Generation, Loc.Language);
         if (_terminalAppearance != appearance || _terminalBody is null || !TerminalContent.Children.Contains(_terminalBody))
         {
@@ -54,6 +55,7 @@ public partial class MainWindow
             TerminalContent.Children.Clear();
             BuildTerminalPage();
         }
+        FitTerminalFrame(header.Side);
         EnsureTerminal();
         ApplyTerminalFont();
         PlaceTerminal();
@@ -76,7 +78,7 @@ public partial class MainWindow
         var right = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Children = { restart, pin } };
         var top = new Grid { Margin = new Thickness(0, 0, 0, 8), Children = { title, right } };
         // The frame the terminal's window is laid over; its colour is the terminal's, so the rounded corners show around it.
-        _terminalFrame = new Border { CornerRadius = new CornerRadius(10), Background = UI.Brush(TerminalBackground), Padding = new Thickness(8, 6, 4, 6) };
+        _terminalFrame = new Border { Background = UI.Brush(TerminalBackground) };
         _terminalFrame.SizeChanged += (_, _) => PlaceTerminal();
         var body = new Grid();
         body.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -85,6 +87,21 @@ public partial class MainWindow
         body.Children.Add(top); body.Children.Add(_terminalFrame);
         _terminalBody = body;
         TerminalContent.Children.Add(body);
+    }
+
+    private void FitTerminalFrame(double gutter)
+    {
+        if (_terminalFrame is not { } frame) return;
+        double top = Math.Min(Look.Corner(10), PanelRadius / _scale);
+        double bottom = Math.Max(0, PanelRadius / _scale - gutter);
+        const double side = 8, minimumVertical = 6;
+        // The terminal is a rectangular native window. Keep its corners just inside the WPF frame
+        // so the renderer never paints over the curve and its text stays inside the usable viewport.
+        double SafeInset(double radius) => Math.Max(minimumVertical, Math.Ceiling(PanelHeader.SquareCornerInset(radius, side)) + 1);
+        var corners = new CornerRadius(top, top, bottom, bottom);
+        var padding = new Thickness(side, SafeInset(top), side, SafeInset(bottom));
+        if (frame.CornerRadius != corners) frame.CornerRadius = corners;
+        if (frame.Padding != padding) frame.Padding = padding;
     }
 
     private void EnsureTerminal()

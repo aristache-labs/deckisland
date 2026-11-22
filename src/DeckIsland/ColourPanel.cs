@@ -52,7 +52,8 @@ public partial class MainWindow
         private const string CopyGlyph = "M6,5 H12 V13 H5 V6 M5,10 H2 V2 H9 V5";
         private readonly StackPanel _values = new(), _contrast = new(), _harmonies = new();
         private readonly StackPanel[] _views;
-        private readonly StackPanel _customResult = new();
+        private readonly StackPanel _customResult = new(), _customAdjustment = new();
+        private readonly ContentControl _customApply = new();
         private readonly StackPanel _standardContrast = new();
         private readonly WrapPanel _recent = new() { VerticalAlignment = VerticalAlignment.Center };
         private readonly Border _swatch = new() { Width = 30, Height = 30, CornerRadius = new CornerRadius(7), Margin = new Thickness(0, 0, 8, 0) };
@@ -68,21 +69,24 @@ public partial class MainWindow
             Appearance = (Look.Generation, Loc.Language);
             _entry = Field(Loc.T("颜色值", "Colour value"), previous?._entry.Text ?? _app.Settings.RecentColours.FirstOrDefault() ?? "");
             _against = Field(Loc.T("对比颜色", "Second colour"), previous?._against.Text ?? "");
+            _against.FontSize = 11;
             _secondColour = InputRow(_against, "", Loc.T("取对比色", "Pick contrast colour"), compact: true);
-            var custom = new WrapPanel { Children = { _secondColour, _customResult } };
+            var custom = new StackPanel { Children = { ContrastLine(_secondColour, _customResult), _customAdjustment } };
+            _values.Margin = new Thickness(0, 9, 0, 0);
             _contrast.Children.Add(_standardContrast);
-            _contrast.Children.Add(ColourCard(custom));
+            _contrast.Children.Add(ContrastCard(custom, _customApply));
             _views = [_values, _contrast, _harmonies];
             _status = Text("", 11, Look.Secondary);
             AutomationProperties.SetLiveSetting(_status, AutomationLiveSetting.Polite);
 
             var sections = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
-            var segments = new Border { CornerRadius = new CornerRadius(Look.Corner(8)), Background = UI.Brush(Look.Hex("fill")), Padding = new Thickness(3), Child = sections };
+            var segments = new Border { CornerRadius = new CornerRadius(Look.Corner(14)), Background = UI.Brush(Look.Fill), BorderBrush = UI.Brush(Look.Outline), BorderThickness = new Thickness(1), Padding = new Thickness(2), Child = sections };
             var names = new[] { Loc.T("数值", "Values"), Loc.T("对比度", "Contrast"), Loc.T("配色", "Harmonies") };
             for (int i = 0; i < names.Length; i++)
             {
                 int section = i;
                 var button = ActionButton(names[i], () => SelectSection(section));
+                button.Template = FlatPill();
                 button.Margin = new Thickness(1, 0, 1, 0);
                 button.Height = 24;
                 button.Padding = new Thickness(9, 0, 9, 0);
@@ -102,7 +106,7 @@ public partial class MainWindow
             SetDock(controls, DockSide.Right);
             SetDock(header, DockSide.Top);
             Children.Add(header);
-            var input = InputRow(_entry, "", Loc.T("从屏幕取色", "Pick from screen"));
+            var input = InputRow(_entry, "", Loc.T("取色", "Pick color"));
             SetDock(input, DockSide.Top);
             Children.Add(input);
             var formatHint = Text(Loc.T("十六进制、RGB、HSL、OKLCH 或 CSS 颜色名", "HEX, RGB, HSL, OKLCH or a CSS colour name"), 11, Look.Tertiary);
@@ -145,8 +149,9 @@ public partial class MainWindow
             for (int i = 0; i < _sectionButtons.Count; i++)
             {
                 bool current = i == section;
-                _sectionButtons[i].Background = current ? UI.Brush(Look.Hex("fillSelected")) : Brushes.Transparent;
-                _sectionButtons[i].Foreground = UI.Brush(current ? Look.Primary : Look.Secondary);
+                _sectionButtons[i].Background = current ? UI.Brush(Look.Primary) : Brushes.Transparent;
+                _sectionButtons[i].Foreground = UI.Brush(current ? Look.Hex("surface") : Look.Secondary);
+                _sectionButtons[i].FontWeight = current ? FontWeights.SemiBold : FontWeights.Normal;
             }
         }
 
@@ -180,12 +185,14 @@ public partial class MainWindow
             var picker = compact ? IconButton(PickerGlyph, sample) : ActionButton(sample);
             if (!compact)
             {
-                string ink = Look.Hex("onAccent");
+                string ink = Look.Primary;
                 var glyph = ButtonGlyph(PickerGlyph, 12, ink);
                 glyph.Margin = new Thickness(0, 0, 7, 0);
                 var caption = new TextBlock { Text = sample, Foreground = UI.Brush(ink), FontSize = 12, FontWeight = FontWeights.SemiBold };
                 picker.Content = new StackPanel { Orientation = Orientation.Horizontal, Children = { glyph, caption } };
-                picker.Background = UI.Brush(Look.Accent);
+                picker.Style = (Style)_owner.FindResource("PanelIconButton");
+                picker.Background = UI.Brush(Look.Fill);
+                picker.BorderBrush = UI.Brush(Look.Outline);
                 picker.Padding = new Thickness(11, 0, 11, 0);
                 AutomationProperties.SetName(picker, sample);
             }
@@ -223,8 +230,8 @@ public partial class MainWindow
                 chrome.BorderBrush = UI.Brush(field.IsKeyboardFocusWithin ? Look.Accent : Look.Hex("outline"));
             if (compact)
             {
-                row.Width = 128;
-                row.Margin = new Thickness(0, 0, 8, 0);
+                row.Width = 108;
+                row.Margin = new Thickness(0, 0, 6, 0);
                 var placeholder = Text(Loc.T("第二种颜色", "Second colour"), 11, Look.Tertiary);
                 placeholder.VerticalAlignment = VerticalAlignment.Center;
                 placeholder.Margin = new Thickness(7, 0, 0, 0);
@@ -308,6 +315,8 @@ public partial class MainWindow
             _values.Children.Clear();
             _standardContrast.Children.Clear();
             _customResult.Children.Clear();
+            _customAdjustment.Children.Clear();
+            _customApply.Content = null;
             _harmonies.Children.Clear();
             bool valid = CssColour.TryParse(_entry.Text, out var colour);
             _clear.IsEnabled = _entry.Text.Length > 0;
@@ -346,9 +355,12 @@ public partial class MainWindow
             CssColour? second = CssColour.TryParse(_against.Text, out var background) ? background : null;
             _customResult.Children.Add(ContrastPreview(colour, second));
             if (second is { } custom && Suggestion(colour, custom) is { } adjustment)
-                _customResult.Children.Add(adjustment);
+            {
+                _customAdjustment.Children.Add(adjustment.Details);
+                _customApply.Content = adjustment.Apply;
+            }
             else if (second is null && _against.Text.Length > 0)
-                _customResult.Children.Add(Text(Loc.T("请输入有效的颜色。", "Enter a valid colour."), 11, Look.Secondary));
+                _customAdjustment.Children.Add(Text(Loc.T("请输入有效的颜色。", "Enter a valid colour."), 11, Look.Secondary));
 
             Harmony(Loc.T("互补", "Complementary"), colour, 0, 180);
             Harmony(Loc.T("三色", "Triad"), colour, 0, 120, 240);
@@ -358,52 +370,75 @@ public partial class MainWindow
         private Border ColourCard(UIElement content) => new()
         {
             Background = UI.Brush(Look.Hex("fill")), CornerRadius = new CornerRadius(Look.Corner(9)),
-            Padding = new Thickness(9, 6, 9, 6), Margin = new Thickness(0, 0, 0, 4), Child = content
+            Padding = new Thickness(8, 4, 8, 4), Margin = new Thickness(0, 0, 0, 4), Child = content
         };
 
         private void ContrastRow(CssColour colour, CssColour background, string label)
         {
             var title = Text(label, 12, Look.Secondary);
-            title.Width = 136;
-            title.LineHeight = 30;
-            title.LineStackingStrategy = LineStackingStrategy.BlockLineHeight;
-            var row = new WrapPanel { Children = { title, ContrastPreview(colour, background) } };
+            title.VerticalAlignment = VerticalAlignment.Center;
+            var row = ContrastLine(title, ContrastPreview(colour, background));
             var stack = new StackPanel { Children = { row } };
-            if (Suggestion(colour, background) is { } suggestion) stack.Children.Add(suggestion);
-            _standardContrast.Children.Add(ColourCard(stack));
+            var action = new ContentControl();
+            if (Suggestion(colour, background) is { } suggestion)
+            {
+                stack.Children.Add(suggestion.Details);
+                action.Content = suggestion.Apply;
+            }
+            _standardContrast.Children.Add(ContrastCard(stack, action));
+        }
+
+        private Border ContrastCard(UIElement content, ContentControl action)
+        {
+            action.Width = 66;
+            action.Margin = new Thickness(8, 0, 4, 0);
+            action.HorizontalContentAlignment = HorizontalAlignment.Right;
+            action.VerticalContentAlignment = VerticalAlignment.Center;
+            DockPanel.SetDock(action, DockSide.Right);
+            return ColourCard(new DockPanel { Children = { action, content } });
+        }
+
+        private static Grid ContrastLine(UIElement label, UIElement preview)
+        {
+            var row = new Grid { MinHeight = 30, Children = { label, preview } };
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(116) });
+            row.ColumnDefinitions.Add(new ColumnDefinition());
+            Grid.SetColumn(preview, 1);
+            return row;
         }
 
         private WrapPanel ContrastPreview(CssColour colour, CssColour? background)
         {
             double? ratio = background is { } other ? colour.Contrast(other) : null;
-            var row = new WrapPanel { MaxWidth = 285 };
-            row.Children.Add(ContrastSample(background, colour));
-            row.Children.Add(ContrastSample(background.HasValue ? colour : null, background));
+            var samples = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+            samples.Children.Add(ContrastSample(background, colour));
+            samples.Children.Add(ContrastSample(background.HasValue ? colour : null, background));
             var value = Text(ratio is double number ? number.ToString("0.00", CultureInfo.InvariantCulture) + ":1" : "", 12, Look.Primary);
             value.FontWeight = FontWeights.SemiBold;
             value.Width = 50;
-            value.Margin = new Thickness(8, 0, 0, 0);
+            value.Margin = new Thickness(4, 0, 4, 0);
             value.VerticalAlignment = VerticalAlignment.Center;
-            row.Children.Add(value);
+            samples.Children.Add(value);
+            var badges = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
             foreach (var (label, threshold) in new[] { ("AA", 4.5), (Loc.T("AA 大号", "AA large"), 3d), ("AAA", 7d) })
             {
                 bool passes = ratio >= threshold;
                 var badge = new Border
                 {
-                    Margin = new Thickness(3, 3, 0, 3), Padding = new Thickness(6, 2, 6, 2),
+                    Margin = new Thickness(2, 1, 2, 1), Padding = new Thickness(4, 2, 4, 2),
                     CornerRadius = new CornerRadius(9), VerticalAlignment = VerticalAlignment.Center,
                     Background = passes ? UI.Brush(Look.Hex("fillSelected")) : UI.Brush(Look.Hex("hover")),
                     Child = Text((ratio is null ? "" : passes ? "✓ " : "× ") + label, 10.5, passes ? Look.Primary : Look.Secondary)
                 };
                 AutomationProperties.SetName(badge, ratio is null ? label : $"{label} {(passes ? Loc.T("通过", "passes") : Loc.T("未通过", "fails"))}");
-                row.Children.Add(badge);
+                badges.Children.Add(badge);
             }
-            return row;
+            return new WrapPanel { Children = { samples, badges } };
         }
 
         private Border ContrastSample(CssColour? background, CssColour? foreground) => new()
         {
-            Width = 42, Height = 29, Margin = new Thickness(0, 0, 4, 0), CornerRadius = new CornerRadius(6),
+            Width = 33, Height = 24, Margin = new Thickness(0, 0, 3, 0), CornerRadius = new CornerRadius(6),
             BorderThickness = new Thickness(1), BorderBrush = UI.Brush(Look.Hex("outline")),
             Background = background is { } bg ? BrushFor(bg) : UI.Brush(Look.Hex("hover")),
             Child = new TextBlock
@@ -414,12 +449,17 @@ public partial class MainWindow
             }
         };
 
-        private DockPanel? Suggestion(CssColour colour, CssColour background)
+        private (WrapPanel Details, Button Apply)? Suggestion(CssColour colour, CssColour background)
         {
             if (colour.AaSuggestion(background) is not { } suggestion) return null;
             var apply = ActionButton(Loc.T("应用", "Apply"), () => Choose(_entry, suggestion));
             AutomationProperties.SetName(apply, $"{Loc.T("应用", "Apply")} {suggestion.Hex}");
-            SetDock(apply, DockSide.Right);
+            apply.Height = 21;
+            apply.Margin = new Thickness(0);
+            apply.Padding = new Thickness(7, 0, 7, 0);
+            apply.FontSize = 11;
+            apply.Style = (Style)_owner.FindResource("PanelIconButton");
+            apply.BorderBrush = UI.Brush(Look.Outline);
             bool darker = suggestion.Contrast(White) > (colour with { A = 255 }).Contrast(White);
             string label = darker ? Loc.T("调暗以达到 AA", "Darker for AA") : Loc.T("调亮以达到 AA", "Lighter for AA");
             var swatch = new Border
@@ -428,9 +468,11 @@ public partial class MainWindow
                 Margin = new Thickness(6, 0, 5, 0), VerticalAlignment = VerticalAlignment.Center
             };
             string ratio = suggestion.Contrast(background).ToString("0.00", CultureInfo.InvariantCulture);
-            var info = new WrapPanel { VerticalAlignment = VerticalAlignment.Center, Children =
-                { Text(label, 11, Look.Secondary), swatch, Text($"{suggestion.Hex}   {ratio}:1", 11, Look.Primary) } };
-            return new DockPanel { Margin = new Thickness(0, 4, 0, 0), Children = { apply, info } };
+            var summary = Text(label, 11, Look.Secondary);
+            var value = Text($"{suggestion.Hex}   {ratio}:1", 11, Look.Primary);
+            summary.VerticalAlignment = value.VerticalAlignment = VerticalAlignment.Center;
+            var details = new WrapPanel { Margin = new Thickness(0, 1, 0, 0), Children = { summary, swatch, value } };
+            return (details, apply);
         }
 
         private void Harmony(string title, CssColour colour, params double[] offsets)
@@ -468,12 +510,13 @@ public partial class MainWindow
             button.Background = Brushes.Transparent;
             button.Padding = new Thickness(0);
             button.Width = button.Height = 24;
+            button.Template = FlatPill();
             button.Margin = new Thickness(0, 0, 6, 0);
             button.ToolTip = colour.Hex;
             AutomationProperties.SetName(button, $"{Loc.T("使用", "Use")} {colour.Hex}");
             var swatch = new Border
             {
-                Width = 24, Height = 24, CornerRadius = new CornerRadius(Look.Corner(7)),
+                Width = 24, Height = 24, CornerRadius = new CornerRadius(12),
                 Background = BrushFor(colour), BorderBrush = UI.Brush(Look.Hex("outline")), BorderThickness = new Thickness(1)
             };
             button.MouseEnter += (_, _) => swatch.BorderBrush = UI.Brush(Look.Primary);
