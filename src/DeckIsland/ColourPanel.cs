@@ -367,10 +367,13 @@ public partial class MainWindow
             var title = Text(label, 12, Look.Secondary);
             title.VerticalAlignment = VerticalAlignment.Center;
             var row = ContrastLine(title, ContrastPreview(colour, background));
-            var stack = new StackPanel { Children = { row } };
+            // The suggestion follows the badges on the same line, and goes below only when the page is too narrow for both.
+            var stack = new WrapPanel { Children = { row } };
             var action = new ContentControl();
             if (Suggestion(colour, background) is { } suggestion)
             {
+                suggestion.Details.Margin = new Thickness(12, 0, 0, 0);
+                suggestion.Details.VerticalAlignment = VerticalAlignment.Center;
                 stack.Children.Add(suggestion.Details);
                 action.Content = suggestion.Apply;
             }

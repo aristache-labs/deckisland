@@ -12,7 +12,7 @@ public partial class MainWindow
 {
     private Button? _reminderAlertSnooze;
     internal Guid? ReminderAlertId { get; private set; }
-    private StackPanel? _reminderRows;
+    private System.Windows.Controls.Primitives.UniformGrid? _reminderRows;
     private StackPanel? _reminderEmpty;
     private (int Theme, string Language, string TimePattern) _reminderAppearance;
     // The list changed while the page was not the one shown, so the rows it holds are old; it is filled again when it is shown.
@@ -134,7 +134,7 @@ public partial class MainWindow
         actions.Children.Add(ReminderButton(Loc.T("明天", "Tomorrow"), () =>
             QuickReminder(Reminder.AtLocal(DateTime.Today.AddDays(1).AddHours(9), TimeZoneInfo.Local))));
         body.Children.Add(actions);
-        _reminderRows = new StackPanel();
+        _reminderRows = new System.Windows.Controls.Primitives.UniformGrid { VerticalAlignment = VerticalAlignment.Top };
         _reminderEmpty = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 8, 0), IsHitTestVisible = false };
         var emptyTitle = WeatherText(Loc.T("还没有待办提醒。", "Nothing to remember yet."), 15);
         emptyTitle.FontWeight = FontWeights.SemiBold;
@@ -172,6 +172,8 @@ public partial class MainWindow
         if (_reminderRows is not { } rows || _reminderEmpty is not { } empty) return;
         _reminderStale = false;
         rows.Children.Clear();
+        // As many columns as the page's width holds, as the capture page does; taller pages show more rows before scrolling.
+        rows.Columns = Math.Max(1, (int)(ContentCanvas.Width / 300));
         var now = DateTimeOffset.Now;
         foreach (var item in _app.OrderedReminders)
         {
@@ -191,7 +193,7 @@ public partial class MainWindow
             var time = item.Due.ToLocalTime().ToString($"ddd d MMM · {Settings.TimePattern}", Loc.Culture);
             description.Children.Add(WeatherText(due ? $"{Loc.T("到期", "Due")} · {time}" : time, 11));
             row.Children.Add(description);
-            rows.Children.Add(new Border { Child = row, Padding = new Thickness(8, 4, 4, 4), Margin = new Thickness(0, 0, 0, 4),
+            rows.Children.Add(new Border { Child = row, Padding = new Thickness(8, 4, 4, 4), Margin = new Thickness(0, 0, rows.Columns > 1 ? 4 : 0, 4),
                 CornerRadius = new CornerRadius(8), Background = UI.Brush(Look.Hex(due ? "fillSelected" : "fill")) });
         }
         empty.Visibility = rows.Children.Count == 0 ? Visibility.Visible : Visibility.Collapsed;

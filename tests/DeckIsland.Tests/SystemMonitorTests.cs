@@ -332,7 +332,8 @@ static class SystemMonitorTests
             DeckPages.Order.Where(page => page != DeckPage.Usage).All(page =>
             {
                 var (compact, standard, spacious) = (Quick(page, PanelSize.Compact), Quick(page, PanelSize.Standard), Quick(page, PanelSize.Spacious));
-                return compact == DeckPages.Size(new DeckSettings(), page) && standard.Width > compact.Width && standard.Height > compact.Height
+                var standardSize = DeckPages.Size(new DeckSettings(), page);
+                return compact == (Math.Max(standardSize.Width, DeckPages.SwitchWidth(settings)), standardSize.Height) && standard.Width > compact.Width && standard.Height > compact.Height
                     && spacious.Width >= Math.Max(800, standard.Width) && spacious.Height == DeckPages.MaxHeight;
             }) && Quick(DeckPage.Music, PanelSize.Standard) == MusicSizes.For(PanelSize.Spacious) && Quick(DeckPage.Capture, PanelSize.Spacious) == (800, DeckPages.MaxHeight));
         check("Pages: quick sizes follow the work area and the scale, within the page's limits",
@@ -340,7 +341,7 @@ static class SystemMonitorTests
             {
                 var limits = DeckPages.Limits(settings, page);
                 return new[] { Quick(page, size, 1.5), Quick(page, size, 1, 3840, 2112), Quick(page, size, 1, 1366, 728) }.All(s =>
-                    s.Width >= limits.MinWidth && s.Width <= limits.MaxWidth && s.Height >= limits.MinHeight && s.Height <= limits.MaxHeight);
+                    s.Width >= Math.Max(limits.MinWidth, DeckPages.SwitchWidth(settings)) && s.Width >= limits.MinWidth && s.Width <= limits.MaxWidth && s.Height >= limits.MinHeight && s.Height <= limits.MaxHeight);
             })) && Quick(DeckPage.Capture, PanelSize.Standard, 1, 3840, 2112).Width == 1200 && Quick(DeckPage.Capture, PanelSize.Standard, 1.5).Width < 760
             && Quick(DeckPage.Capture, PanelSize.Spacious, 1, 1366, 728).Width <= DeckPages.MaxWidthOn(1366));
         check("Pages: a shown page resolves to itself", DeckPages.Resolve(settings, DeckPage.Monitor) == DeckPage.Monitor);

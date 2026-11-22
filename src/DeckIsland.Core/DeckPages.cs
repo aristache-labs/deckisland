@@ -90,7 +90,11 @@ public static class DeckPages
     // The quick sizes, as shares of the work area of the panel's monitor so they scale with its resolution and Windows scale.
     // The shares were taken on the reference work area: there Compact is the page's default size, Standard the old spacious
     // size, and Spacious about 800 DIP wide and the full height the page allows. Each is kept within the page's limits.
-    public const double ReferenceWorkWidth = 1920, ReferenceWorkHeight = 1032, SpaciousWidth = 800;
+    // The reference is a 1920 x 1200 monitor at the Windows 125 % scale, less the taskbar, in DIP.
+    public const double ReferenceWorkWidth = 1536, ReferenceWorkHeight = 922, SpaciousWidth = 800;
+    // The page switch's buttons (28 DIP each) and the room either side of it (the settings button, the gaps): no quick size
+    // is narrower, so the switch is never shrunk to fit. shortcut: mirrors MainWindow.xaml's button width; update it with it.
+    public static double SwitchWidth(DeckSettings settings) => Math.Max(1, Visible(settings).Count) * 28 + 84;
     public static (double Width, double Height) QuickSize(DeckSettings settings, DeckPage page, PanelSize size, double workWidth, double workHeight, double scale = 1)
     {
         var (compact, standard) = Reference(settings, page);
@@ -101,6 +105,7 @@ public static class DeckPages
             _ => (Math.Max(SpaciousWidth, standard.Width), ReferenceWorkHeight)
         };
         var (minWidth, maxWidth, minHeight, maxHeight) = Limits(settings, page);
+        minWidth = Math.Max(minWidth, SwitchWidth(settings));
         maxWidth = Math.Max(minWidth, Math.Min(maxWidth, MaxWidthOn(workWidth, scale)));
         return (Math.Clamp(Math.Round(width / ReferenceWorkWidth * workWidth / scale), minWidth, maxWidth),
             Math.Clamp(Math.Round(height / ReferenceWorkHeight * workHeight / scale), minHeight, maxHeight));
