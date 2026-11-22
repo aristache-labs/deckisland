@@ -35,7 +35,8 @@ public sealed record WeatherUpdate(WeatherReading? Reading, bool Stale)
 
 public static class Weather
 {
-    private const int ForecastDays = 4;
+    // Today and the five days after it.
+    private const int ForecastDays = 6;
     private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(12) };
     public const string Attribution = "https://open-meteo.com/";
     public const string LocationAttribution = "https://www.geonames.org/";
