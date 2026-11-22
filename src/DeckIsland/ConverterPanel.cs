@@ -42,8 +42,9 @@ public partial class MainWindow
         ModelToolbar.Visibility = ApplicationPages.Visibility = Visibility.Collapsed;
         if (!double.IsFinite(ContentCanvas.Height)) return;
         var header = PanelHeader.For(30, 18);
-        ApplyHeader(Settings.UsagePage ? header.WithControlsOf(CachedUsageHeader()) : header);
-        ConverterContent.Margin = new Thickness(header.Side, 0, header.Side, 12);
+        if (Settings.UsagePage) header = header.WithControlsOf(CachedUsageHeader());
+        ApplyHeader(header with { Row = Math.Max(header.Row, header.Height) });
+        ConverterContent.Margin = new Thickness(header.Side, 0, header.Side, Math.Max(12, header.Side - 4));
         if (Shared.ConverterMode == ConverterMode.Currency) RefreshRates();
         var (from, to) = ConverterPair();
         var appearance = (Look.Generation, Loc.Language, Shared.ConverterMode, $"{Shared.ConverterUnitCategory}|{from}|{to}", _ratesVersion, (int)ContentCanvas.Width);
@@ -185,14 +186,18 @@ public partial class MainWindow
     {
         Button Segment(string label, bool on, ConverterMode mode)
         {
-            var button = new Button { Style = (Style)FindResource("WidgetSurfaceButton"), Template = FlatPill(), Height = 20, Padding = new Thickness(9, 0, 9, 0),
-                Background = on ? UI.Brush(Look.Hex("fillSelected")) : Brushes.Transparent, Content = PickerRowText(label, on ? Look.Primary : Look.Secondary) };
-            AutomationProperties.SetName(button, label);
-            button.Click += (_, _) => { if (!on) { _app.ChangeShared(settings => settings.ConverterMode = mode); RenderConverter(); } };
+            var button = PanelSegment(label, () =>
+            {
+                if (on) return;
+                _app.ChangeShared(settings => settings.ConverterMode = mode);
+                RenderConverter();
+            });
+            StylePanelSegment(button, on);
             return button;
         }
-        return new Border { CornerRadius = new CornerRadius(13), Background = UI.Brush(Look.Hex("fill")), Padding = new Thickness(2), VerticalAlignment = VerticalAlignment.Center,
-            Child = new StackPanel { Orientation = Orientation.Horizontal, Children = { Segment(Loc.T("单位", "Units"), !currency, ConverterMode.Units), Segment(Loc.T("货币", "Currency"), currency, ConverterMode.Currency) } } };
+        var units = Segment(Loc.T("单位", "Units"), !currency, ConverterMode.Units);
+        var money = Segment(Loc.T("货币", "Currency"), currency, ConverterMode.Currency);
+        return PanelSegmentTrack(new StackPanel { Orientation = Orientation.Horizontal, Children = { units, money } });
     }
 
     private string SideLabel(bool currency, string id)

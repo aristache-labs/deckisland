@@ -80,17 +80,12 @@ public partial class MainWindow
             AutomationProperties.SetLiveSetting(_status, AutomationLiveSetting.Polite);
 
             var sections = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
-            var segments = new Border { CornerRadius = new CornerRadius(Look.Corner(14)), Background = UI.Brush(Look.Fill), BorderBrush = UI.Brush(Look.Outline), BorderThickness = new Thickness(1), Padding = new Thickness(2), Child = sections };
+            var segments = owner.PanelSegmentTrack(sections);
             var names = new[] { Loc.T("数值", "Values"), Loc.T("对比度", "Contrast"), Loc.T("配色", "Harmonies") };
             for (int i = 0; i < names.Length; i++)
             {
                 int section = i;
-                var button = ActionButton(names[i], () => SelectSection(section));
-                button.Template = FlatPill();
-                button.Margin = new Thickness(1, 0, 1, 0);
-                button.Height = 24;
-                button.Padding = new Thickness(9, 0, 9, 0);
-                button.FontSize = 11;
+                var button = owner.PanelSegment(names[i], () => SelectSection(section));
                 _sectionButtons.Add(button);
                 sections.Children.Add(button);
             }
@@ -147,12 +142,7 @@ public partial class MainWindow
             _scroll.Content = _views[section];
             _scroll.ScrollToTop();
             for (int i = 0; i < _sectionButtons.Count; i++)
-            {
-                bool current = i == section;
-                _sectionButtons[i].Background = current ? UI.Brush(Look.Primary) : Brushes.Transparent;
-                _sectionButtons[i].Foreground = UI.Brush(current ? Look.Hex("surface") : Look.Secondary);
-                _sectionButtons[i].FontWeight = current ? FontWeights.SemiBold : FontWeights.Normal;
-            }
+                _owner.StylePanelSegment(_sectionButtons[i], i == section);
         }
 
         private static TextBlock Text(string value, double size, string colour) => new()

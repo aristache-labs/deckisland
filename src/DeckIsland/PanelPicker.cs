@@ -5,11 +5,38 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using DeckIsland.Core;
+using DockSide = System.Windows.Controls.Dock;
 
 namespace DeckIsland;
 
 public partial class MainWindow
 {
+    private Border PanelSegmentTrack(UIElement choices) => new()
+    {
+        CornerRadius = new CornerRadius(Look.Corner(14)), Background = UI.Brush(Look.Fill),
+        BorderBrush = UI.Brush(Look.Outline), BorderThickness = new Thickness(1), Padding = new Thickness(2),
+        VerticalAlignment = VerticalAlignment.Center, Child = choices
+    };
+
+    private Button PanelSegment(string label, Action choose)
+    {
+        var button = new Button
+        {
+            Style = (Style)FindResource("WidgetSurfaceButton"), Template = FlatPill(), Content = label,
+            Height = 24, Padding = new Thickness(9, 0, 9, 0), Margin = new Thickness(1, 0, 1, 0), FontSize = 11
+        };
+        AutomationProperties.SetName(button, label);
+        button.Click += (_, _) => choose();
+        return button;
+    }
+
+    private void StylePanelSegment(Button button, bool selected)
+    {
+        button.Background = selected ? UI.Brush(Look.Primary) : Brushes.Transparent;
+        button.Foreground = UI.Brush(selected ? Look.Hex("surface") : Look.Secondary);
+        button.FontWeight = selected ? FontWeights.SemiBold : FontWeights.Normal;
+    }
+
     // A choice made inside the page instead of in a pop-up (which is a window of its own, that the pointer would leave the panel for):
     // the list covers the page's body until a row is picked, Esc is pressed or the back row is clicked. With search, a box above the
     // list filters it as it is typed.
@@ -18,30 +45,64 @@ public partial class MainWindow
         ClosePanelPicker(host);
         var list = new StackPanel();
         var scroll = new ScrollViewer { Content = list, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, Focusable = false };
-        var back = new Button { Style = (Style)FindResource("WidgetSurfaceButton"), Background = Brushes.Transparent, HorizontalAlignment = HorizontalAlignment.Left,
-            Padding = new Thickness(6, 2, 8, 2), Content = PickerRowText("‹  " + title, Look.Secondary) };
-        AutomationProperties.SetName(back, Loc.T("返回", "Back"));
-        var top = new DockPanel { Margin = new Thickness(0, 0, 0, 6), LastChildFill = true };
-        DockPanel.SetDock(back, System.Windows.Controls.Dock.Left);
+        var chevron = new Path
+        {
+            Data = Geometry.Parse("M6,2 L2,6 L6,10"), Stroke = UI.Brush(Look.Secondary), StrokeThickness = 1.5,
+            StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round
+        };
+        var back = new Button
+        {
+            Style = (Style)FindResource("PanelIconButton"), Width = 25, Height = 26,
+            Background = UI.Brush(Look.Fill), BorderBrush = UI.Brush(Look.Outline), Content = chevron
+        };
+        back.ToolTip = Loc.T("返回", "Back");
+        AutomationProperties.SetName(back, back.ToolTip.ToString());
+        var heading = PickerRowText(title, Look.Primary);
+        heading.Margin = new Thickness(8, 0, 10, 0);
+        heading.FontWeight = FontWeights.SemiBold;
+        var top = new DockPanel { Margin = new Thickness(0, 0, 0, 8), LastChildFill = true };
+        DockPanel.SetDock(back, DockSide.Left);
+        DockPanel.SetDock(heading, DockSide.Left);
         top.Children.Add(back);
+        top.Children.Add(heading);
         TextBox? box = null;
         if (search)
         {
-            box = new TextBox { Style = (Style)FindResource("ShelfTextBox"), Height = 26, Padding = new Thickness(8, 3, 8, 3), Margin = new Thickness(8, 0, 0, 0), VerticalContentAlignment = VerticalAlignment.Center };
-            AutomationProperties.SetName(box, Loc.T("搜索", "Search"));
+            var searchHint = Loc.T("搜索货币", "Search currency");
+            box = new TextBox
+            {
+                Style = (Style)FindResource("ShelfTextBox"), Height = 27, Padding = new Thickness(9, 0, 9, 0),
+                Background = Brushes.Transparent, BorderThickness = new Thickness(0), VerticalContentAlignment = VerticalAlignment.Center
+            };
+            AutomationProperties.SetName(box, searchHint);
             TakeKeyboardOnClick(box);
-            top.Children.Add(box);
+            var hint = PickerRowText(searchHint, Look.Secondary);
+            hint.IsHitTestVisible = false;
+            hint.Margin = new Thickness(10, 0, 8, 0);
+            var searchField = new Border
+            {
+                Background = UI.Brush(Look.Fill), BorderBrush = UI.Brush(Look.Outline), BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(Look.Corner(7)), Child = new Grid { Children = { box, hint } }
+            };
+            box.TextChanged += (_, _) => hint.Visibility = box.Text.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
+            box.IsKeyboardFocusWithinChanged += (_, _) => searchField.BorderBrush = UI.Brush(box.IsKeyboardFocusWithin ? Look.Accent : Look.Outline);
+            top.Children.Add(searchField);
         }
         var panel = new DockPanel { LastChildFill = true };
-        DockPanel.SetDock(top, System.Windows.Controls.Dock.Top);
+        DockPanel.SetDock(top, DockSide.Top);
         panel.Children.Add(top);
         panel.Children.Add(scroll);
-        var overlay = new Border { Background = UI.Brush(Look.Hex("surface")), Child = panel, Tag = PickerTag };
+        var overlay = new Border
+        {
+            Background = UI.Brush(Look.Hex("surface")), Padding = new Thickness(0, 7, 0, 0),
+            ClipToBounds = true, Child = panel, Tag = PickerTag
+        };
         Grid.SetRowSpan(overlay, Math.Max(1, host.RowDefinitions.Count)); Grid.SetColumnSpan(overlay, Math.Max(1, host.ColumnDefinitions.Count));
 
-        void Fill(string filter)
+        Button? Fill(string filter)
         {
             list.Children.Clear();
+            Button? selected = null;
             for (int i = 0; i < items.Count; i++)
             {
                 var (label, chosen) = items[i];
@@ -52,25 +113,33 @@ public partial class MainWindow
                     StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round, StrokeLineJoin = PenLineJoin.Round };
                 var row = new Button
                 {
-                    Style = (Style)FindResource("WidgetSurfaceButton"), Background = Brushes.Transparent, Height = 28, Padding = new Thickness(8, 0, 8, 0),
-                    HorizontalContentAlignment = HorizontalAlignment.Left,
-                    Content = new StackPanel { Orientation = Orientation.Horizontal, Children = { check, PickerRowText(label, Look.Primary) } }
+                    Style = (Style)FindResource("WidgetSurfaceButton"), Template = StretchPill(),
+                    Background = chosen ? UI.Brush(Look.FillSelected) : UI.Brush(Look.Fill),
+                    Height = 26, Padding = new Thickness(8, 0, 8, 0), Margin = new Thickness(0, 0, 4, 3),
+                    Content = new DockPanel { Children = { check, PickerRowText(label, Look.Primary) } }
                 };
                 AutomationProperties.SetName(row, label);
                 row.Click += (_, _) => { ClosePanelPicker(host); pick(index); };
                 list.Children.Add(row);
+                if (chosen) selected = row;
             }
+            if (list.Children.Count == 0)
+                list.Children.Add(PickerRowText(Loc.T("没有匹配项", "No matches"), Look.Secondary));
+            return selected;
         }
-        Fill("");
-        if (box is not null) box.TextChanged += (_, _) => Fill(box.Text.Trim());
+        var chosenRow = Fill("");
+        if (box is not null) box.TextChanged += (_, _) =>
+        {
+            Fill(box.Text.Trim());
+            scroll.ScrollToTop();
+        };
         back.Click += (_, _) => ClosePanelPicker(host);
         overlay.PreviewKeyDown += (_, e) => { if (e.Key == Key.Escape) { e.Handled = true; ClosePanelPicker(host); } };
         host.Children.Add(overlay);
         // The chosen row in view, so a long list (the currencies) opens where the choice is.
         overlay.Loaded += (_, _) =>
         {
-            if (list.Children.OfType<Button>().FirstOrDefault(row => row.Content is StackPanel { Children: [Path { Visibility: Visibility.Visible }, ..] }) is { } chosen)
-                chosen.BringIntoView();
+            chosenRow?.BringIntoView();
             if (box is not null && IsActive) Keyboard.Focus(box);
         };
     }
