@@ -28,6 +28,7 @@ public partial class MainWindow
     private const string DeleteGlyph = "M3,4 H11 M5,4 V2 H9 V4 M4,4 L5,12 H9 L10,4 M7,6 V10";
     // What each section takes: 0 is every screen, then each display. Screenshots and recordings choose apart.
     private int _captureScreen, _captureVideoScreen, _captureFilter;
+    private bool _captureVideoMode;
     // Select mode: clicking a capture marks it instead of opening it; Delete sends the marked ones to the Recycle Bin.
     private bool _captureSelecting;
     private readonly HashSet<string> _captureSelected = new(StringComparer.OrdinalIgnoreCase);
@@ -122,10 +123,33 @@ public partial class MainWindow
         }
 
         var top = new Grid { Margin = new Thickness(0, 0, 0, 2) };
-        foreach (var width in new[] { new GridLength(84), new GridLength(240), GridLength.Auto, new GridLength(1, GridUnitType.Star), GridLength.Auto })
-            top.ColumnDefinitions.Add(new ColumnDefinition { Width = width });
-        CaptureRow(top, 0, Loc.T("截图", "Screenshot"), screenChip, [], _captureStatus, [shot, region]);
-        CaptureRow(top, 1, Loc.T("视频", "Video"), videoChip, [mic, sound], null, videoActions);
+        // Left column: the section switch, with the screen picker under it (both as wide as the wider one). Beside them, centred:
+        // the section's actions (Capture and Region, or Record and then mic and speaker). The status note sits under them at the right.
+        top.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        top.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        top.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        top.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        // One section at a time, switched at the left: Screenshot or Video. A running recording keeps Video shown.
+        if (recording is not null) _captureVideoMode = true;
+        var modes = new StackPanel { Orientation = Orientation.Horizontal };
+        foreach (var (video, name) in new[] { (false, Loc.T("截图", "Screenshot")), (true, Loc.T("视频", "Video")) })
+        {
+            var button = PanelSegment(name, () => { _captureVideoMode = video; _captureAppearance = default; RenderCapture(); });
+            StylePanelSegment(button, _captureVideoMode == video);
+            button.IsEnabled = recording is null || video;
+            modes.Children.Add(button);
+        }
+        var modeTrack = PanelSegmentTrack(modes);
+        FrameworkElement picker = _captureVideoMode ? videoChip : screenChip;
+        FrameworkElement[] actions = _captureVideoMode ? [.. videoActions, mic, sound] : [shot, region];
+        var centre = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+        for (int i = 0; i < actions.Length; i++) { actions[i].Margin = new Thickness(i == 0 ? 0 : 8, 0, 0, 0); actions[i].VerticalAlignment = VerticalAlignment.Center; centre.Children.Add(actions[i]); }
+        picker.Margin = new Thickness(0, 8, 0, 0);
+        _captureStatus.HorizontalAlignment = HorizontalAlignment.Right; _captureStatus.Margin = new Thickness(12, 8, 0, 0);
+        Grid.SetColumn(centre, 1);
+        Grid.SetRow(picker, 1);
+        Grid.SetRow(_captureStatus, 1); Grid.SetColumn(_captureStatus, 1);
+        top.Children.Add(modeTrack); top.Children.Add(centre); top.Children.Add(picker); top.Children.Add(_captureStatus);
         DockPanel.SetDock(top, DockSide.Top);
         root.Children.Add(top);
         var rule = new Border { Height = 1, Background = UI.Brush(Look.Outline), Margin = new Thickness(0, 6, 0, 10) };
@@ -175,28 +199,6 @@ public partial class MainWindow
             : new TextBlock { Text = Loc.T("还没有截图或录屏。", "No captures yet."), FontSize = 12.5, Foreground = UI.Brush(Look.Secondary), Margin = new Thickness(2, 8, 0, 0) };
         root.Children.Add(new ScrollViewer { Content = list, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled });
         return root;
-    }
-
-    // One row of the grid above the list: label, picker, the row's options, an optional note, and its actions at the right.
-    private void CaptureRow(Grid grid, int row, string label, FrameworkElement picker, FrameworkElement[] options, FrameworkElement? note, FrameworkElement[] actions)
-    {
-        grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        var name = new TextBlock { Text = label, FontSize = 12.5, FontWeight = FontWeights.Medium, Foreground = UI.Brush(Look.Secondary), VerticalAlignment = VerticalAlignment.Center };
-        picker.Margin = new Thickness(0, 0, 10, 0);
-        picker.VerticalAlignment = VerticalAlignment.Center;
-        var middle = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
-        foreach (var option in options) { option.Margin = new Thickness(0, 0, 8, 0); option.VerticalAlignment = VerticalAlignment.Center; middle.Children.Add(option); }
-        var right = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
-        for (int i = 0; i < actions.Length; i++) { actions[i].Margin = new Thickness(i == 0 ? 0 : 8, 0, 0, 0); right.Children.Add(actions[i]); }
-        var cells = new FrameworkElement?[] { name, picker, middle, note, right };
-        for (int column = 0; column < cells.Length; column++)
-        {
-            if (cells[column] is not { } cell) continue;
-            Grid.SetRow(cell, row); Grid.SetColumn(cell, column);
-            if (cell != note) cell.Margin = new Thickness(cell.Margin.Left, row == 0 ? 0 : 8, cell.Margin.Right, 0);
-            else cell.Margin = new Thickness(note!.Margin.Left, row == 0 ? 0 : 8, note.Margin.Right, 0);
-            grid.Children.Add(cell);
-        }
     }
 
     private static PathGlyph CaptureGlyph(string data, double size, string colour) => new()
