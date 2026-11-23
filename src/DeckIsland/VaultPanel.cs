@@ -87,11 +87,11 @@ public partial class MainWindow
         Stroke = UI.Brush(Look.Secondary), StrokeThickness = 1.25, StrokeLineJoin = PenLineJoin.Round, StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round
     };
 
-    private Button VaultIcon(string geometry, string label, Action action)
+    private Button VaultIcon(string geometry, string label, Action action, double glyphSize = 14)
     {
         var button = VaultButton(label, action);
         button.Style = (Style)FindResource("WidgetSurfaceButton");
-        button.Content = VaultGlyph(geometry, 14);
+        button.Content = VaultGlyph(geometry, glyphSize);
         button.Width = button.Height = 28;
         button.Padding = new Thickness(0);
         button.HorizontalAlignment = HorizontalAlignment.Center;
@@ -153,6 +153,7 @@ public partial class MainWindow
             bool locked = document.Protected(_vaultCodes) && _app.VaultKey is null;
             var entries = locked ? Vault.Listings(document, _vaultCodes) : Vault.Entries(document, _vaultCodes, _app.VaultKey);
             var replay = _vaultReplay;
+            Action? afterFill = null;
             _vaultReplay = null;
             var search = new TextBox { Padding = new Thickness(6, 3, 6, 3), Margin = new Thickness(6, 0, 0, 0) };
             AutomationProperties.SetName(search, Loc.T("搜索保险库", "Search vault"));
@@ -162,13 +163,17 @@ public partial class MainWindow
             var status = WeatherText("", 11);
             DockPanel.SetDock(status, DockSide.Bottom);
             root.Children.Add(status);
-            if (_app.VaultKey is not null) actions.Children.Add(VaultButton(Loc.T("锁定", "Lock"), _app.LockVaultViews));
-            actions.Children.Add(VaultButton(Loc.T("添加", "Add"), () =>
+            const string LockBody = "M3,7 H13 V15 H3 Z";
+            bool unlocked = _app.VaultKey is not null;
+            actions.Children.Add(unlocked
+                ? VaultIcon(LockBody + " M5,7 V4 A3,3 0 0 1 11,4", Loc.T("锁定保险库", "Lock Vault"), _app.LockVaultViews, 16)
+                : VaultIcon(LockBody + " M5,7 V4 A3,3 0 0 1 11,4 V7", Loc.T("解锁保险库", "Unlock Vault"), () => VaultUnlockForm(document), 16));
+            actions.Children.Add(VaultIcon("M8,2 V14 M2,8 H14", _vaultCodes ? Loc.T("添加双重验证", "Add 2FA") : Loc.T("添加密码", "Add password"), () =>
             {
                 if (locked && document.Inbox is null)
                     VaultUnlockForm(document, () => _vaultReplay = (-1, "add"));
                 else EditVault(document, entries, -1);
-            }));
+            }, 16));
             if (replay == (-1, "add")) { EditVault(document, entries, -1); return; }
             var list = new StackPanel();
             if (entries.Count == 0)
@@ -247,7 +252,7 @@ public partial class MainWindow
                         if (replay == (index, action))
                         {
                             replay = null;
-                            Dispatcher.BeginInvoke(() => button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
+                            afterFill = run;
                         }
                         return button;
                     }
@@ -329,6 +334,7 @@ public partial class MainWindow
             }
             search.TextChanged += (_, _) => Fill();
             Fill();
+            afterFill?.Invoke();
         }
         catch (Exception error) when (VaultStorageError(error))
         {
@@ -368,6 +374,21 @@ public partial class MainWindow
         });
         var secret = new PasswordBox { MaxLength = 4096, Password = entry?.Password ?? "" };
         var passwordTools = new DockPanel();
+        TextBlock Placeholder(string label) => new()
+        {
+            Text = label, Foreground = UI.Brush(Look.Secondary), FontSize = 12,
+            VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(9, 0, 8, 0),
+            TextTrimming = TextTrimming.CharacterEllipsis, IsHitTestVisible = false
+        };
+        FrameworkElement WithPlaceholder(TextBox input, string label)
+        {
+            if (entry is not null) return input;
+            var hint = Placeholder(label);
+            void Refresh() => hint.Visibility = input.Text.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
+            input.TextChanged += (_, _) => Refresh();
+            Refresh();
+            return new Grid { Children = { input, hint } };
+        }
         if (_vaultCodes)
         {
             VaultField(body, nameLabel, name);
@@ -407,8 +428,8 @@ public partial class MainWindow
                 fields.Children.Add(caption);
                 fields.Children.Add(content);
             }
-            Add(nameLabel, name);
-            Add(accountLabel, account);
+            Add(nameLabel, name, WithPlaceholder(name, Loc.T("例如 GitHub", "e.g. GitHub")));
+            Add(accountLabel, account, WithPlaceholder(account, Loc.T("可选", "Optional")));
             Add(Loc.T("密码", "Password"), secret, passwordTools);
             body.Children.Add(new Border { Background = UI.Brush(Look.Hex("fill")), CornerRadius = new CornerRadius(Corner(8)), Child = fields });
         }
@@ -500,6 +521,13 @@ public partial class MainWindow
             eye.HorizontalAlignment = HorizontalAlignment.Right;
             preview.Margin = new Thickness(8, 0, 34, 0);
             field.Children.Add(secret);
+            if (entry is null)
+            {
+                var hint = Placeholder(Loc.T("输入或生成密码", "Type or generate a password"));
+                hint.Margin = new Thickness(9, 0, 32, 0);
+                secret.PasswordChanged += (_, _) => hint.Visibility = secret.Password.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
+                field.Children.Add(hint);
+            }
             field.Children.Add(preview);
             field.Children.Add(eye);
             preview.Background = UI.Brush(Look.Hex("fill"));
@@ -543,35 +571,39 @@ public partial class MainWindow
         buttons.Children.Add(VaultButton(Loc.T("取消", "Cancel"), BuildVault));
         if (entry is not null)
         {
-            var delete = VaultButton(Loc.T("删除", "Delete"), () => { });
-            var confirm = VaultButton(Loc.T("确认删除", "Confirm delete"), () => Commit([.. entries.Where((_, i) => i != index)]));
-            confirm.Foreground = UI.Brush(Look.Hex("danger"));
-            confirm.Visibility = Visibility.Collapsed;
-            delete.Click += (_, _) =>
+            var warning = WeatherText(Loc.T("永久删除此条目？", "Permanently delete this entry?"), 12);
+            warning.Visibility = Visibility.Collapsed;
+            warning.Foreground = UI.Brush(Look.Hex("danger"));
+            warning.VerticalAlignment = VerticalAlignment.Center;
+            warning.Margin = new Thickness(0, 0, 6, 0);
+            Button? trash = null;
+            trash = VaultIcon("M2,4 H14 M5,4 V2 H11 V4 M4,4 L5,14 H11 L12,4 M7,7 V11 M9,7 V11", Loc.T("删除", "Delete"), () =>
             {
-                status.Text = Loc.T("永久删除此条目？", "Permanently delete this entry?");
-                delete.Visibility = Visibility.Collapsed;
-                confirm.Visibility = Visibility.Visible;
-                confirm.Focus();
-            };
+                if (warning.Visibility == Visibility.Visible)
+                {
+                    Commit([.. entries.Where((_, i) => i != index)]);
+                    return;
+                }
+                warning.Visibility = Visibility.Visible;
+                if (trash!.Content is System.Windows.Shapes.Path glyph)
+                    glyph.Stroke = warning.Foreground;
+                string label = Loc.T("确认永久删除", "Confirm permanent deletion");
+                AutomationProperties.SetName(trash, label);
+                trash.ToolTip = label;
+            });
+            var deleteAction = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right,
+                Children = { warning, trash } };
             if (passwordEditor?.Children[0] is TextBlock heading)
             {
                 var header = new DockPanel();
                 passwordEditor.Children.Remove(heading);
                 DockPanel.SetDock(header, DockSide.Top);
-                var trash = VaultIcon("M2,4 H14 M5,4 V2 H11 V4 M4,4 L5,14 H11 L12,4 M7,7 V11 M9,7 V11", Loc.T("删除", "Delete"), () =>
-                {
-                    status.Text = Loc.T("永久删除此条目？", "Permanently delete this entry?");
-                    confirm.Visibility = Visibility.Visible;
-                    confirm.Focus();
-                });
-                DockPanel.SetDock(trash, DockSide.Right);
-                header.Children.Add(trash);
+                DockPanel.SetDock(deleteAction, DockSide.Right);
+                header.Children.Add(deleteAction);
                 header.Children.Add(heading);
                 passwordEditor.Children.Insert(0, header);
             }
-            else buttons.Children.Add(delete);
-            buttons.Children.Add(confirm);
+            else body.Children.Insert(1, deleteAction);
         }
         var save = VaultButton(Loc.T("保存", "Save"), () =>
         {
