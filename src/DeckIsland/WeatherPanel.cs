@@ -163,7 +163,9 @@ public partial class MainWindow
 
         var currentTemperature = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 4, 0, 2) };
         currentTemperature.Children.Add(ForecastIcon(icon, 44, foreground, animate: Animates));
-        currentTemperature.Children.Add(Current(WeatherTemperature(reading.Temperature), 32, true));
+        var currentDegrees = Current(WeatherTemperature(reading.Temperature), 32, true);
+        currentDegrees.Margin = new Thickness(7, 0, 0, 0);
+        currentTemperature.Children.Add(currentDegrees);
         now.Children.Add(currentTemperature);
         now.Children.Add(Current(condition, 13, true));
         var today = reading.Days.FirstOrDefault();
@@ -173,7 +175,7 @@ public partial class MainWindow
         if (_app.WeatherStale) now.Children.Add(Current(Loc.T("数据未更新", "Weather data is stale"), 11));
         var chips = new StackPanel { Orientation = Orientation.Horizontal };
         facts.Children.Add(new Viewbox { Child = chips, StretchDirection = StretchDirection.DownOnly,
-            HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 8, 0, 3) });
+            HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 8, 0, 3) });
         void Chip(string symbol, string label, string value, double? degrees = null)
         {
             var content = new StackPanel { Orientation = Orientation.Horizontal };
@@ -200,9 +202,16 @@ public partial class MainWindow
         facts.Children.Add(sun);
         void AddSun(string marker, string label, DateTime time)
         {
-            var item = Current($"{marker} {time:HH:mm}", 11);
-            item.Margin = new Thickness(4, 0, 4, 0);
-            item.ToolTip = label;
+            var icon = new Path
+            {
+                Data = Geometry.Parse("M1,10 H15 M3,13 H13 M4,10 A4,4 0 0 1 12,10 M2,7 L3,8 M14,7 L13,8 " +
+                    (marker == "↑" ? "M8,0 V4 M6,2 L8,0 L10,2" : "M8,0 V4 M6,2 L8,4 L10,2")),
+                Stroke = foreground, StrokeThickness = 1.2, StrokeStartLineCap = PenLineCap.Round,
+                StrokeEndLineCap = PenLineCap.Round, StrokeLineJoin = PenLineJoin.Round,
+                Stretch = Stretch.Uniform, Width = 13, Height = 12, Margin = new Thickness(0, 0, 4, 0), VerticalAlignment = VerticalAlignment.Center
+            };
+            var item = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(4, 0, 4, 0),
+                ToolTip = label, Children = { icon, Current($"{time:HH:mm}", 11) } };
             AutomationProperties.SetName(item, $"{label} {time:HH:mm}");
             sun.Children.Add(item);
         }
@@ -244,7 +253,7 @@ public partial class MainWindow
         {
             var (mark, summary) = WeatherCondition(day.Code, true);
             var row = new Grid { Height = 22, Background = Brushes.Transparent };
-            foreach (double width in new[] { 40d, 21, 30, -1, 32, 45 })
+            foreach (double width in new[] { 48d, 21, 30, -1, 25, 45 })
                 row.ColumnDefinitions.Add(new ColumnDefinition { Width = width < 0 ? new GridLength(1, GridUnitType.Star) : new GridLength(width) });
             void Add(int column, FrameworkElement element)
             {
