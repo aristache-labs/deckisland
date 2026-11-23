@@ -256,9 +256,53 @@ public partial class MainWindow
                         }
                         return button;
                     }
+                    Button? deleteCode = null;
+                    if (_vaultCodes)
+                    {
+                        void DeleteCode()
+                        {
+                            if (locked)
+                            {
+                                VaultUnlockForm(document, () => _vaultReplay = (index, "delete"));
+                                return;
+                            }
+                            try
+                            {
+                                Vault.Save(document, true, _app.VaultKey, [.. entries.Where((_, i) => i != index)]);
+                                BuildVault();
+                            }
+                            catch (Exception error) when (VaultStorageError(error)) { status.Text = VaultUnavailable; }
+                        }
+
+                        var warning = WeatherText(Loc.T("永久删除此条目？", "Permanently delete this entry?"), 11);
+                        warning.Foreground = UI.Brush(Look.Hex("danger"));
+                        warning.Visibility = Visibility.Collapsed;
+                        warning.VerticalAlignment = VerticalAlignment.Center;
+                        tools.Children.Add(warning);
+                        deleteCode = VaultIcon("M2,4 H14 M5,4 V2 H11 V4 M4,4 L5,14 H11 L12,4 M7,7 V11 M9,7 V11", Loc.T("删除", "Delete"), () =>
+                        {
+                            if (warning.Visibility == Visibility.Visible) { DeleteCode(); return; }
+                            warning.Visibility = Visibility.Visible;
+                            if (deleteCode!.Content is System.Windows.Shapes.Path glyph) glyph.Stroke = warning.Foreground;
+                            var label = Loc.T("确认永久删除", "Confirm permanent deletion");
+                            deleteCode.ToolTip = label;
+                            AutomationProperties.SetName(deleteCode, label);
+                        });
+                        tools.Children.Add(deleteCode);
+                        if (replay == (index, "delete"))
+                        {
+                            replay = null;
+                            afterFill = DeleteCode;
+                        }
+                    }
                     if (_vaultCodes && locked)
                     {
-                        tools.Children.Add(SecretButton("code", VaultKeyGlyph, Loc.T("解锁验证码", "Unlock code"), () => { }));
+                        var label = Loc.T("解锁验证码", "Unlock code");
+                        var masked = VaultButton("● ● ●   ● ● ●", () => VaultUnlockForm(document));
+                        masked.ToolTip = label;
+                        AutomationProperties.SetName(masked, label);
+                        tools.Children.Add(masked);
+                        tools.Children.Add(VaultIcon("M3,7 H13 V15 H3 Z M5,7 V4 A3,3 0 0 1 11,4 V7", label, () => VaultUnlockForm(document)));
                     }
                     else if (entry.Otp is { } otp)
                     {
@@ -284,6 +328,8 @@ public partial class MainWindow
                             string value = otp.Code(now);
                             readout.Text = value.Insert(value.Length / 2, " ");
                             double remaining = otp.Period - (now.ToUnixTimeMilliseconds() / 1000.0 % otp.Period);
+                            bool pulse = remaining <= 5 && now.ToUnixTimeMilliseconds() % 1000 < 500;
+                            readout.Foreground = UI.Brush(pulse ? Look.Hex("danger") : Look.Primary);
                             double circumference = Math.PI * (ringSize - stroke) / stroke;
                             arc.StrokeDashArray = new DoubleCollection { circumference * remaining / otp.Period, circumference };
                             ring.ToolTip = Loc.T($"剩余 {Math.Ceiling(remaining)} 秒", $"{Math.Ceiling(remaining)} seconds remaining");
@@ -318,17 +364,16 @@ public partial class MainWindow
                         });
                         tools.Children.Add(eye);
                     }
-                    tools.Children.Add(SecretButton("edit", VaultEditGlyph, Loc.T("编辑条目", "Edit entry"), () => EditVault(document, entries, index)));
                     if (!_vaultCodes)
                     {
+                        tools.Children.Add(SecretButton("edit", VaultEditGlyph, Loc.T("编辑条目", "Edit entry"), () => EditVault(document, entries, index)));
                         tick.Add(_ => { if (feedback.Visibility == Visibility.Visible) RefreshLine(); });
                         tools.Children.Add(SecretButton("copy", VaultKeyGlyph, Loc.T("复制密码", "Copy password"), () => CopyEntry(entry.Password, true)));
                     }
                     var surface = new Border { Child = row, Background = Brushes.Transparent,
                         CornerRadius = new CornerRadius(Corner(8)), Padding = new Thickness(10, 5, 6, 5), Margin = new Thickness(0, 0, 0, 4) };
-                    if (!_vaultCodes)
                     {
-                        var hoverTools = tools.Children.OfType<Button>().Take(tools.Children.Count - 1).ToArray();
+                        var hoverTools = _vaultCodes ? new[] { deleteCode! } : tools.Children.OfType<Button>().Take(tools.Children.Count - 1).ToArray();
                         void Hover()
                         {
                             bool active = surface.IsMouseOver || surface.IsKeyboardFocusWithin;
