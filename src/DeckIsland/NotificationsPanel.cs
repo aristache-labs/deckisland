@@ -488,10 +488,13 @@ public partial class MainWindow
                 image.StreamSource = new System.IO.MemoryStream(bytes);
                 image.CacheOption = BitmapCacheOption.OnLoad;
                 image.EndInit();
-                image.Freeze();
-                tile.Padding = new Thickness(4);
-                tile.Child = new Image { Source = image, Stretch = Stretch.Uniform };
-                return tile;
+                if (TrimNoticeLogo(image) is { } logo)
+                {
+                    logo.Freeze();
+                    tile.Padding = new Thickness(4);
+                    tile.Child = new Image { Source = logo, Stretch = Stretch.Uniform };
+                    return tile;
+                }
             }
             catch (Exception error) when (error is NotSupportedException or System.IO.IOException or InvalidOperationException) { }
         }
@@ -501,5 +504,30 @@ public partial class MainWindow
             Width = 15, Height = 15, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center
         };
         return tile;
+    }
+
+    private static BitmapSource? TrimNoticeLogo(BitmapSource image)
+    {
+        int width = image.PixelWidth, height = image.PixelHeight;
+        int stride = checked(width * 4);
+        var pixels = new byte[checked(height * stride)];
+        new FormatConvertedBitmap(image, PixelFormats.Bgra32, null, 0).CopyPixels(pixels, stride, 0);
+
+        int left = width, top = height, right = -1, bottom = -1;
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                if (pixels[y * stride + x * 4 + 3] == 0) continue;
+                left = Math.Min(left, x);
+                top = Math.Min(top, y);
+                right = Math.Max(right, x);
+                bottom = Math.Max(bottom, y);
+            }
+        }
+
+        if (right < 0) return null;
+        if (left == 0 && top == 0 && right == width - 1 && bottom == height - 1) return image;
+        return new CroppedBitmap(image, new Int32Rect(left, top, right - left + 1, bottom - top + 1));
     }
 }
