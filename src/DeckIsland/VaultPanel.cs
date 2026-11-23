@@ -17,6 +17,7 @@ public partial class MainWindow
     private DispatcherTimer? _vaultClock;
     private DispatcherTimer? _vaultReveal;
     private TextBlock? _vaultRevealed;
+    private Action? _vaultHideRow;
     private VaultStore Vault => _app.Vault;
 
     private void VaultPage_Click(object sender, RoutedEventArgs e) => SelectPage(DeckPage.Vault);
@@ -42,6 +43,8 @@ public partial class MainWindow
             _vaultRevealed.Visibility = Visibility.Collapsed;
         }
         _vaultRevealed = null;
+        _vaultHideRow?.Invoke();
+        _vaultHideRow = null;
     }
 
     private void RenderVault()
@@ -138,16 +141,14 @@ public partial class MainWindow
                 _vaultCodes = codes;
                 BuildVault();
             }
-            var passwords = VaultButton(Loc.T("密码", "Passwords"), () => Section(false));
-            var codes = VaultButton("2FA", () => Section(true));
-            void MarkSelected(Button button)
+            var modes = new StackPanel { Orientation = Orientation.Horizontal };
+            foreach (var (isCodes, label) in new[] { (false, Loc.T("密码", "Passwords")), (true, "2FA") })
             {
-                button.Tag = "Selected";
-                AutomationProperties.SetItemStatus(button, Loc.T("已选择", "Selected"));
+                var button = PanelSegment(label, () => Section(isCodes));
+                StylePanelSegment(button, _vaultCodes == isCodes);
+                modes.Children.Add(button);
             }
-            MarkSelected(_vaultCodes ? codes : passwords);
-            toolbar.Children.Add(passwords);
-            toolbar.Children.Add(codes);
+            toolbar.Children.Add(PanelSegmentTrack(modes));
             if (document.Protected(_vaultCodes) && _app.VaultKey is null)
             {
                 toolbar.LastChildFill = false;
@@ -208,8 +209,28 @@ public partial class MainWindow
                     var feedback = WeatherText("", 11);
                     DateTimeOffset feedbackUntil = default;
                     feedback.Visibility = Visibility.Collapsed;
-                    feedback.Foreground = UI.Brush(Look.Secondary);
-                    var detail = new StackPanel { Children = { WeatherText(entry.Name, 14), WeatherText(entry.Account, 11), shown, feedback } };
+                    var accountLine = WeatherText(entry.Account, 11);
+                    var detail = new StackPanel { Children = { WeatherText(entry.Name, 14), accountLine, shown, feedback } };
+                    void RefreshLine()
+                    {
+                        bool copied = DateTimeOffset.UtcNow < feedbackUntil;
+                        bool revealed = _vaultRevealed == shown;
+                        feedback.Visibility = copied ? Visibility.Visible : Visibility.Collapsed;
+                        shown.Visibility = !copied && revealed ? Visibility.Visible : Visibility.Collapsed;
+                        accountLine.Visibility = !copied && !revealed ? Visibility.Visible : Visibility.Collapsed;
+                    }
+                    void CopyEntry(string value, bool expire)
+                    {
+                        bool copied = CopyVault(value, expire, feedback);
+                        if (copied) feedback.Text = expire
+                            ? Loc.T("✓ 密码已复制 · 30 秒后清除", "✓ Password copied · clears in 30 s")
+                            : Loc.T("✓ 用户名已复制", "✓ Username copied");
+                        feedback.Foreground = UI.Brush(copied
+                            ? (Look.HighContrast ? Look.Primary : "#27B966")
+                            : Look.Hex("danger"));
+                        feedbackUntil = DateTimeOffset.UtcNow.AddSeconds(3);
+                        RefreshLine();
+                    }
                     row.Children.Add(detail);
                     if (entry.Otp is { } otp)
                     {
@@ -221,29 +242,36 @@ public partial class MainWindow
                     else
                     {
                         if (entry.Account.Length > 0)
-                            tools.Children.Add(VaultIcon(VaultAccountGlyph, Loc.T("复制用户名", "Copy username"), () => CopyVault(entry.Account, false, status)));
-                        tools.Children.Add(VaultIcon(VaultEyeGlyph, Loc.T("显示密码", "Show password"), () =>
+                            tools.Children.Add(VaultIcon(VaultAccountGlyph, Loc.T("复制用户名", "Copy username"), () => CopyEntry(entry.Account, false)));
+                        Button? eye = null;
+                        void Eye(bool revealed)
                         {
+                            var label = revealed ? Loc.T("隐藏密码", "Hide password") : Loc.T("显示密码", "Show password");
+                            eye!.Content = VaultGlyph(revealed ? VaultEyeGlyph + " M2,2 L14,14" : VaultEyeGlyph, 14);
+                            eye.ToolTip = label;
+                            AutomationProperties.SetName(eye, label);
+                        }
+                        eye = VaultIcon(VaultEyeGlyph, Loc.T("显示密码", "Show password"), () =>
+                        {
+                            feedbackUntil = default;
                             if (_vaultRevealed == shown) { HideVaultPassword(); return; }
                             HideVaultPassword();
                             _vaultRevealed = shown;
+                            _vaultHideRow = () => { Eye(false); RefreshLine(); };
                             shown.Text = entry.Password;
-                            shown.Visibility = Visibility.Visible;
-                            _vaultReveal = new DispatcherTimer { Interval = TimeSpan.FromSeconds(15) };
+                            Eye(true);
+                            RefreshLine();
+                            _vaultReveal = new DispatcherTimer { Interval = TimeSpan.FromSeconds(30) };
                             _vaultReveal.Tick += (_, _) => HideVaultPassword();
                             _vaultReveal.Start();
-                        }));
+                        });
+                        tools.Children.Add(eye);
                     }
                     tools.Children.Add(VaultIcon(VaultEditGlyph, Loc.T("编辑条目", "Edit entry"), () => EditVault(document, entries, index)));
                     if (entry.Otp is null)
                     {
-                        tick.Add(now => { if (now >= feedbackUntil) feedback.Visibility = Visibility.Collapsed; });
-                        tools.Children.Add(VaultIcon(VaultKeyGlyph, Loc.T("复制密码", "Copy password"), () =>
-                        {
-                            CopyVault(entry.Password, true, feedback);
-                            feedbackUntil = DateTimeOffset.UtcNow.AddSeconds(30);
-                            feedback.Visibility = Visibility.Visible;
-                        }));
+                        tick.Add(_ => { if (feedback.Visibility == Visibility.Visible) RefreshLine(); });
+                        tools.Children.Add(VaultIcon(VaultKeyGlyph, Loc.T("复制密码", "Copy password"), () => CopyEntry(entry.Password, true)));
                     }
                     list.Children.Add(new Border { Child = row, Background = UI.Brush(Look.Hex("fill")),
                         CornerRadius = new CornerRadius(Corner(8)), Padding = new Thickness(10, 5, 6, 5), Margin = new Thickness(0, 0, 0, 4) });
@@ -275,10 +303,25 @@ public partial class MainWindow
         var entry = index >= 0 ? entries[index] : null;
         var body = VaultForm(_vaultCodes
             ? entry is null ? Loc.T("添加双重验证", "Add 2FA") : Loc.T("编辑双重验证", "Edit 2FA")
-            : entry is null ? Loc.T("添加密码", "Add password") : Loc.T("编辑密码", "Edit password"));
+            : "Vault");
+        DockPanel? passwordEditor = null;
+        if (!_vaultCodes)
+        {
+            VaultContent.Children.Clear();
+            passwordEditor = new DockPanel();
+            VaultContent.Children.Add(passwordEditor);
+            body.MaxWidth = double.PositiveInfinity;
+            body.Margin = new Thickness(0, 0, 0, 8);
+            var title = (TextBlock)body.Children[0];
+            body.Children.Remove(title);
+            title.FontSize = 15;
+            title.Margin = new Thickness(4, 0, 0, 8);
+            DockPanel.SetDock(title, DockSide.Top);
+            passwordEditor.Children.Add(title);
+        }
         var status = WeatherText("", 12);
         status.Margin = new Thickness(0, 5, 0, 5);
-        string nameLabel = Loc.T("名称", "Name"), accountLabel = Loc.T("用户名或邮箱", "Username or email");
+        string nameLabel = Loc.T("名称", "Name"), accountLabel = Loc.T("用户名或邮箱", "Username / email");
         var name = new TextBox { Text = entry?.Name ?? "", MaxLength = 120 };
         var account = new TextBox { Text = entry?.Account ?? "", MaxLength = 240 };
         CommandManager.AddPreviewExecutedHandler(account, (_, e) =>
@@ -296,19 +339,30 @@ public partial class MainWindow
         else
         {
             var fields = new Grid();
-            fields.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(2, GridUnitType.Star) });
-            fields.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(3, GridUnitType.Star) });
+            fields.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(56, GridUnitType.Star) });
+            fields.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(44, GridUnitType.Star) });
             void Add(string label, Control input, FrameworkElement? content = null)
             {
                 int row = fields.RowDefinitions.Count;
-                fields.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+                fields.RowDefinitions.Add(new RowDefinition { Height = new GridLength(40) });
+                if (row > 0)
+                {
+                    var rule = new Border { Height = 1, BorderThickness = new Thickness(0, 1, 0, 0),
+                        BorderBrush = UI.Brush(Look.Hex("rim")), VerticalAlignment = VerticalAlignment.Top, IsHitTestVisible = false };
+                    Grid.SetRow(rule, row);
+                    Grid.SetColumnSpan(rule, 2);
+                    fields.Children.Add(rule);
+                }
                 var caption = WeatherText(label, 12);
                 caption.Margin = new Thickness(10, 0, 8, 0);
                 caption.VerticalAlignment = VerticalAlignment.Center;
                 StyleVaultInput(input);
                 AutomationProperties.SetName(input, label);
                 content ??= input;
-                content.Margin = new Thickness(0, 3, 7, 3);
+                input.MinHeight = 28;
+                input.Padding = new Thickness(8, 3, 8, 3);
+                input.VerticalContentAlignment = VerticalAlignment.Center;
+                content.Margin = new Thickness(0, 5, 11, 5);
                 Grid.SetRow(caption, row);
                 Grid.SetRow(content, row);
                 Grid.SetColumn(content, 1);
@@ -323,7 +377,7 @@ public partial class MainWindow
         VaultOtp? imported = null;
         bool filling = false;
         secret.PasswordChanged += (_, _) => { if (!filling) imported = null; };
-        var options = new WrapPanel { Margin = new Thickness(0, 4, 0, 4) };
+        var options = new WrapPanel { Margin = _vaultCodes ? new Thickness(0, 4, 0, 4) : new Thickness(10, 9, 0, 4) };
         body.Children.Add(options);
 
         void PasteQr()
@@ -365,15 +419,19 @@ public partial class MainWindow
             var symbols = new CheckBox { Content = Loc.T("符号", "Symbols"), IsChecked = true, Margin = new Thickness(8, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
             var length = new Slider { Minimum = 12, Maximum = 64, Value = 20, Width = 95, TickFrequency = 1, IsSnapToTickEnabled = true };
             AutomationProperties.SetName(length, Loc.T("密码长度", "Password length"));
-            var lengthLabel = WeatherText($"{Loc.T("长度", "Length")} · 20", 12);
-            length.ValueChanged += (_, _) => lengthLabel.Text = $"{Loc.T("长度", "Length")} · {(int)length.Value}";
-            options.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 8, 0),
-                Children = { lengthLabel, length } });
+            var lengthLabel = WeatherText(Loc.T("长度", "Length"), 11);
+            var lengthValue = WeatherText("20", 11);
+            lengthLabel.Margin = new Thickness(0, 0, 10, 0);
+            lengthValue.Margin = new Thickness(10, 0, 0, 0);
+            length.ValueChanged += (_, _) => lengthValue.Text = ((int)length.Value).ToString();
+            options.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 15, 0),
+                VerticalAlignment = VerticalAlignment.Center, Children = { lengthLabel, length, lengthValue } });
             options.Children.Add(digits);
             options.Children.Add(symbols);
             void Tool(Button button)
             {
                 DockPanel.SetDock(button, DockSide.Right);
+                button.Background = UI.Brush(Look.Hex("fillSelected"));
                 passwordTools.Children.Add(button);
             }
             Tool(VaultIcon(VaultGenerateGlyph, Loc.T("生成密码", "Generate password"), () =>
@@ -387,7 +445,8 @@ public partial class MainWindow
             preview.Visibility = Visibility.Collapsed;
             preview.Margin = new Thickness(8, 0, 4, 0);
             preview.TextTrimming = TextTrimming.CharacterEllipsis;
-            var field = new DockPanel();
+            var field = new Grid();
+            secret.Padding = new Thickness(8, 3, 32, 3);
             var eye = VaultIcon(VaultEyeGlyph, Loc.T("显示密码", "Show password"), () =>
             {
                 if (_vaultRevealed == preview) { HideVaultPassword(); return; }
@@ -400,9 +459,11 @@ public partial class MainWindow
                 _vaultReveal.Tick += (_, _) => HideVaultPassword();
                 _vaultReveal.Start();
             });
-            DockPanel.SetDock(eye, DockSide.Right);
+            eye.HorizontalAlignment = HorizontalAlignment.Right;
+            preview.Margin = new Thickness(8, 0, 34, 0);
+            field.Children.Add(secret);
+            field.Children.Add(preview);
             field.Children.Add(eye);
-            field.Children.Add(new Grid { Children = { secret, preview } });
             preview.Background = UI.Brush(Look.Hex("fill"));
             preview.VerticalAlignment = VerticalAlignment.Center;
             passwordTools.Children.Add(field);
@@ -413,11 +474,18 @@ public partial class MainWindow
         var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
         DockPanel.SetDock(buttons, DockSide.Right);
         footer.Children.Add(buttons);
-        body.Children.Add(footer);
+        if (passwordEditor is null) body.Children.Add(footer);
+        else
+        {
+            footer.Margin = new Thickness(4, 4, 0, 3);
+            DockPanel.SetDock(footer, DockSide.Bottom);
+            passwordEditor.Children.Add(footer);
+            passwordEditor.Children.Add(new ScrollViewer { Content = body, VerticalScrollBarVisibility = ScrollBarVisibility.Auto });
+        }
         if (!_vaultCodes)
         {
             var strength = WeatherText("", 11);
-            var meter = new ProgressBar { Minimum = 0, Maximum = 3, Width = 48, Height = 4, Margin = new Thickness(0, 0, 6, 0) };
+            var meter = new ProgressBar { Minimum = 0, Maximum = 3, Width = 56, Height = 4, Margin = new Thickness(0, 0, 6, 0) };
             footer.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Children = { meter, strength } });
             void UpdateStrength()
             {
@@ -448,10 +516,26 @@ public partial class MainWindow
                 confirm.Visibility = Visibility.Visible;
                 confirm.Focus();
             };
-            buttons.Children.Add(delete);
+            if (passwordEditor?.Children[0] is TextBlock heading)
+            {
+                var header = new DockPanel();
+                passwordEditor.Children.Remove(heading);
+                DockPanel.SetDock(header, DockSide.Top);
+                var trash = VaultIcon("M2,4 H14 M5,4 V2 H11 V4 M4,4 L5,14 H11 L12,4 M7,7 V11 M9,7 V11", Loc.T("删除", "Delete"), () =>
+                {
+                    status.Text = Loc.T("永久删除此条目？", "Permanently delete this entry?");
+                    confirm.Visibility = Visibility.Visible;
+                    confirm.Focus();
+                });
+                DockPanel.SetDock(trash, DockSide.Right);
+                header.Children.Add(trash);
+                header.Children.Add(heading);
+                passwordEditor.Children.Insert(0, header);
+            }
+            else buttons.Children.Add(delete);
             buttons.Children.Add(confirm);
         }
-        buttons.Children.Add(VaultButton(Loc.T("保存", "Save"), () =>
+        var save = VaultButton(Loc.T("保存", "Save"), () =>
         {
             string nameValue = name.Text.Trim(), accountValue = account.Text.Trim(), password = "";
             if (nameValue.Length == 0) { status.Text = Loc.T("请输入名称。", "Enter a name."); return; }
@@ -470,12 +554,23 @@ public partial class MainWindow
             var saved = entries.ToList();
             if (index < 0) saved.Add(edited); else saved[index] = edited;
             Commit(saved);
-        }));
+        });
+        if (!_vaultCodes)
+        {
+            save.Tag = "Selected";
+            foreach (Button button in buttons.Children.OfType<Button>().Append(save))
+            {
+                button.Height = 28;
+                button.Padding = new Thickness(12, 3, 12, 3);
+                button.Background = UI.Brush(Look.Hex("fillSelected"));
+            }
+        }
+        buttons.Children.Add(save);
         BeginTyping(name);
 
         void Commit(List<VaultEntry> updated)
         {
-            if (!_expanded || CurrentPage != DeckPage.Vault || !VaultContent.Children.OfType<ScrollViewer>().Any(view => view.Content == body)) return;
+            if (!_expanded || CurrentPage != DeckPage.Vault || !VaultContent.IsAncestorOf(body)) return;
             try
             {
                 Vault.Save(document, _vaultCodes, _app.VaultKey, updated);
@@ -486,14 +581,15 @@ public partial class MainWindow
         }
     }
 
-    private static void CopyVault(string value, bool expire, TextBlock status)
+    private static bool CopyVault(string value, bool expire, TextBlock status)
     {
-        if (value.Length == 0) return;
+        if (value.Length == 0) return false;
         try
         {
             VaultClipboard.Copy(value, expire);
             status.Text = expire ? Loc.T("已复制 · 30 秒后清除", "Copied · clears in 30 s") : Loc.T("已复制。", "Copied.");
+            return true;
         }
-        catch (ExternalException) { status.Text = Loc.T("无法写入剪贴板。", "Clipboard is unavailable."); }
+        catch (ExternalException) { status.Text = Loc.T("无法写入剪贴板。", "Clipboard is unavailable."); return false; }
     }
 }

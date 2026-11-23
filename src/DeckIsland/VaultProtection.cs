@@ -60,12 +60,63 @@ public partial class MainWindow
         form.Children.Add(input);
     }
 
-    private PasswordBox VaultPin(StackPanel form, string label)
+    private void VaultPinScreen(string title, Action<string, TextBlock> submit)
     {
-        var pin = new PasswordBox { MaxLength = 4, Width = 132, HorizontalAlignment = HorizontalAlignment.Left, FontSize = 16 };
+        ClearVaultView();
+        var form = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+        VaultContent.Children.Add(form);
+        form.Children.Add(new Border
+        {
+            Width = 42, Height = 42, CornerRadius = new CornerRadius(21), Background = UI.Brush(Look.Hex("fillSelected")),
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Child = VaultGlyph("M3,7 H13 V15 H3 Z M5,7 V4 A3,3 0 0 1 11,4 V7", 16)
+        });
+        var heading = WeatherText(title, 15);
+        heading.HorizontalAlignment = HorizontalAlignment.Center;
+        heading.FontWeight = FontWeights.SemiBold;
+        heading.Margin = new Thickness(0, 10, 0, 8);
+        form.Children.Add(heading);
+
+        var input = new Grid { Width = 120, Height = 34, HorizontalAlignment = HorizontalAlignment.Center };
+        var dots = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center, IsHitTestVisible = false };
+        var pin = new PasswordBox { MaxLength = 4, Opacity = 0 };
+        StyleVaultInput(pin);
+        AutomationProperties.SetName(pin, title);
         pin.PreviewTextInput += (_, e) => e.Handled = !e.Text.All(char.IsAsciiDigit);
-        VaultField(form, label, pin);
-        return pin;
+        input.Children.Add(pin);
+        input.Children.Add(dots);
+        for (int i = 0; i < 4; i++)
+            dots.Children.Add(new System.Windows.Shapes.Ellipse { Width = 11, Height = 11, StrokeThickness = 1,
+                Stroke = UI.Brush(Look.Secondary), Margin = new Thickness(7, 0, 7, 0) });
+        form.Children.Add(input);
+
+        var hint = WeatherText(Loc.T("输入四位数字", "Type four digits"), 12);
+        hint.HorizontalAlignment = HorizontalAlignment.Center;
+        hint.Foreground = UI.Brush(Look.Secondary);
+        form.Children.Add(hint);
+        var status = VaultStatus(form);
+        status.HorizontalAlignment = HorizontalAlignment.Center;
+        var cancel = VaultButton(Loc.T("取消", "Cancel"), BuildVault);
+        cancel.HorizontalAlignment = HorizontalAlignment.Center;
+        form.Children.Add(cancel);
+
+        pin.PasswordChanged += (_, _) =>
+        {
+            using var masked = pin.SecurePassword;
+            int length = masked.Length;
+            for (int i = 0; i < dots.Children.Count; i++)
+                ((System.Windows.Shapes.Ellipse)dots.Children[i]).Fill = i < length ? UI.Brush(Look.Primary) : null;
+            if (length != 4) return;
+            Dispatcher.BeginInvoke(() =>
+            {
+                if (!VaultContent.IsAncestorOf(pin) || !VaultRules.ValidPin(pin.Password)) return;
+                string value = pin.Password;
+                pin.Clear();
+                submit(value, status);
+            });
+        };
+        BeginTyping(pin);
     }
 
     private TextBlock VaultStatus(StackPanel body)
@@ -114,47 +165,46 @@ public partial class MainWindow
 
     private void VaultUnlockForm(VaultStore.Document document)
     {
-        var body = VaultForm(Loc.T("解锁保险库", "Unlock Vault"), document.Hello is null
-            ? Loc.T("输入四位数字 PIN。", "Enter your four-digit Vault PIN.")
-            : Loc.T("使用 Windows Hello 解密保险库。", "Use Windows Hello to decrypt the vault."));
-        var pin = document.Hello is null ? VaultPin(body, Loc.T("保险库 PIN", "Vault PIN")) : null;
-        var status = VaultStatus(body);
-        VaultActions(body, document.Hello is null ? Loc.T("解锁", "Unlock") : Loc.T("使用 Windows Hello 解锁", "Unlock with Windows Hello"),
-            async () => await VaultRun(status, async () =>
+        async Task Unlock(string? pin, TextBlock status) => await VaultRun(status, async () =>
+        {
+            var key = pin is null ? await VaultHello.Unlock(document.Hello!) : CheckVaultPin(pin, status);
+            if (key is null) return;
+            try
             {
-                byte[]? key = pin is null ? await VaultHello.Unlock(document.Hello!) : CheckVaultPin(pin.Password, status);
-                pin?.Clear();
-                if (key is null) return;
-                try
-                {
-                    if (!VaultContent.IsAncestorOf(status) || (pin is null && Vault.Read()?.Revision != document.Revision)) return;
-                    _app.UnlockVault(key);
-                    key = null;
-                    BuildVault();
-                }
-                finally { if (key is not null) CryptographicOperations.ZeroMemory(key); }
-            }));
-        if (pin is not null) BeginTyping(pin);
+                if (!VaultContent.IsAncestorOf(status) || (pin is null && Vault.Read()?.Revision != document.Revision)) return;
+                _app.UnlockVault(key);
+                key = null;
+                BuildVault();
+            }
+            finally { if (key is not null) CryptographicOperations.ZeroMemory(key); }
+        });
+
+        if (document.Hello is null)
+        {
+            VaultPinScreen(Loc.T("输入 PIN", "Enter PIN"), async (pin, status) => await Unlock(pin, status));
+            return;
+        }
+        var body = VaultForm(Loc.T("解锁保险库", "Unlock Vault"), Loc.T("使用 Windows Hello 解密保险库。", "Use Windows Hello to decrypt the vault."));
+        var status = VaultStatus(body);
+        VaultActions(body, Loc.T("使用 Windows Hello 解锁", "Unlock with Windows Hello"), async () => await Unlock(null, status));
     }
 
     private void VaultSetup()
     {
-        var body = VaultForm(Loc.T("设置保险库 PIN", "Set up Vault PIN"), Loc.T("使用四位数字。", "Use four digits."));
-        var pin = VaultPin(body, Loc.T("新 PIN", "New PIN"));
-        var confirm = VaultPin(body, Loc.T("确认 PIN", "Confirm PIN"));
-        var status = VaultStatus(body);
-        VaultActions(body, Loc.T("保存", "Save"), async () => await VaultRun(status, () =>
+        VaultPinScreen(Loc.T("设置 PIN", "Set PIN"), (pin, _) =>
         {
-            if (!VaultRules.ValidPin(pin.Password) || pin.Password != confirm.Password)
+            VaultPinScreen(Loc.T("确认 PIN", "Confirm PIN"), async (confirmation, status) => await VaultRun(status, () =>
             {
-                status.Text = Loc.T("请输入并确认四位数字 PIN。", "Enter and confirm a four-digit PIN.");
+                if (pin != confirmation)
+                {
+                    status.Text = Loc.T("PIN 不匹配，请重试。", "PINs don’t match. Try again.");
+                    return Task.CompletedTask;
+                }
+                Vault.Configure(null, null, confirmation, pinPasswords: true, pinCodes: true);
+                BuildVault();
                 return Task.CompletedTask;
-            }
-            Vault.Configure(null, null, pin.Password, pinPasswords: true, pinCodes: true);
-            BuildVault();
-            return Task.CompletedTask;
-        }));
-        BeginTyping(pin);
+            }));
+        });
     }
 
     private async Task VaultRun(TextBlock status, Func<Task> action)
