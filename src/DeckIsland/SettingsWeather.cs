@@ -174,7 +174,7 @@ public partial class SettingsWindow
         from.VerticalAlignment = VerticalAlignment.Center;
         from.Margin = new Thickness(0, 0, 8, 0);
         sources.Children.Add(from);
-        foreach (var (name, url) in new[] { ("Open-Meteo", Weather.Attribution), ("GeoNames", Weather.LocationAttribution), ("BigDataCloud", Weather.AutomaticLocationAttribution) })
+        foreach (var (name, url) in new[] { ("Open-Meteo (CC BY 4.0)", Weather.Attribution), ("GeoNames", Weather.LocationAttribution), ("BigDataCloud", Weather.AutomaticLocationAttribution) })
         {
             var link = Link(name + " ↗", url); link.FontSize = 12; link.Margin = new Thickness(0, 0, 14, 0);
             sources.Children.Add(link);
@@ -185,7 +185,7 @@ public partial class SettingsWindow
             Rule(),
             SwitchRow(Loc.T("华氏度", "Fahrenheit"), Loc.T("用 °F 显示所有温度，而不是 °C：天气，以及系统监控里 CPU、GPU 和硬盘的温度。", "Show every temperature in °F instead of °C: the weather, and the CPU, GPU and drive temperatures in the system monitor."), S.WeatherFahrenheit, value => Change(s => s.WeatherFahrenheit = value)),
             Rule(),
-            ChoiceRow(Loc.T("天气外观", "Weather look"), Loc.T("简约用线条图标和纯文字；多彩会按天空给卡片着色。", "Minimal uses line icons and plain type; Colourful tints the card with the sky."), look),
+            ChoiceRow(Loc.T("天气外观", "Weather look"), Loc.T("简约使用中性底色；多彩按天气状况给当前天气和小组件着色。", "Minimal uses neutral cards. Colourful tints the current conditions and widget to match the weather."), look),
             sources);
     }
 

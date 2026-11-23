@@ -23,11 +23,23 @@ internal static class WeatherTests
 
         WeatherPoint place = new("Tokyo", 35.68, 139.69);
         using var forecast = JsonDocument.Parse("""
-            {"timezone":"Asia/Tokyo","current":{"time":"2026-11-21T01:00","temperature_2m":13,"is_day":0,"weather_code":0},
+            {"timezone":"Asia/Tokyo","current":{"time":"2026-11-21T01:15","temperature_2m":13,"is_day":0,"weather_code":0,
+             "apparent_temperature":11,"wind_speed_10m":18,"wind_direction_10m":270,"relative_humidity_2m":82},
+             "hourly":{"time":["2026-11-21T00:00","2026-11-21T01:00","2026-11-21T02:00","2026-11-21T03:00","2026-11-21T04:00","2026-11-21T05:00","2026-11-21T06:00","2026-11-21T07:00","2026-11-21T08:00","2026-11-21T09:00"],
+               "temperature_2m":[10,12,9],"weather_code":[0,3,61],"is_day":[0,0,0],"precipitation_probability":[0,0,35]},
              "daily":{"time":["2026-11-21","2026-11-22","2026-11-23","2026-11-24","2026-11-25","2026-11-26","2026-11-27"],"temperature_2m_max":[17,null,18,16],"temperature_2m_min":[7],
-               "precipitation_probability_max":[75,0,null,32],"precipitation_sum":[2.4,0,null,0.8],"snowfall_sum":[0,0,null,0.56]}}
+               "precipitation_probability_max":[75,0,null,32],"precipitation_sum":[2.4,0,null,0.8],"snowfall_sum":[0,0,null,0.56],
+               "sunrise":["2026-11-21T06:17"],"sunset":["2026-11-21T16:31"]}}
             """);
         var reading = Weather.Parse(place, forecast.RootElement);
+        check("Weather keeps eight location-local hours starting at the observation hour and preserves missing values",
+            reading is { Hours.Count: 8 } && reading.Hours[0] is { Temperature: 12, Chance: 0, Daylight: false } &&
+            reading.Hours[0].Time.Hour == 1 && reading.Hours[7].Time.Hour == 8 &&
+            reading.Hours[1] is { Code: 61, Temperature: 9, Chance: 35 } && reading.Hours[2].Temperature is null);
+        check("Weather reads current metrics and local daylight times",
+            reading is { FeelsLike: 11, WindSpeed: 18, WindDirection: 270, Humidity: 82 } &&
+            reading.Days[0].Sunrise == new DateTime(2026, 11, 21, 6, 17, 0) &&
+            reading.Days[0].Sunset == new DateTime(2026, 11, 21, 16, 31, 0));
         check("Weather keeps daily precipitation amounts, chance, zero and missing values distinct",
             reading?.Days[0] is { PrecipitationProbability: 75, PrecipitationMillimetres: 2.4 } &&
             reading.Days[1] is { PrecipitationProbability: 0, PrecipitationMillimetres: 0 } &&

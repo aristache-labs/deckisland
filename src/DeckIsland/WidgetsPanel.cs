@@ -264,7 +264,7 @@ public partial class MainWindow
                 var (background, foreground) = appearance.Colourful ? WeatherCardColours(icon) : (baseFill, ink);
                 frame.Background = background;
                 temperature.Foreground = place.Foreground = range.Foreground = foreground;
-                var graphic = appearance.Colourful ? ColourfulWeatherIcon(icon, appearance.Motion) : null;
+                var graphic = Look.HighContrast ? null : ColourfulWeatherIcon(icon, appearance.Motion);
                 sky.Child = new Viewbox { Child = graphic ?? WeatherLineIcon(icon, 32, foreground) };
                 sky.Visibility = Visibility.Visible;
             }

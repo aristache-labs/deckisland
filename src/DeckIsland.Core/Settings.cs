@@ -856,8 +856,9 @@ public sealed class DeckSettings
     public bool WeatherPage { get; set; } = true;
     public bool NotchWeather { get; set; } = true;
     public bool CapsuleWeather { get; set; } = true;
-    public double WeatherWidth { get; set; } = 460;
-    public double WeatherHeight { get; set; } = 240;
+    private const double DefaultWeatherWidth = 680, DefaultWeatherHeight = 290;
+    public double WeatherWidth { get; set; } = DefaultWeatherWidth;
+    public double WeatherHeight { get; set; } = DefaultWeatherHeight;
     public bool ShowsWeather(CompactStyle style) => WeatherEnabled &&
         (style == CompactStyle.Notch ? NotchWeather : style == CompactStyle.Capsule && CapsuleWeather);
 
@@ -1128,8 +1129,8 @@ public sealed class DeckSettings
         // The sounds are not a choice any more: Information when a Focus ends, Critical stop when a Break does.
         FocusEndSound = FocusSound.Asterisk;
         BreakEndSound = FocusSound.Hand;
-        WeatherWidth = double.IsFinite(WeatherWidth) ? Math.Clamp(WeatherWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : 460;
-        WeatherHeight = double.IsFinite(WeatherHeight) ? Math.Clamp(WeatherHeight, DeckPages.MinHeight, DeckPages.MaxHeight) : 240;
+        WeatherWidth = double.IsFinite(WeatherWidth) ? Math.Clamp(WeatherWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : DefaultWeatherWidth;
+        WeatherHeight = double.IsFinite(WeatherHeight) ? Math.Clamp(WeatherHeight, DeckPages.MinHeight, DeckPages.MaxHeight) : DefaultWeatherHeight;
         DevicesWidth = double.IsFinite(DevicesWidth) ? Math.Clamp(DevicesWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : 460;
         DevicesHeight = double.IsFinite(DevicesHeight) ? Math.Clamp(DevicesHeight, DeckPages.MinHeight, DeckPages.MaxHeight) : 200;
         DeviceChoices = [.. (DeviceChoices ?? []).OfType<DeviceChoice>().Where(device => !string.IsNullOrWhiteSpace(device.Key)).DistinctBy(device => device.Key).Take(256)];

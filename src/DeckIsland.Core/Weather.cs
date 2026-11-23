@@ -21,8 +21,17 @@ public sealed record WeatherPoint(string Name, double Latitude, double Longitude
 }
 
 public sealed record WeatherDay(DateOnly Date, int? Code, double? High, double? Low,
-    double? PrecipitationProbability = null, double? PrecipitationMillimetres = null, double? SnowfallCentimetres = null);
-public sealed record WeatherReading(WeatherPoint Place, double Temperature, int? Code, bool Daylight, IReadOnlyList<WeatherDay> Days);
+    double? PrecipitationProbability = null, double? PrecipitationMillimetres = null, double? SnowfallCentimetres = null,
+    DateTime? Sunrise = null, DateTime? Sunset = null);
+public sealed record WeatherHour(DateTime Time, double? Temperature, int? Code, bool Daylight, double? Chance);
+public sealed record WeatherReading(WeatherPoint Place, double Temperature, int? Code, bool Daylight, IReadOnlyList<WeatherDay> Days)
+{
+    public IReadOnlyList<WeatherHour> Hours { get; init; } = [];
+    public double? FeelsLike { get; init; }
+    public double? WindSpeed { get; init; }
+    public double? WindDirection { get; init; }
+    public double? Humidity { get; init; }
+}
 public sealed record WeatherUpdate(WeatherReading? Reading, bool Stale)
 {
     public WeatherUpdate Complete(WeatherPoint? place, WeatherReading? fresh, CancellationToken token)
@@ -35,7 +44,6 @@ public sealed record WeatherUpdate(WeatherReading? Reading, bool Stale)
 
 public static class Weather
 {
-    // Today and the five days after it.
     private const int ForecastDays = 7;
     private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(12) };
     public const string Attribution = "https://open-meteo.com/";
@@ -56,7 +64,10 @@ public static class Weather
     public static async Task<WeatherReading?> Fetch(WeatherPoint place, CancellationToken token)
     {
         string coordinates = FormattableString.Invariant($"latitude={place.Latitude}&longitude={place.Longitude}");
-        string url = $"https://api.open-meteo.com/v1/forecast?{coordinates}&timezone=auto&forecast_days={ForecastDays}&current=temperature_2m,weather_code,is_day&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,snowfall_sum";
+        string url = $"https://api.open-meteo.com/v1/forecast?{coordinates}&timezone=auto&forecast_days={ForecastDays}&forecast_hours=24" +
+            "&current=temperature_2m,weather_code,is_day,apparent_temperature,wind_speed_10m,wind_direction_10m,relative_humidity_2m" +
+            "&hourly=temperature_2m,weather_code,is_day,precipitation_probability" +
+            "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,snowfall_sum,sunrise,sunset";
         return Parse(place, await Http.GetFromJsonAsync<JsonElement>(url, token).ConfigureAwait(false));
     }
 
@@ -101,10 +112,34 @@ public static class Weather
             if (DateOnly.TryParseExact(Str(At(daily, "time", i)), "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
                 days.Add(new(date, Code(At(daily, "weather_code", i)), Number(At(daily, "temperature_2m_max", i)),
                     Number(At(daily, "temperature_2m_min", i)), Number(At(daily, "precipitation_probability_max", i)),
-                    Number(At(daily, "precipitation_sum", i)), Number(At(daily, "snowfall_sum", i))));
+                    Number(At(daily, "precipitation_sum", i)), Number(At(daily, "snowfall_sum", i)),
+                    Clock(At(daily, "sunrise", i)), Clock(At(daily, "sunset", i))));
         }
-        return new(place, temperature, Code(Field(current, "weather_code")), Number(Field(current, "is_day")) != 0, days);
+        var hours = new List<WeatherHour>();
+        var hourly = Field(response, "hourly");
+        var observed = Clock(Field(current, "time"));
+        var times = Field(hourly, "time");
+        if (times.ValueKind == JsonValueKind.Array)
+        {
+            for (int i = 0; i < times.GetArrayLength() && hours.Count < 8; i++)
+            {
+                if (Clock(times[i]) is not { } time || observed is { } when && time < when.AddMinutes(-when.Minute)) continue;
+                hours.Add(new(time, Number(At(hourly, "temperature_2m", i)), Code(At(hourly, "weather_code", i)),
+                    Number(At(hourly, "is_day", i)) != 0, Number(At(hourly, "precipitation_probability", i))));
+            }
+        }
+        return new(place, temperature, Code(Field(current, "weather_code")), Number(Field(current, "is_day")) != 0, days)
+        {
+            Hours = hours,
+            FeelsLike = Number(Field(current, "apparent_temperature")),
+            WindSpeed = Number(Field(current, "wind_speed_10m")),
+            WindDirection = Number(Field(current, "wind_direction_10m")),
+            Humidity = Number(Field(current, "relative_humidity_2m"))
+        };
     }
+
+    private static DateTime? Clock(JsonElement value) =>
+        DateTime.TryParseExact(Str(value), "yyyy-MM-dd'T'HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out var time) ? time : null;
 
     private static JsonElement Field(JsonElement obj, string key) =>
         obj.ValueKind == JsonValueKind.Object && obj.TryGetProperty(key, out var value) ? value : default;

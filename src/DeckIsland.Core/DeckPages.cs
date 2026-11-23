@@ -137,7 +137,8 @@ public static class DeckPages
             DeckPage.Notifications or DeckPage.Reminders => (620, 380),
             DeckPage.Calls => (560, 260),
             DeckPage.Scratchpad or DeckPage.Terminal or DeckPage.Colour or DeckPage.Capture or DeckPage.Vault => (760, 380),
-            DeckPage.Converter or DeckPage.Weather => (620, page == DeckPage.Weather ? 320 : 240),
+            DeckPage.Converter => (620, 240),
+            DeckPage.Weather => (740, 320),
             _ => (620, 280)
         })
     };

@@ -131,106 +131,182 @@ public partial class MainWindow
 
         var (icon, condition) = WeatherCondition(reading.Code, reading.Daylight);
         var (background, foreground) = WeatherCardColours(colourful ? icon : null);
-        var hero = new StackPanel();
-        var title = new Grid
+        var overview = new Grid();
+        overview.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(35, GridUnitType.Star) });
+        overview.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(65, GridUnitType.Star) });
+        rows.Children.Add(overview);
+
+        var hero = new DockPanel();
+        var facts = new StackPanel();
+        DockPanel.SetDock(facts, System.Windows.Controls.Dock.Bottom);
+        hero.Children.Add(facts);
+        var now = new StackPanel();
+        hero.Children.Add(now);
+        overview.Children.Add(new Border { Child = hero, Background = colourful ? background : UI.Brush(Look.Hex("fill")), Padding = new Thickness(10),
+            CornerRadius = new CornerRadius(Corner(12)), Margin = new Thickness(0, 0, 7, 0) });
+
+        TextBlock Current(string text, double size, bool bold = false)
         {
-            ColumnDefinitions =
-            {
-                new ColumnDefinition(),
-                new ColumnDefinition { Width = GridLength.Auto },
-                new ColumnDefinition()
-            }
-        };
-        // The page can be built while collapsed. The icon starts when the expanded content becomes visible.
-        var skyIcon = colourful ? ColourfulWeatherIcon(icon, Animates) ?? WeatherLineIcon(icon, 36, foreground)
-            : WeatherLineIcon(icon, 36, foreground);
-        skyIcon.Margin = new Thickness(12, 0, 0, 0);
-        skyIcon.HorizontalAlignment = HorizontalAlignment.Right;
-        Grid.SetColumn(skyIcon, 2);
-        title.Children.Add(skyIcon);
-        var today = reading.Days.FirstOrDefault();
-        var todayPrecipitation = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
-        todayPrecipitation.Children.Add(WeatherPrecipitation(today, foreground, probability: true, hero: true));
-        var todayTotal = WeatherPrecipitation(today, foreground, probability: false, hero: true);
-        todayTotal.Margin = new Thickness(14, 0, 0, 0);
-        todayPrecipitation.Children.Add(todayTotal);
-        Grid.SetColumn(todayPrecipitation, 1);
-        title.Children.Add(todayPrecipitation);
-        var temperature = WeatherText(WeatherTemperature(reading.Temperature, true), 34);
-        temperature.Foreground = foreground;
-        temperature.FontWeight = FontWeights.SemiBold;
-        title.Children.Add(temperature);
-        hero.Children.Add(title);
-        var summary = new DockPanel { LastChildFill = true, Margin = new Thickness(0, 7, 0, 0) };
-        var extremes = WeatherText(WeatherExtremes(today), 13);
-        extremes.Foreground = foreground;
-        extremes.Margin = new Thickness(12, 0, 0, 0);
-        DockPanel.SetDock(extremes, System.Windows.Controls.Dock.Right);
-        summary.Children.Add(extremes);
-        var location = WeatherText($"{condition} · {WeatherPlace(reading)}", 13);
-        location.Foreground = foreground;
-        summary.Children.Add(location);
-        hero.Children.Add(summary);
-        rows.Children.Add(new Border
-        {
-            Child = hero, Padding = new Thickness(14, 10, 14, 10), CornerRadius = new CornerRadius(12),
-            BorderBrush = UI.Brush(Look.Hex("rim")), BorderThickness = new Thickness(1),
-            Background = background
-        });
-        foreach (var day in reading.Days.Skip(1))
-        {
-            var (dayIcon, dayCondition) = WeatherCondition(day.Code, true);
-            var dayRow = new Grid
-            {
-                ColumnDefinitions =
-                {
-                    new ColumnDefinition { Width = GridLength.Auto, SharedSizeGroup = "WeatherDate" },
-                    new ColumnDefinition { MinWidth = 8 },
-                    new ColumnDefinition { Width = GridLength.Auto, SharedSizeGroup = "WeatherConditions" },
-                    new ColumnDefinition { MinWidth = 8 },
-                    new ColumnDefinition { Width = GridLength.Auto, SharedSizeGroup = "WeatherPrecipitationTotal" },
-                    new ColumnDefinition { MinWidth = 8 },
-                    new ColumnDefinition { Width = GridLength.Auto, SharedSizeGroup = "WeatherRange" }
-                }
-            };
-            void AddColumn(FrameworkElement element, int column)
-            {
-                element.HorizontalAlignment = column == 3 ? HorizontalAlignment.Right : HorizontalAlignment.Left;
-                Grid.SetColumn(element, column * 2);
-                dayRow.Children.Add(element);
-            }
-            var when = WeatherText(day.Date.ToString("d ddd", Loc.Culture), 12);
-            AddColumn(when, 0);
-            var ink = when.Foreground;
-            var chance = WeatherPrecipitation(day, ink, probability: true, sharedIcon: dayIcon);
-            chance.Margin = new Thickness(0, 0, 6, 0);
-            var mark = WeatherLineIcon(dayIcon, 17, ink);
-            mark.Margin = new Thickness(0, 0, 8, 0);
-            var conditions = new Grid
-            {
-                ColumnDefinitions =
-                {
-                    new ColumnDefinition { Width = GridLength.Auto, SharedSizeGroup = "WeatherProbability" },
-                    new ColumnDefinition { Width = GridLength.Auto },
-                    new ColumnDefinition()
-                }
-            };
-            var description = WeatherText(dayCondition, 12);
-            Grid.SetColumn(mark, 1);
-            Grid.SetColumn(description, 2);
-            conditions.Children.Add(chance);
-            conditions.Children.Add(mark);
-            conditions.Children.Add(description);
-            AddColumn(conditions, 1);
-            AddColumn(WeatherPrecipitation(day, ink, probability: false), 2);
-            AddColumn(WeatherText(WeatherExtremes(day, abbreviated: true), 12), 3);
-            rows.Children.Add(new Border
-            {
-                Child = dayRow, Margin = new Thickness(0, 3, 0, 0), Padding = new Thickness(14, 5, 14, 5),
-                BorderBrush = UI.Brush(Look.Hex("rim")), BorderThickness = new Thickness(0, 0, 0, 1)
-            });
+            var label = WeatherText(text, size);
+            label.Foreground = foreground;
+            if (bold) label.FontWeight = FontWeights.SemiBold;
+            return label;
         }
-        if (_app.WeatherStale) rows.Children.Add(WeatherText(Loc.T("数据未更新", "Weather data is stale"), 12));
+
+        var place = Current(WeatherPlace(reading), 12, true);
+        var location = new StackPanel { Orientation = Orientation.Horizontal, ToolTip = WeatherPlace(reading) };
+        var pin = new Path { Data = Geometry.Parse("M8,14 C5,10 3,8 3,5 A5,5 0 0 1 13,5 C13,8 11,10 8,14 Z M10,5 A2,2 0 1 1 6,5 A2,2 0 1 1 10,5"),
+            Stroke = foreground, StrokeThickness = 1.3, Width = 10, Height = 12, Stretch = Stretch.Uniform, Margin = new Thickness(0, 0, 4, 0) };
+        location.Children.Add(pin);
+        location.Children.Add(place);
+        now.Children.Add(location);
+
+        var currentTemperature = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 4, 0, 2) };
+        currentTemperature.Children.Add(ForecastIcon(icon, 44, foreground, animate: Animates));
+        currentTemperature.Children.Add(Current(WeatherTemperature(reading.Temperature), 32, true));
+        now.Children.Add(currentTemperature);
+        now.Children.Add(Current(condition, 13, true));
+        var today = reading.Days.FirstOrDefault();
+        var feels = Current($"{Loc.T("体感", "Feels like")} {WeatherTemperature(reading.FeelsLike)} · {WeatherTemperature(today?.Low)}–{WeatherTemperature(today?.High)}", 11);
+        feels.TextWrapping = TextWrapping.Wrap;
+        now.Children.Add(feels);
+        if (_app.WeatherStale) now.Children.Add(Current(Loc.T("数据未更新", "Weather data is stale"), 11));
+        var chips = new StackPanel { Orientation = Orientation.Horizontal };
+        facts.Children.Add(new Viewbox { Child = chips, StretchDirection = StretchDirection.DownOnly,
+            HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 8, 0, 3) });
+        void Chip(string symbol, string label, string value, double? degrees = null)
+        {
+            var content = new StackPanel { Orientation = Orientation.Horizontal };
+            content.Children.Add(Current(symbol, 10));
+            content.Children.Add(Current(" " + value, 10, true));
+            if (degrees is { } direction)
+            {
+                var arrow = Current("↑", 10);
+                arrow.RenderTransformOrigin = new Point(.5, .5);
+                arrow.RenderTransform = new RotateTransform(direction + 180);
+                arrow.Margin = new Thickness(2, 0, 0, 0);
+                content.Children.Add(arrow);
+            }
+            AutomationProperties.SetName(content, $"{label} {value}");
+            chips.Children.Add(new Border { Child = content, Background = UI.Brush(Look.Hex("fillSelected")), Padding = new Thickness(4, 2, 4, 2),
+                Margin = new Thickness(0, 0, 3, 3), CornerRadius = new CornerRadius(Corner(5)), ToolTip = label });
+        }
+        Chip("≋", Loc.T("风速", "Wind speed"), reading.WindSpeed is { } wind ? $"{wind:0} km/h" : "—", reading.WindDirection);
+        Chip("◊", Loc.T("湿度", "Humidity"), reading.Humidity is { } humidity ? $"{humidity:0}%" : "—");
+        Chip("+", Loc.T("今日总降水量", "Today's total precipitation"), today?.PrecipitationMillimetres is { } rain ? $"{rain:0.##} mm" : "—");
+        var sun = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center };
+        if (today?.Sunrise is { } rise && rise != today.Sunset) AddSun("↑", Loc.T("日出", "Sunrise"), rise);
+        if (today?.Sunset is { } set && set != today.Sunrise) AddSun("↓", Loc.T("日落", "Sunset"), set);
+        facts.Children.Add(sun);
+        void AddSun(string marker, string label, DateTime time)
+        {
+            var item = Current($"{marker} {time:HH:mm}", 11);
+            item.Margin = new Thickness(4, 0, 4, 0);
+            item.ToolTip = label;
+            AutomationProperties.SetName(item, $"{label} {time:HH:mm}");
+            sun.Children.Add(item);
+        }
+
+        var forecast = new StackPanel();
+        Grid.SetColumn(forecast, 1);
+        overview.Children.Add(forecast);
+        var hourly = new System.Windows.Controls.Primitives.UniformGrid { Rows = 1 };
+        var secondary = UI.Brush(Look.Secondary);
+        var primary = UI.Brush(Look.Primary);
+        void Hour(string label, string mark, string summary, double? degrees, double? chance)
+        {
+            var heading = WeatherText(label, 11);
+            heading.Foreground = secondary;
+            var temperature = WeatherText(WeatherTemperature(degrees), 11);
+            temperature.FontWeight = FontWeights.SemiBold;
+            heading.HorizontalAlignment = temperature.HorizontalAlignment = HorizontalAlignment.Center;
+            var tile = new StackPanel { Background = Brushes.Transparent, Children = { heading, ForecastIcon(mark, 22, primary), temperature } };
+            string help = chance is { } percent
+                ? $"{summary} · {Loc.T("降水概率", "Chance of precipitation")} {percent:0}%"
+                : summary;
+            tile.ToolTip = help;
+            AutomationProperties.SetName(tile, $"{label}, {temperature.Text}, {help}");
+            hourly.Children.Add(tile);
+        }
+        Hour(Loc.T("现在", "Now"), icon, condition, reading.Temperature, reading.Hours.FirstOrDefault()?.Chance);
+        foreach (var hour in reading.Hours.Skip(1))
+        {
+            var (mark, summary) = WeatherCondition(hour.Code, hour.Daylight);
+            Hour(hour.Time.ToString("HH"), mark, summary, hour.Temperature, hour.Chance);
+        }
+        forecast.Children.Add(ForecastCard(hourly, new Thickness(4, 5, 4, 5)));
+
+        var daily = new StackPanel();
+        var validRanges = reading.Days.Where(day => day.Low is { } low && day.High is { } high && high >= low).ToArray();
+        double min = validRanges.Length == 0 ? 0 : validRanges.Min(day => day.Low!.Value);
+        double max = validRanges.Length == 0 ? 1 : validRanges.Max(day => day.High!.Value);
+        foreach (var day in reading.Days)
+        {
+            var (mark, summary) = WeatherCondition(day.Code, true);
+            var row = new Grid { Height = 22, Background = Brushes.Transparent };
+            foreach (double width in new[] { 40d, 21, 30, -1, 32, 45 })
+                row.ColumnDefinitions.Add(new ColumnDefinition { Width = width < 0 ? new GridLength(1, GridUnitType.Star) : new GridLength(width) });
+            void Add(int column, FrameworkElement element)
+            {
+                Grid.SetColumn(element, column);
+                row.Children.Add(element);
+            }
+            bool isToday = day == today;
+            var label = WeatherText(isToday ? Loc.T("今天", "Today") : day.Date.ToString("ddd", Loc.Culture), 12);
+            label.Foreground = isToday ? primary : secondary;
+            label.FontWeight = isToday ? FontWeights.SemiBold : FontWeights.Normal;
+            Add(0, label);
+            Add(1, ForecastIcon(mark, 21, primary));
+            var lowText = WeatherText(WeatherTemperature(day.Low), 12);
+            lowText.HorizontalAlignment = HorizontalAlignment.Right;
+            lowText.Foreground = secondary;
+            Add(2, lowText);
+            var track = new Grid { Height = 5, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(6, 0, 6, 0) };
+            track.Children.Add(new Border { Background = UI.Brush(Look.Hex("fillSelected")), CornerRadius = new CornerRadius(3) });
+            if (day.Low is { } low && day.High is { } high && high >= low)
+            {
+                var span = new Grid();
+                foreach (double length in new[] { low - min, Math.Max(.15, high - low), max - high })
+                    span.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(length, GridUnitType.Star) });
+                Brush tint = Look.HighContrast ? primary : new LinearGradientBrush(Color.FromRgb(45, 190, 155), Color.FromRgb(128, 209, 75), 0);
+                var bar = new Border { Background = tint, CornerRadius = new CornerRadius(3) };
+                Grid.SetColumn(bar, 1);
+                span.Children.Add(bar);
+                track.Children.Add(span);
+            }
+            Add(3, track);
+            var highText = WeatherText(WeatherTemperature(day.High), 12);
+            highText.FontWeight = FontWeights.SemiBold;
+            Add(4, highText);
+            if (day.PrecipitationMillimetres is > 0 and { } amount)
+            {
+                var total = WeatherText($"{amount:0.#} mm", 10);
+                total.Foreground = Look.HighContrast ? primary : UI.Brush(Look.Hex("accent"));
+                total.HorizontalAlignment = HorizontalAlignment.Right;
+                Add(5, total);
+            }
+            string details = $"{day.Date.ToString("D", Loc.Culture)} · {summary} · {WeatherExtremes(day)}";
+            if (day.PrecipitationProbability is { } probability)
+                details += $" · {Loc.T("最高降水概率", "Peak precipitation chance")} {probability:0}%";
+            row.ToolTip = details;
+            AutomationProperties.SetName(row, details);
+            daily.Children.Add(row);
+        }
+        var dailyCard = ForecastCard(daily, new Thickness(8, 4, 8, 4));
+        dailyCard.Margin = new Thickness(0, 6, 0, 0);
+        forecast.Children.Add(dailyCard);
+    }
+
+    private Border ForecastCard(FrameworkElement body, Thickness padding) => new()
+    {
+        Child = body, Padding = padding, Background = UI.Brush(Look.Hex("fill")), CornerRadius = new CornerRadius(Corner(10))
+    };
+
+    private FrameworkElement ForecastIcon(string icon, double size, Brush ink, bool animate = false)
+    {
+        var picture = Look.HighContrast ? null : ColourfulWeatherIcon(icon, animate);
+        return new Viewbox { Width = size, Height = size, HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center, Child = picture ?? WeatherLineIcon(icon, size, ink) };
     }
 
     private static FrameworkElement WeatherLineIcon(string icon, double size, Brush ink, bool matchHeight = false)
@@ -305,41 +381,6 @@ public partial class MainWindow
             }
         };
         return (wash, new SolidColorBrush(PanelTheme.ToColor(ink)));
-    }
-
-    private FrameworkElement WeatherPrecipitation(WeatherDay? day, Brush foreground, bool probability, string? sharedIcon = null, bool hero = false)
-    {
-        string value = (probability, day?.PrecipitationProbability, day?.PrecipitationMillimetres) switch
-        {
-            (true, { } chance, _) => $"{chance:0}%",
-            (false, _, { } amount) => $"{amount:0.##} mm",
-            _ => "—"
-        };
-        var figures = WeatherText(value, hero ? 14 : 12);
-        figures.Foreground = foreground;
-        string label = probability ? Loc.T("最高降水概率", "Peak precipitation probability")
-            : Loc.T("总降水量（雨、阵雨及雪）", "Total precipitation (rain, showers and snow)");
-        label += $" {value}";
-        AutomationProperties.SetName(figures, label);
-        var metric = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, ToolTip = label };
-        bool snow = day?.SnowfallCentimetres > 0 || day?.Code is 71 or 73 or 75 or 77 or 85 or 86;
-        string? icon = null;
-        if (probability && day?.PrecipitationProbability > 0)
-            icon = snow ? "❄" : day?.PrecipitationMillimetres > 0 ? RainIcon : null;
-        else if (!probability && day?.PrecipitationMillimetres is not null)
-            icon = snow ? "❄" : WaterIcon;
-        if (hero && probability && day?.PrecipitationProbability is not null)
-            icon ??= WaterIcon;
-        bool valueFirst = probability && !hero;
-        if (valueFirst) metric.Children.Add(figures);
-        if (icon is not null && icon != sharedIcon)
-        {
-            var mark = WeatherLineIcon(icon, hero ? 21 : 14, foreground, matchHeight: hero);
-            mark.Margin = valueFirst ? new Thickness(4, 0, 0, 0) : new Thickness(0, 0, 5, 0);
-            metric.Children.Add(mark);
-        }
-        if (!valueFirst) metric.Children.Add(figures);
-        return metric;
     }
 
     private string WeatherExtremes(WeatherDay? day, bool abbreviated = false) =>
