@@ -13,7 +13,6 @@ public sealed partial class SettingsWindow
 
     private Border RemindersOptionsCard()
     {
-        var enabled = HeaderSwitch(Loc.T("启用提醒", "Enable Reminders"), S.RemindersPage, value => Change(s => s.RemindersPage = value));
         var entry = new TextBox { Style = (Style)FindResource("FormInput"), MaxLength = 200, Tag = Loc.T("例如：20m 买牛奶", "e.g. 20m buy milk") };
         AutomationProperties.SetName(entry, Loc.T("新提醒", "New reminder"));
         var status = TextLine("", 12, TextSecondary);
@@ -30,7 +29,6 @@ public sealed partial class SettingsWindow
         {
             var item = Reminder.Parse(entry.Text, DateTimeOffset.Now, TimeZoneInfo.Local);
             if (item is null) { Say(Loc.T("请输入内容和有效时间。", "Enter a title and a valid time."), true); return; }
-            if (!S.RemindersPage) { Change(s => s.RemindersPage = true); enabled.IsChecked = true; }
             _app.AddReminder(item);
             entry.Clear();
             Say(Loc.T("已保存提醒。", "Reminder saved."), false);
@@ -57,7 +55,7 @@ public sealed partial class SettingsWindow
             choice.Checked += (_, _) => Change(s => s.ReminderSound = sound);
             sounds.Children.Add(choice);
         }
-        return OptionsCard(Loc.T("提醒", "Reminders"), Loc.T("提醒到点时，会在岛上响起。", "A reminder rings on the island when it comes due."), enabled,
+        return OptionsCard(Loc.T("提醒", "Reminders"), Loc.T("提醒到点时，会在岛上响起。", "A reminder rings on the island when it comes due."),
             quickField,
             Rule(),
             ChoiceRow(Loc.T("提示音", "Alert sound"), Loc.T("“重复”会一直响，直到你回应或推迟。", "Repeat keeps chiming until you answer or snooze."), SegmentBorder(sounds)));

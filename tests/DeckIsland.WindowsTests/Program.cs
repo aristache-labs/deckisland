@@ -25,6 +25,7 @@ internal static class Program
             if (args is ["--only", "ringletter", ..]) { RingLetterChecks.Run(Check, args.Length > 2 ? args[2] : null); return Finish(); }
             if (args is ["--only", "drawn"]) { DrawnAutomationTests.Run(Check); return Finish(); }
             if (args is ["--only", "paste"]) { PasteInputChecks.Run(Check); return Finish(); }
+            if (args is ["--only", "vault"]) { VaultChecks.Run(Check); return Finish(); }
             if (args is ["--only", "settings"]) { SettingsFocusTests.Run(Check); DeckIsland.MainWindow.CheckPageCapsuleFit(Check); return Finish(); }
             if (args is ["--only", "popup"]) { PopupGhostChecks.Run(Check); return Finish(); }
             if (args is ["--only", "callmic"]) { CallMicMeterChecks.Run(Check); return Finish(); }
@@ -46,6 +47,7 @@ internal static class Program
             DrawnAutomationTests.Run(Check);
             RingLetterChecks.Run(Check);
             SettingsFocusTests.Run(Check);
+            VaultChecks.Run(Check);
             ThemeCardChecks.Run(Check);
             PopupGhostChecks.Run(Check);
             CallMicMeterChecks.Run(Check);

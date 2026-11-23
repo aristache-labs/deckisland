@@ -9,6 +9,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\DeckIsland.Core\DeckIsland.Core.csproj" />
+    <Compile Include="..\..\src\DeckIsland\VaultStore.cs" Link="VaultStore.cs" />
     <PackageReference Include="NAudio.Wasapi" Version="2.2.1" />
     <PackageReference Include="System.IO.Ports" Version="10.0.0" />
     <Compile Include="..\..\src\DeckIsland\Native\PdhQuery.cs" Link="PdhQuery.cs" />

@@ -16,10 +16,7 @@ public sealed partial class SettingsWindow
                 Loc.T("显示通话时长和静音开关。", "How long you have talked, and a mute switch.")),
             Describe(Toggle(Loc.T("麦克风提示", "Microphone HUD"), S.MicHud, value => Change(s => s.MicHud = value),
                 help: Loc.T("麦克风被静音或取消静音时显示提示，包括由其他应用操作时。", "Show a readout whenever the microphone is muted or unmuted, including by other apps.")),
-                Loc.T("静音或取消静音时提示。", "A readout when it is muted or unmuted.")),
-            Describe(Toggle(Loc.T("通话标签页", "Call tab"), S.CallsPage, value => Change(s => s.CallsPage = value),
-                help: Loc.T("通话标签页：麦克风静音开关，以及通话前测试扬声器和麦克风。", "A tab for calls: the call timer, mute, your speaker and microphone, and a camera mirror that opens only when you press Check camera. The camera is released the moment the tab closes.")),
-                Loc.T("通话前检查扬声器、麦克风和摄像头。", "Check your speaker, mic and camera before a call.")));
+                Loc.T("静音或取消静音时提示。", "A readout when it is muted or unmuted.")));
     }
 
     private void CallSizeControls() => PageSizeControls(DeckPage.Calls, Loc.T("通话", "Calls"));

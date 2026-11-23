@@ -180,7 +180,7 @@ public partial class SettingsWindow
             sources.Children.Add(link);
         }
 
-        return OptionsCard(WidgetLayout.Name(WidgetKind.Weather), Loc.T("当前天气，以及今天的最低和最高气温。", "Current conditions, with today's low and high."), null,
+        return OptionsCard(WidgetLayout.Name(WidgetKind.Weather), Loc.T("当前天气，以及今天的最低和最高气温。", "Current conditions, with today's low and high."),
             placeField,
             Rule(),
             SwitchRow(Loc.T("华氏度", "Fahrenheit"), Loc.T("用 °F 显示所有温度，而不是 °C：天气，以及系统监控里 CPU、GPU 和硬盘的温度。", "Show every temperature in °F instead of °C: the weather, and the CPU, GPU and drive temperatures in the system monitor."), S.WeatherFahrenheit, value => Change(s => s.WeatherFahrenheit = value)),

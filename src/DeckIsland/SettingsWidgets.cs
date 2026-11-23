@@ -12,16 +12,13 @@ public sealed partial class SettingsWindow
 
     private void WidgetsSettings()
     {
-        SectionTitle(Loc.T("小组件页", "Widget page"), description: Loc.T("展开面板是否带有一页小组件。", "Whether the open island has a page of widgets."));
-        Group(Describe(Toggle(Loc.T("显示小组件", "Show Widgets"), S.WidgetsPage, value => Change(s => s.WidgetsPage = value)),
-            Loc.T("在展开面板中加入小组件页。", "Add the widget page to the open island.")));
         WidgetGallery();
         WidgetOptions();
         // The tool tabs share this page instead of each having one in the navigation.
-        ScratchpadSettings();
         ConverterSettings();
         TerminalSettings();
         CaptureSettings();
+        VaultOptions();
     }
 
     private void WidgetSizeControls() => PageSizeControls(DeckPage.Widgets, WidgetLayout.Title);

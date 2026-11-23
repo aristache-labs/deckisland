@@ -89,7 +89,6 @@
               <Grid Grid.Row="1" x:Name="ShelfContent" Visibility="Collapsed"/>
               <Grid Grid.Row="1" x:Name="DevicesContent" Visibility="Collapsed"/>
               <Grid Grid.Row="1" x:Name="WeatherContent" Visibility="Collapsed"/>
-              <Grid Grid.Row="1" x:Name="FocusContent" Visibility="Collapsed"/>
               <Grid Grid.Row="1" x:Name="WidgetsContent" Visibility="Collapsed"/>
               <Grid Grid.Row="1" x:Name="RemindersContent" Visibility="Collapsed"/>
               <Grid Grid.Row="1" x:Name="NotificationsContent" Visibility="Collapsed"/>
@@ -99,6 +98,7 @@
               <!-- The terminal (TerminalPanel.cs) is kept while hidden, so its session runs on with the notch closed. -->
               <Grid Grid.Row="1" x:Name="TerminalContent" Visibility="Collapsed"/>
               <Grid Grid.Row="1" x:Name="ColourContent" Visibility="Collapsed"/>
+              <Grid Grid.Row="1" x:Name="VaultContent" Visibility="Collapsed"/>
               <Grid Grid.Row="1" x:Name="CaptureContent" Visibility="Collapsed"/>
               <!-- What a rebuilt usage or media page replaced, while it leaves (PageHandover). It spans the header row too and is
                    placed where the old content was: the next page's header row may be taller or shorter. -->
@@ -137,11 +137,6 @@
                         StrokeThickness="1.55" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
                         Data="M 5,19 A 3.5,3.5 0 0 1 5,12 A 5,5 0 0 1 14.8,11 A 4,4 0 1 1 17,19 Z M 8,8 A 3,3 0 0 1 13,6 M 10,2 V 3 M 4.5,4.5 L 5.5,5.5 M 15.5,4.5 L 14.5,5.5"/>
                 </Button>
-                <Button x:Name="FocusPageButton" Style="{StaticResource PanelIconButton}" Width="28" Height="24" Click="FocusPage_Click">
-                  <Path Width="16" Height="16" Stretch="Uniform" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
-                        StrokeThickness="1.55" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
-                        Data="M 12,5 A 8,8 0 1 0 12,21 A 8,8 0 1 0 12,5 M 9,2 H 15 M 12,9 V 13 L 15,15"/>
-                </Button>
                 <Button x:Name="WidgetsPageButton" Style="{StaticResource PanelIconButton}" Width="28" Height="24" Click="WidgetsPage_Click">
                   <Path Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.2" Data="M1,1 H6 V6 H1 Z M9,1 H14 V6 H9 Z M1,9 H6 V14 H1 Z M9,9 H14 V14 H9 Z"/>
                 </Button>
@@ -179,6 +174,10 @@
                   <Path Width="15" Height="15" Stretch="Uniform" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
                         StrokeThickness="1.55" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
                         Data="M 3,16 L 3,20 L 7,20 L 17,10 M 3,16 L 13,6 M 11,4 L 19,12 M 13,6 L 16,3 A 2.8,2.8 0 0 1 20,7 L 17,10"/>
+                </Button>
+                <Button x:Name="VaultPageButton" Style="{StaticResource PanelIconButton}" Width="28" Height="24" Click="VaultPage_Click">
+                  <Path Width="16" Height="16" Stretch="Uniform" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                        StrokeThickness="1.55" StrokeLineJoin="Round" Data="M4,9 H20 V21 H4 Z M8,9 V6 A4,4 0 0 1 16,6 V9 M12,13 V17"/>
                 </Button>
                 <Button x:Name="CapturePageButton" Style="{StaticResource PanelIconButton}" Width="28" Height="24" Click="CapturePage_Click">
                   <Path Width="15" Height="15" Stretch="Uniform" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"

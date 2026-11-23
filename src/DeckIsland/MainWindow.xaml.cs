@@ -145,6 +145,7 @@ public partial class MainWindow : Window
             if (_expanded && !_preview) PointerChanged(_pointerInside);
         }) { Interval = TimeSpan.FromSeconds(1) };
         InitializeComponent();
+        VaultContent.IsVisibleChanged += (_, _) => { if (!VaultContent.IsVisible) LockVault(); };
         // Out of sight until the boot (or, without animations, until it has its place): the window shows before it is placed.
         HoverZone.Opacity = 0;
         // The island stays in sight over a taskbar that Start or search has lifted above every application window, and above
@@ -186,7 +187,7 @@ public partial class MainWindow : Window
         _host.ContextChanged += context =>
         {
             _context = context;
-            if (_expanded && !_preview && ReminderAlertId is null && _detailPopup is null && _popupReturnArea is null && AnchorMenu?.IsOpen != true && !ShelfHolds)
+            if (_expanded && !_preview && ReminderAlertId is null && _detailPopup is null && _popupReturnArea is null && AnchorMenu?.IsOpen != true && !ShelfHolds && !_vaultDialogOpen)
             {
                 _expanded = false;
                 PanelClosed();
@@ -724,9 +725,9 @@ public partial class MainWindow : Window
         System.Windows.Automation.AutomationProperties.SetName(ConverterPageButton, Loc.T("换算", "Converter"));
         System.Windows.Automation.AutomationProperties.SetName(TerminalPageButton, Loc.T("终端", "Terminal"));
         System.Windows.Automation.AutomationProperties.SetName(ColourPageButton, Loc.T("颜色", "Colour"));
+        System.Windows.Automation.AutomationProperties.SetName(VaultPageButton, "Vault");
         System.Windows.Automation.AutomationProperties.SetName(CapturePageButton, Loc.T("截图与录屏", "Capture"));
         System.Windows.Automation.AutomationProperties.SetName(RemindersPageButton, Loc.T("提醒", "Reminders"));
-        System.Windows.Automation.AutomationProperties.SetName(FocusPageButton, Loc.T("专注计时器", "Focus timer"));
         System.Windows.Automation.AutomationProperties.SetName(WeatherPageButton, Loc.T("天气", "Weather"));
         System.Windows.Automation.AutomationProperties.SetName(DevicesPageButton, Loc.T("设备电量", "Device batteries"));
         System.Windows.Automation.AutomationProperties.SetName(MusicPageButton, Loc.T("音乐", "Music"));
@@ -855,6 +856,7 @@ public partial class MainWindow : Window
     // details, a panel the expand hotkey showed while the panels are hidden hides again, and the collapsed title scrolls its laps anew.
     private void PanelClosed()
     {
+        LockVault();
         StopCallPreview();
         ClearReminderAlert();
         _app.UpdateCollectionLatency();
@@ -871,7 +873,7 @@ public partial class MainWindow : Window
     public void SetExpanded(bool expanded, bool instant = false, bool keyboard = false)
     {
         if (expanded && IsSuppressed || _poweringOff) return;
-        if (ReminderAlertId is not null && (IsSuppressed || !Settings.RemindersPage)) ClearReminderAlert();
+        if (ReminderAlertId is not null && IsSuppressed) ClearReminderAlert();
         bool reminderAlert = expanded && ReminderAlertId is not null;
         if (expanded && !_expanded) EndBoot();
         // Only the panel under the pointer is open; the others close at once and give up the Escape key.
@@ -941,6 +943,7 @@ public partial class MainWindow : Window
         // Lay out in device-independent pixels. Column typography adapts to its available space.
         ContentCanvas.Width = _pageWidth;
         ContentCanvas.Height = pageHeight;
+        if (expanded && !wasExpanded && CurrentPage == DeckPage.Vault) RenderVault();
         // motion-review C1, C4: closing takes three quarters of the set time; a move the keyboard asked for takes 0.6 of it. The
         // open panel changing size in place (a page switch) keeps its own length whatever the setting (PanelMotion.Reshape).
         bool turning = wasExpanded != expanded;

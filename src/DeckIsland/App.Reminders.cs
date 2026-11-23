@@ -64,7 +64,6 @@ public partial class App
             }
             return;
         }
-        if (!ShownSettings.Any(settings => settings.RemindersPage)) return;
         var reminder = OrderedReminders.FirstOrDefault(item => item.Due <= now && !_reminderSeen.ContainsKey(item.Id));
         if (reminder is null) return;
         var deck = Decks.FirstOrDefault(panel => panel.IsOpenForHotkey && panel.CanShowReminder)

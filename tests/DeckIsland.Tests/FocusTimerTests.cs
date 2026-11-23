@@ -23,13 +23,21 @@ internal static class FocusTimerTests
         timer.Reset();
         check("Reset clears the active focus countdown", timer.Phase == FocusPhase.Idle && timer.Remaining(start) == TimeSpan.Zero);
         var settings = new DeckSettings();
-        check("Focus is opt-in for existing settings", !DeckPages.Shown(settings, DeckPage.Focus) && !settings.ShowsFocus(CompactStyle.Notch));
-        settings.FocusPage = true;
-        check("Enabled Focus can be ordered in both layouts", DeckPages.Visible(settings).Contains(DeckPage.Focus) &&
+        settings.WidgetsPage = true;
+        check("Legacy Focus pages resolve to Widgets and stay out of the switch",
+            !DeckPages.Visible(settings).Contains(DeckPage.Focus) &&
+            !DeckPages.Normalize([DeckPage.Focus]).Contains(DeckPage.Focus) &&
+            DeckPages.Opening(DefaultDeckPage.Focus) == DeckPage.Widgets &&
+            DeckPages.Resolve(settings, DeckPage.Focus) == DeckPage.Widgets);
+        check("Enabled Focus remains available in compact layouts",
             settings.ShowsFocus(CompactStyle.Notch) && settings.ShowsFocus(CompactStyle.Capsule) &&
             settings.NotchOrder.Contains(CompactPart.Focus));
         check("Focus simplifies Notch and Capsule by default", settings.FocusSimplifiesCompact(CompactStyle.Notch) &&
             settings.FocusSimplifiesCompact(CompactStyle.Capsule) && !settings.FocusSimplifiesCompact(CompactStyle.Line));
+        settings.WidgetSlots = [];
+        check("Deselecting Focus removes its compact indicator and simplified layout",
+            !settings.ShowsFocus(CompactStyle.Notch) && !settings.FocusSimplifiesCompact(CompactStyle.Notch));
+        settings.WidgetSlots = [WidgetKind.Focus];
         settings.FocusHideOtherWidgets = false;
         check("Disabling simplified Focus keeps the timer in the normal widget row",
             !settings.FocusSimplifiesCompact(CompactStyle.Notch) && settings.ShowsFocus(CompactStyle.Notch));

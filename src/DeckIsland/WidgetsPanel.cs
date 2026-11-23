@@ -21,18 +21,7 @@ public partial class MainWindow
     private void WidgetsPage_Click(object sender, RoutedEventArgs e) => SelectPage(DeckPage.Widgets);
 
     internal bool WidgetVisible(WidgetKind kind) => _expanded && !_preview && CurrentPage == DeckPage.Widgets &&
-        IsVisible && !IsSuppressed && !DisplayPower.Off && ReminderAlertId is null && Settings.WidgetSlots.Contains(kind) && WidgetEnabled(kind);
-
-    // A widget follows its Expanded view switch: turning the page off removes the widget too.
-    private bool WidgetEnabled(WidgetKind kind) => kind switch
-    {
-        WidgetKind.Weather => DeckPages.Shown(Settings, DeckPage.Weather),
-        WidgetKind.Monitor => DeckPages.Shown(Settings, DeckPage.Monitor),
-        WidgetKind.Focus => DeckPages.Shown(Settings, DeckPage.Focus),
-        WidgetKind.Devices => DeckPages.Shown(Settings, DeckPage.Devices),
-        WidgetKind.Quotas => DeckPages.Shown(Settings, DeckPage.Usage),
-        _ => true
-    };
+        IsVisible && !IsSuppressed && !DisplayPower.Off && ReminderAlertId is null && Settings.WidgetSlots.Contains(kind);
 
     private void UpdateWidgetTimer()
     {
@@ -43,14 +32,14 @@ public partial class MainWindow
     private void RenderWidgets()
     {
         UsageContent.Visibility = MusicContent.Visibility = MonitorContent.Visibility = ShelfContent.Visibility =
-            DevicesContent.Visibility = WeatherContent.Visibility = FocusContent.Visibility = RemindersContent.Visibility = NotificationsContent.Visibility = CallsContent.Visibility = ScratchpadContent.Visibility = ConverterContent.Visibility = TerminalContent.Visibility = Visibility.Collapsed;
+            DevicesContent.Visibility = WeatherContent.Visibility = RemindersContent.Visibility = NotificationsContent.Visibility = CallsContent.Visibility = ScratchpadContent.Visibility = ConverterContent.Visibility = TerminalContent.Visibility = Visibility.Collapsed;
         ModelToolbar.Visibility = ApplicationPages.Visibility = Visibility.Collapsed;
         double height = ContentCanvas.Height;
         if (!double.IsFinite(height)) return;
         ApplyHeader(PanelHeader.For(ToolbarFor(height), 14));
         WidgetsContent.Margin = new Thickness(_header.Side, 0, _header.Side, MonitorBottom(height));
         var slots = Settings.WidgetSlots;
-        string key = $"{string.Join(',', slots)}:{Look.Generation}:{Loc.Language}:{Settings.RemindersPage}:{Settings.FocusPage}:{Settings.WeatherEnabled}:{Settings.UsagePage}:{Settings.MonitorPage}:{Settings.DevicesPage}:{Settings.WeatherPage}:{Settings.WeatherFahrenheit}:{Settings.NetworkMegabits}:{Settings.TimePattern}:{string.Join('|', Settings.WorldClocks)}:{Settings.CountdownTitle}:{Settings.CountdownDate}:{_pageWidth:0}";
+        string key = $"{string.Join(',', slots)}:{Look.Generation}:{Loc.Language}:{Settings.RemindersPage}:{Settings.WeatherEnabled}:{Settings.UsagePage}:{Settings.MonitorPage}:{Settings.DevicesPage}:{Settings.WeatherPage}:{Settings.WeatherFahrenheit}:{Settings.NetworkMegabits}:{Settings.TimePattern}:{string.Join('|', Settings.WorldClocks)}:{Settings.CountdownTitle}:{Settings.CountdownDate}:{_pageWidth:0}";
         if (slots.Contains(WidgetKind.Monitor)) key += $":{MonitorThemeColors.For(Settings, Look)}";
         if (_widgetKey != key || WidgetsContent.Children.Count == 0)
         {
@@ -61,7 +50,7 @@ public partial class MainWindow
             const double Bell = 44, Outer = 5, Inner = 4;
             for (int i = 0; i < slots.Length; i++)
             {
-                var card = WidgetCard(WidgetEnabled(slots[i]) ? slots[i] : WidgetKind.Empty);
+                var card = WidgetCard(slots[i]);
                 // A tight gap; the round centre button overlaps only the inner corners.
                 if (Settings.RemindersPage)
                     card.Margin = new Thickness(i % 2 == 0 ? Outer : Inner, i < 2 ? Outer : Inner, i % 2 == 0 ? Inner : Outer, i < 2 ? Inner : Outer);
@@ -150,14 +139,13 @@ public partial class MainWindow
         {
             WidgetKind.Weather => (DeckPage.Weather, SettingsWindow.WeatherSettingsPage),
             WidgetKind.Monitor => (DeckPage.Monitor, SettingsWindow.MonitorSettingsPage),
-            WidgetKind.Focus => (DeckPage.Focus, SettingsWindow.FocusSettingsPage),
             WidgetKind.Devices => (DeckPage.Devices, SettingsWindow.DevicesSettingsPage),
             _ => (DeckPage.Usage, 3)
         };
         string name = WidgetLayout.Name(kind);
         string configureLabel = Loc.T("设置", "Configure");
         bool detailed = DeckPages.Shown(Settings, page);
-        bool setup = kind == WidgetKind.Weather && !Settings.WeatherEnabled || kind == WidgetKind.Focus && !Settings.FocusPage ||
+        bool setup = kind == WidgetKind.Weather && !Settings.WeatherEnabled ||
             kind == WidgetKind.Quotas && Settings.ConfiguredApps.Count == 0;
         if (kind == WidgetKind.Monitor) return MonitorWidget(frame, detailed);
         if (kind == WidgetKind.Today) return TodayWidget(frame);
@@ -171,7 +159,7 @@ public partial class MainWindow
         if (kind == WidgetKind.Devices) return DevicesWidget(frame, detailed);
         if (!setup && kind == WidgetKind.Quotas) return QuotasWidget(frame, detailed);
         if (!setup && kind == WidgetKind.Weather) return WeatherWidget(frame, detailed);
-        if (!setup && kind == WidgetKind.Focus) return FocusWidget(frame, detailed);
+        if (kind == WidgetKind.Focus) return FocusWidget(frame);
         if (detailed || setup)
         {
             var link = WidgetAction(setup ? $"{name} · {configureLabel}" : name,
@@ -294,7 +282,7 @@ public partial class MainWindow
         return frame;
     }
 
-    private Border FocusWidget(Border frame, bool detailed)
+    private Border FocusWidget(Border frame)
     {
         frame.CornerRadius = new CornerRadius(Corner(16));
         frame.Padding = new Thickness(WidgetSide, 6, WidgetSide, 6);
@@ -313,13 +301,7 @@ public partial class MainWindow
         detail.Foreground = UI.Brush(Look.Secondary);
         var controls = BuildFocusControls();
         var content = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
-        if (detailed)
-        {
-            var headingLink = WidgetSurface(heading, Loc.T("打开专注计时器", "Open Focus timer"), () => SelectPage(DeckPage.Focus));
-            headingLink.HorizontalAlignment = HorizontalAlignment.Left;
-            content.Children.Add(headingLink);
-        }
-        else content.Children.Add(heading);
+        content.Children.Add(heading);
         content.Children.Add(detail);
         content.Children.Add(controls.View);
         frame.Child = new DockPanel { Children = { face, content } };

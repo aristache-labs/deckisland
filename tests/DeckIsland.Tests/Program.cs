@@ -21,6 +21,15 @@ try
 {
     ReminderTests.Run(Check);
     FocusTimerTests.Run(Check);
+    var vaultOtp = VaultOtp.Parse("otpauth://totp/Test:user?secret=GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ&digits=8");
+    Check("Vault TOTP matches the RFC 6238 SHA-1 vector and reads the account",
+        vaultOtp is { Account: "user" } && vaultOtp.Value.Otp.Code(DateTimeOffset.FromUnixTimeSeconds(59)) == "94287082");
+    Check("Vault rejects malformed or counter-based OTP keys",
+        VaultOtp.Parse("A") is null && VaultOtp.Parse("otpauth://hotp/Test?secret=ABCD") is null);
+    Check("Vault PIN lockout starts at five attempts and doubles",
+        VaultRules.Delay(4) == TimeSpan.Zero && VaultRules.Delay(5).TotalSeconds == 30 && VaultRules.Delay(6).TotalSeconds == 60);
+    Check("Vault enables its page only when requested",
+        !DeckPages.Shown(new DeckSettings(), DeckPage.Vault) && DeckPages.Shown(new DeckSettings { VaultPage = true }, DeckPage.Vault));
     WeatherTests.Run(Check);
     ClipboardSyncTests.Run(Check);
     ClipboardToolsTests.Run(Check);

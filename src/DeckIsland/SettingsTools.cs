@@ -10,15 +10,6 @@ public sealed partial class SettingsWindow
 {
     internal const int ScratchpadSettingsPage = 25, ConverterSettingsPage = 26, TerminalSettingsPage = 27;
 
-    private void ScratchpadSettings()
-    {
-        SectionTitle(Loc.T("代码草稿", "Scratchpad"), description: Loc.T("带语法着色的代码草稿本。", "A code pad with syntax colouring."));
-        Group(Describe(Toggle(Loc.T("代码草稿标签页", "Scratchpad tab"), S.ScratchpadPage, value => Change(s => s.ScratchpadPage = value),
-            help: Loc.T("JavaScript、TypeScript、Rust、Python 或纯文本。每种语言各自保留草稿，输入时自动保存在本机。",
-                "JavaScript, TypeScript, Rust and Python colouring, or plain text. Each language keeps its own draft, saved on this PC as you type.")),
-            Loc.T("每种语言各有一份草稿。", "Each language keeps its own draft.")));
-    }
-
     private void ConverterSettings()
     {
         SectionTitle(Loc.T("换算", "Converter"), description: Loc.T("单位和货币换算。", "Units and currencies."));
@@ -27,18 +18,12 @@ public sealed partial class SettingsWindow
         var baseCombo = ProfileCombo(Loc.T("基准货币", "Base currency"), [.. codes.Select(code => _app.Rates.NameOf(code) is var name && name != code ? $"{code} · {name}" : code)], chosen,
             index => Change(s => s.ConverterBaseCurrency = codes[index]), width: 240);
         Group(
-            Describe(Toggle(Loc.T("换算标签页", "Converter tab"), S.ConverterPage, value => Change(s => s.ConverterPage = value),
-                help: Loc.T("长度、重量、温度、体积和速度，以及约 160 种货币，按欧洲央行和其他央行的参考汇率（通过 Frankfurter）。",
-                    "Length, weight, temperature, volume and speed, and about 160 currencies at the reference rates of the European Central Bank and other central banks, through Frankfurter.")),
-                Loc.T("打开时显示上次用过的单位和货币。", "Opens on the units and currencies you used last.")),
             Describe(Row(Loc.T("基准货币", "Base currency"), baseCombo,
                 help: () => Loc.T("任意两种货币都通过基准货币换算，它也是默认的货币。各央行发布日期不同，换算显示两者中较早的日期。",
                     "Any two currencies convert through the base currency, which is also the default. The banks publish on different days, so a pair shows the older of its two dates.")),
                 Loc.T("换算经过的货币，也是默认货币。", "The pivot for every pair, and the default.")));
     }
 
-    // The Capture tab's options as one compact card, like the widgets' option cards: the tab's switch in the header, the three
-    // choices side by side, then the switches in two columns.
     private void CaptureSettings()
     {
         CaptureImageFormat[] formats = [CaptureImageFormat.Png, CaptureImageFormat.Jpeg];
@@ -53,10 +38,9 @@ public sealed partial class SettingsWindow
         int[] rates = [30, 60];
         var fps = ProfileCombo(Loc.T("录屏帧率", "Recording frame rate"), ["30 fps", "60 fps"],
             Math.Max(0, Array.IndexOf(rates, S.CaptureFps)), index => Change(s => s.CaptureFps = rates[index]), width: 210);
-        var enabled = HeaderSwitch(Loc.T("截图与录屏标签页", "Capture tab"), S.CapturePage, value => Change(s => s.CapturePage = value));
         _cardBody = null;
         Target.Children.Add(OptionsCard(Loc.T("截图与录屏", "Capture"),
-            Loc.T("截图存到“图片\\屏幕截图”，录屏存到“视频\\DeckIsland\\Recordings”。", "Screenshots go to Pictures\\Screenshots, recordings to Videos\\DeckIsland\\Recordings."), enabled,
+            Loc.T("截图存到“图片\\屏幕截图”，录屏存到“视频\\DeckIsland\\Recordings”。", "Screenshots go to Pictures\\Screenshots, recordings to Videos\\DeckIsland\\Recordings."),
             Columns(
                 Field(Loc.T("截图格式", "Screenshot format"), format, Loc.T("PNG 保留每个像素，JPEG 小得多。", "PNG keeps every pixel; JPEG is much smaller.")),
                 Field(Loc.T("录屏分辨率", "Recording resolution"), resolution, Loc.T("多块屏幕录在同一个视频里。", "Several screens go into one video.")),
@@ -80,7 +64,7 @@ public sealed partial class SettingsWindow
 
     private void TerminalSettings()
     {
-        SectionTitle(Loc.T("终端", "Terminal"), description: Loc.T("在灵动岛里运行命令行。", "A shell inside the notch."));
+        SectionTitle(Loc.T("终端", "Terminal"), description: Loc.T("灵动岛收起时会话继续运行；关闭终端标签页会结束会话。", "The session keeps running while the island is collapsed. Turning off the Terminal tab ends the session."));
         var shells = Enum.GetValues<TerminalShell>();
         var shell = ProfileCombo(Loc.T("命令行", "Shell"), [.. shells.Select(TerminalShells.Name)], Array.IndexOf(shells, S.TerminalShell),
             index => Change(s => s.TerminalShell = shells[index]), width: 200);
@@ -98,9 +82,6 @@ public sealed partial class SettingsWindow
         browse.Margin = new Thickness(6, 0, 0, 0);
         var folderRow = new StackPanel { Orientation = Orientation.Horizontal, Children = { folder, browse } };
         Group(
-            Describe(Toggle(Loc.T("终端标签页", "Terminal tab"), S.TerminalPage, value => Change(s => s.TerminalPage = value),
-                help: Loc.T("灵动岛收起时会话继续运行；关闭此标签页会结束会话。", "The session keeps running while the notch is closed; switching the tab off ends it.")),
-                Loc.T("收起时会话继续运行。", "Keeps running while the notch is closed.")),
             Describe(Row(Loc.T("命令行", "Shell"), shell, help: () => Loc.T("没有安装 PowerShell 7 时使用 Windows PowerShell。更改后按终端的重新启动按钮生效。",
                 "Windows PowerShell is used where PowerShell 7 is not installed. Changes apply when you press the terminal's restart button.")),
                 Loc.T("PowerShell 7、Windows PowerShell 或命令提示符。", "PowerShell 7, Windows PowerShell or Command Prompt.")),

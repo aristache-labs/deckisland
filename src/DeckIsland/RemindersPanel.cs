@@ -17,7 +17,7 @@ public partial class MainWindow
     private (int Theme, string Language, string TimePattern) _reminderAppearance;
     // The list changed while the page was not the one shown, so the rows it holds are old; it is filled again when it is shown.
     private bool _reminderStale;
-    internal bool CanShowReminder => Settings.RemindersPage && IsVisible && !IsSuppressed && !DisplayPower.Off && !_preview;
+    internal bool CanShowReminder => IsVisible && !IsSuppressed && !DisplayPower.Off && !_preview;
 
     private void InitializeReminders()
     {
@@ -106,7 +106,7 @@ public partial class MainWindow
     {
         RefreshStatus();
         UsageContent.Visibility = MusicContent.Visibility = MonitorContent.Visibility = ShelfContent.Visibility =
-            DevicesContent.Visibility = WeatherContent.Visibility = FocusContent.Visibility = NotificationsContent.Visibility = CallsContent.Visibility = ScratchpadContent.Visibility = ConverterContent.Visibility = TerminalContent.Visibility = Visibility.Collapsed;
+            DevicesContent.Visibility = WeatherContent.Visibility = NotificationsContent.Visibility = CallsContent.Visibility = ScratchpadContent.Visibility = ConverterContent.Visibility = TerminalContent.Visibility = Visibility.Collapsed;
         ModelToolbar.Visibility = ApplicationPages.Visibility = Visibility.Collapsed;
         double height = ContentCanvas.Height;
         if (!double.IsFinite(height)) return;

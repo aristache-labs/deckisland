@@ -57,13 +57,13 @@ public sealed record IgnoredMediaApp(string AppId = "", string Name = "", string
 public enum ProviderId { Claude, Codex, Antigravity, Cursor, GlmChina, NewApi, Sub2Api, Custom, ZCode = 10, GlmGlobal = 11, Dsh = 12, DeepSeek = 13, GrokBot = 14, Kimi = 15, KimiApi = 16, OpenCode = 17, OpenCodeGo = 18, OpenRouter = 19, Pi = 20, CodeAgent = 21, CommandCode = 22, CommandCodeApi = 23, WorkBuddy = 24, WorkBuddyAi = 25, MiMo = 26, MiMoApi = 27, MiMoTokenPlan = 28, MiMoLinked = 29, KimiPlatform = 30 }
 public enum SettingsTheme { System, Light, Dark }
 // Pages are saved as numbers, so new members go at the end; their order in the page switch is DeckSettings.PageOrder.
-public enum DeckPage { Usage, Music, Monitor, Clipboard, Devices, Weather, Focus, Reminders, Widgets, Notifications, Calls, Scratchpad, Converter, Terminal, Colour, Capture }
+public enum DeckPage { Usage, Music, Monitor, Clipboard, Devices, Weather, Focus, Reminders, Widgets, Notifications, Calls, Scratchpad, Converter, Terminal, Colour, Capture, Vault }
 // How the Capture tab lists past captures, as Explorer's View menu: Grid (small icons), List (one line, in columns), Details (one row each, with columns), Tiles.
 public enum CaptureLayout { Grid, List, Details, Tiles }
 public enum CaptureImageFormat { Png, Jpeg }
 // The bit rate a recording is encoded at, per pixel and frame (CaptureQualities).
 public enum CaptureQuality { Low, Standard, High }
-public enum DefaultDeckPage { Last, Usage, Music, Monitor, Clipboard, Devices, Weather, Focus, Reminders, Widgets, Notifications, Calls, Scratchpad, Converter, Terminal, Colour, Capture }
+public enum DefaultDeckPage { Last, Usage, Music, Monitor, Clipboard, Devices, Weather, Focus, Reminders, Widgets, Notifications, Calls, Scratchpad, Converter, Terminal, Colour, Capture, Vault }
 // What the mouse wheel does over the expanded panel. Saved as numbers, so new members go at the end.
 public enum MouseWheelAction { None, Pages, Volume }
 // What a double click on an end of the collapsed notch or capsule does: turn its auto width on or off, or start moving it
@@ -743,6 +743,9 @@ public sealed class DeckSettings
     public bool ColourfulWeatherCard { get; set; }
     public WeatherCity? WeatherCity { get; set; }
     public bool WidgetsPage { get; set; }
+    public bool VaultPage { get; set; }
+    public double VaultWidth { get; set; } = 700;
+    public double VaultHeight { get; set; } = 340;
     public double WidgetsWidth { get; set; } = 540;
     public double WidgetsHeight { get; set; } = 292;
     public WidgetKind[] WidgetSlots { get => [.. _widgetSlots]; set => _widgetSlots = WidgetLayout.Normalize(value); }
@@ -840,18 +843,15 @@ public sealed class DeckSettings
     public List<Reminder> Reminders { get; set; } = [];
     public double RemindersWidth { get; set; } = 490;
     public double RemindersHeight { get; set; } = 280;
-    public bool FocusPage { get; set; }
     public bool FocusHideOtherWidgets { get; set; } = true;
     public FocusSound FocusEndSound { get; set; } = FocusSound.Asterisk;
     public FocusSound BreakEndSound { get; set; } = FocusSound.Hand;
-    public bool FocusSimplifiesCompact(CompactStyle style) => FocusPage && FocusHideOtherWidgets && style != CompactStyle.Line;
+    public bool FocusSimplifiesCompact(CompactStyle style) => _widgetSlots.Contains(WidgetKind.Focus) && FocusHideOtherWidgets && style != CompactStyle.Line;
     public bool NotchFocus { get; set; } = true;
     public bool CapsuleFocus { get; set; } = true;
     public int FocusMinutes { get; set; } = 25;
     public int BreakMinutes { get; set; } = 5;
-    public double FocusWidth { get; set; } = 440;
-    public double FocusHeight { get; set; } = 180;
-    public bool ShowsFocus(CompactStyle style) => FocusPage && style is CompactStyle.Notch or CompactStyle.Capsule;
+    public bool ShowsFocus(CompactStyle style) => _widgetSlots.Contains(WidgetKind.Focus) && style is CompactStyle.Notch or CompactStyle.Capsule;
     public bool WeatherPage { get; set; } = true;
     public bool NotchWeather { get; set; } = true;
     public bool CapsuleWeather { get; set; } = true;
@@ -1099,6 +1099,8 @@ public sealed class DeckSettings
         ConverterAmount = (ConverterAmount ?? "").Length <= 40 ? ConverterAmount ?? "" : "100";
         ColourWidth = double.IsFinite(ColourWidth) ? Math.Clamp(ColourWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : DefaultColourWidth;
         ColourHeight = double.IsFinite(ColourHeight) ? Math.Clamp(ColourHeight, DeckPages.MinHeight, DeckPages.MaxHeight) : DefaultColourHeight;
+        VaultWidth = double.IsFinite(VaultWidth) ? Math.Clamp(VaultWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : 700;
+        VaultHeight = double.IsFinite(VaultHeight) ? Math.Clamp(VaultHeight, DeckPages.MinHeight, DeckPages.MaxHeight) : 340;
         CaptureWidth = double.IsFinite(CaptureWidth) ? Math.Clamp(CaptureWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : DefaultCaptureWidth;
         CaptureHeight = double.IsFinite(CaptureHeight) ? Math.Clamp(CaptureHeight, DeckPages.MinHeight, DeckPages.MaxHeight) : DefaultCaptureHeight;
         if (CaptureFps is not (30 or 60)) CaptureFps = 30;
@@ -1124,8 +1126,6 @@ public sealed class DeckSettings
         // The sounds are not a choice any more: Information when a Focus ends, Critical stop when a Break does.
         FocusEndSound = FocusSound.Asterisk;
         BreakEndSound = FocusSound.Hand;
-        FocusWidth = double.IsFinite(FocusWidth) ? Math.Clamp(FocusWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : 440;
-        FocusHeight = double.IsFinite(FocusHeight) ? Math.Clamp(FocusHeight, DeckPages.MinHeight, DeckPages.MaxHeight) : 180;
         WeatherWidth = double.IsFinite(WeatherWidth) ? Math.Clamp(WeatherWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : 460;
         WeatherHeight = double.IsFinite(WeatherHeight) ? Math.Clamp(WeatherHeight, DeckPages.MinHeight, DeckPages.MaxHeight) : 240;
         DevicesWidth = double.IsFinite(DevicesWidth) ? Math.Clamp(DevicesWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : 460;
@@ -1205,6 +1205,7 @@ public sealed class DeckSettings
         ScreenTimeApps = ScreenTime.Normalize(ScreenTimeDate, ScreenTimeApps);
         if (ScreenTimeApps.Count == 0) ScreenTimeDate = "";
         if (!Enum.IsDefined(DefaultPage)) DefaultPage = DefaultDeckPage.Last;
+        if (DefaultPage == DefaultDeckPage.Focus) DefaultPage = DefaultDeckPage.Widgets;
         if (!Enum.IsDefined(LastPage)) LastPage = DeckPage.Usage;
         OpenDelay = Math.Clamp(OpenDelay, 0, 2000);
         CloseDelay = Math.Clamp(CloseDelay, 0, 2000);

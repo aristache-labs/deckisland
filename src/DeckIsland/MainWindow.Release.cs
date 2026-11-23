@@ -54,9 +54,6 @@ public partial class MainWindow
                     CallsContent.Children.Clear();
                     _callMic = null;
                     break;
-                case DeckPage.Focus:
-                    FocusContent.Children.Clear();
-                    break;
                 case DeckPage.Weather:
                     WeatherContent.Children.Clear();
                     break;

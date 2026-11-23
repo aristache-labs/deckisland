@@ -169,6 +169,9 @@ public partial class MainWindow
     public void RenderUsage()
     {
         if (UsageContent is null) return;
+        VaultContent.Visibility = CurrentPage == DeckPage.Vault ? Visibility.Visible : Visibility.Collapsed;
+        if (CurrentPage == DeckPage.Vault) { RenderVault(); return; }
+        if (VaultContent.Children.Count > 0) LockVault();
         ColourContent.Visibility = CurrentPage == DeckPage.Colour ? Visibility.Visible : Visibility.Collapsed;
         if (CurrentPage == DeckPage.Colour) { RenderColour(); return; }
         CaptureContent.Visibility = CurrentPage == DeckPage.Capture ? Visibility.Visible : Visibility.Collapsed;
@@ -182,13 +185,11 @@ public partial class MainWindow
         TerminalContent.Visibility = CurrentPage == DeckPage.Terminal ? Visibility.Visible : Visibility.Collapsed;
         if (CurrentPage == DeckPage.Terminal) { RenderTerminal(); return; }
         CallsContent.Visibility = CurrentPage == DeckPage.Calls ? Visibility.Visible : Visibility.Collapsed;
-        if (CurrentPage == DeckPage.Calls) { NotificationsContent.Visibility = RemindersContent.Visibility = FocusContent.Visibility = Visibility.Collapsed; RenderCalls(); return; }
+        if (CurrentPage == DeckPage.Calls) { NotificationsContent.Visibility = RemindersContent.Visibility = Visibility.Collapsed; RenderCalls(); return; }
         NotificationsContent.Visibility = CurrentPage == DeckPage.Notifications ? Visibility.Visible : Visibility.Collapsed;
-        if (CurrentPage == DeckPage.Notifications) { RemindersContent.Visibility = FocusContent.Visibility = Visibility.Collapsed; RenderNotifications(); return; }
+        if (CurrentPage == DeckPage.Notifications) { RemindersContent.Visibility = Visibility.Collapsed; RenderNotifications(); return; }
         RemindersContent.Visibility = CurrentPage == DeckPage.Reminders ? Visibility.Visible : Visibility.Collapsed;
-        if (CurrentPage == DeckPage.Reminders) { FocusContent.Visibility = Visibility.Collapsed; RenderReminders(); return; }
-        FocusContent.Visibility = CurrentPage == DeckPage.Focus ? Visibility.Visible : Visibility.Collapsed;
-        if (CurrentPage == DeckPage.Focus) { RenderFocus(); return; }
+        if (CurrentPage == DeckPage.Reminders) { RenderReminders(); return; }
         if (IsMusicPage) { RenderMusic(); return; }
         if (IsMonitorPage) { RenderMonitor(); return; }
         if (IsShelfPage) { RenderShelf(lazy: true); return; }

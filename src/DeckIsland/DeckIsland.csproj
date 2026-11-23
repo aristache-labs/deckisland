@@ -12,6 +12,7 @@
     <PackageReference Include="System.IO.Ports" Version="10.0.0" />
     <PackageReference Include="System.Management" Version="10.0.0" />
     <PackageReference Include="System.ServiceProcess.ServiceController" Version="10.0.0" />
+    <PackageReference Include="ZXing.Net" Version="0.16.11" />
     <Resource Include="Assets\Fonts\*.ttf" />
     <Resource Include="Assets\Weather\*.png" />
     <Resource Include="Assets\QuotaAgents\*.png" />

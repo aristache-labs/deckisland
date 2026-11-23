@@ -21,7 +21,7 @@ public sealed partial class SettingsWindow
             choice.Checked += (_, _) => Change(s => s.NetworkMegabits = megabits);
             units.Children.Add(choice);
         }
-        return OptionsCard(WidgetLayout.Name(WidgetKind.Monitor), Loc.T("CPU、GPU、内存和网络，一眼看清。", "CPU, GPU, memory and network at a glance."), null,
+        return OptionsCard(WidgetLayout.Name(WidgetKind.Monitor), Loc.T("CPU、GPU、内存和网络，一眼看清。", "CPU, GPU, memory and network at a glance."),
             ChoiceRow(Loc.T("网速", "Network speed"),
                 Loc.T("下载和上传按每秒兆字节（MB/s，像文件下载那样）或每秒兆比特（Mbps，像测速和宽带套餐那样）显示。这项设置同样用于系统监控页和收起时的状态条。",
                     "Show download and upload in megabytes a second (MB/s, as file downloads do) or megabits a second (Mbps, as speed tests and internet plans do). This applies to the System monitoring widget, the System monitor tab and the collapsed strip alike."),
@@ -41,7 +41,7 @@ public sealed partial class SettingsWindow
             Show();
         };
         Show();
-        return OptionsCard(WidgetLayout.Name(WidgetKind.ScreenTime), Loc.T("今天每个应用在前台多久。", "How long each app was in front today."), null,
+        return OptionsCard(WidgetLayout.Name(WidgetKind.ScreenTime), Loc.T("今天每个应用在前台多久。", "How long each app was in front today."),
             ChoiceRow(Loc.T("统计内容", "What is counted"),
                 Loc.T("只有小组件放在岛上时才统计：你在键盘前时，哪个应用的窗口在最前面，以及多久。不记录你在应用里做了什么，数据只保存在这台电脑上，每天从头开始。",
                     "Counted only while the widget is on the island: which app's window is in front while you are at the keyboard, and for how long. Nothing about what you do in it is recorded. It stays on this PC and starts over each day."),

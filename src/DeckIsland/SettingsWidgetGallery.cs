@@ -14,7 +14,7 @@ public sealed partial class SettingsWindow
     // The badge shows the position it holds, so the order follows the order the widgets were added in.
     private void WidgetGallery()
     {
-        SectionTitle(Loc.T("岛上的小组件", "On the island"), description: Loc.T("小组件页上的小组件，按添加的顺序排列。", "The widgets on the page, in the order they were added."));
+        SectionTitle(Loc.T("岛上的小组件", "On the island"), description: Loc.T("在展开视图设置中选择要显示的标签页。", "Choose which tabs appear under Expanded view settings."));
         var count = TextLine("", 12, TextSecondary);
         count.TextWrapping = TextWrapping.Wrap;
         count.Margin = new Thickness(0, 14, 0, 10);

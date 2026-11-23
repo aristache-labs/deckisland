@@ -72,7 +72,7 @@ internal static class ToolTabsTests
     private static void Pages(Action<string, bool> check)
     {
         var settings = new DeckSettings();
-        check("Pages: the tool tabs come last in the switch", DeckPages.Order.TakeLast(5).SequenceEqual([DeckPage.Scratchpad, DeckPage.Converter, DeckPage.Terminal, DeckPage.Colour, DeckPage.Capture]));
+        check("Pages: the tool tabs come last in the switch", DeckPages.Order.TakeLast(6).SequenceEqual([DeckPage.Scratchpad, DeckPage.Converter, DeckPage.Terminal, DeckPage.Colour, DeckPage.Capture, DeckPage.Vault]));
         check("Pages: the tool tabs open on their own setting",
             DeckPages.Opening(DefaultDeckPage.Scratchpad) == DeckPage.Scratchpad && DeckPages.Opening(DefaultDeckPage.Converter) == DeckPage.Converter && DeckPages.Opening(DefaultDeckPage.Terminal) == DeckPage.Terminal);
         DeckPages.SetSize(settings, DeckPage.Terminal, 700, 320);

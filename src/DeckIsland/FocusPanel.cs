@@ -10,19 +10,12 @@ public partial class MainWindow
 {
     private TextBlock? _focusBadge;
     private FocusDial? _focusBadgeDial;
-    private TextBlock? _focusHeading, _focusDetail, _focusReading;
-    private FocusDial? _focusDial;
-    private Action<FocusTimer>? _updateFocusControls;
-
-    private (int Theme, string Language) _focusAppearance;
 
     private void InitializeFocus()
     {
         _app.FocusChanged += FocusChanged;
         Closed += (_, _) => _app.FocusChanged -= FocusChanged;
     }
-
-    private void FocusPage_Click(object sender, RoutedEventArgs e) => SelectPage(DeckPage.Focus);
 
     // A screen recording also leaves the collapsed island showing only its badge (CaptureBadge).
     private bool FocusCompactOnly => _app.Recording is not null || Settings.FocusSimplifiesCompact(EffectiveStyle) && _app.FocusSession.Phase != FocusPhase.Idle;
@@ -88,57 +81,16 @@ public partial class MainWindow
         _focusBadge = badge;
         _focusBadgeDial = new FocusDial { Width = size, Height = size, Margin = new Thickness(0, 0, 4 * scale, 0) };
         _focusBadgeDial.Update(_app.FocusSession, Animates);
-        var host = new StackPanel { Orientation = Orientation.Horizontal, Background = Brushes.Transparent, Children = { _focusBadgeDial, badge },
-            ToolTip = Loc.T("打开专注计时器", "Open Focus timer") };
+        var host = new StackPanel { Orientation = Orientation.Horizontal, Background = Brushes.Transparent, Children = { _focusBadgeDial, badge } };
         host.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
         host.Width = Math.Ceiling(host.DesiredSize.Width + 4 * scale);
         host.Height = Math.Ceiling(host.DesiredSize.Height);
-        host.MouseLeftButtonUp += (_, e) => { OpenFromHotkey(DeckPage.Focus); e.Handled = true; };
-        return host;
-    }
-
-    private void RenderFocus()
-    {
-        RefreshStatus();
-        UsageContent.Visibility = MusicContent.Visibility = MonitorContent.Visibility = ShelfContent.Visibility =
-            DevicesContent.Visibility = WeatherContent.Visibility = Visibility.Collapsed;
-        ModelToolbar.Visibility = ApplicationPages.Visibility = Visibility.Collapsed;
-        double height = ContentCanvas.Height;
-        if (!double.IsFinite(height)) return;
-        var header = PanelHeader.For(ToolbarFor(height), height < 170 ? 14 : 20);
-        ApplyHeader(Settings.UsagePage ? header.WithControlsOf(CachedUsageHeader()) : header);
-        FocusContent.Margin = new Thickness(_header.Side, 0, _header.Side, MonitorBottom(height));
-        var appearance = (Look.Generation, Loc.Language);
-        if (FocusContent.Children.Count == 0 || _focusAppearance != appearance)
+        if (Settings.WidgetsPage && Settings.WidgetSlots.Contains(WidgetKind.Focus))
         {
-            _focusAppearance = appearance;
-            FocusContent.Children.Clear();
-            BuildFocusCard();
+            host.ToolTip = WidgetLayout.Name(WidgetKind.Focus);
+            host.MouseLeftButtonUp += (_, e) => { OpenFromHotkey(DeckPage.Widgets); e.Handled = true; };
         }
-        UpdateFocus();
-    }
-
-    private void BuildFocusCard()
-    {
-        var face = new Grid { Width = 78, Height = 78, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 16, 0) };
-        _focusDial = new FocusDial();
-        face.Children.Add(_focusDial);
-        _focusReading = WeatherText("", 16);
-        _focusReading.HorizontalAlignment = HorizontalAlignment.Center;
-        _focusReading.FontWeight = FontWeights.SemiBold;
-        Typography.SetNumeralAlignment(_focusReading, FontNumeralAlignment.Tabular);
-        face.Children.Add(_focusReading);
-
-        _focusHeading = WeatherText("", 16);
-        _focusHeading.FontWeight = FontWeights.SemiBold;
-        _focusDetail = WeatherText("", 12);
-        var controls = BuildFocusControls();
-        _updateFocusControls = controls.Update;
-        var settings = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Children = { _focusHeading, _focusDetail, controls.View } };
-        var body = new DockPanel { Children = { face, settings } };
-        // Straight on the page like the other tabs, no card around it.
-        body.VerticalAlignment = VerticalAlignment.Center;
-        FocusContent.Children.Add(body);
+        return host;
     }
 
     private void AdjustFocus(int change)
@@ -155,18 +107,6 @@ public partial class MainWindow
             _focusBadge.Text = FocusBadgeLabel();
             _focusBadgeDial?.Update(_app.FocusSession, Animates);
         }
-        if (_focusReading is null || CurrentPage != DeckPage.Focus || FocusContent.Children.Count == 0) return;
-        var timer = _app.FocusSession;
-        bool idle = timer.Phase == FocusPhase.Idle;
-        var remaining = idle ? TimeSpan.FromMinutes(Settings.FocusMinutes) : timer.Remaining(DateTimeOffset.UtcNow);
-        _focusReading.Text = FocusTime(remaining);
-        _focusHeading!.Text = FocusPhaseLabel();
-        var notice = FocusNoticeLabel();
-        _focusDetail!.Text = notice.Length > 0 ? notice : idle
-            ? Loc.T($"{Settings.FocusMinutes} + {Settings.BreakMinutes} 分钟", $"{Settings.FocusMinutes} + {Settings.BreakMinutes} min")
-            : timer.Running ? Loc.T("进行中", "In progress") : Loc.T("已暂停", "Paused");
-        _updateFocusControls?.Invoke(timer);
-        _focusDial!.Update(timer, Animates);
     }
 
     private sealed class FocusDial : FrameworkElement

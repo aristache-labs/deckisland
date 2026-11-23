@@ -24,7 +24,7 @@ internal static class WeatherTests
         WeatherPoint place = new("Tokyo", 35.68, 139.69);
         using var forecast = JsonDocument.Parse("""
             {"timezone":"Asia/Tokyo","current":{"time":"2026-11-21T01:00","temperature_2m":13,"is_day":0,"weather_code":0},
-             "daily":{"time":["2026-11-21","2026-11-22","2026-11-23","2026-11-24"],"temperature_2m_max":[17,null,18,16],"temperature_2m_min":[7],
+             "daily":{"time":["2026-11-21","2026-11-22","2026-11-23","2026-11-24","2026-11-25","2026-11-26","2026-11-27"],"temperature_2m_max":[17,null,18,16],"temperature_2m_min":[7],
                "precipitation_probability_max":[75,0,null,32],"precipitation_sum":[2.4,0,null,0.8],"snowfall_sum":[0,0,null,0.56]}}
             """);
         var reading = Weather.Parse(place, forecast.RootElement);
@@ -34,7 +34,7 @@ internal static class WeatherTests
             reading.Days[2] is { PrecipitationProbability: null, PrecipitationMillimetres: null } &&
             reading.Days[3] is { PrecipitationMillimetres: 0.8, SnowfallCentimetres: 0.56 });
         check("Weather keeps location-local dates and tolerates missing forecast fields",
-            reading is { Temperature: 13, Daylight: false, Days.Count: 4 } &&
+            reading is { Temperature: 13, Daylight: false, Days.Count: 7 } && reading.Days[6].Date == new DateOnly(2026, 11, 27) &&
             reading.Days[0] is { High: 17, Low: 7, Code: null } &&
             reading.Days[0].Date == new DateOnly(2026, 11, 21) &&
             reading.Days[1] is { High: null, Low: null } && reading.Days[2].High == 18 &&
