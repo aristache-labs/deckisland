@@ -9,6 +9,16 @@ internal static class VaultChecks
         string path = Path.Combine(Path.GetTempPath(), $"deckisland-vault-test-{Guid.NewGuid():N}.dat");
         var vault = new VaultStore(path);
         var now = DateTimeOffset.UtcNow;
+        var session = new DeckIsland.Core.VaultSession();
+        var sessionKey = RandomNumberGenerator.GetBytes(32);
+        session.Open(sessionKey, now);
+        check("Vault timeout is measured from unlock without extending on access",
+            session.Remaining(15, now.AddMinutes(10)) == TimeSpan.FromMinutes(5) &&
+            session.Remaining(15, now.AddMinutes(15)) == TimeSpan.Zero);
+        check("Until exit disables the deadline and session lock clears key material",
+            session.Remaining(0, now.AddHours(10)) is null && session.Key == sessionKey);
+        session.Lock();
+        check("Ending the Vault session erases the in-memory key", session.Key is null && sessionKey.All(value => value == 0));
         try
         {
             vault.Configure(null, null, "1234", pinPasswords: true, pinCodes: false);

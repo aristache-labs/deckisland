@@ -4,6 +4,31 @@ using System.Security.Cryptography;
 
 namespace DeckIsland.Core;
 
+public sealed class VaultSession
+{
+    public const int DefaultMinutes = 15;
+    public static readonly IReadOnlyList<int> Timeouts = [1, 5, 15, 30, 60, 120, 240, 0];
+
+    private DateTimeOffset _unlockedAt;
+    public byte[]? Key { get; private set; }
+
+    public void Open(byte[] key, DateTimeOffset now)
+    {
+        Lock();
+        Key = key;
+        _unlockedAt = now;
+    }
+
+    public TimeSpan? Remaining(int minutes, DateTimeOffset now) =>
+        Key is null || minutes == 0 ? null : _unlockedAt.AddMinutes(minutes) - now;
+
+    public void Lock()
+    {
+        if (Key is { } key) CryptographicOperations.ZeroMemory(key);
+        Key = null;
+    }
+}
+
 public sealed record VaultOtp(string Key, string Algorithm = "SHA1", int Digits = 6, int Period = 30)
 {
     public static (VaultOtp Otp, string Name, string Account)? Parse(string value)

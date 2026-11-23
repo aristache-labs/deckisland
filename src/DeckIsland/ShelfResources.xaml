@@ -72,4 +72,18 @@
       </ControlTemplate.Triggers>
     </ControlTemplate></Setter.Value></Setter>
   </Style>
+  <Style x:Key="VaultPasswordInput" TargetType="PasswordBox">
+    <Setter Property="OverridesDefaultStyle" Value="True"/>
+    <Setter Property="SelectionBrush" Value="{DynamicResource PanelAccent}"/>
+    <Setter Property="VerticalContentAlignment" Value="Center"/>
+    <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="PasswordBox">
+      <Border x:Name="Frame" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+              BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{DynamicResource PanelR6}">
+        <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+      </Border>
+      <ControlTemplate.Triggers>
+        <Trigger Property="IsKeyboardFocusWithin" Value="True"><Setter TargetName="Frame" Property="BorderBrush" Value="{DynamicResource PanelAccent}"/></Trigger>
+      </ControlTemplate.Triggers>
+    </ControlTemplate></Setter.Value></Setter>
+  </Style>
 </ResourceDictionary>

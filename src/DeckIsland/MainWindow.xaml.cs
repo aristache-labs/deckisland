@@ -145,7 +145,7 @@ public partial class MainWindow : Window
             if (_expanded && !_preview) PointerChanged(_pointerInside);
         }) { Interval = TimeSpan.FromSeconds(1) };
         InitializeComponent();
-        VaultContent.IsVisibleChanged += (_, _) => { if (!VaultContent.IsVisible) LockVault(); };
+        VaultContent.IsVisibleChanged += (_, _) => { if (!VaultContent.IsVisible) ClearVaultView(); };
         // Out of sight until the boot (or, without animations, until it has its place): the window shows before it is placed.
         HoverZone.Opacity = 0;
         // The island stays in sight over a taskbar that Start or search has lifted above every application window, and above
@@ -856,7 +856,7 @@ public partial class MainWindow : Window
     // details, a panel the expand hotkey showed while the panels are hidden hides again, and the collapsed title scrolls its laps anew.
     private void PanelClosed()
     {
-        LockVault();
+        ClearVaultView();
         StopCallPreview();
         ClearReminderAlert();
         _app.UpdateCollectionLatency();

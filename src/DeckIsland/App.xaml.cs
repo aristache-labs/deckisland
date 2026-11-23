@@ -649,6 +649,7 @@ public partial class App : Application
     }
     protected override void OnExit(ExitEventArgs e)
     {
+        EndVaultSession();
         _reminderTimer.Stop();
         StopHud();
         StopReminderAlarm();

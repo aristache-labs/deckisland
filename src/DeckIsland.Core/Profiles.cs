@@ -77,6 +77,7 @@ public static class Profiles
         nameof(DeckSettings.SettingsWindowWidth), nameof(DeckSettings.SettingsWindowHeight), nameof(DeckSettings.SettingsWindowMaximized),
         nameof(DeckSettings.IncludeWsl), nameof(DeckSettings.Apps),
         nameof(DeckSettings.Reminders), nameof(DeckSettings.ReminderSound),
+        nameof(DeckSettings.VaultLockMinutes),
         nameof(DeckSettings.WeatherEnabled), nameof(DeckSettings.ManualWeatherLocation), nameof(DeckSettings.WeatherFahrenheit), nameof(DeckSettings.WeatherCity),
         nameof(DeckSettings.Profiles), nameof(DeckSettings.CurrentProfile), nameof(DeckSettings.ReturnProfile), nameof(DeckSettings.ProfileRules),
         nameof(DeckSettings.FullscreenExceptions), nameof(DeckSettings.MouseWheelPages)

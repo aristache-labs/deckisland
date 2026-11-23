@@ -171,7 +171,7 @@ public partial class MainWindow
         if (UsageContent is null) return;
         VaultContent.Visibility = CurrentPage == DeckPage.Vault ? Visibility.Visible : Visibility.Collapsed;
         if (CurrentPage == DeckPage.Vault) { RenderVault(); return; }
-        if (VaultContent.Children.Count > 0) LockVault();
+        if (VaultContent.Children.Count > 0) ClearVaultView();
         ColourContent.Visibility = CurrentPage == DeckPage.Colour ? Visibility.Visible : Visibility.Collapsed;
         if (CurrentPage == DeckPage.Colour) { RenderColour(); return; }
         CaptureContent.Visibility = CurrentPage == DeckPage.Capture ? Visibility.Visible : Visibility.Collapsed;

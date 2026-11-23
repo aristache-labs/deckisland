@@ -744,6 +744,7 @@ public sealed class DeckSettings
     public WeatherCity? WeatherCity { get; set; }
     public bool WidgetsPage { get; set; }
     public bool VaultPage { get; set; }
+    public int VaultLockMinutes { get; set; } = VaultSession.DefaultMinutes;
     public double VaultWidth { get; set; } = 700;
     public double VaultHeight { get; set; } = 340;
     public double WidgetsWidth { get; set; } = 540;
@@ -1100,6 +1101,7 @@ public sealed class DeckSettings
         ColourWidth = double.IsFinite(ColourWidth) ? Math.Clamp(ColourWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : DefaultColourWidth;
         ColourHeight = double.IsFinite(ColourHeight) ? Math.Clamp(ColourHeight, DeckPages.MinHeight, DeckPages.MaxHeight) : DefaultColourHeight;
         VaultWidth = double.IsFinite(VaultWidth) ? Math.Clamp(VaultWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : 700;
+        if (!VaultSession.Timeouts.Contains(VaultLockMinutes)) VaultLockMinutes = VaultSession.DefaultMinutes;
         VaultHeight = double.IsFinite(VaultHeight) ? Math.Clamp(VaultHeight, DeckPages.MinHeight, DeckPages.MaxHeight) : 340;
         CaptureWidth = double.IsFinite(CaptureWidth) ? Math.Clamp(CaptureWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : DefaultCaptureWidth;
         CaptureHeight = double.IsFinite(CaptureHeight) ? Math.Clamp(CaptureHeight, DeckPages.MinHeight, DeckPages.MaxHeight) : DefaultCaptureHeight;
