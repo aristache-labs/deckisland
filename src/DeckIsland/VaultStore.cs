@@ -11,11 +11,14 @@ internal sealed record VaultEntry(string Name, string Account, string Password, 
 }
 
 internal sealed record VaultHelloCredential(string Name, byte[] Challenge, byte[] PublicKey);
+internal sealed record VaultListing(string Name, string Account);
+internal sealed record VaultPending(bool Codes, VaultListing Listing, byte[] WrappedKey, byte[] Ciphertext);
+internal sealed record VaultInbox(byte[] PublicKey, byte[] PrivateKey, VaultListing[] Passwords, VaultListing[] Codes, VaultPending[] Pending);
 
 internal sealed class VaultStore(string path)
 {
     internal sealed record Document(byte[] Salt, byte[] PinCheck, byte[] Passwords, byte[] Codes, bool PinPasswords, bool PinCodes,
-        int Failures = 0, DateTimeOffset RetryAt = default, VaultHelloCredential? Hello = null, Guid Revision = default)
+        int Failures = 0, DateTimeOffset RetryAt = default, VaultHelloCredential? Hello = null, Guid Revision = default, VaultInbox? Inbox = null)
     {
         internal bool Protected(bool codes) => Hello is not null || (codes ? PinCodes : PinPasswords);
     }
@@ -68,7 +71,8 @@ internal sealed class VaultStore(string path)
         {
             var passwords = current is null ? [] : Entries(current, false, oldKey);
             var codes = current is null ? [] : Entries(current, true, oldKey);
-            Write(new(salt, Encode(true, key), Encode(passwords, pinPasswords ? key : null), Encode(codes, pinCodes ? key : null), pinPasswords, pinCodes));
+            Write(new(salt, Encode(true, key), Encode(passwords, pinPasswords ? key : null), Encode(codes, pinCodes ? key : null), pinPasswords, pinCodes,
+                Inbox: CreateInbox(key, passwords, codes)));
         }
         finally { if (newPin is not null) CryptographicOperations.ZeroMemory(key); }
     }
@@ -77,15 +81,72 @@ internal sealed class VaultStore(string path)
     {
         RequireCurrent(current);
         if (current.Hello is not null || !Decode<bool>(current.PinCheck, oldKey)) throw new CryptographicException();
-        Write(new([], [], Seal(Entries(current, false, oldKey), helloKey, false), Seal(Entries(current, true, oldKey), helloKey, true),
-            current.PinPasswords, current.PinCodes, Hello: credential));
+        var passwords = Entries(current, false, oldKey);
+        var codes = Entries(current, true, oldKey);
+        Write(new([], [], Seal(passwords, helloKey, false), Seal(codes, helloKey, true),
+            current.PinPasswords, current.PinCodes, Hello: credential, Inbox: CreateInbox(helloKey, passwords, codes)));
     }
 
     internal List<VaultEntry> Entries(Document document, bool codes, byte[]? key)
     {
         byte[] payload = codes ? document.Codes : document.Passwords;
         byte[]? secret = Key(document, codes, key);
-        return document.Hello is not null ? Unseal(payload, secret!, codes) : Decode<List<VaultEntry>>(payload, secret);
+        var entries = document.Hello is not null ? Unseal(payload, secret!, codes) : Decode<List<VaultEntry>>(payload, secret);
+        if (document.Inbox is not { } inbox || !inbox.Pending.Any(item => item.Codes == codes)) return entries;
+        byte[] privateKey = Decode<byte[]>(inbox.PrivateKey, key ?? throw new CryptographicException());
+        try
+        {
+            using var rsa = RSA.Create();
+            rsa.ImportPkcs8PrivateKey(privateKey, out _);
+            foreach (var item in inbox.Pending.Where(item => item.Codes == codes))
+            {
+                byte[] contentKey = rsa.Decrypt(item.WrappedKey, RSAEncryptionPadding.OaepSHA256);
+                try { entries.AddRange(Unseal(item.Ciphertext, contentKey, codes)); }
+                finally { CryptographicOperations.ZeroMemory(contentKey); }
+            }
+        }
+        finally { CryptographicOperations.ZeroMemory(privateKey); }
+        return entries;
+    }
+
+    internal void PrepareListings(Document document, byte[] key)
+    {
+        if (document.Inbox is not null) return;
+        RequireCurrent(document);
+        Write(document with { Inbox = CreateInbox(key, Entries(document, false, key), Entries(document, true, key)) });
+    }
+
+    internal List<VaultEntry> Listings(Document document, bool codes)
+    {
+        if (document.Inbox is not { } inbox) return [];
+        return (codes ? inbox.Codes : inbox.Passwords).Concat(inbox.Pending.Where(item => item.Codes == codes).Select(item => item.Listing))
+            .Select(item => new VaultEntry(item.Name, item.Account, "", null)).ToList();
+    }
+
+    internal void AddLocked(Document document, bool codes, VaultEntry entry)
+    {
+        RequireCurrent(document);
+        var inbox = document.Inbox ?? throw new IOException("Unlock Vault once to enable locked additions.");
+        if (!document.Protected(codes)) throw new InvalidOperationException();
+        using var rsa = RSA.Create();
+        rsa.ImportSubjectPublicKeyInfo(inbox.PublicKey, out _);
+        byte[] key = RandomNumberGenerator.GetBytes(32);
+        try
+        {
+            var pending = new VaultPending(codes, new(entry.Name, entry.Account), rsa.Encrypt(key, RSAEncryptionPadding.OaepSHA256), Seal([entry], key, codes));
+            Write(document with { Inbox = inbox with { Pending = [.. inbox.Pending, pending] } });
+        }
+        finally { CryptographicOperations.ZeroMemory(key); }
+    }
+
+    private static VaultListing[] Index(List<VaultEntry> entries) => entries.Select(item => new VaultListing(item.Name, item.Account)).ToArray();
+
+    private static VaultInbox CreateInbox(byte[] key, List<VaultEntry> passwords, List<VaultEntry> codes)
+    {
+        using var rsa = RSA.Create(2048);
+        byte[] privateKey = rsa.ExportPkcs8PrivateKey();
+        try { return new(rsa.ExportSubjectPublicKeyInfo(), Encode(privateKey, key), Index(passwords), Index(codes), []); }
+        finally { CryptographicOperations.ZeroMemory(privateKey); }
     }
 
     internal void Save(Document document, bool codes, byte[]? key, List<VaultEntry> entries)
@@ -93,7 +154,13 @@ internal sealed class VaultStore(string path)
         RequireCurrent(document);
         byte[]? secret = Key(document, codes, key);
         byte[] encrypted = document.Hello is not null ? Seal(entries, secret!, codes) : Encode(entries, secret);
-        Write(codes ? document with { Codes = encrypted } : document with { Passwords = encrypted });
+        var inbox = document.Inbox;
+        if (inbox is not null)
+        {
+            inbox = codes ? inbox with { Codes = Index(entries) } : inbox with { Passwords = Index(entries) };
+            inbox = inbox with { Pending = inbox.Pending.Where(item => item.Codes != codes).ToArray() };
+        }
+        Write(codes ? document with { Codes = encrypted, Inbox = inbox } : document with { Passwords = encrypted, Inbox = inbox });
     }
 
     internal void Reset()

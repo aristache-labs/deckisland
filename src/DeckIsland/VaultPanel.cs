@@ -18,6 +18,7 @@ public partial class MainWindow
     private DispatcherTimer? _vaultReveal;
     private TextBlock? _vaultRevealed;
     private Action? _vaultHideRow;
+    private (int Index, string Action)? _vaultReplay;
     private VaultStore Vault => _app.Vault;
 
     private void VaultPage_Click(object sender, RoutedEventArgs e) => SelectPage(DeckPage.Vault);
@@ -149,18 +150,10 @@ public partial class MainWindow
                 modes.Children.Add(button);
             }
             toolbar.Children.Add(PanelSegmentTrack(modes));
-            if (document.Protected(_vaultCodes) && _app.VaultKey is null)
-            {
-                toolbar.LastChildFill = false;
-                empty.Children.Add(WeatherText(document.Hello is null
-                    ? Loc.T("输入 PIN 以访问此部分。", "Enter your PIN to access this section.")
-                    : Loc.T("使用 Windows Hello 解密保险库。", "Use Windows Hello to decrypt the vault."), 13));
-                string unlock = document.Hello is null ? Loc.T("解锁", "Unlock") : Loc.T("使用 Windows Hello 解锁", "Unlock with Windows Hello");
-                EmptyAction(unlock, () => VaultUnlockForm(document));
-                root.Children.Add(empty);
-                return;
-            }
-            var entries = Vault.Entries(document, _vaultCodes, _app.VaultKey);
+            bool locked = document.Protected(_vaultCodes) && _app.VaultKey is null;
+            var entries = locked ? Vault.Listings(document, _vaultCodes) : Vault.Entries(document, _vaultCodes, _app.VaultKey);
+            var replay = _vaultReplay;
+            _vaultReplay = null;
             var search = new TextBox { Padding = new Thickness(6, 3, 6, 3), Margin = new Thickness(6, 0, 0, 0) };
             AutomationProperties.SetName(search, Loc.T("搜索保险库", "Search vault"));
             search.ToolTip = Loc.T("按名称或账户搜索", "Search by name or account");
@@ -170,7 +163,13 @@ public partial class MainWindow
             DockPanel.SetDock(status, DockSide.Bottom);
             root.Children.Add(status);
             if (_app.VaultKey is not null) actions.Children.Add(VaultButton(Loc.T("锁定", "Lock"), _app.LockVaultViews));
-            actions.Children.Add(VaultButton(Loc.T("添加", "Add"), () => EditVault(document, entries, -1)));
+            actions.Children.Add(VaultButton(Loc.T("添加", "Add"), () =>
+            {
+                if (locked && document.Inbox is null)
+                    VaultUnlockForm(document, () => _vaultReplay = (-1, "add"));
+                else EditVault(document, entries, -1);
+            }));
+            if (replay == (-1, "add")) { EditVault(document, entries, -1); return; }
             var list = new StackPanel();
             if (entries.Count == 0)
             {
@@ -184,7 +183,13 @@ public partial class MainWindow
                 hint.HorizontalAlignment = HorizontalAlignment.Center;
                 hint.Foreground = UI.Brush(Look.Secondary);
                 empty.Children.Add(hint);
-                EmptyAction(_vaultCodes ? "+ " + Loc.T("添加双重验证", "Add 2FA") : "+ " + Loc.T("添加密码", "Add password"), () => EditVault(document, entries, -1));
+                if (locked && document.Inbox is null)
+                {
+                    title.Text = Loc.T("解锁一次以准备保险库", "Unlock once to prepare Vault");
+                    hint.Text = Loc.T("现有条目将在解锁后显示。", "Existing entries will appear after unlocking.");
+                    EmptyAction(Loc.T("解锁", "Unlock"), () => VaultUnlockForm(document));
+                }
+                else EmptyAction(_vaultCodes ? "+ " + Loc.T("添加双重验证", "Add 2FA") : "+ " + Loc.T("添加密码", "Add password"), () => EditVault(document, entries, -1));
                 root.Children.Add(empty);
                 return;
             }
@@ -232,12 +237,30 @@ public partial class MainWindow
                         RefreshLine();
                     }
                     row.Children.Add(detail);
-                    if (entry.Otp is { } otp)
+                    Button SecretButton(string action, string glyph, string label, Action run)
+                    {
+                        var button = VaultIcon(glyph, label, () =>
+                        {
+                            if (locked) VaultUnlockForm(document, () => _vaultReplay = (index, action));
+                            else run();
+                        });
+                        if (replay == (index, action))
+                        {
+                            replay = null;
+                            Dispatcher.BeginInvoke(() => button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
+                        }
+                        return button;
+                    }
+                    if (_vaultCodes && locked)
+                    {
+                        tools.Children.Add(SecretButton("code", VaultKeyGlyph, Loc.T("解锁验证码", "Unlock code"), () => { }));
+                    }
+                    else if (entry.Otp is { } otp)
                     {
                         var readout = new TextBlock { VerticalAlignment = VerticalAlignment.Center, MinWidth = 100 };
                         tools.Children.Add(readout);
                         tick.Add(now => readout.Text = $"{otp.Code(now)}   {otp.Period - now.ToUnixTimeSeconds() % otp.Period:00}s");
-                        tools.Children.Add(VaultButton(Loc.T("复制验证码", "Copy code"), () => CopyVault(otp.Code(DateTimeOffset.UtcNow), true, status)));
+                        tools.Children.Add(SecretButton("code", VaultCopyGlyph, Loc.T("复制验证码", "Copy code"), () => CopyVault(otp.Code(DateTimeOffset.UtcNow), true, status)));
                     }
                     else
                     {
@@ -251,7 +274,7 @@ public partial class MainWindow
                             eye.ToolTip = label;
                             AutomationProperties.SetName(eye, label);
                         }
-                        eye = VaultIcon(VaultEyeGlyph, Loc.T("显示密码", "Show password"), () =>
+                        eye = SecretButton("show", VaultEyeGlyph, Loc.T("显示密码", "Show password"), () =>
                         {
                             feedbackUntil = default;
                             if (_vaultRevealed == shown) { HideVaultPassword(); return; }
@@ -267,14 +290,29 @@ public partial class MainWindow
                         });
                         tools.Children.Add(eye);
                     }
-                    tools.Children.Add(VaultIcon(VaultEditGlyph, Loc.T("编辑条目", "Edit entry"), () => EditVault(document, entries, index)));
-                    if (entry.Otp is null)
+                    tools.Children.Add(SecretButton("edit", VaultEditGlyph, Loc.T("编辑条目", "Edit entry"), () => EditVault(document, entries, index)));
+                    if (!_vaultCodes)
                     {
                         tick.Add(_ => { if (feedback.Visibility == Visibility.Visible) RefreshLine(); });
-                        tools.Children.Add(VaultIcon(VaultKeyGlyph, Loc.T("复制密码", "Copy password"), () => CopyEntry(entry.Password, true)));
+                        tools.Children.Add(SecretButton("copy", VaultKeyGlyph, Loc.T("复制密码", "Copy password"), () => CopyEntry(entry.Password, true)));
                     }
-                    list.Children.Add(new Border { Child = row, Background = UI.Brush(Look.Hex("fill")),
-                        CornerRadius = new CornerRadius(Corner(8)), Padding = new Thickness(10, 5, 6, 5), Margin = new Thickness(0, 0, 0, 4) });
+                    var surface = new Border { Child = row, Background = Brushes.Transparent,
+                        CornerRadius = new CornerRadius(Corner(8)), Padding = new Thickness(10, 5, 6, 5), Margin = new Thickness(0, 0, 0, 4) };
+                    if (!_vaultCodes)
+                    {
+                        var hoverTools = tools.Children.OfType<Button>().Take(tools.Children.Count - 1).ToArray();
+                        void Hover()
+                        {
+                            bool active = surface.IsMouseOver || surface.IsKeyboardFocusWithin;
+                            surface.Background = active ? UI.Brush(Look.Hex("fill")) : Brushes.Transparent;
+                            foreach (var button in hoverTools) button.Opacity = active || button.IsKeyboardFocused ? 1 : 0;
+                        }
+                        surface.MouseEnter += (_, _) => Hover();
+                        surface.MouseLeave += (_, _) => Hover();
+                        surface.IsKeyboardFocusWithinChanged += (_, _) => Hover();
+                        Hover();
+                    }
+                    list.Children.Add(surface);
                 }
                 if (list.Children.Count == 0) list.Children.Add(WeatherText(entries.Count == 0
                     ? Loc.T("还没有条目。", "No entries yet.") : Loc.T("无匹配项。", "No matching entries."), 13));
@@ -573,7 +611,9 @@ public partial class MainWindow
             if (!_expanded || CurrentPage != DeckPage.Vault || !VaultContent.IsAncestorOf(body)) return;
             try
             {
-                Vault.Save(document, _vaultCodes, _app.VaultKey, updated);
+                if (index < 0 && document.Protected(_vaultCodes) && _app.VaultKey is null)
+                    Vault.AddLocked(document, _vaultCodes, updated[^1]);
+                else Vault.Save(document, _vaultCodes, _app.VaultKey, updated);
                 secret.Clear();
                 BuildVault();
             }

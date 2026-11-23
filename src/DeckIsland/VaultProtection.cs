@@ -60,7 +60,7 @@ public partial class MainWindow
         form.Children.Add(input);
     }
 
-    private void VaultPinScreen(string title, Action<string, TextBlock> submit)
+    private void VaultPinScreen(string title, Func<string, TextBlock, Task> submit)
     {
         ClearVaultView();
         var form = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
@@ -108,12 +108,17 @@ public partial class MainWindow
             for (int i = 0; i < dots.Children.Count; i++)
                 ((System.Windows.Shapes.Ellipse)dots.Children[i]).Fill = i < length ? UI.Brush(Look.Primary) : null;
             if (length != 4) return;
-            Dispatcher.BeginInvoke(() =>
+            Dispatcher.BeginInvoke(async () =>
             {
                 if (!VaultContent.IsAncestorOf(pin) || !VaultRules.ValidPin(pin.Password)) return;
                 string value = pin.Password;
                 pin.Clear();
-                submit(value, status);
+                await submit(value, status);
+                if (VaultContent.IsAncestorOf(status) && status.Text.Length > 0)
+                {
+                    status.Foreground = UI.Brush(Look.Hex("danger"));
+                    foreach (System.Windows.Shapes.Ellipse dot in dots.Children) dot.Stroke = status.Foreground;
+                }
             });
         };
         BeginTyping(pin);
@@ -159,11 +164,11 @@ public partial class MainWindow
         var retry = Vault.Read()?.RetryAt - now;
         status.Text = retry is { TotalSeconds: > 0 } delay
             ? Loc.T($"请在 {Math.Ceiling(delay.TotalSeconds)} 秒后重试。", $"Try again in {Math.Ceiling(delay.TotalSeconds)} seconds.")
-            : Loc.T("PIN 不正确。", "Incorrect PIN.");
+            : Loc.T($"PIN 不正确，还可尝试 {Math.Max(0, 5 - (Vault.Read()?.Failures ?? 0))} 次。", $"Wrong PIN · {Math.Max(0, 5 - (Vault.Read()?.Failures ?? 0))} tries left");
         return null;
     }
 
-    private void VaultUnlockForm(VaultStore.Document document)
+    private void VaultUnlockForm(VaultStore.Document document, Action? resume = null)
     {
         async Task Unlock(string? pin, TextBlock status) => await VaultRun(status, async () =>
         {
@@ -172,8 +177,10 @@ public partial class MainWindow
             try
             {
                 if (!VaultContent.IsAncestorOf(status) || (pin is null && Vault.Read()?.Revision != document.Revision)) return;
+                Vault.PrepareListings(Vault.Read() ?? throw new IOException(), key);
                 _app.UnlockVault(key);
                 key = null;
+                resume?.Invoke();
                 BuildVault();
             }
             finally { if (key is not null) CryptographicOperations.ZeroMemory(key); }
@@ -204,6 +211,7 @@ public partial class MainWindow
                 BuildVault();
                 return Task.CompletedTask;
             }));
+            return Task.CompletedTask;
         });
     }
 

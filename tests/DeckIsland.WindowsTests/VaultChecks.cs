@@ -49,6 +49,12 @@ internal static class VaultChecks
                 check("Changing PIN preserves entries", vault.Entries(previous, false, key)[0].Password == "sentinel-password");
                 vault.ConfigureHello(previous, key, reference, helloKey);
                 var enrolled = vault.Read()!;
+                vault.AddLocked(enrolled, false, new("Added while locked", "second-account", "sealed-secret", null));
+                enrolled = vault.Read()!;
+                check("A locked vault lists metadata and accepts a sealed addition",
+                    vault.Listings(enrolled, false)[1] is { Account: "second-account", Password.Length: 0 } &&
+                    Throws<InvalidOperationException>(() => vault.Entries(enrolled, false, null)) &&
+                    vault.Entries(enrolled, false, helloKey)[1].Password == "sealed-secret");
                 check("Hello protects both sections and removes the previous PIN verifier",
                     enrolled.Hello?.Name == reference.Name && enrolled.Protected(false) && enrolled.Protected(true) && enrolled.PinCheck.Length == 0);
                 check("The former PIN cannot unlock the Hello vault", vault.Unlock(enrolled, "9876", now.AddSeconds(92)) is null);
@@ -72,7 +78,7 @@ internal static class VaultChecks
                 var restored = vault.Read()!;
                 var restoredKey = vault.Unlock(restored, "2468", now.AddSeconds(93))!;
                 try { check("Switching back from Hello preserves entries and PIN settings",
-                    restored.Hello is null && !restored.Protected(true) && vault.Entries(restored, false, restoredKey).Count == 2); }
+                    restored.Hello is null && !restored.Protected(true) && vault.Entries(restored, false, restoredKey).Count == 3); }
                 finally { CryptographicOperations.ZeroMemory(restoredKey); }
             }
             finally
