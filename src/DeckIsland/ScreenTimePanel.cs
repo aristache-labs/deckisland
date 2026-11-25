@@ -284,6 +284,8 @@ public partial class MainWindow
         var s = _app.Settings;
         int total = ScreenTime.Total(ScreenTime.Today(s.ScreenTimeDate, s.ScreenTimeApps, DateTime.Now));
         var text = WeatherText(ScreenTime.Duration(total), CompactMusicLayout.CollapsedTextSize(Settings.QuotaRingStyle, scale, CompactFigureSize));
+        // The panel's regular face, as the system readings beside it are drawn (MonitorDraw), not the window's heavier one.
+        var face = Fonts.Face(UiFontRole.Panel); text.FontFamily = face.FontFamily; text.FontWeight = FontWeights.Normal;
         // A little smaller than the weather's mark: the hourglass fills its box where the weather marks leave air around them.
         double size = Settings.QuotaRingStyle == QuotaRingStyle.Nested ? CompactMusicLayout.Whole(CompactMusicLayout.StatusRingSize(Settings.QuotaRingStyle, scale) * .78) : Math.Round(12 * scale);
         var mark = MonitorIcons.Icon("hourglass", size, UI.Brush(Look.Accent));
