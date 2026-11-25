@@ -63,7 +63,7 @@ public partial class MainWindow
                     UI.Brush(Look.Primary), filled: false);
                 // The bell drawn larger inside the same circle: scaled where it is drawn, so its place and the circle stay as they are; its
                 // line thinned by the same factor, so it is not heavier than the other glyphs.
-                const double BellGlyphScale = 1.6;
+                const double BellGlyphScale = 1.8;
                 glyph.RenderTransformOrigin = new Point(.5, .5);
                 glyph.RenderTransform = new ScaleTransform(BellGlyphScale, BellGlyphScale);
                 if (glyph is Canvas { Children: [System.Windows.Shapes.Path line] }) line.StrokeThickness = 1.5 / BellGlyphScale * 1.15;
@@ -220,6 +220,8 @@ public partial class MainWindow
         var temperature = WeatherText("", 32);
         temperature.FontWeight = FontWeights.SemiBold;
         var sky = new Border { Width = 35, Height = 35, Margin = new Thickness(0, 0, 9, 0), VerticalAlignment = VerticalAlignment.Center };
+        // The sky drawn a little larger than its box, from its centre: the temperature and the rows around keep their places.
+        sky.RenderTransformOrigin = new Point(.5, .5); sky.RenderTransform = new ScaleTransform(1.22, 1.22);
         DockPanel.SetDock(sky, System.Windows.Controls.Dock.Left);
         // At the foot, left: how it feels, the humidity and the wind, in one small line.
         var feels = WeatherText("", 12);
@@ -312,7 +314,13 @@ public partial class MainWindow
             if (reading.FeelsLike is { } feelsLike) details.Add(Loc.T("体感 ", "Feels ") + WeatherTemperature(feelsLike));
             if (reading.Humidity is { } humidity) details.Add($"{humidity:0}%");
             if (reading.WindSpeed is { } wind) details.Add($"{wind:0} km/h");
-            feels.Text = string.Join("   ·   ", details);
+            // The separators as heavier dots than the text's own "·", at the usual spacing, so they can be seen.
+            feels.Inlines.Clear();
+            for (int i = 0; i < details.Count; i++)
+            {
+                if (i > 0) feels.Inlines.Add(new System.Windows.Documents.Run(" • ") { FontWeight = FontWeights.Bold, FontSize = feels.FontSize + 1.5 });
+                feels.Inlines.Add(new System.Windows.Documents.Run(details[i]));
+            }
             feels.Visibility = details.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
             feels.Foreground = temperature.Foreground; feels.Opacity = .85;
             WeatherWidgetHours(hours, reading, temperature.Foreground, appearance.Colourful, hoursRoom.ActualWidth);
