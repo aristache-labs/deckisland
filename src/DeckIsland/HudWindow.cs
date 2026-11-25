@@ -52,10 +52,11 @@ internal sealed class HudWindow : Window
     private string _key = "";
     private readonly DockPanel _row;
     // A notification: the app's picture, the title and the message under it, in place of the row.
-    private readonly Image _picture = new() { Width = 28, Height = 28, Stretch = Stretch.Uniform, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 12, 0) };
+    private readonly Image _picture = new() { Width = 36, Height = 36, Stretch = Stretch.Uniform, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 12, 0) };
     private readonly TextBlock _title = new() { FontSize = 13.5, FontWeight = FontWeights.SemiBold, TextTrimming = TextTrimming.CharacterEllipsis };
     private readonly TextBlock _body = new() { FontSize = 12, TextTrimming = TextTrimming.CharacterEllipsis };
     private readonly DockPanel _card = new() { LastChildFill = true, Visibility = Visibility.Collapsed };
+    private readonly StackPanel _lines = new() { VerticalAlignment = VerticalAlignment.Center };
 
     internal HudWindow()
     {
@@ -75,7 +76,7 @@ internal sealed class HudWindow : Window
         row.Children.Add(_figure); row.Children.Add(_dot); row.Children.Add(_bar); row.Children.Add(_text);
         DockPanel.SetDock(_picture, Dock.Left);
         _card.Children.Add(_picture);
-        _card.Children.Add(new StackPanel { VerticalAlignment = VerticalAlignment.Center, Children = { _title, _body } });
+        _card.Children.Add(_lines);
         var both = new Grid();
         both.Children.Add(row); both.Children.Add(_card);
         _pill.Child = both;
@@ -92,7 +93,8 @@ internal sealed class HudWindow : Window
 
     private double _level;
 
-    internal void Present(HudMessage message, PanelLook look)
+    // limitSeconds: the most a card whose text scrolls stays (DeckSettings.NotificationScrollSeconds).
+    internal void Present(HudMessage message, PanelLook look, int limitSeconds = 10)
     {
         _pill.Background = UI.Brush(look.Hex("surface"));
         var ink = UI.Brush(look.Primary);
@@ -126,6 +128,14 @@ internal sealed class HudWindow : Window
                 catch (Exception error) when (error is NotSupportedException or System.IO.IOException or InvalidOperationException) { }
             }
             _picture.Visibility = _picture.Source is null ? Visibility.Collapsed : Visibility.Visible;
+            // The room the lines have: the card less its padding and the picture.
+            double room = Width - _pill.Padding.Left - _pill.Padding.Right - (_picture.Visibility == Visibility.Visible ? _picture.Width + _picture.Margin.Right : 0);
+            double held = message.Hold?.TotalSeconds ?? 0;
+            _lines.Children.Clear();
+            var (titleView, titleHold) = HudLines.Fit(_title, room, 1, held, limitSeconds, 0);
+            var (bodyView, bodyHold) = HudLines.Fit(_body, room, 1, held, limitSeconds, 0);
+            _lines.Children.Add(titleView); _lines.Children.Add(bodyView);
+            if (Math.Max(titleHold, bodyHold) > held) message = message with { Hold = TimeSpan.FromSeconds(Math.Max(titleHold, bodyHold)) };
         }
         _text.Text = message.Text;
         _bar.Visibility = message.Level is null ? Visibility.Collapsed : Visibility.Visible;

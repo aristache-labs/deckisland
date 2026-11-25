@@ -181,7 +181,7 @@ public partial class MainWindow
     private (FrameworkElement Parts, double Natural) BuildHudCard(HudMessage hud, double scale, double maxWidth)
     {
         double font = Math.Max(1, CompactMusicLayout.Half(12.5 * scale)), small = Math.Max(1, CompactMusicLayout.Half(11 * scale));
-        double picture = Math.Round(34 * scale), gap = Math.Round(12 * scale), total = Math.Min(Math.Round(360 * scale), maxWidth);
+        double picture = Math.Round(38 * scale), gap = Math.Round(12 * scale), total = Math.Min(Math.Round(360 * scale), maxWidth);
         var grid = new Grid { Width = total, VerticalAlignment = VerticalAlignment.Center, ToolTip = hud.Label ?? hud.Text };
         System.Windows.Automation.AutomationProperties.SetName(grid, hud.Label ?? hud.Text);
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
@@ -200,7 +200,7 @@ public partial class MainWindow
                 image.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
                 image.EndInit();
                 image.Freeze();
-                mark = new Border { Width = picture, Height = picture, CornerRadius = new CornerRadius(Corner(8)), Background = UI.Brush(Look.Hex("fillSelected")), Padding = new Thickness(Math.Round(4 * scale)),
+                mark = new Border { Width = picture, Height = picture, CornerRadius = new CornerRadius(Corner(8)), Background = UI.Brush(Look.Hex("fillSelected")), Padding = new Thickness(Math.Round(2 * scale)),
                     Child = new Image { Source = image, Stretch = System.Windows.Media.Stretch.Uniform } };
             }
             catch (Exception error) when (error is NotSupportedException or System.IO.IOException or InvalidOperationException) { mark = Fallback(); }
@@ -218,35 +218,18 @@ public partial class MainWindow
         return (grid, total);
     }
 
-    // A card's line as it shows: cut with an ellipsis while it fits or cannot scroll, else scrolling left once (HudScroll), started where
-    // the time since the message appeared has it. The first card built for a message lengthens its timer for the longest line.
+    // A card's line, cut or scrolling (HudLines); the first card built for a message lengthens its timer for its longest line.
     private FrameworkElement HudScrolling(TextBlock line, double room, double scale, HudMessage hud)
     {
-        line.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
-        double overflow = line.DesiredSize.Width - room;
         double hold = hud.Hold?.TotalSeconds ?? 0;
-        var (scroll, total) = HudScroll.Plan(overflow / Math.Max(.1, scale), hold, Settings.NotificationScrollSeconds);
-        if (scroll <= 0 || hold <= 0) return line;
+        var (view, total) = HudLines.Fit(line, room, scale, hold, Settings.NotificationScrollSeconds, (Environment.TickCount64 - _hudShownAt) / 1000.0);
         long until = _hudShownAt + (long)(total * 1000);
         if (total > hold && until > _hudScrollUntil && _hudEnd is { IsEnabled: true } && ReferenceEquals(_hudMessage, hud))
         {
             _hudScrollUntil = until;
             _hudEnd.Stop(); _hudEnd.Interval = TimeSpan.FromMilliseconds(Math.Max(1, until - Environment.TickCount64)); _hudEnd.Start();
         }
-        line.TextTrimming = TextTrimming.None; line.HorizontalAlignment = HorizontalAlignment.Left;
-        line.Width = line.DesiredSize.Width;
-        var move = new System.Windows.Media.TranslateTransform();
-        line.RenderTransform = move;
-        double distance = Math.Min(overflow, scroll * HudScroll.Speed * scale);
-        var slide = new System.Windows.Media.Animation.DoubleAnimation(0, -distance, TimeSpan.FromSeconds(scroll))
-        {
-            BeginTime = TimeSpan.FromSeconds(HudScroll.Lead - (Environment.TickCount64 - _hudShownAt) / 1000.0),
-            FillBehavior = System.Windows.Media.Animation.FillBehavior.HoldEnd
-        };
-        move.BeginAnimation(System.Windows.Media.TranslateTransform.XProperty, slide);
-        // The room clips the line; the canvas leaves it its whole width, so the end that scrolls in is drawn.
-        var window = new Canvas { Height = line.Height, ClipToBounds = true, HorizontalAlignment = HorizontalAlignment.Stretch, Children = { line } };
-        return window;
+        return view;
     }
 
     private void RenderCompactHud(HudMessage hud, double scale, double contentWidth)

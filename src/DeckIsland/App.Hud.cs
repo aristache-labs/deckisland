@@ -28,7 +28,7 @@ public partial class App
         if (inline || message.Key == "call" && Decks.Any(deck => deck.IsVisible && deck.IsExpanded && deck.CurrentPage == DeckPage.Calls))
         { _hud?.Clear(message.Key); return; }
         _hud ??= new HudWindow();
-        _hud.Present(message, PanelTheme.Main);
+        _hud.Present(message, PanelTheme.Main, Settings.NotificationScrollSeconds);
     }
 
     private void ClearHud(string key)
