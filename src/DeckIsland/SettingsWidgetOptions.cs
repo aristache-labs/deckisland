@@ -20,6 +20,7 @@ public sealed partial class SettingsWindow
         // A heading over the option cards, as the cards above head themselves (Card).
         var heading = TextLine(Loc.T("小组件选项", "Widget options"), 15, TextPrimary, FontWeights.SemiBold);
         var about = TextLine(Loc.T("有选项的小组件，各占一张卡片。", "The widgets that have options, a card each."), 12.5, TextSecondary);
+        about.TextWrapping = TextWrapping.Wrap; about.TextTrimming = TextTrimming.None;
         about.Margin = new Thickness(0, 3, 0, 0);
         Target.Children.Add(new StackPanel { Margin = new Thickness(2, 8, 0, 14), Children = { heading, about } });
         Target.Children.Add(ClockOptionsCard());

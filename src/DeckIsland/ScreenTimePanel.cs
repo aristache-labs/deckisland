@@ -52,7 +52,7 @@ public partial class MainWindow
         var (apps, hours) = ScreenTime.Day(_screenTimeDay, s.ScreenTimeDate, s.ScreenTimeApps, s.ScreenTimeHours, s.ScreenTimeHistory, now);
         int total = ScreenTime.Total(apps);
         string key = string.Join("|", _screenTimeDay, total / 60, string.Join(",", apps.Take(ScreenTimeTopApps).Select(a => a.Key + a.Value / 60)),
-            string.Join(",", hours.Select(h => h / 60)), now.Hour * 60 / 10 + now.Minute / 10, Look.Generation, Loc.Language, ContentCanvas.Width);
+            string.Join(",", hours.Select(h => h / 60)), now.Hour * 60 / 10 + now.Minute / 10, Look.Generation, Loc.Language, ContentCanvas.Width, s.Uses24HourClock);
         if (key == _screenTimeBuilt && ScreenTimeContent.Children.Count > 0) return;
         _screenTimeBuilt = key;
 
@@ -71,11 +71,11 @@ public partial class MainWindow
         root.Children.Add(title);
 
         var sun = s.WeatherCity is { } city ? SunMoon.Sun(_screenTimeDay, city.Latitude, city.Longitude) : null;
-        var timeline = new ScreenTimeTimeline(hours, sun, _screenTimeDay == today ? now : null, Look) { Margin = new Thickness(0, 0, 0, 10) };
+        var timeline = new ScreenTimeTimeline(hours, sun, _screenTimeDay == today ? now : null, Look, s.Uses24HourClock) { Margin = new Thickness(0, 0, 0, 10) };
         AutomationProperties.SetName(timeline, Loc.T("每小时的使用时间", "Screen time by hour"));
         Grid.SetRow(timeline, 1); root.Children.Add(timeline);
 
-        FrameworkElement body = total > 0 ? ScreenTimeBody(apps, total, today, s) : ScreenTimeEmpty();
+        FrameworkElement body = total > 0 ? ScreenTimeBody(apps, hours, total, today, s) : ScreenTimeEmpty();
         Grid.SetRow(body, 2); root.Children.Add(body);
         ScreenTimeContent.Children.Clear();
         ScreenTimeContent.Children.Add(root);
@@ -103,8 +103,8 @@ public partial class MainWindow
         return new StackPanel { VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center, Children = { icon, text } };
     }
 
-    // The day's total with the seven days up to it, and its apps.
-    private FrameworkElement ScreenTimeBody(IReadOnlyList<KeyValuePair<string, int>> apps, int total, DateOnly today, DeckSettings s)
+    // The day's total with its hours and the last seven days' average, and its apps.
+    private FrameworkElement ScreenTimeBody(IReadOnlyList<KeyValuePair<string, int>> apps, IReadOnlyList<int> hours, int total, DateOnly today, DeckSettings s)
     {
         var grid = new Grid();
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MaxWidth = 280 });
@@ -114,19 +114,14 @@ public partial class MainWindow
         var week = Enumerable.Range(0, 7).Select(i => _screenTimeDay.AddDays(i - 6))
             .Select(day => ScreenTime.Total(ScreenTime.Day(day, s.ScreenTimeDate, s.ScreenTimeApps, s.ScreenTimeHours, s.ScreenTimeHistory, DateTime.Now).Apps)).ToList();
         var counted = week.Where(seconds => seconds > 0).ToList();
-        var left = new Grid();
-        left.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        left.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        left.RowDefinitions.Add(new RowDefinition { MinHeight = 24 });
-        left.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         var number = new TextBlock { Text = ScreenTimeLong(total), FontSize = 19, FontWeight = FontWeights.SemiBold, Foreground = UI.Brush(Look.Primary) };
         var label = new TextBlock { Text = ScreenTimeTitle, FontSize = 12, Foreground = UI.Brush(Look.Tertiary) };
-        var chart = new ScreenTimeWeek(week, Look) { Margin = new Thickness(0, 6, 0, 4) };
-        AutomationProperties.SetName(chart, Loc.T("最近 7 天", "The last 7 days"));
+        // The day's hours, as Crest draws them: the hour now (on today) in full, the others fainter.
+        var chart = new ScreenTimeHours(hours, _screenTimeDay == today ? DateTime.Now.Hour : -1, Look) { Margin = new Thickness(0, 10, 0, 0), HorizontalAlignment = HorizontalAlignment.Left };
+        AutomationProperties.SetName(chart, Loc.T("每小时的使用时间", "Screen time by hour"));
         var average = new TextBlock { Text = Loc.T("最近 7 天平均：", "Average of the last 7 days: ") + ScreenTimeLong(counted.Count > 0 ? (int)counted.Average() : 0),
-            FontSize = 12, Foreground = UI.Brush(Look.Tertiary), TextTrimming = TextTrimming.CharacterEllipsis };
-        Grid.SetRow(label, 1); Grid.SetRow(chart, 2); Grid.SetRow(average, 3);
-        left.Children.Add(number); left.Children.Add(label); left.Children.Add(chart); left.Children.Add(average);
+            FontSize = 12, Foreground = UI.Brush(Look.Tertiary), TextTrimming = TextTrimming.CharacterEllipsis, Margin = new Thickness(0, 4, 0, 0) };
+        var left = new StackPanel { Children = { number, label, chart, average } };
         grid.Children.Add(left);
 
         // The longest apps, each with its share of the longest as a bar, and the rest together.
@@ -171,10 +166,11 @@ public partial class MainWindow
 
 // The day's 24 hours: daylight shaded between sunrise and sunset (labelled above), each hour's counted time as a bar under the
 // track, lines at 6, 12 and 18, the time now on today, and the hours below.
-internal sealed class ScreenTimeTimeline(IReadOnlyList<int> hours, (DateTime Rise, DateTime Set)? sun, DateTime? now, PanelLook look) : FrameworkElement
+// twentyFour: the clock's time format (Settings.Uses24HourClock), for the sun's times and the hours.
+internal sealed class ScreenTimeTimeline(IReadOnlyList<int> hours, (DateTime Rise, DateTime Set)? sun, DateTime? now, PanelLook look, bool twentyFour) : FrameworkElement
 {
-    private const double SunRow = 18, Track = 28, Usage = 6, Labels = 18;
-    protected override Size MeasureOverride(Size availableSize) => new(0, SunRow + Track + Usage + 2 + Labels);
+    private const double SunRow = 18, Track = 28, Labels = 18;
+    protected override Size MeasureOverride(Size availableSize) => new(0, SunRow + Track + 4 + Labels);
 
     protected override void OnRender(DrawingContext drawing)
     {
@@ -189,26 +185,26 @@ internal sealed class ScreenTimeTimeline(IReadOnlyList<int> hours, (DateTime Ris
             drawing.PushClip(new RectangleGeometry(track, 6, 6));
             drawing.DrawRectangle(UI.Brush(MonitorDraw.Faint(look.WarningDefault, .38)), null, new Rect(X(rise), top, Math.Max(0, X(set) - X(rise)), Track));
             drawing.Pop();
-            SunLabel(drawing, "☀ " + Clock(day.Rise), X(rise), look.WarningDefault, ppd);
-            SunLabel(drawing, "☾ " + Clock(day.Set), X(set), look.Tertiary, ppd);
+            SunLabel(drawing, false, Clock(day.Rise), X(rise), ppd);
+            SunLabel(drawing, true, Clock(day.Set), X(set), ppd);
         }
         var line = new Pen(UI.Brush(look.Hairline), 1);
         foreach (int hour in new[] { 6, 12, 18 }) drawing.DrawLine(line, new Point(X(hour) + .5, top), new Point(X(hour) + .5, top + Track));
-        // Each hour's counted time, as tall as its share of the hour, under the track.
-        var used = UI.Brush(look.Accent);
-        double cell = width / 24;
+        // Each hour's counted time as a line along the rail's foot, stronger the more of the hour it took (as Crest's strip).
+        drawing.PushClip(new RectangleGeometry(track, 6, 6));
         for (int hour = 0; hour < 24 && hour < hours.Count; hour++)
         {
             if (hours[hour] <= 0) continue;
-            double share = Math.Clamp(hours[hour] / 3600d, .15, 1);
-            drawing.DrawRoundedRectangle(used, null, new Rect(hour * cell + 1, top + Track + 2 + Usage * (1 - share), Math.Max(1, cell - 2), Usage * share), 1, 1);
+            var brush = UI.Brush(look.Primary).Clone(); brush.Opacity = .15 + .85 * Math.Min(1, hours[hour] / 3600d); brush.Freeze();
+            drawing.DrawRectangle(brush, null, new Rect(X(hour), top + Track - 4, Math.Max(1, X(hour + 1) - X(hour)), 4));
         }
+        drawing.Pop();
         if (now is { } at)
         {
             double x = X(at.TimeOfDay.TotalHours);
             drawing.DrawRectangle(UI.Brush(look.Primary), null, new Rect(x - 1, top - 3, 2, Track + 6));
         }
-        double labels = top + Track + Usage + 4;
+        double labels = top + Track + 4;
         for (int hour = 0; hour <= 24; hour += 6)
         {
             var text = MonitorDraw.Text(HourLabel(hour), 11.5, look.Tertiary, ppd);
@@ -217,36 +213,52 @@ internal sealed class ScreenTimeTimeline(IReadOnlyList<int> hours, (DateTime Ris
         }
     }
 
-    private void SunLabel(DrawingContext drawing, string label, double x, string color, double ppd)
+    // A filled sun (amber) or moon (the text's colour) at 10 DIP, then the time, centred on x.
+    private void SunLabel(DrawingContext drawing, bool moon, string time, double x, double ppd)
     {
-        var text = MonitorDraw.Text(label, 11.5, color, ppd);
-        drawing.DrawText(text, new Point(Math.Clamp(x - text.Width / 2, 0, Math.Max(0, ActualWidth - text.Width)), 0));
+        const double icon = 10, gap = 4;
+        var text = MonitorDraw.Text(time, 11.5, look.Tertiary, ppd);
+        double width = icon + gap + text.Width, left = Math.Clamp(x - width / 2, 0, Math.Max(0, ActualWidth - width)), mid = (SunRow - 2) / 2;
+        drawing.PushTransform(new TranslateTransform(left, mid - icon / 2));
+        drawing.PushTransform(new ScaleTransform(icon / 24, icon / 24));
+        if (moon) drawing.DrawGeometry(UI.Brush(look.Secondary), null, MoonShape);
+        else
+        {
+            var amber = UI.Brush(look.WarningDefault);
+            drawing.DrawEllipse(amber, null, new Point(12, 12), 5, 5);
+            drawing.DrawGeometry(null, new Pen(amber, 2.4) { StartLineCap = PenLineCap.Round, EndLineCap = PenLineCap.Round }, SunRays);
+        }
+        drawing.Pop(); drawing.Pop();
+        drawing.DrawText(text, new Point(left + icon + gap, mid - text.Height / 2));
     }
+    private static readonly Geometry SunRays = Frozen("M12,1.5 V3.5 M12,20.5 V22.5 M1.5,12 H3.5 M20.5,12 H22.5 M4.6,4.6 L6,6 M18,18 L19.4,19.4 M4.6,19.4 L6,18 M18,6 L19.4,4.6");
+    private static readonly Geometry MoonShape = Frozen("M21,14.5 A9,9 0 1 1 9.5,3 A7,7 0 0 0 21,14.5 Z");
+    private static Geometry Frozen(string data) { var g = Geometry.Parse(data); g.Freeze(); return g; }
 
-    private static bool TwentyFour => !CultureInfo.CurrentCulture.DateTimeFormat.ShortTimePattern.Contains('h') || !Loc.IsEnglish;
-    private static string Clock(DateTime time) => time.ToString(TwentyFour ? "HH:mm" : "h:mm tt", CultureInfo.InvariantCulture);
-    private static string HourLabel(int hour) => TwentyFour ? $"{hour % 24:00}:00" : $"{(hour % 12 == 0 ? 12 : hour % 12)} {(hour % 24 < 12 ? "AM" : "PM")}";
+    private string Clock(DateTime time) => time.ToString(twentyFour ? "HH:mm" : "h:mm tt", CultureInfo.InvariantCulture);
+    private string HourLabel(int hour) => twentyFour ? $"{hour % 24:00}:00" : $"{(hour % 12 == 0 ? 12 : hour % 12)} {(hour % 24 < 12 ? "AM" : "PM")}";
 }
 
-// The seven days up to the shown one, as bars against the longest; the shown day in the primary colour, a dashed line under them.
-internal sealed class ScreenTimeWeek(IReadOnlyList<int> days, PanelLook look) : FrameworkElement
+// The day's 24 hours as bars against a full hour, as Crest's HourBars: the hour now in the primary colour, the others fainter, an
+// hour with nothing a short line on the floor. A fixed height, so the average sits right under it.
+internal sealed class ScreenTimeHours(IReadOnlyList<int> hours, int hourNow, PanelLook look) : FrameworkElement
 {
-    protected override Size MeasureOverride(Size availableSize) => new(0, Math.Min(56, double.IsFinite(availableSize.Height) ? availableSize.Height : 56));
+    private const double Tall = 48, Widest = 220;
+    protected override Size MeasureOverride(Size availableSize) => new(Math.Min(Widest, double.IsFinite(availableSize.Width) ? availableSize.Width : Widest), Tall);
 
     protected override void OnRender(DrawingContext drawing)
     {
-        double width = ActualWidth, height = ActualHeight;
-        if (width <= 0 || height <= 4 || days.Count == 0) return;
-        int longest = Math.Max(1, days.Max());
-        double slot = width / days.Count, bar = Math.Min(8, slot * .5);
-        var dashed = new Pen(UI.Brush(look.Hairline), 1) { DashStyle = new DashStyle([2, 3], 0) };
-        drawing.DrawLine(dashed, new Point(0, height - .5), new Point(width, height - .5));
-        for (int i = 0; i < days.Count; i++)
+        double width = Math.Min(Widest, ActualWidth), slot = width / 24, bar = Math.Max(2, slot * .66), floor = Tall - 1;
+        var empty = UI.Brush(MonitorDraw.Faint(look.Tertiary, .35));
+        var faint = UI.Brush(MonitorDraw.Faint(look.Primary, .55));
+        var full = UI.Brush(look.Primary);
+        for (int hour = 0; hour < 24; hour++)
         {
-            double tall = days[i] <= 0 ? 0 : Math.Max(2, (height - 2) * days[i] / longest);
-            if (tall <= 0) continue;
-            bool shown = i == days.Count - 1;
-            drawing.DrawRoundedRectangle(UI.Brush(shown ? look.Primary : look.Tertiary), null, new Rect(i * slot + (slot - bar) / 2, height - 1 - tall, bar, tall), 1.5, 1.5);
+            int seconds = hour < hours.Count ? hours[hour] : 0;
+            double x = hour * slot;
+            if (seconds <= 0) { drawing.DrawRectangle(empty, null, new Rect(x, floor - 1, bar, 1)); continue; }
+            double tall = Math.Max(2, (Tall - 2) * Math.Min(1, seconds / 3600d));
+            drawing.DrawRoundedRectangle(hour == hourNow ? full : faint, null, new Rect(x, floor - tall, bar, tall), 1, 1);
         }
     }
 }
