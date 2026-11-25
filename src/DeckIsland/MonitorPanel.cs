@@ -146,7 +146,8 @@ public partial class MainWindow
     private ExpandedPlan CurrentMonitorPlan((int Drives, bool Small, int Power) sensors)
     {
         double height = ContentCanvas.Height;
-        return ExpandedLayout.For(ExpandedMonitor.Shown(Settings.ExpandedReadings), ContentCanvas.Width - 2 * _header.Side, height - _header.Row - MonitorBottom(height),
+        return ExpandedLayout.For(ExpandedMonitor.Shown(Settings.ExpandedReadings), ContentCanvas.Width - 2 * _header.Side - MonitorView.CardChromeWidth,
+            height - _header.Row - MonitorBottom(height) - MonitorView.CardChromeHeight,
             new ExpandedContent(sensors.Drives, sensors.Power), null, Settings.MonitorMain, _monitorView is not null ? _monitorPlan : null);
     }
     // What the open page reads: what its layout kept, before the first one is made what the table chooses.
