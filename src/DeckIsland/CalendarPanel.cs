@@ -333,6 +333,15 @@ public partial class MainWindow
     internal CalendarEvent? CalendarNoticeShown { get; private set; }
     // The next opening of the panel goes to the Calendar page: the notice was clicked (ApplyDefaultMusicPage).
     private bool _calendarNoticeOpens;
+    private FrameworkElement? _calendarNoticeClose;
+
+    // Whether the pointer is on the notice's ✕ (with a little room around it), where pointing does not open the island.
+    private bool OverCalendarNoticeClose()
+    {
+        if (_expanded || _calendarNoticeClose is not { IsVisible: true } close || PresentationSource.FromVisual(close) is null) return false;
+        var at = close.PointFromScreen(Native.WindowsHost.Cursor());
+        return at.X >= -6 && at.X <= close.ActualWidth + 6 && at.Y >= -8 && at.Y <= close.ActualHeight + 8;
+    }
 
     internal void ShowCalendarNotice(CalendarEvent? item)
     {
@@ -365,6 +374,7 @@ public partial class MainWindow
                 Width = Math.Round(8 * scale), Height = Math.Round(8 * scale), Stretch = Stretch.Uniform, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center } };
         AutomationProperties.SetName(close, Loc.T("关闭日程提醒", "Close the event notice"));
         close.MouseLeftButtonDown += (_, e) => e.Handled = true;
+        _calendarNoticeClose = close;
         close.MouseLeftButtonUp += (_, e) => { e.Handled = true; _app.DismissCalendarNotice(item.Id); };
 
         var line = new DockPanel { VerticalAlignment = VerticalAlignment.Center, LastChildFill = true };
