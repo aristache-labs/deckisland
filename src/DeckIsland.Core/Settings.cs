@@ -880,6 +880,9 @@ public sealed class DeckSettings
     public double CalendarWidth { get; set; } = 720;
     public double CalendarHeight { get; set; } = 340;
     public int CalendarHorizon { get; set; } = CalendarFeed.DefaultHorizon;
+    // A notice in the island this many minutes (5 or 10) before a timed event starts, until it starts.
+    public bool CalendarNotice { get; set; } = true;
+    public int CalendarNoticeMinutes { get; set; } = 10;
     public bool NotchNextEvent { get; set; } = true;
     public bool CapsuleNextEvent { get; set; } = true;
     public bool ShowsNextEvent(CompactStyle style) => style == CompactStyle.Notch ? NotchNextEvent : style == CompactStyle.Capsule && CapsuleNextEvent;
@@ -1244,6 +1247,7 @@ public sealed class DeckSettings
             .ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.OrdinalIgnoreCase);
         CalendarSources = CalendarFeed.Normalize(CalendarSources);
         if (!CalendarFeed.Horizons.Contains(CalendarHorizon)) CalendarHorizon = CalendarFeed.DefaultHorizon;
+        if (CalendarNoticeMinutes is not (5 or 10)) CalendarNoticeMinutes = 10;
         CalendarWidth = double.IsFinite(CalendarWidth) ? Math.Clamp(CalendarWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : 720;
         CalendarHeight = double.IsFinite(CalendarHeight) ? Math.Clamp(CalendarHeight, DeckPages.MinHeight, DeckPages.MaxHeight) : 340;
         ScreenTimeWidth = double.IsFinite(ScreenTimeWidth) ? Math.Clamp(ScreenTimeWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : 700;

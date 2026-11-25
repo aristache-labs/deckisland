@@ -62,6 +62,12 @@ static class CalendarFeedTests
         check("Calendar: a range given in local time (DateTime.Today) is read too", live.Count(e => e.Title == "Standup") == 4);
         check("Calendar: a web page is told from an ICS calendar",
             CalendarFeed.IsCalendar("\uFEFFBEGIN:VCALENDAR\r\n") && !CalendarFeed.IsCalendar("<!doctype html><html>"));
+        var soon = standups[1];
+        check("Calendar: the notice is due within its lead, not before, not once started, not once dismissed",
+            CalendarFeed.Due(events, soon.Start.AddMinutes(-9), 10, new HashSet<string>()) == soon
+            && CalendarFeed.Due(events, soon.Start.AddMinutes(-11), 10, new HashSet<string>()) is null
+            && CalendarFeed.Due(events, soon.Start, 10, new HashSet<string>()) is null
+            && CalendarFeed.Due(events, soon.Start.AddMinutes(-9), 10, new HashSet<string> { soon.Id }) is null);
         check("Calendar: saved sources are repaired", sources.Count == 1 && sources[0].Name == "Work" && sources[0].Color == CalendarFeed.Palette[0]);
     }
 }

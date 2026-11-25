@@ -17,6 +17,8 @@ public partial class App
     private readonly DispatcherTimer _calendarMinute = new() { Interval = TimeSpan.FromMinutes(1) };
     private int _calendarCall;
     private string? _calendarNextShown;
+    // Notices closed with their ✕ (or Join): not shown again while DeckIsland runs.
+    private readonly HashSet<string> _calendarDismissed = [];
 
     internal IReadOnlyList<CalendarEvent> CalendarEvents { get; private set; } = [];
     // Per source, why its last fetch failed; a source that answered has none.
@@ -98,12 +100,27 @@ public partial class App
         CalendarChanged();
     }
 
+    internal void DismissCalendarNotice(string id) => _calendarDismissed.Add(id);
+
     private void CalendarMinute()
     {
+        CalendarNoticeStep();
         string next = CalendarFeed.Next(CalendarEvents, DateTime.Now, Settings.CalendarHorizon)?.Id ?? "";
         if (next == _calendarNextShown) return;
         _calendarNextShown = next;
         foreach (var deck in Decks) deck.CalendarChanged(page: false);
+    }
+
+    // The notice before an event: shown on one panel that can show it while none shows an alert card; taken down when its event starts.
+    private void CalendarNoticeStep()
+    {
+        var now = DateTime.Now;
+        foreach (var deck in Decks)
+            if (deck.CalendarNoticeShown is { } shown && (shown.Start <= now || !Settings.CalendarNotice)) deck.CloseCalendarNotice();
+        if (!Settings.CalendarNotice || Decks.Any(deck => deck.ReminderAlertId is not null)) return;
+        if (CalendarFeed.Due(CalendarEvents, now, Settings.CalendarNoticeMinutes, _calendarDismissed) is not { } due) return;
+        var target = Decks.FirstOrDefault(panel => panel.IsOpenForHotkey && panel.CanShowReminder) ?? Decks.FirstOrDefault(panel => panel.CanShowReminder);
+        if (target?.ShowCalendarNotice(due) == true) _calendarDismissed.Add(due.Id);
     }
 
     private void CalendarChanged()

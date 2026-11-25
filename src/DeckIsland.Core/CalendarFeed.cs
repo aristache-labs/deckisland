@@ -101,6 +101,10 @@ public static partial class CalendarFeed
     public static CalendarEvent? Next(IEnumerable<CalendarEvent> events, DateTime now, int minutes) =>
         events.Where(e => !e.AllDay && e.Start > now && e.Start - now <= TimeSpan.FromMinutes(minutes)).MinBy(e => e.Start);
 
+    // The event to announce: a timed one starting within `minutes`, not dismissed; the soonest first.
+    public static CalendarEvent? Due(IEnumerable<CalendarEvent> events, DateTime now, int minutes, IReadOnlySet<string> dismissed) =>
+        events.Where(e => !e.AllDay && !dismissed.Contains(e.Id) && e.Start > now && e.Start - now <= TimeSpan.FromMinutes(minutes)).MinBy(e => e.Start);
+
     // The first https link to a Google Meet, Zoom, Teams or Webex meeting in the URL, location or description; null otherwise.
     public static string? MeetingLink(params string?[] texts)
     {
