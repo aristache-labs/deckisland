@@ -1307,7 +1307,7 @@ public partial class MainWindow
         var apps = notice ? [] : liveApps;
         var steadyItems = QuotaRings(liveApps);
         // The clock keeps its own width; shown alone, it is centred.
-        var clock = Show(CompactPart.Clock) && Settings.ShowsClock(EffectiveStyle) ? new ClockFace(Settings.ClockStyle, Settings.Uses24HourClock, Settings.ClockSeconds, ClockFace.Palette(Settings, CoverColor, Look), DateTime.Now, scale, Look) : null;
+        var clock = Show(CompactPart.Clock) && Settings.ShowsClock(EffectiveStyle) ? new ClockFace(Settings.ClockStyle, Settings.Uses24HourClock, Settings.ClockSeconds, ClockFace.Palette(Settings, CoverColor, Look), DateTime.Now, CompactClockScale(scale), Look) : null;
         // The file transfer's count keeps one width, as the clock does; with both, they are counted as one fixed part with a gap between.
         var transfer = TransferBadge(scale, Show(CompactPart.Transfer));
         double dpi = VisualTreeHelper.GetDpi(this).DpiScaleX;

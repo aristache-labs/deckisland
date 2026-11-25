@@ -50,7 +50,7 @@ public partial class MainWindow
         var liveApps = !FocusCompactOnly && Show(CompactPart.Rings) && Settings.ShowsSummary(EffectiveStyle) ? RunningQuotaApps() : [];
         _visibleQuotaAgentIds = liveApps.Select(entry => entry.InstanceId).ToArray();
         var apps = notice ? [] : liveApps;
-        var clock = Show(CompactPart.Clock) && Settings.ShowsClock(EffectiveStyle) ? new ClockFace(Settings.ClockStyle, Settings.Uses24HourClock, Settings.ClockSeconds, ClockFace.Palette(Settings, CoverColor, Look), DateTime.Now, scale, Look, vertical: true) : null;
+        var clock = Show(CompactPart.Clock) && Settings.ShowsClock(EffectiveStyle) ? new ClockFace(Settings.ClockStyle, Settings.Uses24HourClock, Settings.ClockSeconds, ClockFace.Palette(Settings, CoverColor, Look), DateTime.Now, CompactClockScale(scale), Look, vertical: true) : null;
         var transfer = TransferBadge(scale, Show(CompactPart.Transfer));
         var devices = Show(CompactPart.Devices) ? CompactDevices(scale) : null;
         var weather = Show(CompactPart.Weather) ? CompactWeather(scale, vertical: true) : null;

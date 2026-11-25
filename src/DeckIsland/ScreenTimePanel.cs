@@ -272,6 +272,10 @@ public partial class MainWindow
     // The collapsed figures beside a mark (the weather's degrees, the screen time): a little larger than the row's other text, so the
     // figure stands about as tall as its mark.
     private const double CompactFigureSize = 12.5;
+    // The collapsed clock follows the ring style as the row's text does: as it is with nested rings, smaller by the same share as the
+    // text with single ones (CollapsedTextSize: 11.5 against 13).
+    private double CompactClockScale(double scale) => Settings.QuotaRingStyle == QuotaRingStyle.Nested ? scale
+        : scale * CompactMusicLayout.CollapsedTextSize(QuotaRingStyle.Single, 1) / CompactMusicLayout.CollapsedTextSize(QuotaRingStyle.Nested, 1);
 
     private FrameworkElement? CompactScreenTime(double scale, bool vertical = false)
     {
@@ -280,8 +284,8 @@ public partial class MainWindow
         var s = _app.Settings;
         int total = ScreenTime.Total(ScreenTime.Today(s.ScreenTimeDate, s.ScreenTimeApps, DateTime.Now));
         var text = WeatherText(ScreenTime.Duration(total), CompactMusicLayout.CollapsedTextSize(Settings.QuotaRingStyle, scale, CompactFigureSize));
-        // As tall as the weather's mark beside it, so the row's marks line up.
-        double size = Settings.QuotaRingStyle == QuotaRingStyle.Nested ? CompactMusicLayout.Whole(CompactMusicLayout.StatusRingSize(Settings.QuotaRingStyle, scale) * .9) : Math.Round(14 * scale);
+        // A little smaller than the weather's mark: the hourglass fills its box where the weather marks leave air around them.
+        double size = Settings.QuotaRingStyle == QuotaRingStyle.Nested ? CompactMusicLayout.Whole(CompactMusicLayout.StatusRingSize(Settings.QuotaRingStyle, scale) * .78) : Math.Round(12 * scale);
         var mark = MonitorIcons.Icon("hourglass", size, UI.Brush(Look.Accent));
         mark.Margin = vertical ? new Thickness(0, 0, 0, 2 * scale) : new Thickness(0, 0, 4 * scale, 0);
         mark.VerticalAlignment = VerticalAlignment.Center;
