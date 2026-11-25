@@ -47,7 +47,7 @@ public sealed partial class SettingsWindow
         };
         var first = capsule ? S.CapsuleMinimalFirst : S.NotchMinimalFirst;
         var second = capsule ? S.CapsuleMinimalSecond : S.NotchMinimalSecond;
-        var parts = Enum.GetValues<CompactPart>().Where(part => part != CompactPart.Focus).ToArray();
+        var parts = Enum.GetValues<CompactPart>().Where(part => part is not (CompactPart.Focus or CompactPart.ScreenTime)).ToArray();
         string Name(CompactPart part) => part switch
         {
             CompactPart.Clock => Loc.T("时钟", "Clock"), CompactPart.Rings => Loc.T("配额环", "Quota rings"),

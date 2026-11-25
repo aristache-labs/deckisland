@@ -87,14 +87,14 @@ public enum QuotaRingStyle { Nested = 0, Single = 1 }
 // The parts of the collapsed notch and capsule that are put in order, left to right. The cover stays at the left; Music places
 // only the title or lyric. Saved as numbers, so new members go at the end.
 // 9 was the retired Reminders part, still found in saved files, so Date is 10.
-public enum CompactPart { Rings, Music, Monitor, Equalizer, Clock, Transfer, Devices, Weather, Focus, Date = 10 }
+public enum CompactPart { Rings, Music, Monitor, Equalizer, Clock, Transfer, Devices, Weather, Focus, Date = 10, ScreenTime = 11 }
 public static class CompactParts
 {
     // The order of new settings and of restoring the defaults: the equalizer and the clock come last.
-    public static IReadOnlyList<CompactPart> Default { get; } = [CompactPart.Rings, CompactPart.Music, CompactPart.Monitor, CompactPart.Transfer, CompactPart.Devices, CompactPart.Equalizer, CompactPart.Clock, CompactPart.Weather, CompactPart.Focus];
+    public static IReadOnlyList<CompactPart> Default { get; } = [CompactPart.Rings, CompactPart.Music, CompactPart.Monitor, CompactPart.Transfer, CompactPart.Devices, CompactPart.Equalizer, CompactPart.Clock, CompactPart.Weather, CompactPart.ScreenTime, CompactPart.Focus];
     // The order in which parts missing from a saved file are added after its own. A file saved before the equalizer and the clock
     // were put in order adds them after its parts, the clock last, where they stood; the devices' batteries (1.3.0) join last.
-    private static readonly IReadOnlyList<CompactPart> Missing = [CompactPart.Rings, CompactPart.Music, CompactPart.Monitor, CompactPart.Equalizer, CompactPart.Clock, CompactPart.Transfer, CompactPart.Devices, CompactPart.Weather, CompactPart.Focus];
+    private static readonly IReadOnlyList<CompactPart> Missing = [CompactPart.Rings, CompactPart.Music, CompactPart.Monitor, CompactPart.Equalizer, CompactPart.Clock, CompactPart.Transfer, CompactPart.Devices, CompactPart.Weather, CompactPart.Focus, CompactPart.ScreenTime];
     // Each known part once, in the saved order; a part missing from the file takes its place after the others.
     public static List<CompactPart> Normalize(IEnumerable<CompactPart>? order) => [.. (order ?? []).Where(part => Enum.IsDefined(part)).Concat(Missing).Distinct()];
 }
@@ -869,6 +869,10 @@ public sealed class DeckSettings
     public double WeatherHeight { get; set; } = DefaultWeatherHeight;
     public bool ShowsWeather(CompactStyle style) => WeatherEnabled &&
         (style == CompactStyle.Notch ? NotchWeather : style == CompactStyle.Capsule && CapsuleWeather);
+    // Today's screen time in the collapsed row: an hourglass and the total.
+    public bool NotchScreenTime { get; set; } = true;
+    public bool CapsuleScreenTime { get; set; } = true;
+    public bool ShowsScreenTime(CompactStyle style) => style == CompactStyle.Notch ? NotchScreenTime : style == CompactStyle.Capsule && CapsuleScreenTime;
 
     public bool DevicesPage { get; set; } = true;
     public double DevicesWidth { get; set; } = 460;

@@ -236,7 +236,8 @@ internal sealed class ScreenTimeTimeline(IReadOnlyList<int> hours, (DateTime Ris
     private static Geometry Frozen(string data) { var g = Geometry.Parse(data); g.Freeze(); return g; }
 
     private string Clock(DateTime time) => time.ToString(twentyFour ? "HH:mm" : "h:mm tt", CultureInfo.InvariantCulture);
-    private string HourLabel(int hour) => twentyFour ? $"{hour % 24:00}:00" : $"{(hour % 12 == 0 ? 12 : hour % 12)} {(hour % 24 < 12 ? "AM" : "PM")}";
+    // 24 h: the day ends at 24:00, not at a second 00:00.
+    private string HourLabel(int hour) => twentyFour ? $"{hour:00}:00" : $"{(hour % 12 == 0 ? 12 : hour % 12)} {(hour % 24 < 12 ? "AM" : "PM")}";
 }
 
 // The day's 24 hours as bars against a full hour, as Crest's HourBars: the hour now in the primary colour, the others fainter, an
@@ -260,5 +261,47 @@ internal sealed class ScreenTimeHours(IReadOnlyList<int> hours, int hourNow, Pan
             double tall = Math.Max(2, (Tall - 2) * Math.Min(1, seconds / 3600d));
             drawing.DrawRoundedRectangle(hour == hourNow ? full : faint, null, new Rect(x, floor - tall, bar, tall), 1, 1);
         }
+    }
+}
+
+// Today's screen time in the collapsed row: an hourglass in the accent colour and the total ("4m"). Opened from it, the panel
+// opens on the Screen Time page (ApplyDefaultMusicPage).
+public partial class MainWindow
+{
+    private FrameworkElement? _compactScreenTime;
+
+    private FrameworkElement? CompactScreenTime(double scale, bool vertical = false)
+    {
+        _compactScreenTime = null;
+        if (!Settings.ShowsScreenTime(EffectiveStyle)) return null;
+        var s = _app.Settings;
+        int total = ScreenTime.Total(ScreenTime.Today(s.ScreenTimeDate, s.ScreenTimeApps, DateTime.Now));
+        var text = WeatherText(ScreenTime.Duration(total), CompactMusicLayout.CollapsedTextSize(Settings.QuotaRingStyle, scale, 11));
+        var mark = MonitorIcons.Icon("hourglass", Math.Round(13 * scale), UI.Brush(Look.Accent));
+        mark.Margin = vertical ? new Thickness(0, 0, 0, 2 * scale) : new Thickness(0, 0, 4 * scale, 0);
+        mark.VerticalAlignment = VerticalAlignment.Center;
+        var content = new StackPanel { Orientation = vertical ? Orientation.Vertical : Orientation.Horizontal, Children = { mark, text } };
+        if (vertical) mark.HorizontalAlignment = text.HorizontalAlignment = HorizontalAlignment.Center;
+        content.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        content.Width = Math.Ceiling(content.DesiredSize.Width + 2 * scale);
+        content.Height = Math.Ceiling(content.DesiredSize.Height);
+        AutomationProperties.SetName(content, ScreenTimeTitle + " · " + ScreenTime.Duration(total));
+        _compactScreenTime = content;
+        return content;
+    }
+
+    private bool PointerOnScreenTime()
+    {
+        if (_compactScreenTime is not { IsVisible: true } part || PresentationSource.FromVisual(part) is null) return false;
+        var rect = new Rect(part.PointToScreen(new Point()), part.PointToScreen(new Point(part.ActualWidth, part.ActualHeight)));
+        rect.Inflate(4, 6);
+        return rect.Contains(Native.WindowsHost.Cursor());
+    }
+
+    // Today's total passed another minute (App.ScreenTime): a collapsed row that shows it is built again; an open page refreshes.
+    internal void ScreenTimeMinuteChanged()
+    {
+        if (!_expanded && Settings.ShowsScreenTime(EffectiveStyle)) RenderCompact();
+        else if (_expanded && CurrentPage == DeckPage.ScreenTime) BuildScreenTime();
     }
 }

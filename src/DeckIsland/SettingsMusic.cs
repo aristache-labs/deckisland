@@ -129,6 +129,8 @@ public sealed partial class SettingsWindow
                 Loc.T("显示文件中转里的文件数量，没有文件时不显示。单击直接展开到剪贴板与文件中转页。", "Shows how many files the file transfer holds, and nothing while it is empty. Clicking it opens the clipboard and file transfer page.")),
             CompactPart.Focus => (Loc.T("专注计时器", "Focus timer"), notch ? S.NotchFocus : S.CapsuleFocus, null),
             CompactPart.Weather => (Loc.T("天气", "Weather"), notch ? S.NotchWeather : S.CapsuleWeather, null),
+            CompactPart.ScreenTime => (Loc.T("屏幕使用时间", "Screen Time"), notch ? S.NotchScreenTime : S.CapsuleScreenTime,
+                Loc.T("显示今天的屏幕使用时间。单击打开屏幕使用时间页。", "Shows today's Screen Time. Clicking it opens the Screen Time page.")),
             CompactPart.Devices => (Loc.T("设备电量", "Device batteries"), S.ShowsDevices(style),
                 Loc.T("显示哪些设备、是否显示数字，在“设备电量”设置页中选择。", "Which devices show, and whether with figures, is chosen on the device batteries settings page.")),
             _ => (Loc.T("系统监控", "System monitor"), S.ShowsMonitor(style), null)
@@ -143,6 +145,7 @@ public sealed partial class SettingsWindow
                 case CompactPart.Transfer: if (notch) s.NotchTransfer = on; else s.CapsuleTransfer = on; break;
                 case CompactPart.Focus: if (notch) s.NotchFocus = on; else s.CapsuleFocus = on; break;
                 case CompactPart.Weather: if (notch) s.NotchWeather = on; else s.CapsuleWeather = on; break;
+                case CompactPart.ScreenTime: if (notch) s.NotchScreenTime = on; else s.CapsuleScreenTime = on; break;
                 case CompactPart.Devices: if (notch) s.NotchDevices = on; else s.CapsuleDevices = on; break;
                 default: if (notch) s.NotchMonitor = on; else s.CapsuleMonitor = on; break;
             }

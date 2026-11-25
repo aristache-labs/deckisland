@@ -108,6 +108,7 @@ try
     OfficialDriverTests.Run(Check);
     PowerTests.Run(Check);
     ListeningPortsTests.Run(Check);
+    CalendarFeedTests.Run(Check);
     DevicesPageTests.Run(Check);
     FrameRateTests.Run(Check);
     ResizeMotionTests.Run(Check);

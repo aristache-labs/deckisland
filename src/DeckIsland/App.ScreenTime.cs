@@ -20,7 +20,10 @@ public partial class App
 
     // Nothing is watched unless a Screen time widget is on an island or the Screen Time page is shown: the app in front is only
     // asked for while one is.
-    private bool CountsScreenTime => ShownSettings.Any(settings => settings.WidgetSlots.Contains(WidgetKind.ScreenTime) || settings.ScreenTimePage);
+    private bool CountsScreenTime => ShownSettings.Any(settings => settings.WidgetSlots.Contains(WidgetKind.ScreenTime) || settings.ScreenTimePage
+        || settings.ShowsScreenTime(CompactStyle.Notch) || settings.ShowsScreenTime(CompactStyle.Capsule));
+    // Today's total in whole minutes when the collapsed rows were last told: they are built again only when it changes.
+    private int _screenTimeShownMinutes = -1;
 
     // One stretch counted for the app in front, unless the person is away (no key or mouse for ScreenTime.IdleAfter). The stretch
     // is the time since the last look, at most three steps, so a PC that slept does not count its night. Saved about once a minute.
@@ -42,6 +45,12 @@ public partial class App
         var (date, apps) = ScreenTime.Add(Settings.ScreenTimeDate, Settings.ScreenTimeApps, now, shown, seconds);
         Settings.ScreenTimeDate = date;
         Settings.ScreenTimeApps = apps;
+        int minutes = ScreenTime.Total(Settings.ScreenTimeApps) / 60;
+        if (minutes != _screenTimeShownMinutes)
+        {
+            _screenTimeShownMinutes = minutes;
+            foreach (var deck in Decks) deck.ScreenTimeMinuteChanged();
+        }
         if (path.Length > 0 && !Settings.ScreenTimePaths.ContainsKey(shown)) Settings.ScreenTimePaths = new(Settings.ScreenTimePaths, StringComparer.OrdinalIgnoreCase) { [shown] = path };
         if (++_screenTimeUnsaved < ScreenTimeSaveEvery) return;
         _screenTimeUnsaved = 0;
@@ -56,6 +65,8 @@ public partial class App
         Settings.ScreenTimeHours = [.. new int[24]];
         Settings.ScreenTimeHistory = [];
         Settings.ScreenTimePaths = [];
+        _screenTimeShownMinutes = -1;
+        foreach (var deck in Decks) deck.ScreenTimeMinuteChanged();
         QueueSave();
     }
 
