@@ -85,6 +85,12 @@ internal sealed class MonitorRows : StackPanel
                             VerticalAlignment = VerticalAlignment.Center, ToolTip = Loc.T("点击打开电池报告", "Click to open the battery report") };
                         _health.MouseLeftButtonUp += (_, e) => { e.Handled = true; OpenBatteryReport(); };
                         _battery.Extras.Children.Add(_health);
+                        // The health follows the battery's state right after it ("Plugged in  Health 100 %"), not at the row's right.
+                        if (_battery.Extras.Parent is Grid line)
+                        {
+                            line.ColumnDefinitions[0].Width = GridLength.Auto; line.ColumnDefinitions[1].Width = new GridLength(1, GridUnitType.Star);
+                            _battery.Extras.HorizontalAlignment = HorizontalAlignment.Left;
+                        }
                     }
                     break;
             }
@@ -144,15 +150,25 @@ internal sealed class MonitorRows : StackPanel
         catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException or System.IO.IOException) { }
     });
 
-    // The first IPv4 address of a connected adapter, as ipconfig lists it; looked up again every AddressLife.
+    // The IPv4 address of the connected physical Wi-Fi or Ethernet adapter, as ipconfig lists it; looked up again every AddressLife.
     private static string? Address()
     {
         if (_ip is { } known && DateTime.UtcNow - known.At < AddressLife) return known.Text.Length > 0 ? known.Text : null;
         string text = "";
         try
         {
-            text = Core.ClipboardSync.LanNetwork.Interfaces().Select(adapter => adapter.Address)
-                .FirstOrDefault(address => address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)?.ToString() ?? "";
+            // The physical Wi-Fi or Ethernet adapter that is connected, not WSL's, a VPN's or another virtual one (PhysicalAdapters).
+            var adapters = System.Net.NetworkInformation.NetworkInterface.GetAllNetworkInterfaces().Select(adapter =>
+            {
+                var properties = adapter.GetIPProperties();
+                bool gateway = properties.GatewayAddresses.Any(g => g.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork && !g.Address.Equals(System.Net.IPAddress.Any));
+                string? address = properties.UnicastAddresses.Select(u => u.Address).FirstOrDefault(ip => ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)?.ToString();
+                return new AdapterInfo(adapter.Name, adapter.Description, adapter.NetworkInterfaceType == System.Net.NetworkInformation.NetworkInterfaceType.Wireless80211,
+                    adapter.NetworkInterfaceType is System.Net.NetworkInformation.NetworkInterfaceType.Ethernet or System.Net.NetworkInformation.NetworkInterfaceType.GigabitEthernet
+                        or System.Net.NetworkInformation.NetworkInterfaceType.FastEthernetT or System.Net.NetworkInformation.NetworkInterfaceType.FastEthernetFx,
+                    adapter.OperationalStatus == System.Net.NetworkInformation.OperationalStatus.Up, gateway, address);
+            });
+            text = PhysicalAdapters.Choose(adapters)?.Address ?? "";
         }
         catch (System.Net.NetworkInformation.NetworkInformationException) { }
         _ip = (text, DateTime.UtcNow);
