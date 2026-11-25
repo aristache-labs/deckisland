@@ -215,18 +215,35 @@ public partial class MainWindow
         temperature.FontWeight = FontWeights.SemiBold;
         var sky = new Border { Width = 35, Height = 35, Margin = new Thickness(0, 0, 9, 0), VerticalAlignment = VerticalAlignment.Center };
         DockPanel.SetDock(sky, System.Windows.Controls.Dock.Left);
-        var headline = new DockPanel { Children = { sky, temperature } };
+        // At the foot, left: how it feels, the humidity and the wind, in one small line.
+        var feels = WeatherText("", 12);
+        feels.TextWrapping = TextWrapping.NoWrap; feels.Visibility = Visibility.Collapsed;
+        // At the right, the next hours as the Weather page's strip has them: the hour, its sky and its temperature. As many as the
+        // widget's width has room for, none on a narrow one.
+        var hours = new System.Windows.Controls.Primitives.UniformGrid { Rows = 1, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(12, 0, 0, 0) };
+        DockPanel.SetDock(hours, System.Windows.Controls.Dock.Right);
+
+        var where = WeatherText("", 12);
+        where.TextWrapping = TextWrapping.NoWrap; where.FontWeight = FontWeights.SemiBold;
+        var pin = new System.Windows.Shapes.Path { Data = Geometry.Parse("M8,14 C5,10 3,8 3,5 A5,5 0 0 1 13,5 C13,8 11,10 8,14 Z M10,5 A2,2 0 1 1 6,5 A2,2 0 1 1 10,5"),
+            StrokeThickness = 1.3, Width = 10, Height = 12, Stretch = Stretch.Uniform, Margin = new Thickness(0, 0, 4, 0), VerticalAlignment = VerticalAlignment.Center };
+        var placeRow = new StackPanel { Orientation = Orientation.Horizontal, Children = { pin, where }, Visibility = Visibility.Collapsed, Margin = new Thickness(0, 0, 0, 2) };
+        // The condition, under the sky and the temperature.
         var place = WeatherText("", 12);
-        place.TextWrapping = TextWrapping.NoWrap;
+        place.TextWrapping = TextWrapping.NoWrap; place.Margin = new Thickness(0, 2, 0, 0);
+        var now = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Children = { new DockPanel { Children = { sky, temperature } }, place } };
+        var headline = new DockPanel { Children = { hours, now } };
         var range = WeatherText("", 12);
         range.FontWeight = FontWeights.SemiBold;
         range.Margin = new Thickness(8, 0, 0, 0);
         DockPanel.SetDock(range, System.Windows.Controls.Dock.Right);
-        var footer = new DockPanel { VerticalAlignment = VerticalAlignment.Bottom, Children = { range, place } };
+        var footer = new DockPanel { VerticalAlignment = VerticalAlignment.Bottom, Children = { range, feels } };
         var body = new Grid();
+        body.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         body.RowDefinitions.Add(new RowDefinition());
         body.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        Grid.SetRow(footer, 1);
+        Grid.SetRow(headline, 1); Grid.SetRow(footer, 2);
+        body.Children.Add(placeRow);
         body.Children.Add(headline);
         body.Children.Add(footer);
         var trigger = WidgetSurface(body, Loc.T("打开天气", "Open weather"), () =>
@@ -239,6 +256,11 @@ public partial class MainWindow
         frame.Child = trigger;
 
         (string Icon, bool Colourful, bool Motion)? drawn = null;
+        // A resize changes how many hours fit.
+        frame.SizeChanged += (_, e) =>
+        {
+            if (e.WidthChanged && _app.CurrentWeather is { } shown) WeatherWidgetHours(hours, shown, temperature.Foreground, drawn?.Colourful == true, frame.ActualWidth);
+        };
         _widgetUpdates.Add(() =>
         {
             if (_app.CurrentWeather is not { } reading)
@@ -249,6 +271,7 @@ public partial class MainWindow
                 place.Text = _app.WeatherLoading ? "" : Loc.T("天气设置", "Weather settings");
                 sky.Visibility = Visibility.Collapsed;
                 range.Text = "";
+                feels.Visibility = Visibility.Collapsed; hours.Children.Clear(); placeRow.Visibility = Visibility.Collapsed;
                 frame.Background = baseFill;
                 temperature.Foreground = place.Foreground = range.Foreground = ink;
                 AutomationProperties.SetName(trigger, Loc.T("打开天气设置", "Open weather settings"));
@@ -271,8 +294,18 @@ public partial class MainWindow
             string location = WeatherPlace(reading);
             temperature.FontSize = 32;
             temperature.Text = WeatherTemperature(reading.Temperature);
-            place.Text = $"{condition} · {location}";
+            place.Text = condition;
+            where.Text = location; where.Foreground = temperature.Foreground; pin.Stroke = temperature.Foreground;
+            placeRow.Visibility = Visibility.Visible; placeRow.ToolTip = location;
             range.Text = WeatherExtremes(reading.Days.FirstOrDefault(), abbreviated: true);
+            var details = new List<string>();
+            if (reading.FeelsLike is { } feelsLike) details.Add(Loc.T("体感 ", "Feels ") + WeatherTemperature(feelsLike));
+            if (reading.Humidity is { } humidity) details.Add($"{humidity:0}%");
+            if (reading.WindSpeed is { } wind) details.Add($"{wind:0} km/h");
+            feels.Text = string.Join(" · ", details);
+            feels.Visibility = details.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+            feels.Foreground = temperature.Foreground; feels.Opacity = .85;
+            WeatherWidgetHours(hours, reading, temperature.Foreground, appearance.Colourful, frame.ActualWidth);
             if (_app.WeatherStale) place.Text += " *";
             string action = detailed ? Loc.T("打开天气", "Open weather") : Loc.T("打开天气设置", "Open weather settings");
             string stale = _app.WeatherStale ? $" · {Loc.T("数据未更新", "Weather data is stale")}" : "";
@@ -280,6 +313,31 @@ public partial class MainWindow
             trigger.ToolTip = $"{condition} · {location}{stale}";
         });
         return frame;
+    }
+
+    // The widget's next hours: from the hour after this one, each a column of the hour, its sky and its temperature; four on a wide
+    // widget, fewer as it narrows (about 46 DIP each, after 190 DIP for the temperature), none below that.
+    private void WeatherWidgetHours(System.Windows.Controls.Primitives.UniformGrid hours, WeatherReading reading, Brush ink, bool colourful, double width)
+    {
+        int room = width <= 0 ? 4 : (int)Math.Clamp((width - 2 * WidgetSide - 190) / 46, 0, 4);
+        var now = DateTime.Now;
+        var next = reading.Hours.Where(hour => hour.Time > now).Take(room).ToList();
+        hours.Children.Clear();
+        hours.Columns = Math.Max(1, next.Count);
+        hours.Visibility = next.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        foreach (var hour in next)
+        {
+            var (icon, condition) = WeatherCondition(hour.Code, hour.Daylight);
+            var label = WeatherText(hour.Time.ToString(Settings.Uses24HourClock ? "HH" : "h tt", System.Globalization.CultureInfo.InvariantCulture), 11);
+            label.Foreground = ink; label.Opacity = .75; label.HorizontalAlignment = HorizontalAlignment.Center;
+            var picture = colourful && !Look.HighContrast ? ColourfulWeatherIcon(icon, false) : null;
+            var mark = new Viewbox { Width = 20, Height = 20, Margin = new Thickness(0, 2, 0, 2), Child = picture ?? WeatherLineIcon(icon, 18, ink) };
+            var degrees = WeatherText(hour.Temperature is { } t ? WeatherTemperature(t) : "—", 12);
+            degrees.Foreground = ink; degrees.FontWeight = FontWeights.SemiBold; degrees.HorizontalAlignment = HorizontalAlignment.Center;
+            var column = new StackPanel { Margin = new Thickness(4, 0, 4, 0), Children = { label, mark, degrees } };
+            AutomationProperties.SetName(column, $"{label.Text} · {condition} · {degrees.Text}");
+            hours.Children.Add(column);
+        }
     }
 
     private Border FocusWidget(Border frame)
