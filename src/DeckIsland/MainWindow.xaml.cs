@@ -727,6 +727,7 @@ public partial class MainWindow : Window
         System.Windows.Automation.AutomationProperties.SetName(ColourPageButton, Loc.T("颜色", "Colour"));
         System.Windows.Automation.AutomationProperties.SetName(VaultPageButton, "Vault");
         System.Windows.Automation.AutomationProperties.SetName(ScreenTimePageButton, ScreenTimeTitle);
+        System.Windows.Automation.AutomationProperties.SetName(CalendarPageButton, CalendarTitle);
         System.Windows.Automation.AutomationProperties.SetName(CapturePageButton, Loc.T("截图与录屏", "Capture"));
         System.Windows.Automation.AutomationProperties.SetName(RemindersPageButton, Loc.T("提醒", "Reminders"));
         System.Windows.Automation.AutomationProperties.SetName(WeatherPageButton, Loc.T("天气", "Weather"));

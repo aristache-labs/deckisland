@@ -313,18 +313,18 @@ internal static class CompactReadingTests
             && Read("""{"NotificationSeconds":99}""").NotificationSeconds == 15);
         check("Calls: a call's length reads as 0:06, 12:34 and 1:02:03", HudFormat.Duration(TimeSpan.FromSeconds(6)) == "0:06"
             && HudFormat.Duration(TimeSpan.FromSeconds(754)) == "12:34" && HudFormat.Duration(TimeSpan.FromSeconds(3723)) == "1:02:03" && HudFormat.Duration(TimeSpan.FromSeconds(-5)) == "0:00");
-        CompactPart[] standard = [CompactPart.Rings, CompactPart.Music, CompactPart.Monitor, CompactPart.Transfer, CompactPart.Devices, CompactPart.Equalizer, CompactPart.Clock, CompactPart.Weather, CompactPart.ScreenTime, CompactPart.Focus];
+        CompactPart[] standard = [CompactPart.Rings, CompactPart.Music, CompactPart.Monitor, CompactPart.Transfer, CompactPart.Devices, CompactPart.Equalizer, CompactPart.Clock, CompactPart.Weather, CompactPart.ScreenTime, CompactPart.NextEvent, CompactPart.Focus];
         check("Compact order: the default order appends Weather after the clock", new DeckSettings().NotchOrder.SequenceEqual(standard)
             && CompactParts.Default.SequenceEqual(standard));
         var odd = Read("""{"AppVersion":"0.1.0","NotchOrder":[2,999,9,2,0]}""");
-        check("Compact order: retired reminders, unknown and repeated parts are dropped and missing ones added", odd.NotchOrder.SequenceEqual([CompactPart.Monitor, CompactPart.Rings, CompactPart.Music, CompactPart.Equalizer, CompactPart.Clock, CompactPart.Transfer, CompactPart.Devices, CompactPart.Weather, CompactPart.Focus, CompactPart.ScreenTime])
+        check("Compact order: retired reminders, unknown and repeated parts are dropped and missing ones added", odd.NotchOrder.SequenceEqual([CompactPart.Monitor, CompactPart.Rings, CompactPart.Music, CompactPart.Equalizer, CompactPart.Clock, CompactPart.Transfer, CompactPart.Devices, CompactPart.Weather, CompactPart.Focus, CompactPart.ScreenTime, CompactPart.NextEvent])
             && odd.CapsuleOrder.SequenceEqual(standard));
         var older = Read("""{"AppVersion":"1.2.2","NotchOrder":[1,2,0]}""");
         check("Compact order: an order saved before the equalizer and the clock had a place puts the equalizer before the clock",
-            older.NotchOrder.SequenceEqual([CompactPart.Music, CompactPart.Monitor, CompactPart.Rings, CompactPart.Equalizer, CompactPart.Clock, CompactPart.Transfer, CompactPart.Devices, CompactPart.Weather, CompactPart.Focus, CompactPart.ScreenTime]));
+            older.NotchOrder.SequenceEqual([CompactPart.Music, CompactPart.Monitor, CompactPart.Rings, CompactPart.Equalizer, CompactPart.Clock, CompactPart.Transfer, CompactPart.Devices, CompactPart.Weather, CompactPart.Focus, CompactPart.ScreenTime, CompactPart.NextEvent]));
         var moved = Read("""{"AppVersion":"1.2.3","NotchOrder":[4,0,3,1,2]}""");
         check("Compact order: the equalizer and the clock keep a place chosen for them",
-            moved.NotchOrder.SequenceEqual([CompactPart.Clock, CompactPart.Rings, CompactPart.Equalizer, CompactPart.Music, CompactPart.Monitor, CompactPart.Transfer, CompactPart.Devices, CompactPart.Weather, CompactPart.Focus, CompactPart.ScreenTime]));
+            moved.NotchOrder.SequenceEqual([CompactPart.Clock, CompactPart.Rings, CompactPart.Equalizer, CompactPart.Music, CompactPart.Monitor, CompactPart.Transfer, CompactPart.Devices, CompactPart.Weather, CompactPart.Focus, CompactPart.ScreenTime, CompactPart.NextEvent]));
         var musicOff = Upgraded("""{"AppVersion":"1.2.2","NotchMusic":false}""");
         check("Compact equalizer: a file from before its own switch shows it as the music was shown",
             !musicOff.NotchEqualizer && musicOff.CapsuleEqualizer && !musicOff.EqualizerAlways && Upgraded("""{"AppVersion":"1.2.2"}""").NotchEqualizer);
@@ -347,6 +347,6 @@ internal static class CompactReadingTests
         check("Compact order: each style keeps its own and Copy is deep", settings.CompactOrder(CompactStyle.Capsule)[0] == CompactPart.Music
             && settings.CompactOrder(CompactStyle.Notch).SequenceEqual(standard));
         var read = SettingsMigrations.Read(JsonSerializer.Serialize(settings));
-        check("Compact order: survives saving and reading", read.CapsuleOrder.SequenceEqual([CompactPart.Music, CompactPart.Monitor, CompactPart.Rings, CompactPart.Equalizer, CompactPart.Clock, CompactPart.Transfer, CompactPart.Devices, CompactPart.Weather, CompactPart.Focus, CompactPart.ScreenTime]));
+        check("Compact order: survives saving and reading", read.CapsuleOrder.SequenceEqual([CompactPart.Music, CompactPart.Monitor, CompactPart.Rings, CompactPart.Equalizer, CompactPart.Clock, CompactPart.Transfer, CompactPart.Devices, CompactPart.Weather, CompactPart.Focus, CompactPart.ScreenTime, CompactPart.NextEvent]));
     }
 }

@@ -123,7 +123,8 @@ public partial class MainWindow
         // A page hotkey opens on its page and remembers it, as choosing it on the page switch does (MainWindow.Hotkeys.cs).
         // Opened from the file transfer's count on the island, the panel opens on the clipboard and file transfer page.
         var wanted = _hotkeyPage ?? (DeckPages.Shown(Settings, DeckPage.Clipboard) && OpensOnTransfer() ? DeckPage.Clipboard : (DeckPage?)null)
-            ?? (DeckPages.Shown(Settings, DeckPage.ScreenTime) && PointerOnScreenTime() ? DeckPage.ScreenTime : (DeckPage?)null) ?? DeckPages.Opening(Settings.DefaultPage) ?? _page;
+            ?? (DeckPages.Shown(Settings, DeckPage.ScreenTime) && PointerOnScreenTime() ? DeckPage.ScreenTime : (DeckPage?)null)
+            ?? (DeckPages.Shown(Settings, DeckPage.Calendar) && PointerOnNextEvent() ? DeckPage.Calendar : (DeckPage?)null) ?? DeckPages.Opening(Settings.DefaultPage) ?? _page;
         if (wanted != _page && DeckPages.Shown(Settings, wanted)) SelectPage(wanted, remember: _hotkeyPage is not null);
         // The clipboard page builds nothing while the panel is closed (RenderShelf), the page switch just above included: it is
         // built now, as the panel opens on it.
@@ -153,7 +154,7 @@ public partial class MainWindow
     }
     // The page chosen on another display's panel (App.PageChosen).
     internal void FollowPage(DeckPage page) { if (CurrentPage != page) SelectPage(page, remember: false); }
-    private FrameworkElement PageContent(DeckPage page) => page switch { DeckPage.Music => MusicContent, DeckPage.Monitor => MonitorContent, DeckPage.Clipboard => ShelfContent, DeckPage.Devices => DevicesContent, DeckPage.Weather => WeatherContent, DeckPage.Widgets => WidgetsContent, DeckPage.Reminders => RemindersContent, DeckPage.Notifications => NotificationsContent, DeckPage.Calls => CallsContent, DeckPage.Scratchpad => ScratchpadContent, DeckPage.Converter => ConverterContent, DeckPage.Terminal => TerminalContent, DeckPage.Colour => ColourContent, DeckPage.Capture => CaptureContent, DeckPage.Vault => VaultContent, DeckPage.ScreenTime => ScreenTimeContent, _ => UsageContent };
+    private FrameworkElement PageContent(DeckPage page) => page switch { DeckPage.Music => MusicContent, DeckPage.Monitor => MonitorContent, DeckPage.Clipboard => ShelfContent, DeckPage.Devices => DevicesContent, DeckPage.Weather => WeatherContent, DeckPage.Widgets => WidgetsContent, DeckPage.Reminders => RemindersContent, DeckPage.Notifications => NotificationsContent, DeckPage.Calls => CallsContent, DeckPage.Scratchpad => ScratchpadContent, DeckPage.Converter => ConverterContent, DeckPage.Terminal => TerminalContent, DeckPage.Colour => ColourContent, DeckPage.Capture => CaptureContent, DeckPage.Vault => VaultContent, DeckPage.ScreenTime => ScreenTimeContent, DeckPage.Calendar => CalendarContent, _ => UsageContent };
     private void ShowPage(DeckPage page, bool animatePage)
     {
         // The music page keeps what it built while another page shows (RenderMusic's key), so switching back does not build it again.
@@ -286,7 +287,7 @@ public partial class MainWindow
         PortsButton.Visibility = IsMonitorPage ? Visibility.Visible : Visibility.Collapsed;
         PortsButton.ToolTip = Loc.T("监听端口", "Listening ports"); AutomationProperties.SetName(PortsButton, Loc.T("监听端口", "Listening ports"));
         if (!IsMonitorPage) ShowPorts(false);
-        foreach (var (button, page) in new[] { (AIUsageButton, DeckPage.Usage), (MusicPageButton, DeckPage.Music), (MonitorPageButton, DeckPage.Monitor), (ShelfPageButton, DeckPage.Clipboard), (DevicesPageButton, DeckPage.Devices), (WeatherPageButton, DeckPage.Weather), (WidgetsPageButton, DeckPage.Widgets), (RemindersPageButton, DeckPage.Reminders), (NotificationsPageButton, DeckPage.Notifications), (CallsPageButton, DeckPage.Calls), (ScratchpadPageButton, DeckPage.Scratchpad), (ConverterPageButton, DeckPage.Converter), (TerminalPageButton, DeckPage.Terminal), (ColourPageButton, DeckPage.Colour), (CapturePageButton, DeckPage.Capture), (VaultPageButton, DeckPage.Vault), (ScreenTimePageButton, DeckPage.ScreenTime) })
+        foreach (var (button, page) in new[] { (AIUsageButton, DeckPage.Usage), (MusicPageButton, DeckPage.Music), (MonitorPageButton, DeckPage.Monitor), (ShelfPageButton, DeckPage.Clipboard), (DevicesPageButton, DeckPage.Devices), (WeatherPageButton, DeckPage.Weather), (WidgetsPageButton, DeckPage.Widgets), (RemindersPageButton, DeckPage.Reminders), (NotificationsPageButton, DeckPage.Notifications), (CallsPageButton, DeckPage.Calls), (ScratchpadPageButton, DeckPage.Scratchpad), (ConverterPageButton, DeckPage.Converter), (TerminalPageButton, DeckPage.Terminal), (ColourPageButton, DeckPage.Colour), (CapturePageButton, DeckPage.Capture), (VaultPageButton, DeckPage.Vault), (ScreenTimePageButton, DeckPage.ScreenTime), (CalendarPageButton, DeckPage.Calendar) })
         {
             bool current = CurrentPage == page || page == DeckPage.Widgets && CurrentPage == DeckPage.Reminders;
             button.Visibility = DeckPages.Shown(Settings, page) && (page != DeckPage.Reminders || !Settings.WidgetsPage) ? Visibility.Visible : Visibility.Collapsed;
@@ -1314,13 +1315,14 @@ public partial class MainWindow
         var devices = Show(CompactPart.Devices) ? CompactDevices(scale) : null;
         var weather = Show(CompactPart.Weather) ? CompactWeather(scale) : null;
         var screenTime = Show(CompactPart.ScreenTime) ? CompactScreenTime(scale) : null;
+        var nextEvent = Show(CompactPart.NextEvent) ? CompactNextEvent(scale) : null;
         // The date (Minimal only) takes the focus slot: a running session leaves Minimal showing only the session.
         var focus = CaptureBadge(scale) ?? (Show(CompactPart.Focus) ? CompactFocus(scale) : CompactDate(scale));
         int spacing = Settings.CompactPartSpacing(EffectiveStyle);
         double unit = CompactMusicLayout.PartGap(scale, spacing);
         double devicesWidth = devices is null ? 0 : DevicePixels.Up(devices.PreferredWidth, dpi);
         double transferWidth = transfer?.Width ?? 0;
-        double fixedFace = FixedFace(unit, clock?.ReservedWidth ?? 0, transferWidth, devicesWidth, focus?.Width ?? 0, weather?.Width ?? 0, screenTime?.Width ?? 0);
+        double fixedFace = FixedFace(unit, clock?.ReservedWidth ?? 0, transferWidth, devicesWidth, focus?.Width ?? 0, weather?.Width ?? 0, screenTime?.Width ?? 0, nextEvent?.Width ?? 0);
         // The system readings ask for the width of everything chosen, on whole device pixels; the whole ones that fit their region show.
         var strip = !FocusCompactOnly && Show(CompactPart.Monitor) && Settings.ShowsMonitor(EffectiveStyle) ? new MonitorStrip(Settings.CompactReadings, MonitorThemeColors.Strip(Settings, Look), scale,
             !(media && showCover) && !equalizer && apps.Count == 0 && text.Length == 0 && clock is null && transfer is null && devices is null, _stripPresence, dpi, _stripUnavailable = _stripAdmission.Hidden, _stripAdmission,
@@ -1380,10 +1382,10 @@ public partial class MainWindow
         double titleFloor = hasText ? Math.Min(shortest, titleWanted) : 0;
         var ringWidths = apps.Select(_ => layout.RingSize).ToList();
         bool hasRings = ringWidths.Count > 0, hasReadings = readingWidths.Count > 0;
-        bool hasWeather = weather is not null && hasFixed, hasScreenTime = screenTime is not null && hasFixed;
+        bool hasWeather = weather is not null && hasFixed, hasScreenTime = screenTime is not null && hasFixed, hasNextEvent = nextEvent is not null && hasFixed;
         bool hasFocus = focus is not null && hasFixed;
-        int parts = (hasFocus ? 1 : 0) + (hasWeather ? 1 : 0) + (hasScreenTime ? 1 : 0) + (hasCover ? 1 : 0) + (hasEqualizer ? 1 : 0) + (hasClock ? 1 : 0) + (hasTransfer ? 1 : 0) + (hasDevices ? 1 : 0) + (hasText ? 1 : 0) + (hasRings ? 1 : 0) + (hasReadings ? 1 : 0);
-        double others = (hasFocus ? focus!.Width : 0) + (hasWeather ? weather!.Width : 0) + (hasScreenTime ? screenTime!.Width : 0) + (hasCover ? layout.CoverSize : 0) + (hasEqualizer ? layout.EqualizerSize : 0) + (hasClock ? clock!.ReservedWidth : 0) + (hasTransfer ? transferWidth : 0) + (hasDevices ? devicesWidth : 0) + Math.Max(0, parts - 1) * unit;
+        int parts = (hasFocus ? 1 : 0) + (hasWeather ? 1 : 0) + (hasScreenTime ? 1 : 0) + (hasNextEvent ? 1 : 0) + (hasCover ? 1 : 0) + (hasEqualizer ? 1 : 0) + (hasClock ? 1 : 0) + (hasTransfer ? 1 : 0) + (hasDevices ? 1 : 0) + (hasText ? 1 : 0) + (hasRings ? 1 : 0) + (hasReadings ? 1 : 0);
+        double others = (hasFocus ? focus!.Width : 0) + (hasWeather ? weather!.Width : 0) + (hasScreenTime ? screenTime!.Width : 0) + (hasNextEvent ? nextEvent!.Width : 0) + (hasCover ? layout.CoverSize : 0) + (hasEqualizer ? layout.EqualizerSize : 0) + (hasClock ? clock!.ReservedWidth : 0) + (hasTransfer ? transferWidth : 0) + (hasDevices ? devicesWidth : 0) + Math.Max(0, parts - 1) * unit;
         double pool = SnapDown(contentWidth, dpi) - others - titleShare;
         // Too short for both narrowest windows, the title gives way down to its shortest.
         double needed = CompactSpacing.Minimum(ringWidths, layout.RingGap) + CompactSpacing.Minimum(readingWidths, strip?.Gap ?? 0);
@@ -1420,6 +1422,7 @@ public partial class MainWindow
             else if (part is CompactPart.Focus or CompactPart.Date && hasFocus) shown.Add((part, new(focus!.Width)));
             else if (part == CompactPart.Weather && hasWeather) shown.Add((part, new(weather!.Width)));
             else if (part == CompactPart.ScreenTime && hasScreenTime) shown.Add((part, new(screenTime!.Width)));
+            else if (part == CompactPart.NextEvent && hasNextEvent) shown.Add((part, new(nextEvent!.Width)));
             else if (part == CompactPart.Devices && hasDevices) shown.Add((part, new(devicesWidth)));
         }
         int title = shown.FindIndex(entry => entry.Part is CompactPart.Music);
@@ -1452,6 +1455,9 @@ public partial class MainWindow
                 case CompactPart.ScreenTime:
                     if (room < screenTime!.Width || left + screenTime.Width > grid.Width + .01) continue;
                     element = CompactRegion(screenTime, room, screenTime.Width, screenTime.Height, row, RegionAnchor.Left, dpi); break;
+                case CompactPart.NextEvent:
+                    if (room < nextEvent!.Width || left + nextEvent.Width > grid.Width + .01) continue;
+                    element = CompactRegion(nextEvent, room, nextEvent.Width, nextEvent.Height, row, RegionAnchor.Left, dpi); break;
                 case CompactPart.Devices:
                     devices!.Width = devicesWidth;
                     element = CompactRegion(devices, room, devicesWidth, devices.Height, row, RegionAnchor.Left, dpi); break;

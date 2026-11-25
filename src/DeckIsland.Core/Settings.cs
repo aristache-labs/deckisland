@@ -57,13 +57,13 @@ public sealed record IgnoredMediaApp(string AppId = "", string Name = "", string
 public enum ProviderId { Claude, Codex, Antigravity, Cursor, GlmChina, NewApi, Sub2Api, Custom, ZCode = 10, GlmGlobal = 11, Dsh = 12, DeepSeek = 13, GrokBot = 14, Kimi = 15, KimiApi = 16, OpenCode = 17, OpenCodeGo = 18, OpenRouter = 19, Pi = 20, CodeAgent = 21, CommandCode = 22, CommandCodeApi = 23, WorkBuddy = 24, WorkBuddyAi = 25, MiMo = 26, MiMoApi = 27, MiMoTokenPlan = 28, MiMoLinked = 29, KimiPlatform = 30 }
 public enum SettingsTheme { System, Light, Dark }
 // Pages are saved as numbers, so new members go at the end; their order in the page switch is DeckSettings.PageOrder.
-public enum DeckPage { Usage, Music, Monitor, Clipboard, Devices, Weather, Focus, Reminders, Widgets, Notifications, Calls, Scratchpad, Converter, Terminal, Colour, Capture, Vault, ScreenTime }
+public enum DeckPage { Usage, Music, Monitor, Clipboard, Devices, Weather, Focus, Reminders, Widgets, Notifications, Calls, Scratchpad, Converter, Terminal, Colour, Capture, Vault, ScreenTime, Calendar }
 // How the Capture tab lists past captures, as Explorer's View menu: Grid (small icons), List (one line, in columns), Details (one row each, with columns), Tiles.
 public enum CaptureLayout { Grid, List, Details, Tiles }
 public enum CaptureImageFormat { Png, Jpeg }
 // The bit rate a recording is encoded at, per pixel and frame (CaptureQualities).
 public enum CaptureQuality { Low, Standard, High }
-public enum DefaultDeckPage { Last, Usage, Music, Monitor, Clipboard, Devices, Weather, Focus, Reminders, Widgets, Notifications, Calls, Scratchpad, Converter, Terminal, Colour, Capture, Vault, ScreenTime }
+public enum DefaultDeckPage { Last, Usage, Music, Monitor, Clipboard, Devices, Weather, Focus, Reminders, Widgets, Notifications, Calls, Scratchpad, Converter, Terminal, Colour, Capture, Vault, ScreenTime, Calendar }
 // What the mouse wheel does over the expanded panel. Saved as numbers, so new members go at the end.
 public enum MouseWheelAction { None, Pages, Volume }
 // What a double click on an end of the collapsed notch or capsule does: turn its auto width on or off, or start moving it
@@ -87,14 +87,14 @@ public enum QuotaRingStyle { Nested = 0, Single = 1 }
 // The parts of the collapsed notch and capsule that are put in order, left to right. The cover stays at the left; Music places
 // only the title or lyric. Saved as numbers, so new members go at the end.
 // 9 was the retired Reminders part, still found in saved files, so Date is 10.
-public enum CompactPart { Rings, Music, Monitor, Equalizer, Clock, Transfer, Devices, Weather, Focus, Date = 10, ScreenTime = 11 }
+public enum CompactPart { Rings, Music, Monitor, Equalizer, Clock, Transfer, Devices, Weather, Focus, Date = 10, ScreenTime = 11, NextEvent = 12 }
 public static class CompactParts
 {
     // The order of new settings and of restoring the defaults: the equalizer and the clock come last.
-    public static IReadOnlyList<CompactPart> Default { get; } = [CompactPart.Rings, CompactPart.Music, CompactPart.Monitor, CompactPart.Transfer, CompactPart.Devices, CompactPart.Equalizer, CompactPart.Clock, CompactPart.Weather, CompactPart.ScreenTime, CompactPart.Focus];
+    public static IReadOnlyList<CompactPart> Default { get; } = [CompactPart.Rings, CompactPart.Music, CompactPart.Monitor, CompactPart.Transfer, CompactPart.Devices, CompactPart.Equalizer, CompactPart.Clock, CompactPart.Weather, CompactPart.ScreenTime, CompactPart.NextEvent, CompactPart.Focus];
     // The order in which parts missing from a saved file are added after its own. A file saved before the equalizer and the clock
     // were put in order adds them after its parts, the clock last, where they stood; the devices' batteries (1.3.0) join last.
-    private static readonly IReadOnlyList<CompactPart> Missing = [CompactPart.Rings, CompactPart.Music, CompactPart.Monitor, CompactPart.Equalizer, CompactPart.Clock, CompactPart.Transfer, CompactPart.Devices, CompactPart.Weather, CompactPart.Focus, CompactPart.ScreenTime];
+    private static readonly IReadOnlyList<CompactPart> Missing = [CompactPart.Rings, CompactPart.Music, CompactPart.Monitor, CompactPart.Equalizer, CompactPart.Clock, CompactPart.Transfer, CompactPart.Devices, CompactPart.Weather, CompactPart.Focus, CompactPart.ScreenTime, CompactPart.NextEvent];
     // Each known part once, in the saved order; a part missing from the file takes its place after the others.
     public static List<CompactPart> Normalize(IEnumerable<CompactPart>? order) => [.. (order ?? []).Where(part => Enum.IsDefined(part)).Concat(Missing).Distinct()];
 }
@@ -873,6 +873,16 @@ public sealed class DeckSettings
     public bool NotchScreenTime { get; set; } = true;
     public bool CapsuleScreenTime { get; set; } = true;
     public bool ShowsScreenTime(CompactStyle style) => style == CompactStyle.Notch ? NotchScreenTime : style == CompactStyle.Capsule && CapsuleScreenTime;
+    // The calendars read from ICS links (CalendarFeed; each link is a secret in App.Secrets under the source's Id), the Calendar page,
+    // and the collapsed row's next event, shown from CalendarHorizon minutes before it starts.
+    public List<CalendarSource> CalendarSources { get; set; } = [];
+    public bool CalendarPage { get; set; } = true;
+    public double CalendarWidth { get; set; } = 720;
+    public double CalendarHeight { get; set; } = 340;
+    public int CalendarHorizon { get; set; } = CalendarFeed.DefaultHorizon;
+    public bool NotchNextEvent { get; set; } = true;
+    public bool CapsuleNextEvent { get; set; } = true;
+    public bool ShowsNextEvent(CompactStyle style) => style == CompactStyle.Notch ? NotchNextEvent : style == CompactStyle.Capsule && CapsuleNextEvent;
 
     public bool DevicesPage { get; set; } = true;
     public double DevicesWidth { get; set; } = 460;
@@ -1054,6 +1064,7 @@ public sealed class DeckSettings
         copy.ScreenTimeHistory = (ScreenTimeHistory ?? []).ToDictionary(pair => pair.Key,
             pair => new ScreenTimeDay { Apps = new Dictionary<string, int>(pair.Value?.Apps ?? [], StringComparer.OrdinalIgnoreCase), Hours = [.. pair.Value?.Hours ?? []] });
         copy.ScreenTimePaths = new Dictionary<string, string>(ScreenTimePaths ?? [], StringComparer.OrdinalIgnoreCase);
+        copy.CalendarSources = CalendarFeed.Normalize(CalendarSources);
         copy.ScratchpadDrafts = new Dictionary<string, string>(ScratchpadDrafts ?? []);
         copy.DisplayMonitors = [.. DisplayMonitors ?? []];
         copy.ThemeChoices = (ThemeChoices ?? []).ToDictionary(pair => pair.Key, pair => pair.Value.Copy());
@@ -1231,6 +1242,10 @@ public sealed class DeckSettings
         var named = ScreenTimeApps.Keys.Concat(ScreenTimeHistory.Values.SelectMany(day => day.Apps.Keys)).ToHashSet(StringComparer.OrdinalIgnoreCase);
         ScreenTimePaths = (ScreenTimePaths ?? []).Where(pair => named.Contains(pair.Key) && !string.IsNullOrWhiteSpace(pair.Value) && pair.Value.Length <= 400)
             .ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.OrdinalIgnoreCase);
+        CalendarSources = CalendarFeed.Normalize(CalendarSources);
+        if (!CalendarFeed.Horizons.Contains(CalendarHorizon)) CalendarHorizon = CalendarFeed.DefaultHorizon;
+        CalendarWidth = double.IsFinite(CalendarWidth) ? Math.Clamp(CalendarWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : 720;
+        CalendarHeight = double.IsFinite(CalendarHeight) ? Math.Clamp(CalendarHeight, DeckPages.MinHeight, DeckPages.MaxHeight) : 340;
         ScreenTimeWidth = double.IsFinite(ScreenTimeWidth) ? Math.Clamp(ScreenTimeWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : 700;
         ScreenTimeHeight = double.IsFinite(ScreenTimeHeight) ? Math.Clamp(ScreenTimeHeight, DeckPages.MinHeight, DeckPages.MaxHeight) : 340;
         if (!Enum.IsDefined(DefaultPage)) DefaultPage = DefaultDeckPage.Last;

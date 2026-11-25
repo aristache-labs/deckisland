@@ -56,6 +56,9 @@ public static partial class CalendarFeed
         return kept;
     }
 
+    // Whether a downloaded text is an ICS calendar at all: a link to a calendar's web page (Google's public or embed address) gives HTML.
+    public static bool IsCalendar(string text) => text.TrimStart('\uFEFF', ' ', '\r', '\n', '\t').StartsWith("BEGIN:VCALENDAR", StringComparison.OrdinalIgnoreCase);
+
     // The events of one ICS text that touch [from, to), repeats expanded, in local time; the soonest first.
     public static List<CalendarEvent> Parse(string ics, Guid source, DateTime from, DateTime to)
     {
@@ -63,7 +66,8 @@ public static partial class CalendarFeed
         if (calendar is null) return [];
         var events = new List<CalendarEvent>();
         // Occurrences come in start order from the start given; an all-day event or one that began before `from` still touches it.
-        foreach (var occurrence in calendar.GetOccurrences(new CalDateTime(from.AddDays(-14)), null))
+        // CalDateTime takes no local DateTime (DateTime.Today is one): the start is passed as a plain date and time.
+        foreach (var occurrence in calendar.GetOccurrences(new CalDateTime(DateTime.SpecifyKind(from.AddDays(-14), DateTimeKind.Unspecified)), null))
         {
             if (occurrence.Source is not Ical.Net.CalendarComponents.CalendarEvent item) continue;
             var period = occurrence.Period;

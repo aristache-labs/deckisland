@@ -10,17 +10,18 @@ namespace DeckIsland;
 
 public partial class MainWindow
 {
-    // Today's date large, with the week it falls in below; rebuilt only when the day changes.
+    // Today's date large, with the week it falls in below, a dot under each day with calendar events (App.Calendar); a day clicked
+    // opens the Calendar page on it. Rebuilt when the day changes or the calendars are read again.
     private Border TodayWidget(Border frame)
     {
         frame.CornerRadius = new CornerRadius(Corner(16));
         frame.Padding = new Thickness(WidgetSide, 8, WidgetSide, 8);
-        DateOnly shown = default;
+        (DateOnly, DateTime?) shown = default;
         _widgetUpdates.Add(() =>
         {
             var today = DateOnly.FromDateTime(DateTime.Now);
-            if (today == shown && frame.Child is not null) return;
-            shown = today;
+            if ((today, _app.CalendarFetched) == shown && frame.Child is not null) return;
+            shown = (today, _app.CalendarFetched);
             frame.Child = TodayContent(today);
         });
         return frame;
@@ -65,13 +66,28 @@ public partial class MainWindow
             {
                 CornerRadius = new CornerRadius(Corner(9)), Padding = new Thickness(0, 4, 0, 5), Width = 28, HorizontalAlignment = HorizontalAlignment.Center,
                 Background = current ? UI.Brush(Look.Hex("rangeFill")) : null,
-                Child = new StackPanel { Children = { letter, number } }
+                Child = new StackPanel { Children = { letter, number, TodayDots(date) } }
             };
+            if (DeckPages.Shown(Settings, DeckPage.Calendar))
+            {
+                cell.Cursor = System.Windows.Input.Cursors.Hand;
+                cell.MouseLeftButtonUp += (_, e) => { e.Handled = true; OpenCalendarDay(date); };
+            }
             AutomationProperties.SetName(cell, date.ToString("dddd d MMMM", culture) + (current ? $" · {Loc.T("今天", "Today")}" : ""));
             days.Children.Add(cell);
         }
         var content = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Children = { top, days } };
         AutomationProperties.SetName(content, $"{Loc.T("今天", "Today")} · {today.ToString("dddd d MMMM", culture)} · {weekLabel.Text}");
         return content;
+    }
+
+    // Up to three dots in the colours of the calendars with events on the day; an empty line keeps the cells level.
+    private FrameworkElement TodayDots(DateOnly date)
+    {
+        var dots = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center, Height = 4, Margin = new Thickness(0, 2, 0, 0) };
+        var colors = _app.Settings.CalendarSources.ToDictionary(source => source.Id, source => source.Color);
+        foreach (var source in CalendarFeed.On(_app.CalendarEvents, date).Select(e => e.Source).Distinct().Take(3))
+            dots.Children.Add(new System.Windows.Shapes.Ellipse { Width = 4, Height = 4, Margin = new Thickness(1, 0, 1, 0), Fill = UI.Brush(colors.GetValueOrDefault(source, Look.Accent)) });
+        return dots;
     }
 }

@@ -30,11 +30,11 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
     private ScrollViewer _scroll = null!;
     private static string[] _pages => [Loc.T("常规", "General"), Loc.T("收起外观", "Collapsed view"), Loc.T("展开外观", "Expanded view"),
         Loc.T("配额与统计", "Quotas and usage"), Loc.T("模型价格", "Model prices"), Loc.T("样式", "Style"), Loc.T("播放器", "Players"), Loc.T("关于 DeckIsland", "About DeckIsland"), Loc.T("面板主题", "Panel theme"), Loc.T("显示与读数", "Display and readings"), Loc.T("增强传感器", "Enhanced sensors"), Loc.T("快捷键", "Shortcuts"), Loc.T("显示与设备", "Display and devices"),
-        Loc.T("剪贴板", "Clipboard"), Loc.T("文件中转", "File transfer"), Loc.T("快捷操作", "Quick actions"), Loc.T("显示器与配置", "Displays and profiles"), Loc.T("页面布局", "Page layout"), Loc.T("剪贴板同步", "Clipboard sync"), Loc.T("天气", "Weather"), Loc.T("专注计时器", "Focus timer"), Loc.T("提醒", "Reminders"), Loc.T("小组件与标签页", "Widgets & Tabs"), Loc.T("通知与状态提示", "Notifications and HUDs"), Loc.T("通话", "Calls"), Loc.T("代码草稿", "Scratchpad"), Loc.T("换算", "Converter"), Loc.T("终端", "Terminal")];
+        Loc.T("剪贴板", "Clipboard"), Loc.T("文件中转", "File transfer"), Loc.T("快捷操作", "Quick actions"), Loc.T("显示器与配置", "Displays and profiles"), Loc.T("页面布局", "Page layout"), Loc.T("剪贴板同步", "Clipboard sync"), Loc.T("天气", "Weather"), Loc.T("专注计时器", "Focus timer"), Loc.T("提醒", "Reminders"), Loc.T("小组件与标签页", "Widgets & Tabs"), Loc.T("通知与状态提示", "Notifications and HUDs"), Loc.T("通话", "Calls"), Loc.T("代码草稿", "Scratchpad"), Loc.T("换算", "Converter"), Loc.T("终端", "Terminal"), Loc.T("连接", "Connections")];
     // The order of the pages in the navigation; the theme page (ThemePage) and the shortcuts (HotkeysPage) are listed with the
     // basic pages, and the system monitor's page (MonitorSettingsPage) has its own group after music, then the clipboard's
     // pages (the layout first), before About. The profiles page (ProfilesPage) closes the basic pages.
-    private static readonly int[] PageOrder = [0, 1, 2, WidgetsSettingsPage, NotificationsSettingsPage, CallsSettingsPage, ThemePage, HotkeysPage, ProfilesPage, 3, 4, 5, 6, MusicGesturesPage, MonitorSettingsPage, SensorsPage, ShelfLayoutSettingsPage, ClipboardSettingsPage, TransferSettingsPage, ClipboardSyncSettingsPage, DevicesSettingsPage, 7];
+    private static readonly int[] PageOrder = [0, 1, 2, WidgetsSettingsPage, NotificationsSettingsPage, CallsSettingsPage, ConnectionsSettingsPage, ThemePage, HotkeysPage, ProfilesPage, 3, 4, 5, 6, MusicGesturesPage, MonitorSettingsPage, SensorsPage, ShelfLayoutSettingsPage, ClipboardSettingsPage, TransferSettingsPage, ClipboardSyncSettingsPage, DevicesSettingsPage, 7];
     private int _page;
     private bool _preview;
     private StackPanel? _appRows;
@@ -377,6 +377,7 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
         if (page == ScratchpadSettingsPage) PageHeader(head, Loc.T("带语法着色、按语言分别保存的代码草稿。", "A code pad that keeps a draft per language."));
         if (page == ConverterSettingsPage) PageHeader(head, Loc.T("单位换算，以及按央行参考汇率的货币换算。", "Unit conversion, and currencies at the central banks' reference rates."));
         if (page == TerminalSettingsPage) PageHeader(head, Loc.T("在灵动岛里运行的命令行及其外观。", "The shell that runs inside the notch, and how it looks."));
+        if (page == ConnectionsSettingsPage) PageHeader(head, Loc.T("DeckIsland 读取的外部服务。", "Outside services DeckIsland reads."));
         if (page == CallsSettingsPage) PageHeader(head, Loc.T("通话时灵动岛显示的计时、静音和设备检查。", "The timer, mute and device check the island offers during calls."));
         if (page == ThemePage) PageHeader(head, Loc.T("刘海、胶囊和展开面板的配色与外观。", "The colors and look of the notch, capsule and open panel."));
         if (page == HotkeysPage) PageHeader(head, Loc.T("在任何地方都能使用的快捷键。", "Keyboard shortcuts that work from anywhere."));
@@ -384,7 +385,7 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
         if (page == NotificationsSettingsPage) PageHeader(head, Loc.T("灵动岛显示的通知、状态提示和实时活动。", "What the island tells you: notifications, readouts and things in progress."));
         if (page == WidgetsSettingsPage) PageHeader(head, Loc.T("选择小组件页显示哪些小组件并逐一设置，以及代码草稿、换算和终端标签页。", "Choose what the widget page shows, set each widget up, and the Scratchpad, Converter and Terminal tabs."));
         if (page == 2) PageHeader(head, Loc.T("展开面板显示哪些页面、它们的尺寸以及如何响应。", "Which pages the open island shows, how big they are and how it responds."));
-        switch(page) { case WidgetsSettingsPage: WidgetsSettings(); break; case NotificationsSettingsPage: NotificationsSettings(); break; case CallsSettingsPage: CallsSettings(); break; case ConverterSettingsPage: ConverterSettings(); break; case TerminalSettingsPage: TerminalSettings(); break; case 0: General(); break; case 1: Compact(); break; case 2: Expanded(); break; case 3: Pages(); break; case 4: ModelPrices(); break; case 5: MusicStyle(); break; case 6: Players(); break; case 7: About(); break; case ThemePage: ThemesPage(); break; case MonitorSettingsPage: MonitorSettings(); break; case SensorsPage: SensorsSettings(); break; case HotkeysPage: HotkeysSettings(); break; case DevicesSettingsPage: DevicesSettings(); break; case ClipboardSettingsPage: ClipboardSettings(); break; case TransferSettingsPage: TransferSettings(); break; case ClipboardSyncSettingsPage: ClipboardSyncSettings(); break; case ShelfLayoutSettingsPage: ShelfLayoutSettings(); break; case MusicGesturesPage: MusicGesturesSettings(); break; case ProfilesPage: ProfilesSettings(); break; }
+        switch(page) { case WidgetsSettingsPage: WidgetsSettings(); break; case NotificationsSettingsPage: NotificationsSettings(); break; case CallsSettingsPage: CallsSettings(); break; case ConnectionsSettingsPage: ConnectionsSettings(); break; case ConverterSettingsPage: ConverterSettings(); break; case TerminalSettingsPage: TerminalSettings(); break; case 0: General(); break; case 1: Compact(); break; case 2: Expanded(); break; case 3: Pages(); break; case 4: ModelPrices(); break; case 5: MusicStyle(); break; case 6: Players(); break; case 7: About(); break; case ThemePage: ThemesPage(); break; case MonitorSettingsPage: MonitorSettings(); break; case SensorsPage: SensorsSettings(); break; case HotkeysPage: HotkeysSettings(); break; case DevicesSettingsPage: DevicesSettings(); break; case ClipboardSettingsPage: ClipboardSettings(); break; case TransferSettingsPage: TransferSettings(); break; case ClipboardSyncSettingsPage: ClipboardSyncSettings(); break; case ShelfLayoutSettingsPage: ShelfLayoutSettings(); break; case MusicGesturesPage: MusicGesturesSettings(); break; case ProfilesPage: ProfilesSettings(); break; }
         if (_content.Children[^1] is Border lastGroup) lastGroup.Margin = new Thickness(lastGroup.Margin.Left, lastGroup.Margin.Top, lastGroup.Margin.Right, 0);
         // Apply the offset before the frame is drawn, so the rebuilt page never shows its top for a frame.
         if (keep > 0) { _scroll.UpdateLayout(); _scroll.ScrollToVerticalOffset(keep); _scroll.UpdateLayout(); }
@@ -407,6 +408,7 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
         ScratchpadSettingsPage => "M 5,4 L 1,8 L 5,12 M 11,4 L 15,8 L 11,12 M 9.5,2 L 6.5,14",
         ConverterSettingsPage => "M 2,5 H 13 M 10,2 L 13,5 L 10,8 M 14,11 H 3 M 6,8 L 3,11 L 6,14",
         TerminalSettingsPage => "M 2,2.5 H 14 A 1,1 0 0 1 15,3.5 V 12.5 A 1,1 0 0 1 14,13.5 H 2 A 1,1 0 0 1 1,12.5 V 3.5 A 1,1 0 0 1 2,2.5 Z M 4,6 L 6,8 L 4,10 M 8,10 H 11",
+        ConnectionsSettingsPage => "M 6,10 L 10,6 M 4.5,7.5 L 3,9 A 2.8,2.8 0 0 0 7,13 L 8.5,11.5 M 7.5,4.5 L 9,3 A 2.8,2.8 0 0 1 13,7 L 11.5,8.5",
         CallsSettingsPage => "M 8,2 A2,2 0 0 1 10,4 V8 A2,2 0 0 1 6,8 V4 A2,2 0 0 1 8,2 Z M3.5,7.5 A4.5,4.5 0 0 0 12.5,7.5 M8,12 V14.5",
         NotificationsSettingsPage => "M 3,3 H13 A1,1 0 0 1 14,4 V10 A1,1 0 0 1 13,11 H7 L4,14 V11 H3 A1,1 0 0 1 2,10 V4 A1,1 0 0 1 3,3 Z",
         RemindersSettingsPage => "M 2,11 C 4,9 4,8 4,6 A 4,4 0 0 1 12,6 C 12,8 12,9 14,11 Z M 6,14 A 2,2 0 0 0 10,14",
@@ -578,6 +580,7 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
                     DeckPage.Colour => (DefaultDeckPage.Colour, Loc.T("颜色", "Colour")),
                     DeckPage.Vault => (DefaultDeckPage.Vault, "Vault"),
                     DeckPage.ScreenTime => (DefaultDeckPage.ScreenTime, Loc.T("屏幕使用时间", "Screen Time")),
+                    DeckPage.Calendar => (DefaultDeckPage.Calendar, Loc.T("日历", "Calendar")),
                     DeckPage.Capture => (DefaultDeckPage.Capture, Loc.T("截图与录屏", "Capture")),
                     DeckPage.Weather => (DefaultDeckPage.Weather, Loc.T("天气", "Weather")),
                     DeckPage.Devices => (DefaultDeckPage.Devices, Loc.T("设备电量", "Device batteries")),
@@ -612,6 +615,8 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
                     value => { Change(s => s.ColourTool = value); FillStarts(); }, Collect(() => PageSizeControls(DeckPage.Colour, Loc.T("颜色", "Colour"))), pages, FillStarts),
                 DeckPage.Vault => SizeRow(Loc.T("显示保险库", "Show Vault"), "Vault", page, S.VaultPage,
                     value => { Change(s => s.VaultPage = value); FillStarts(); }, Collect(() => PageSizeControls(DeckPage.Vault, "Vault")), pages, FillStarts),
+                DeckPage.Calendar => SizeRow(Loc.T("显示日历", "Show Calendar"), Loc.T("日历", "Calendar"), page, S.CalendarPage,
+                    value => { Change(s => s.CalendarPage = value); FillStarts(); }, Collect(() => PageSizeControls(DeckPage.Calendar, Loc.T("日历", "Calendar"))), pages, FillStarts),
                 DeckPage.ScreenTime => SizeRow(Loc.T("显示屏幕使用时间", "Show Screen Time"), Loc.T("屏幕使用时间", "Screen Time"), page, S.ScreenTimePage,
                     value => { Change(s => s.ScreenTimePage = value); FillStarts(); }, Collect(() => PageSizeControls(DeckPage.ScreenTime, Loc.T("屏幕使用时间", "Screen Time"))), pages, FillStarts),
                 DeckPage.Capture => SizeRow(Loc.T("显示截图与录屏", "Show Capture"), Loc.T("截图与录屏", "Capture"), page, S.CapturePage,
@@ -764,7 +769,7 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
                 case HotkeysPage:foreach(var kind in Enum.GetValues<HotkeyKind>())s.SetHotkey(kind,defaults.Hotkey(kind));break;
                 case 1:s.Style=defaults.Style;s.NotchSummary=defaults.NotchSummary;s.NotchMusic=defaults.NotchMusic;s.CapsuleSummary=defaults.CapsuleSummary;s.CapsuleMusic=defaults.CapsuleMusic;s.MusicIndicatorProgress=defaults.MusicIndicatorProgress;
                     s.NotchFocus=defaults.NotchFocus;s.CapsuleFocus=defaults.CapsuleFocus;
-                    s.NotchWeather=defaults.NotchWeather;s.CapsuleWeather=defaults.CapsuleWeather;s.NotchScreenTime=defaults.NotchScreenTime;s.CapsuleScreenTime=defaults.CapsuleScreenTime;
+                    s.NotchWeather=defaults.NotchWeather;s.CapsuleWeather=defaults.CapsuleWeather;s.NotchScreenTime=defaults.NotchScreenTime;s.CapsuleScreenTime=defaults.CapsuleScreenTime;s.NotchNextEvent=defaults.NotchNextEvent;s.CapsuleNextEvent=defaults.CapsuleNextEvent;
                     s.NotchMinimal=defaults.NotchMinimal;s.CapsuleMinimal=defaults.CapsuleMinimal;s.NotchMinimalFirst=defaults.NotchMinimalFirst;s.NotchMinimalSecond=defaults.NotchMinimalSecond;s.CapsuleMinimalFirst=defaults.CapsuleMinimalFirst;s.CapsuleMinimalSecond=defaults.CapsuleMinimalSecond;s.NotchEqualizer=defaults.NotchEqualizer;s.CapsuleEqualizer=defaults.CapsuleEqualizer;s.NotchClock=defaults.NotchClock;s.CapsuleClock=defaults.CapsuleClock;s.ClockStyle=defaults.ClockStyle;s.ClockColor=defaults.ClockColor;s.ClockCustomColor=defaults.ClockCustomColor;s.ClockGradient=[.. PanelTheme.Current.ClockGradients[0].Stops];s.ClockSeconds=defaults.ClockSeconds;CopyCollapsedSize(s,defaults);s.GripDoubleClick=defaults.GripDoubleClick;
                     s.NotchMonitor=defaults.NotchMonitor;s.CapsuleMonitor=defaults.CapsuleMonitor;s.NotchDevices=defaults.NotchDevices;s.CapsuleDevices=defaults.CapsuleDevices;s.NotchOrder=defaults.NotchOrder;s.CapsuleOrder=defaults.CapsuleOrder;s.NotchTransfer=defaults.NotchTransfer;s.CapsuleTransfer=defaults.CapsuleTransfer;
                     // The clock goes back to the one the panel theme suggests, as choosing the theme gives.
@@ -775,7 +780,8 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
                     s.WidgetsPage=defaults.WidgetsPage;s.WidgetsWidth=defaults.WidgetsWidth;s.WidgetsHeight=defaults.WidgetsHeight;s.RemindersPage=defaults.RemindersPage;s.NotificationsPage=defaults.NotificationsPage;s.CallsPage=defaults.CallsPage;s.CallsWidth=defaults.CallsWidth;s.CallsHeight=defaults.CallsHeight;s.ScratchpadPage=defaults.ScratchpadPage;s.ScratchpadWidth=defaults.ScratchpadWidth;s.ScratchpadHeight=defaults.ScratchpadHeight;s.ConverterPage=defaults.ConverterPage;s.ConverterWidth=defaults.ConverterWidth;s.ConverterHeight=defaults.ConverterHeight;s.ColourTool=defaults.ColourTool;s.ColourWidth=defaults.ColourWidth;s.ColourHeight=defaults.ColourHeight;s.VaultPage=defaults.VaultPage;s.VaultWidth=defaults.VaultWidth;s.VaultHeight=defaults.VaultHeight;s.CapturePage=defaults.CapturePage;s.CaptureWidth=defaults.CaptureWidth;s.CaptureHeight=defaults.CaptureHeight;s.TerminalPage=defaults.TerminalPage;s.TerminalWidth=defaults.TerminalWidth;s.TerminalHeight=defaults.TerminalHeight;s.NotificationsWidth=defaults.NotificationsWidth;s.NotificationsHeight=defaults.NotificationsHeight;s.RemindersWidth=defaults.RemindersWidth;s.RemindersHeight=defaults.RemindersHeight;
                     s.WeatherPage=defaults.WeatherPage;s.WeatherWidth=defaults.WeatherWidth;s.WeatherHeight=defaults.WeatherHeight;
                     s.DevicesPage=defaults.DevicesPage;s.DevicesWidth=defaults.DevicesWidth;s.DevicesHeight=defaults.DevicesHeight;
-                    s.ScreenTimePage=defaults.ScreenTimePage;s.ScreenTimeWidth=defaults.ScreenTimeWidth;s.ScreenTimeHeight=defaults.ScreenTimeHeight;break;
+                    s.ScreenTimePage=defaults.ScreenTimePage;s.ScreenTimeWidth=defaults.ScreenTimeWidth;s.ScreenTimeHeight=defaults.ScreenTimeHeight;
+                    s.CalendarPage=defaults.CalendarPage;s.CalendarWidth=defaults.CalendarWidth;s.CalendarHeight=defaults.CalendarHeight;break;
                 case MonitorSettingsPage:s.MonitorPalette=defaults.MonitorPalette;s.MonitorCustomColors=defaults.MonitorCustomColors;s.CompactWarningColor=null;s.CompactCriticalColor=null;s.CompactSmoothing=defaults.CompactSmoothing;s.CoreDisplay=defaults.CoreDisplay;s.MonitorInterval=defaults.MonitorInterval;s.MonitorProcesses=defaults.MonitorProcesses;s.MonitorSort=defaults.MonitorSort;s.MonitorMain=defaults.MonitorMain;s.MonitorProcessView=defaults.MonitorProcessView;
                     s.CompactMonitor=defaults.CompactMonitor;s.CompactMonitorItems=defaults.CompactMonitorItems;s.CompactReadings=defaults.CompactReadings;s.NotchAutoWidth=defaults.NotchAutoWidth;s.CapsuleAutoWidth=defaults.CapsuleAutoWidth;s.MonitorTemperatures=defaults.MonitorTemperatures;s.MonitorStorage=defaults.MonitorStorage;s.MonitorPower=defaults.MonitorPower;s.MonitorFrames=defaults.MonitorFrames;s.ExpandedTable=null;s.MonitorGpuUsage=defaults.MonitorGpuUsage;s.MonitorTrafficPeriod=defaults.MonitorTrafficPeriod;break;
                 // The devices' order, names and switches stay; the page and its size are Expanded view's (case 2).
@@ -1340,7 +1346,7 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
     // The Collapsed view page is laid out in General's cards (Card): there a section title heads the card its next group
     // opens, and a group with no title of its own joins the card above it.
     private bool CardPage => _page is 1 or 2 or 3 or 5 or 6 or 7 or MusicGesturesPage or MonitorSettingsPage or SensorsPage or ShelfLayoutSettingsPage or ClipboardSettingsPage
-        or TransferSettingsPage or ClipboardSyncSettingsPage or DevicesSettingsPage or WidgetsSettingsPage or NotificationsSettingsPage or CallsSettingsPage or ScratchpadSettingsPage or ConverterSettingsPage or TerminalSettingsPage or ThemePage or HotkeysPage or ProfilesPage;
+        or TransferSettingsPage or ClipboardSyncSettingsPage or DevicesSettingsPage or WidgetsSettingsPage or NotificationsSettingsPage or CallsSettingsPage or ConnectionsSettingsPage or ScratchpadSettingsPage or ConverterSettingsPage or TerminalSettingsPage or ThemePage or HotkeysPage or ProfilesPage;
     private (string Title, string Description, FrameworkElement? Action, Func<string>? Help)? _cardTitle;
     private StackPanel? _cardBody;
 

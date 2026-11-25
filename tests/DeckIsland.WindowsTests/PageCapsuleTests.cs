@@ -30,6 +30,7 @@ public partial class MainWindow
     private readonly Button ColourPageButton = new() { Content = "Colour", Width = 60, Height = 24 };
     private readonly Button VaultPageButton = new() { Content = "Vault", Width = 60, Height = 24 };
     private readonly Button ScreenTimePageButton = new() { Content = "Screen Time", Width = 60, Height = 24 };
+    private readonly Button CalendarPageButton = new() { Content = "Calendar", Width = 60, Height = 24 };
     private readonly Button CapturePageButton = new() { Content = "Capture", Width = 60, Height = 24 };
     private readonly Button TerminalPageButton = new() { Content = "Terminal", Width = 60, Height = 24 };
     private readonly Button NotificationsPageButton = new() { Content = "Notifications", Width = 60, Height = 24 };

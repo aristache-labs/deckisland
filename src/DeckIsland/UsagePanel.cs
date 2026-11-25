@@ -169,6 +169,8 @@ public partial class MainWindow
     public void RenderUsage()
     {
         if (UsageContent is null) return;
+        CalendarContent.Visibility = CurrentPage == DeckPage.Calendar ? Visibility.Visible : Visibility.Collapsed;
+        if (CurrentPage == DeckPage.Calendar) { RenderCalendar(); return; }
         ScreenTimeContent.Visibility = CurrentPage == DeckPage.ScreenTime ? Visibility.Visible : Visibility.Collapsed;
         if (CurrentPage == DeckPage.ScreenTime) { RenderScreenTime(); return; }
         VaultContent.Visibility = CurrentPage == DeckPage.Vault ? Visibility.Visible : Visibility.Collapsed;

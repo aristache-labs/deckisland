@@ -58,6 +58,10 @@ static class CalendarFeedTests
             && CalendarFeed.LinkUri("file:///c:/x.ics") is null && CalendarFeed.LinkUri("") is null);
         var id = Guid.NewGuid();
         var sources = CalendarFeed.Normalize([new() { Id = id, Name = " Work ", Color = "bad" }, new() { Id = id }, null, new() { Id = Guid.Empty }]);
+        var live = CalendarFeed.Parse(Sample.Replace("\r\n", "\n").Replace("\n", "\r\n"), source, DateTime.Today.AddDays(-400), DateTime.Today.AddDays(400));
+        check("Calendar: a range given in local time (DateTime.Today) is read too", live.Count(e => e.Title == "Standup") == 4);
+        check("Calendar: a web page is told from an ICS calendar",
+            CalendarFeed.IsCalendar("\uFEFFBEGIN:VCALENDAR\r\n") && !CalendarFeed.IsCalendar("<!doctype html><html>"));
         check("Calendar: saved sources are repaired", sources.Count == 1 && sources[0].Name == "Work" && sources[0].Color == CalendarFeed.Palette[0]);
     }
 }

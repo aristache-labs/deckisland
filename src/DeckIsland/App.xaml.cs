@@ -145,6 +145,7 @@ public partial class App : Application
         Step(Deck.Show);
         Step(InitializeReminders);
         Step(InitializeScreenTime);
+        Step(InitializeCalendar);
         Step(InitializeHud);
         Step(InitializeHotkeys);
         Step(() => _dataKey = DataKey());
