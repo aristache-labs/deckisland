@@ -69,7 +69,7 @@ internal sealed class MonitorView : Grid
     // temperatures are shown. main and mainChanged are kept for the callers; every row is the same size now.
     public MonitorView(ExpandedPlan plan, MonitorColors colors, MonitorMain main, ProcessSort sort, MonitorProcessView processView,
         Action<MonitorMain> mainChanged, Action<ProcessSort> sortChanged, Action<bool> hold, Action<GpuSample> gpuChanged, bool temperatures = false, bool smallTemperature = false,
-        PowerOptions? power = null, FrameworkElement? message = null, CoreDisplay coreDisplay = CoreDisplay.Auto, MonitorRows.ShowMenu? menu = null)
+        PowerOptions? power = null, FrameworkElement? message = null, CoreDisplay coreDisplay = CoreDisplay.Auto, MonitorRows.ShowMenu? menu = null, IReadOnlyList<ExpandedItem>? tableOrder = null)
     {
         var layout = plan.Steps;
         _layout = layout;
@@ -79,7 +79,9 @@ internal sealed class MonitorView : Grid
             if (message is not null) Children.Add(message);
             return;
         }
+        // The rows in the settings' table order: the layout keeps the CPU and the GPU together (once one band of gauges), the rows do not.
         var order = plan.Parts.Select(part => part.Item).ToList();
+        if (tableOrder is not null) order = [.. order.OrderBy(item => tableOrder.ToList().IndexOf(item) is var at and >= 0 ? at : int.MaxValue)];
         bool showsPower = plan.Part(ExpandedItem.Power) is not null && layout.PowerLines > 0 && power is not null;
         _rows = new MonitorRows(order, colors, layout, temperatures, showsPower ? power : null, plan.Part(ExpandedItem.Frames) is not null && layout.FrameLine, gpuChanged, coreDisplay, menu);
         bool sideList = plan.List != ExpandedList.Full && layout.List == ListPlacement.Side;

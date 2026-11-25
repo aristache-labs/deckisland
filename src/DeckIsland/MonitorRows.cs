@@ -307,9 +307,9 @@ internal sealed class MonitorRows : StackPanel
         if (snapshot.Power.TryGet(out var power))
         {
             // Where the power goes, as the battery says it: charging, discharging; on mains without a battery, where it is read.
-            string state = battery is { Charging: true } ? Loc.T("充电中", "Charging")
-                : battery is { AcOnline: false } || power.Source == PowerSource.Battery ? Loc.T("放电", "Discharge")
-                : power.Source == PowerSource.SystemMeter ? Loc.T("整机功率计", "System meter") : Loc.T("估算", "Estimate");
+            // As Crest says it: how sure the figure is (read from a meter or the battery's discharge, or added up from the parts); while
+            // the battery charges, that it does.
+            string state = battery is { Charging: true } ? Loc.T("充电中", "Charging") : power.Estimated ? Loc.T("估算", "Estimate") : Loc.T("实测", "Measured");
             var parts = power.Parts.Where(part => part.Key is "cpu" or "gpu").GroupBy(part => part.Key)
                 .Select(group => (group.Key == "cpu" ? "CPU " : "GPU ") + PowerText.Watts(group.Sum(part => part.Watts)));
             Detail(_power!, string.Join(" · ", parts.Prepend(state)));
