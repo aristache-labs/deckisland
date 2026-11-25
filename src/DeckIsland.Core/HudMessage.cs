@@ -8,6 +8,20 @@ public sealed record HudMessage(string Key, HudIcon Icon, string Text, double? L
     TimeSpan? Hold = null, bool Lit = false, string? Reserve = null, string? Label = null,
     string? Body = null, byte[]? Picture = null, double? IconLevel = null, string? FigureColor = null);
 
+// A notification's line too long for its card scrolls left once, at one speed, after a short wait, as Crest's do; the card stays until
+// it has scrolled and been read (Tail), never past the limit chosen for long texts. A line that would take longer stops where it got.
+public static class HudScroll
+{
+    public const double Lead = 1, Tail = 1.5, Speed = 45;
+    // overflow: how much wider the line is than its room, in DIPs at scale 1. Returns how long it scrolls and how long the card stays.
+    public static (double Scroll, double Hold) Plan(double overflow, double holdSeconds, double limitSeconds)
+    {
+        if (overflow <= .5) return (0, holdSeconds);
+        double hold = Math.Max(holdSeconds, Math.Min(Lead + overflow / Speed + Tail, Math.Max(holdSeconds, limitSeconds)));
+        return (Math.Min(overflow / Speed, Math.Max(0, hold - Lead - Tail)), hold);
+    }
+}
+
 public static class HudFormat
 {
     public static string Speed(double bytesPerSecond) => bytesPerSecond switch

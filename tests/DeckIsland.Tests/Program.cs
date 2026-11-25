@@ -109,6 +109,7 @@ try
     PowerTests.Run(Check);
     ListeningPortsTests.Run(Check);
     CalendarFeedTests.Run(Check);
+    HudScrollTests.Run(Check);
     DevicesPageTests.Run(Check);
     FrameRateTests.Run(Check);
     ResizeMotionTests.Run(Check);

@@ -839,6 +839,8 @@ public sealed class DeckSettings
     public bool MicHud { get; set; } = true;
     public bool MirrorNotifications { get; set; } = true;
     public int NotificationSeconds { get; set; } = 5;
+    // The most a notification whose text scrolls (HudScroll) stays, in seconds.
+    public int NotificationScrollSeconds { get; set; } = 10;
     public bool KeepNoticesLonger { get; set; }
     public bool HudVolume { get; set; } = true;
     public bool HudBrightness { get; set; } = true;
@@ -1149,6 +1151,7 @@ public sealed class DeckSettings
         NotificationsWidth = double.IsFinite(NotificationsWidth) ? Math.Clamp(NotificationsWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : 490;
         NotificationsHeight = double.IsFinite(NotificationsHeight) ? Math.Clamp(NotificationsHeight, DeckPages.MinHeight, DeckPages.MaxHeight) : 280;
         NotificationSeconds = Math.Clamp(NotificationSeconds, 2, 15);
+        NotificationScrollSeconds = Math.Clamp(NotificationScrollSeconds, 5, 30);
         SensorIgnoredApps = [.. (SensorIgnoredApps ?? []).Where(name => !string.IsNullOrWhiteSpace(name)).Select(name => name.Trim()).Distinct(StringComparer.OrdinalIgnoreCase)];
         Reminders = Reminder.Normalize(Reminders);
         if (!Enum.IsDefined(ReminderSound)) ReminderSound = ReminderSound.Once;

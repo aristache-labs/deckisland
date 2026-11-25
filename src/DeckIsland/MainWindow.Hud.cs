@@ -16,13 +16,16 @@ public partial class MainWindow
     // The length of the island along its edge when a readout started: one without text on a side edge is 80 % of it.
     private double _normalSurface = double.NaN;
     private DispatcherTimer? _hudEnd;
+    // When the shown message appeared, so a card built again (a new shape or theme) carries its scrolling on where it was; and the
+    // moment (TickCount64) its timer was lengthened to for its scrolling lines.
+    private long _hudShownAt, _hudScrollUntil;
 
     // False when this panel cannot show it in place (open, hidden, or a line); the caller then floats it.
     internal bool ShowHudInline(HudMessage message)
     {
         if (_expanded || !IsVisible || IsSuppressed || DisplayPower.Off || _poweringOff || EffectiveStyle == CompactStyle.Line) return false;
         if (_hudMessage is null) _normalSurface = Collapsed.Surface.Width;
-        _hudMessage = message;
+        _hudMessage = message; _hudShownAt = Environment.TickCount64; _hudScrollUntil = 0;
         _hudEnd ??= new DispatcherTimer();
         _hudEnd.Stop();
         if (message.Hold is { } hold && hold > TimeSpan.Zero)
@@ -208,10 +211,42 @@ public partial class MainWindow
         var title = UI.Fixed(hud.Text, font, Math.Max(1, CompactMusicLayout.Whole(17 * scale)), Look.Primary, FontWeights.SemiBold);
         var body = UI.Fixed(hud.Body ?? "", small, Math.Max(1, CompactMusicLayout.Whole(15 * scale)), Look.Secondary);
         foreach (var line in new[] { title, body }) { line.ClearValue(FrameworkElement.WidthProperty); line.TextTrimming = TextTrimming.CharacterEllipsis; line.HorizontalAlignment = HorizontalAlignment.Stretch; }
-        var text = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Children = { title, body } };
+        double room = Math.Max(1, total - picture - gap);
+        var text = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Children = { HudScrolling(title, room, scale, hud), HudScrolling(body, room, scale, hud) } };
         Grid.SetColumn(text, 1);
         grid.Children.Add(text);
         return (grid, total);
+    }
+
+    // A card's line as it shows: cut with an ellipsis while it fits or cannot scroll, else scrolling left once (HudScroll), started where
+    // the time since the message appeared has it. The first card built for a message lengthens its timer for the longest line.
+    private FrameworkElement HudScrolling(TextBlock line, double room, double scale, HudMessage hud)
+    {
+        line.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        double overflow = line.DesiredSize.Width - room;
+        double hold = hud.Hold?.TotalSeconds ?? 0;
+        var (scroll, total) = HudScroll.Plan(overflow / Math.Max(.1, scale), hold, Settings.NotificationScrollSeconds);
+        if (scroll <= 0 || hold <= 0) return line;
+        long until = _hudShownAt + (long)(total * 1000);
+        if (total > hold && until > _hudScrollUntil && _hudEnd is { IsEnabled: true } && ReferenceEquals(_hudMessage, hud))
+        {
+            _hudScrollUntil = until;
+            _hudEnd.Stop(); _hudEnd.Interval = TimeSpan.FromMilliseconds(Math.Max(1, until - Environment.TickCount64)); _hudEnd.Start();
+        }
+        line.TextTrimming = TextTrimming.None; line.HorizontalAlignment = HorizontalAlignment.Left;
+        line.Width = line.DesiredSize.Width;
+        var move = new System.Windows.Media.TranslateTransform();
+        line.RenderTransform = move;
+        double distance = Math.Min(overflow, scroll * HudScroll.Speed * scale);
+        var slide = new System.Windows.Media.Animation.DoubleAnimation(0, -distance, TimeSpan.FromSeconds(scroll))
+        {
+            BeginTime = TimeSpan.FromSeconds(HudScroll.Lead - (Environment.TickCount64 - _hudShownAt) / 1000.0),
+            FillBehavior = System.Windows.Media.Animation.FillBehavior.HoldEnd
+        };
+        move.BeginAnimation(System.Windows.Media.TranslateTransform.XProperty, slide);
+        // The room clips the line; the canvas leaves it its whole width, so the end that scrolls in is drawn.
+        var window = new Canvas { Height = line.Height, ClipToBounds = true, HorizontalAlignment = HorizontalAlignment.Stretch, Children = { line } };
+        return window;
     }
 
     private void RenderCompactHud(HudMessage hud, double scale, double contentWidth)

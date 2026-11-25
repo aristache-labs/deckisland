@@ -32,6 +32,8 @@ public sealed partial class SettingsWindow
                 Loc.T("在灵动岛上显示新通知。", "Show new notifications on the island.")),
             Describe(InlineSlider(Loc.T("通知时长", "Notification time"), S.NotificationSeconds, 2, 15, 1, "s", value => Change(s => s.NotificationSeconds = (int)value)),
                 Loc.T("每条通知停留的时间。", "How long each one stays.")),
+            Describe(InlineSlider(Loc.T("长文本通知", "Long text"), S.NotificationScrollSeconds, 5, 30, 1, "s", value => Change(s => s.NotificationScrollSeconds = (int)value)),
+                Loc.T("标题或内容太长时会滚动一次，通知停留到滚动结束，但最多这么久。", "A title or text too long to fit scrolls once; the notification stays until it has, but no longer than this.")),
             Describe(Toggle(Loc.T("显示具体时间", "Clock times"), S.NotificationClockTimes, value => Change(s => s.NotificationClockTimes = value),
                 help: Loc.T("显示通知到达的时刻（如 14:32），而不是已过去的时间（如 22m）。", "Show when each notification came, like 14:32, instead of how long ago, like 22m.")),
                 Loc.T("显示 14:32，而不是 22m。", "14:32 instead of 22m.")),
