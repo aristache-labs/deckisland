@@ -200,6 +200,16 @@ public partial class MainWindow
         return panel;
     }
 
+    // The listening ports page over the monitor page (PortsView), opened from the header; the monitor page keeps running under it.
+    private void Ports_Click(object sender, RoutedEventArgs e) => ShowPorts(PortsContent.Visibility != Visibility.Visible);
+    private void ShowPorts(bool show)
+    {
+        if (show) PortsContent.Child ??= new PortsView(() => ShowPorts(false));
+        PortsContent.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+        MonitorContent.Opacity = show ? 0 : 1; MonitorContent.IsHitTestVisible = !show;
+        PortsButton.Foreground = UI.Brush(show ? Look.Primary : Look.Secondary);
+    }
+
     private void RenderMonitor()
     {
         // A page on screen that is built again (a resize across a step, a sensor found or missing, a new main gauge) gives way to
@@ -215,6 +225,7 @@ public partial class MainWindow
         var header = PanelHeader.For(ToolbarFor(height), height < 170 ? 14 : 20);
         ApplyHeader(Settings.UsagePage ? header.WithControlsOf(CachedUsageHeader()) : header);
         MonitorContent.Margin = new Thickness(_header.Side, 0, _header.Side, MonitorBottom(height));
+        PortsContent.Margin = MonitorContent.Margin;
         Motion.Enabled = MonitorMotion;
         // Worked out once for each render: a drag renders the page many times a second.
         var sensors = MonitorSensors();

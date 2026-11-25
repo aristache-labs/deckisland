@@ -28,23 +28,24 @@ public sealed partial class SettingsWindow
                 SegmentBorder(units)));
     }
 
-    // What the Screen time widget keeps, said plainly, and a way to start today's count again.
+    // What the Screen time widget and page keep, said plainly, and a way to delete all of it.
     private Border ScreenTimeOptionsCard()
     {
-        var reset = new Button { Style = (Style)FindResource("FormButton"), Content = Loc.T("重置今天", "Reset today"), HorizontalContentAlignment = HorizontalAlignment.Center, Padding = new Thickness(16, 0, 16, 0) };
-        AutomationProperties.SetName(reset, Loc.T("重置今天的屏幕使用时间", "Reset today's screen time"));
-        void Show() => reset.IsEnabled = S.ScreenTimeApps.Count > 0;
-        reset.Click += (_, _) =>
+        var delete = new Button { Style = (Style)FindResource("FormButton"), Content = Loc.T("删除", "Delete"), HorizontalContentAlignment = HorizontalAlignment.Center, Padding = new Thickness(16, 0, 16, 0) };
+        AutomationProperties.SetName(delete, Loc.T("删除所有屏幕使用时间", "Delete all Screen Time"));
+        void Show() => delete.IsEnabled = S.ScreenTimeApps.Count > 0 || S.ScreenTimeHistory.Count > 0;
+        delete.Click += (_, _) =>
         {
-            if (!Confirm(Loc.T("重置今天", "Reset today"), Loc.T("今天已统计的屏幕使用时间会被清空，并重新开始计时。", "Today's counted screen time is cleared and the count starts again."), Loc.T("重置今天", "Reset today"))) return;
+            if (!Confirm(Loc.T("删除屏幕使用时间", "Delete Screen Time"), Loc.T("所有日期已统计的屏幕使用时间都会被删除，无法恢复。统计会从现在重新开始。",
+                "Screen Time counted on every day is deleted and cannot be restored. Counting starts again from now."), Loc.T("删除", "Delete"))) return;
             _app.ResetScreenTime();
             Show();
         };
         Show();
-        return OptionsCard(WidgetLayout.Name(WidgetKind.ScreenTime), Loc.T("今天每个应用在前台多久。", "How long each app was in front today."),
-            ChoiceRow(Loc.T("统计内容", "What is counted"),
-                Loc.T("只有小组件放在岛上时才统计：你在键盘前时，哪个应用的窗口在最前面，以及多久。不记录你在应用里做了什么，数据只保存在这台电脑上，每天从头开始。",
-                    "Counted only while the widget is on the island: which app's window is in front while you are at the keyboard, and for how long. Nothing about what you do in it is recorded. It stays on this PC and starts over each day."),
-                reset));
+        // What is counted, then the one action: deleting every day's data, not only today's.
+        return OptionsCard(WidgetLayout.Name(WidgetKind.ScreenTime),
+            Loc.T("小组件显示今天，屏幕使用时间页显示最近 30 天。小组件放在岛上或屏幕使用时间页打开显示时统计：你在键盘前时，哪个应用的窗口在最前面，按小时记录。不读取窗口标题或网页，两分钟没有键盘或鼠标操作不计入。数据只保存在这台电脑上，保留 30 天。",
+                "The widget shows today, the Screen Time page the last 30 days. Counted while the widget is on the island or the Screen Time page is shown: which app's window is in front while you are at the keyboard, hour by hour. No window titles or web pages are read, and two minutes without keyboard or mouse do not count. It stays on this PC for 30 days."),
+            ChoiceRow(Loc.T("删除屏幕使用时间", "Delete Screen Time"), Loc.T("删除所有日期的数据，不只是今天。", "Deletes every day's data, not only today's."), delete));
     }
 }

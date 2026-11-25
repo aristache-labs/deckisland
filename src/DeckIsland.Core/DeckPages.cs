@@ -6,7 +6,7 @@ public static class DeckPages
 {
     // The page switch, left to right, until the order is changed in the settings (DeckSettings.PageOrder). The clipboard comes
     // before the devices, as their groups do in the settings' list.
-    public static readonly IReadOnlyList<DeckPage> Order = [DeckPage.Usage, DeckPage.Music, DeckPage.Monitor, DeckPage.Clipboard, DeckPage.Devices, DeckPage.Weather, DeckPage.Reminders, DeckPage.Widgets, DeckPage.Notifications, DeckPage.Calls, DeckPage.Scratchpad, DeckPage.Converter, DeckPage.Terminal, DeckPage.Colour, DeckPage.Capture, DeckPage.Vault];
+    public static readonly IReadOnlyList<DeckPage> Order = [DeckPage.Usage, DeckPage.Music, DeckPage.Monitor, DeckPage.Clipboard, DeckPage.Devices, DeckPage.Weather, DeckPage.Reminders, DeckPage.Widgets, DeckPage.Notifications, DeckPage.Calls, DeckPage.ScreenTime, DeckPage.Scratchpad, DeckPage.Converter, DeckPage.Terminal, DeckPage.Colour, DeckPage.Capture, DeckPage.Vault];
     // Each known page once, in the saved order; a page missing from the file takes its default place after the others.
     public static List<DeckPage> Normalize(IEnumerable<DeckPage>? order) => [.. (order ?? []).Where(page => Enum.IsDefined(page) && page != DeckPage.Focus).Concat(Order).Distinct()];
 
@@ -14,7 +14,7 @@ public static class DeckPages
     {
         DeckPage.Usage => settings.UsagePage, DeckPage.Music => settings.MusicPage, DeckPage.Monitor => settings.MonitorPage, DeckPage.Devices => settings.DevicesPage,
         DeckPage.Clipboard => settings.ClipboardPage, DeckPage.Weather => settings.WeatherEnabled && settings.WeatherPage, DeckPage.Reminders => settings.RemindersPage, DeckPage.Widgets => settings.WidgetsPage, DeckPage.Notifications => settings.NotificationsPage, DeckPage.Calls => settings.CallsPage,
-        DeckPage.Scratchpad => settings.ScratchpadPage, DeckPage.Converter => settings.ConverterPage, DeckPage.Terminal => settings.TerminalPage, DeckPage.Colour => settings.ColourTool, DeckPage.Capture => settings.CapturePage, DeckPage.Vault => settings.VaultPage, _ => false
+        DeckPage.Scratchpad => settings.ScratchpadPage, DeckPage.Converter => settings.ConverterPage, DeckPage.Terminal => settings.TerminalPage, DeckPage.Colour => settings.ColourTool, DeckPage.Capture => settings.CapturePage, DeckPage.Vault => settings.VaultPage, DeckPage.ScreenTime => settings.ScreenTimePage, _ => false
     };
 
     public static IReadOnlyList<DeckPage> Visible(DeckSettings settings) => settings.PageOrder.Where(page => Shown(settings, page)).ToList();
@@ -32,7 +32,7 @@ public static class DeckPages
     {
         DefaultDeckPage.Usage => DeckPage.Usage, DefaultDeckPage.Music => DeckPage.Music, DefaultDeckPage.Monitor => DeckPage.Monitor, DefaultDeckPage.Devices => DeckPage.Devices,
         DefaultDeckPage.Clipboard => DeckPage.Clipboard, DefaultDeckPage.Weather => DeckPage.Weather, DefaultDeckPage.Focus or DefaultDeckPage.Widgets => DeckPage.Widgets, DefaultDeckPage.Reminders => DeckPage.Reminders, DefaultDeckPage.Notifications => DeckPage.Notifications, DefaultDeckPage.Calls => DeckPage.Calls,
-        DefaultDeckPage.Scratchpad => DeckPage.Scratchpad, DefaultDeckPage.Converter => DeckPage.Converter, DefaultDeckPage.Terminal => DeckPage.Terminal, DefaultDeckPage.Colour => DeckPage.Colour, DefaultDeckPage.Capture => DeckPage.Capture, DefaultDeckPage.Vault => DeckPage.Vault, _ => null
+        DefaultDeckPage.Scratchpad => DeckPage.Scratchpad, DefaultDeckPage.Converter => DeckPage.Converter, DefaultDeckPage.Terminal => DeckPage.Terminal, DefaultDeckPage.Colour => DeckPage.Colour, DefaultDeckPage.Capture => DeckPage.Capture, DefaultDeckPage.Vault => DeckPage.Vault, DefaultDeckPage.ScreenTime => DeckPage.ScreenTime, _ => null
     };
 
     // Every page's size lies within these; the usage page is also at least as wide as its columns need (MinimumWidth).
@@ -59,6 +59,7 @@ public static class DeckPages
             case DeckPage.Terminal: settings.TerminalWidth = width; settings.TerminalHeight = height; break;
             case DeckPage.Colour: settings.ColourWidth = width; settings.ColourHeight = height; break;
             case DeckPage.Vault: settings.VaultWidth = width; settings.VaultHeight = height; break;
+            case DeckPage.ScreenTime: settings.ScreenTimeWidth = width; settings.ScreenTimeHeight = height; break;
             case DeckPage.Capture: settings.CaptureWidth = width; settings.CaptureHeight = height; break;
             case DeckPage.Music: settings.MusicWidth = width; settings.MusicHeight = height; break;
             case DeckPage.Monitor: settings.MonitorWidth = width; settings.MonitorHeight = height; break;
@@ -88,6 +89,7 @@ public static class DeckPages
         DeckPage.Colour => (settings.ColourWidth, settings.ColourHeight),
         DeckPage.Capture => (settings.CaptureWidth, settings.CaptureHeight),
         DeckPage.Vault => (settings.VaultWidth, settings.VaultHeight),
+        DeckPage.ScreenTime => (settings.ScreenTimeWidth, settings.ScreenTimeHeight),
         DeckPage.Music => (settings.MusicWidth, settings.MusicHeight),
         DeckPage.Monitor => (settings.MonitorWidth, settings.MonitorHeight),
         DeckPage.Reminders => (settings.RemindersWidth, settings.RemindersHeight),
@@ -136,7 +138,7 @@ public static class DeckPages
             DeckPage.Widgets => (700, 360),
             DeckPage.Notifications or DeckPage.Reminders => (620, 380),
             DeckPage.Calls => (560, 260),
-            DeckPage.Scratchpad or DeckPage.Terminal or DeckPage.Colour or DeckPage.Capture or DeckPage.Vault => (760, 380),
+            DeckPage.Scratchpad or DeckPage.Terminal or DeckPage.Colour or DeckPage.Capture or DeckPage.Vault or DeckPage.ScreenTime => (760, 380),
             DeckPage.Converter => (620, 240),
             DeckPage.Weather => (740, 320),
             _ => (620, 280)

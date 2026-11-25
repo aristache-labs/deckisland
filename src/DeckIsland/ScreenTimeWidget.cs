@@ -26,12 +26,12 @@ public partial class MainWindow
             string key = ScreenTime.Total(today) / 60 + ":" + string.Join(",", today.Take(3).Select(pair => pair.Key + pair.Value / 60));
             if (key == drawn && frame.Child is not null) return;
             drawn = key;
-            frame.Child = ScreenTimeContent(today);
+            frame.Child = ScreenTimeWidgetContent(today);
         });
         return frame;
     }
 
-    private FrameworkElement ScreenTimeContent(IReadOnlyList<KeyValuePair<string, int>> today)
+    private FrameworkElement ScreenTimeWidgetContent(IReadOnlyList<KeyValuePair<string, int>> today)
     {
         int total = ScreenTime.Total(today);
         var number = WeatherText(ScreenTime.Duration(total), 28);

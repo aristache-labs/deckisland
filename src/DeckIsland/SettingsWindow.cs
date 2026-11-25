@@ -577,6 +577,7 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
                     DeckPage.Terminal => (DefaultDeckPage.Terminal, Loc.T("终端", "Terminal")),
                     DeckPage.Colour => (DefaultDeckPage.Colour, Loc.T("颜色", "Colour")),
                     DeckPage.Vault => (DefaultDeckPage.Vault, "Vault"),
+                    DeckPage.ScreenTime => (DefaultDeckPage.ScreenTime, Loc.T("屏幕使用时间", "Screen Time")),
                     DeckPage.Capture => (DefaultDeckPage.Capture, Loc.T("截图与录屏", "Capture")),
                     DeckPage.Weather => (DefaultDeckPage.Weather, Loc.T("天气", "Weather")),
                     DeckPage.Devices => (DefaultDeckPage.Devices, Loc.T("设备电量", "Device batteries")),
@@ -611,6 +612,8 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
                     value => { Change(s => s.ColourTool = value); FillStarts(); }, Collect(() => PageSizeControls(DeckPage.Colour, Loc.T("颜色", "Colour"))), pages, FillStarts),
                 DeckPage.Vault => SizeRow(Loc.T("显示保险库", "Show Vault"), "Vault", page, S.VaultPage,
                     value => { Change(s => s.VaultPage = value); FillStarts(); }, Collect(() => PageSizeControls(DeckPage.Vault, "Vault")), pages, FillStarts),
+                DeckPage.ScreenTime => SizeRow(Loc.T("显示屏幕使用时间", "Show Screen Time"), Loc.T("屏幕使用时间", "Screen Time"), page, S.ScreenTimePage,
+                    value => { Change(s => s.ScreenTimePage = value); FillStarts(); }, Collect(() => PageSizeControls(DeckPage.ScreenTime, Loc.T("屏幕使用时间", "Screen Time"))), pages, FillStarts),
                 DeckPage.Capture => SizeRow(Loc.T("显示截图与录屏", "Show Capture"), Loc.T("截图与录屏", "Capture"), page, S.CapturePage,
                     value => { Change(s => s.CapturePage = value); FillStarts(); }, Collect(() => PageSizeControls(DeckPage.Capture, Loc.T("截图与录屏", "Capture"))), pages, FillStarts),
                 DeckPage.Terminal => SizeRow(Loc.T("显示终端", "Show Terminal"), Loc.T("终端", "Terminal"), page, S.TerminalPage, value => { Change(s => s.TerminalPage = value); FillStarts(); }, Collect(TerminalSizeControls), pages, FillStarts),
@@ -771,7 +774,8 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
                     s.ClipboardPage=defaults.ClipboardPage;s.ClipboardWidth=defaults.ClipboardWidth;s.ClipboardHeight=defaults.ClipboardHeight;
                     s.WidgetsPage=defaults.WidgetsPage;s.WidgetsWidth=defaults.WidgetsWidth;s.WidgetsHeight=defaults.WidgetsHeight;s.RemindersPage=defaults.RemindersPage;s.NotificationsPage=defaults.NotificationsPage;s.CallsPage=defaults.CallsPage;s.CallsWidth=defaults.CallsWidth;s.CallsHeight=defaults.CallsHeight;s.ScratchpadPage=defaults.ScratchpadPage;s.ScratchpadWidth=defaults.ScratchpadWidth;s.ScratchpadHeight=defaults.ScratchpadHeight;s.ConverterPage=defaults.ConverterPage;s.ConverterWidth=defaults.ConverterWidth;s.ConverterHeight=defaults.ConverterHeight;s.ColourTool=defaults.ColourTool;s.ColourWidth=defaults.ColourWidth;s.ColourHeight=defaults.ColourHeight;s.VaultPage=defaults.VaultPage;s.VaultWidth=defaults.VaultWidth;s.VaultHeight=defaults.VaultHeight;s.CapturePage=defaults.CapturePage;s.CaptureWidth=defaults.CaptureWidth;s.CaptureHeight=defaults.CaptureHeight;s.TerminalPage=defaults.TerminalPage;s.TerminalWidth=defaults.TerminalWidth;s.TerminalHeight=defaults.TerminalHeight;s.NotificationsWidth=defaults.NotificationsWidth;s.NotificationsHeight=defaults.NotificationsHeight;s.RemindersWidth=defaults.RemindersWidth;s.RemindersHeight=defaults.RemindersHeight;
                     s.WeatherPage=defaults.WeatherPage;s.WeatherWidth=defaults.WeatherWidth;s.WeatherHeight=defaults.WeatherHeight;
-                    s.DevicesPage=defaults.DevicesPage;s.DevicesWidth=defaults.DevicesWidth;s.DevicesHeight=defaults.DevicesHeight;break;
+                    s.DevicesPage=defaults.DevicesPage;s.DevicesWidth=defaults.DevicesWidth;s.DevicesHeight=defaults.DevicesHeight;
+                    s.ScreenTimePage=defaults.ScreenTimePage;s.ScreenTimeWidth=defaults.ScreenTimeWidth;s.ScreenTimeHeight=defaults.ScreenTimeHeight;break;
                 case MonitorSettingsPage:s.MonitorPalette=defaults.MonitorPalette;s.MonitorCustomColors=defaults.MonitorCustomColors;s.CompactWarningColor=null;s.CompactCriticalColor=null;s.CompactSmoothing=defaults.CompactSmoothing;s.CoreDisplay=defaults.CoreDisplay;s.MonitorInterval=defaults.MonitorInterval;s.MonitorProcesses=defaults.MonitorProcesses;s.MonitorSort=defaults.MonitorSort;s.MonitorMain=defaults.MonitorMain;s.MonitorProcessView=defaults.MonitorProcessView;
                     s.CompactMonitor=defaults.CompactMonitor;s.CompactMonitorItems=defaults.CompactMonitorItems;s.CompactReadings=defaults.CompactReadings;s.NotchAutoWidth=defaults.NotchAutoWidth;s.CapsuleAutoWidth=defaults.CapsuleAutoWidth;s.MonitorTemperatures=defaults.MonitorTemperatures;s.MonitorStorage=defaults.MonitorStorage;s.MonitorPower=defaults.MonitorPower;s.MonitorFrames=defaults.MonitorFrames;s.ExpandedTable=null;s.MonitorGpuUsage=defaults.MonitorGpuUsage;s.MonitorTrafficPeriod=defaults.MonitorTrafficPeriod;break;
                 // The devices' order, names and switches stay; the page and its size are Expanded view's (case 2).

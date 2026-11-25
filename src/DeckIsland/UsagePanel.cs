@@ -169,6 +169,8 @@ public partial class MainWindow
     public void RenderUsage()
     {
         if (UsageContent is null) return;
+        ScreenTimeContent.Visibility = CurrentPage == DeckPage.ScreenTime ? Visibility.Visible : Visibility.Collapsed;
+        if (CurrentPage == DeckPage.ScreenTime) { RenderScreenTime(); return; }
         VaultContent.Visibility = CurrentPage == DeckPage.Vault ? Visibility.Visible : Visibility.Collapsed;
         if (CurrentPage == DeckPage.Vault) { RenderVault(); return; }
         if (VaultContent.Children.Count > 0) ClearVaultView();

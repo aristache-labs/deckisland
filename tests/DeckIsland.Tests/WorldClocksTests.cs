@@ -107,6 +107,23 @@ internal static class ScreenTimeTests
         check("Screen time keeps at most sixty apps and drops a newcomer that is smaller than all", capped.Count == ScreenTime.MaxApps && !capped.ContainsKey("new"));
         (_, capped) = ScreenTime.Add("2026-11-21", many, noon, "new", 500);
         check("Screen time lets a bigger newcomer replace the smallest app", capped.Count == ScreenTime.MaxApps && capped.ContainsKey("new") && !capped.ContainsKey("app0"));
+        var hours = ScreenTime.AddHour(date, [], noon, 120);
+        hours = ScreenTime.AddHour(date, hours, noon.AddMinutes(1), 60);
+        check("Screen time counts each hour, and a new day's hours start from nothing",
+            hours.Count == 24 && hours[12] == 180 && ScreenTime.AddHour(date, hours, noon.AddDays(1), 5).Sum() == 5);
+        var tomorrow = noon.AddDays(1);
+        var history = ScreenTime.Archive(new Dictionary<string, ScreenTimeDay> { ["2026-10-01"] = new() { Apps = new() { ["old"] = 60 } }, ["junk"] = new() }, date, apps, hours, tomorrow);
+        var (pastApps, pastHours) = ScreenTime.Day(new DateOnly(2026, 11, 21), "", new Dictionary<string, int>(), [], history, tomorrow);
+        check("Screen time history: a finished day joins it, days past 30 and keys that are not days leave",
+            history.Keys.SequenceEqual(["2026-11-21"]) && pastApps[0].Key == "codex" && ScreenTime.Total(pastApps) == 210 && pastHours[12] == 180);
+        check("Screen time history: today's own count is not archived, and today reads from the running count",
+            ScreenTime.Archive(null, date, apps, hours, noon).Count == 0 && ScreenTime.Total(ScreenTime.Day(new DateOnly(2026, 11, 21), date, apps, hours, history, noon).Apps) == 210);
+        check("Screen time history: a day with nothing counted reads as empty",
+            ScreenTime.Day(new DateOnly(2026, 11, 15), "", new Dictionary<string, int>(), [], history, tomorrow).Apps.Count == 0);
+        var saved = new DeckSettings { ScreenTimeDate = "2020-01-01", ScreenTimeApps = new() { ["a"] = 5 }, ScreenTimePaths = new() { ["a"] = @"C:.exe", ["gone"] = @"C:\g.exe" } };
+        saved.Normalize();
+        check("Screen time settings: an old day's count leaves today's fields, and paths of apps no longer counted are dropped",
+            saved.ScreenTimeDate == "" && saved.ScreenTimeApps.Count == 0 && saved.ScreenTimeHours.Count == 24 && saved.ScreenTimePaths.Count == 0);
         check("Screen time reads a saved count back, dropping what cannot be", ScreenTime.Normalize("2026-11-21", new Dictionary<string, int> { ["a"] = 5, [" "] = 9, ["b"] = -3 }).Count == 1
             && ScreenTime.Normalize("yesterday", new Dictionary<string, int> { ["a"] = 5 }).Count == 0);
         check("Screen time writes durations in minutes", ScreenTime.Duration(0) == "0m" && ScreenTime.Duration(30) == "<1m" && ScreenTime.Duration(360) == "6m"

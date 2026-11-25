@@ -152,7 +152,7 @@ public partial class MainWindow
     }
     // The page chosen on another display's panel (App.PageChosen).
     internal void FollowPage(DeckPage page) { if (CurrentPage != page) SelectPage(page, remember: false); }
-    private FrameworkElement PageContent(DeckPage page) => page switch { DeckPage.Music => MusicContent, DeckPage.Monitor => MonitorContent, DeckPage.Clipboard => ShelfContent, DeckPage.Devices => DevicesContent, DeckPage.Weather => WeatherContent, DeckPage.Widgets => WidgetsContent, DeckPage.Reminders => RemindersContent, DeckPage.Notifications => NotificationsContent, DeckPage.Calls => CallsContent, DeckPage.Scratchpad => ScratchpadContent, DeckPage.Converter => ConverterContent, DeckPage.Terminal => TerminalContent, DeckPage.Colour => ColourContent, DeckPage.Capture => CaptureContent, DeckPage.Vault => VaultContent, _ => UsageContent };
+    private FrameworkElement PageContent(DeckPage page) => page switch { DeckPage.Music => MusicContent, DeckPage.Monitor => MonitorContent, DeckPage.Clipboard => ShelfContent, DeckPage.Devices => DevicesContent, DeckPage.Weather => WeatherContent, DeckPage.Widgets => WidgetsContent, DeckPage.Reminders => RemindersContent, DeckPage.Notifications => NotificationsContent, DeckPage.Calls => CallsContent, DeckPage.Scratchpad => ScratchpadContent, DeckPage.Converter => ConverterContent, DeckPage.Terminal => TerminalContent, DeckPage.Colour => ColourContent, DeckPage.Capture => CaptureContent, DeckPage.Vault => VaultContent, DeckPage.ScreenTime => ScreenTimeContent, _ => UsageContent };
     private void ShowPage(DeckPage page, bool animatePage)
     {
         // The music page keeps what it built while another page shows (RenderMusic's key), so switching back does not build it again.
@@ -282,7 +282,10 @@ public partial class MainWindow
         KeepHeaderGap();
         OrderPageButtons();
         if (!IsShelfPage) { ShelfToolbar.Visibility = Visibility.Collapsed; ShelfSearchButton.Visibility = Visibility.Collapsed; }
-        foreach (var (button, page) in new[] { (AIUsageButton, DeckPage.Usage), (MusicPageButton, DeckPage.Music), (MonitorPageButton, DeckPage.Monitor), (ShelfPageButton, DeckPage.Clipboard), (DevicesPageButton, DeckPage.Devices), (WeatherPageButton, DeckPage.Weather), (WidgetsPageButton, DeckPage.Widgets), (RemindersPageButton, DeckPage.Reminders), (NotificationsPageButton, DeckPage.Notifications), (CallsPageButton, DeckPage.Calls), (ScratchpadPageButton, DeckPage.Scratchpad), (ConverterPageButton, DeckPage.Converter), (TerminalPageButton, DeckPage.Terminal), (ColourPageButton, DeckPage.Colour), (CapturePageButton, DeckPage.Capture), (VaultPageButton, DeckPage.Vault) })
+        PortsButton.Visibility = IsMonitorPage ? Visibility.Visible : Visibility.Collapsed;
+        PortsButton.ToolTip = Loc.T("监听端口", "Listening ports"); AutomationProperties.SetName(PortsButton, Loc.T("监听端口", "Listening ports"));
+        if (!IsMonitorPage) ShowPorts(false);
+        foreach (var (button, page) in new[] { (AIUsageButton, DeckPage.Usage), (MusicPageButton, DeckPage.Music), (MonitorPageButton, DeckPage.Monitor), (ShelfPageButton, DeckPage.Clipboard), (DevicesPageButton, DeckPage.Devices), (WeatherPageButton, DeckPage.Weather), (WidgetsPageButton, DeckPage.Widgets), (RemindersPageButton, DeckPage.Reminders), (NotificationsPageButton, DeckPage.Notifications), (CallsPageButton, DeckPage.Calls), (ScratchpadPageButton, DeckPage.Scratchpad), (ConverterPageButton, DeckPage.Converter), (TerminalPageButton, DeckPage.Terminal), (ColourPageButton, DeckPage.Colour), (CapturePageButton, DeckPage.Capture), (VaultPageButton, DeckPage.Vault), (ScreenTimePageButton, DeckPage.ScreenTime) })
         {
             bool current = CurrentPage == page || page == DeckPage.Widgets && CurrentPage == DeckPage.Reminders;
             button.Visibility = DeckPages.Shown(Settings, page) && (page != DeckPage.Reminders || !Settings.WidgetsPage) ? Visibility.Visible : Visibility.Collapsed;

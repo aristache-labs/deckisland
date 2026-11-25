@@ -371,7 +371,8 @@ internal sealed class ShareBar : FrameworkElement
     }
 }
 
-// Line icons for the rows, from Lucide (ISC): cpu, memory-stick, gpu, arrow-up-down, zap, battery-medium, gauge; on a 24 unit grid.
+// Line icons for the rows and the ports page, from Lucide (ISC): cpu, memory-stick, gpu, arrow-up-down, zap, battery-medium, globe, lock, copy,
+// external-link, gauge; on a 24 unit grid.
 internal static class MonitorIcons
 {
     public static FrameworkElement Icon(string name, double size, Brush brush)
@@ -388,6 +389,11 @@ internal static class MonitorIcons
             "power" => "M4,14 A1,1 0 0 1 3.22,12.37 L13.12,2.17 A0.5,0.5 0 0 1 13.98,2.63 L12.06,8.65 A1,1 0 0 0 13,10 H20 A1,1 0 0 1 20.78,11.63"
                 + " L10.88,21.83 A0.5,0.5 0 0 1 10.02,21.37 L11.94,15.35 A1,1 0 0 0 11,14 Z",
             "battery" => "M4,6 H16 A2,2 0 0 1 18,8 V16 A2,2 0 0 1 16,18 H4 A2,2 0 0 1 2,16 V8 A2,2 0 0 1 4,6 Z M22,14 V10 M6,10 V14 M10,10 V14",
+            "hourglass" => "M5,22 H19 M5,2 H19 M17,22 V17.828 A2,2 0 0 0 16.414,16.414 L12,12 L7.586,16.414 A2,2 0 0 0 7,17.828 V22 M7,2 V6.172 A2,2 0 0 0 7.586,7.586 L12,12 L16.414,7.586 A2,2 0 0 0 17,6.172 V2",
+            "globe" => "M22,12 A10,10 0 1 1 2,12 A10,10 0 1 1 22,12 Z M12,2 A14.5,14.5 0 0 0 12,22 A14.5,14.5 0 0 0 12,2 Z M2,12 H22",
+            "lock" => "M5,11 H19 A2,2 0 0 1 21,13 V20 A2,2 0 0 1 19,22 H5 A2,2 0 0 1 3,20 V13 A2,2 0 0 1 5,11 Z M7,11 V7 A5,5 0 0 1 17,7 V11",
+            "copy" => "M10,8 H20 A2,2 0 0 1 22,10 V20 A2,2 0 0 1 20,22 H10 A2,2 0 0 1 8,20 V10 A2,2 0 0 1 10,8 Z M4,16 C2.9,16 2,15.1 2,14 V4 C2,2.9 2.9,2 4,2 H14 C15.1,2 16,2.9 16,4",
+            "open" => "M15,3 H21 V9 M10,14 L21,3 M18,13 V19 A2,2 0 0 1 16,21 H5 A2,2 0 0 1 3,19 V8 A2,2 0 0 1 5,6 H11",
             _ => "M12,14 L16,10 M3.34,19 A10,10 0 1 1 20.66,19"
         };
         var path = new Path { Data = Geometry.Parse(data), Stroke = brush, StrokeThickness = 2, StrokeStartLineCap = PenLineCap.Round,

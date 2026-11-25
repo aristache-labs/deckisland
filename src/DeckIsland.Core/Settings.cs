@@ -57,13 +57,13 @@ public sealed record IgnoredMediaApp(string AppId = "", string Name = "", string
 public enum ProviderId { Claude, Codex, Antigravity, Cursor, GlmChina, NewApi, Sub2Api, Custom, ZCode = 10, GlmGlobal = 11, Dsh = 12, DeepSeek = 13, GrokBot = 14, Kimi = 15, KimiApi = 16, OpenCode = 17, OpenCodeGo = 18, OpenRouter = 19, Pi = 20, CodeAgent = 21, CommandCode = 22, CommandCodeApi = 23, WorkBuddy = 24, WorkBuddyAi = 25, MiMo = 26, MiMoApi = 27, MiMoTokenPlan = 28, MiMoLinked = 29, KimiPlatform = 30 }
 public enum SettingsTheme { System, Light, Dark }
 // Pages are saved as numbers, so new members go at the end; their order in the page switch is DeckSettings.PageOrder.
-public enum DeckPage { Usage, Music, Monitor, Clipboard, Devices, Weather, Focus, Reminders, Widgets, Notifications, Calls, Scratchpad, Converter, Terminal, Colour, Capture, Vault }
+public enum DeckPage { Usage, Music, Monitor, Clipboard, Devices, Weather, Focus, Reminders, Widgets, Notifications, Calls, Scratchpad, Converter, Terminal, Colour, Capture, Vault, ScreenTime }
 // How the Capture tab lists past captures, as Explorer's View menu: Grid (small icons), List (one line, in columns), Details (one row each, with columns), Tiles.
 public enum CaptureLayout { Grid, List, Details, Tiles }
 public enum CaptureImageFormat { Png, Jpeg }
 // The bit rate a recording is encoded at, per pixel and frame (CaptureQualities).
 public enum CaptureQuality { Low, Standard, High }
-public enum DefaultDeckPage { Last, Usage, Music, Monitor, Clipboard, Devices, Weather, Focus, Reminders, Widgets, Notifications, Calls, Scratchpad, Converter, Terminal, Colour, Capture, Vault }
+public enum DefaultDeckPage { Last, Usage, Music, Monitor, Clipboard, Devices, Weather, Focus, Reminders, Widgets, Notifications, Calls, Scratchpad, Converter, Terminal, Colour, Capture, Vault, ScreenTime }
 // What the mouse wheel does over the expanded panel. Saved as numbers, so new members go at the end.
 public enum MouseWheelAction { None, Pages, Volume }
 // What a double click on an end of the collapsed notch or capsule does: turn its auto width on or off, or start moving it
@@ -526,9 +526,17 @@ public sealed class DeckSettings
     public List<TodoItem> TodoItems { get; set; } = [];
     public const int MaxNoteLength = 2000;
     public string NoteText { get; set; } = "";
-    // Today's time in each app (ScreenTime), counted only while the Screen time widget is on the island; ScreenTimeDate is its day.
+    // Today's time in each app (ScreenTime), counted only while the Screen time widget is on the island or the Screen Time page is
+    // shown; ScreenTimeDate is its day and ScreenTimeHours its seconds in each hour. The days before are in ScreenTimeHistory (30 of
+    // them), and ScreenTimePaths has each app's executable, for its icon.
     public string ScreenTimeDate { get; set; } = "";
     public Dictionary<string, int> ScreenTimeApps { get; set; } = [];
+    public List<int> ScreenTimeHours { get; set; } = [];
+    public Dictionary<string, ScreenTimeDay> ScreenTimeHistory { get; set; } = [];
+    public Dictionary<string, string> ScreenTimePaths { get; set; } = [];
+    public bool ScreenTimePage { get; set; } = true;
+    public double ScreenTimeWidth { get; set; } = 700;
+    public double ScreenTimeHeight { get; set; } = 340;
     public ClockTimeFormat TimeFormat { get; set; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public bool? Clock24Hour { get; set; }
     [JsonIgnore] public string TimePattern => TimeFormat switch
@@ -1038,6 +1046,10 @@ public sealed class DeckSettings
         copy.WorldClocks = [.. WorldClocks ?? []];
         copy.TodoItems = [.. TodoItems ?? []];
         copy.ScreenTimeApps = new Dictionary<string, int>(ScreenTimeApps ?? [], StringComparer.OrdinalIgnoreCase);
+        copy.ScreenTimeHours = [.. ScreenTimeHours ?? []];
+        copy.ScreenTimeHistory = (ScreenTimeHistory ?? []).ToDictionary(pair => pair.Key,
+            pair => new ScreenTimeDay { Apps = new Dictionary<string, int>(pair.Value?.Apps ?? [], StringComparer.OrdinalIgnoreCase), Hours = [.. pair.Value?.Hours ?? []] });
+        copy.ScreenTimePaths = new Dictionary<string, string>(ScreenTimePaths ?? [], StringComparer.OrdinalIgnoreCase);
         copy.ScratchpadDrafts = new Dictionary<string, string>(ScratchpadDrafts ?? []);
         copy.DisplayMonitors = [.. DisplayMonitors ?? []];
         copy.ThemeChoices = (ThemeChoices ?? []).ToDictionary(pair => pair.Key, pair => pair.Value.Copy());
@@ -1207,6 +1219,16 @@ public sealed class DeckSettings
         NoteText = (NoteText ?? "").Length <= MaxNoteLength ? NoteText ?? "" : NoteText![..MaxNoteLength];
         ScreenTimeApps = ScreenTime.Normalize(ScreenTimeDate, ScreenTimeApps);
         if (ScreenTimeApps.Count == 0) ScreenTimeDate = "";
+        ScreenTimeHours = ScreenTimeHours is { Count: 24 } && ScreenTimeDate.Length > 0 ? [.. ScreenTimeHours.Select(v => Math.Clamp(v, 0, 3600))] : [.. new int[24]];
+        // A count from a day that has ended joins the history; days past KeepDays leave it.
+        var now = DateTime.Now;
+        ScreenTimeHistory = ScreenTime.Archive(ScreenTimeHistory, ScreenTimeDate, ScreenTimeApps, ScreenTimeHours, now);
+        if (ScreenTimeDate.Length > 0 && ScreenTimeDate != ScreenTime.DayKey(now)) { ScreenTimeDate = ""; ScreenTimeApps = []; ScreenTimeHours = [.. new int[24]]; }
+        var named = ScreenTimeApps.Keys.Concat(ScreenTimeHistory.Values.SelectMany(day => day.Apps.Keys)).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        ScreenTimePaths = (ScreenTimePaths ?? []).Where(pair => named.Contains(pair.Key) && !string.IsNullOrWhiteSpace(pair.Value) && pair.Value.Length <= 400)
+            .ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.OrdinalIgnoreCase);
+        ScreenTimeWidth = double.IsFinite(ScreenTimeWidth) ? Math.Clamp(ScreenTimeWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : 700;
+        ScreenTimeHeight = double.IsFinite(ScreenTimeHeight) ? Math.Clamp(ScreenTimeHeight, DeckPages.MinHeight, DeckPages.MaxHeight) : 340;
         if (!Enum.IsDefined(DefaultPage)) DefaultPage = DefaultDeckPage.Last;
         if (DefaultPage == DefaultDeckPage.Focus) DefaultPage = DefaultDeckPage.Widgets;
         if (!Enum.IsDefined(LastPage)) LastPage = DeckPage.Usage;

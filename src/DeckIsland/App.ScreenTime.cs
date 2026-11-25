@@ -18,8 +18,9 @@ public partial class App
         _screenTimer.Start();
     }
 
-    // Nothing is watched unless a Screen time widget is on an island: the app in front is only asked for while it is.
-    private bool CountsScreenTime => ShownSettings.Any(settings => settings.WidgetSlots.Contains(WidgetKind.ScreenTime));
+    // Nothing is watched unless a Screen time widget is on an island or the Screen Time page is shown: the app in front is only
+    // asked for while one is.
+    private bool CountsScreenTime => ShownSettings.Any(settings => settings.WidgetSlots.Contains(WidgetKind.ScreenTime) || settings.ScreenTimePage);
 
     // One stretch counted for the app in front, unless the person is away (no key or mouse for ScreenTime.IdleAfter). The stretch
     // is the time since the last look, at most three steps, so a PC that slept does not count its night. Saved about once a minute.
@@ -31,20 +32,30 @@ public partial class App
         if (Exiting || !CountsScreenTime) return;
         int seconds = (int)Math.Round(Math.Clamp(gap, 0, ScreenTimeStepSeconds * 3));
         if (seconds == 0 || IdleFor() >= ScreenTime.IdleAfter) return;
-        var (name, _) = ForegroundApp();
+        var (name, path) = ForegroundApp();
         if (name.Length == 0) return;
-        var (date, apps) = ScreenTime.Add(Settings.ScreenTimeDate, Settings.ScreenTimeApps, now, ScreenTime.Display(name), seconds);
+        string shown = ScreenTime.Display(name);
+        // A new day: the one before joins the history before today's count starts.
+        if (Settings.ScreenTimeDate != ScreenTime.DayKey(now))
+            Settings.ScreenTimeHistory = ScreenTime.Archive(Settings.ScreenTimeHistory, Settings.ScreenTimeDate, Settings.ScreenTimeApps, Settings.ScreenTimeHours, now);
+        Settings.ScreenTimeHours = ScreenTime.AddHour(Settings.ScreenTimeDate, Settings.ScreenTimeHours, now, seconds);
+        var (date, apps) = ScreenTime.Add(Settings.ScreenTimeDate, Settings.ScreenTimeApps, now, shown, seconds);
         Settings.ScreenTimeDate = date;
         Settings.ScreenTimeApps = apps;
+        if (path.Length > 0 && !Settings.ScreenTimePaths.ContainsKey(shown)) Settings.ScreenTimePaths = new(Settings.ScreenTimePaths, StringComparer.OrdinalIgnoreCase) { [shown] = path };
         if (++_screenTimeUnsaved < ScreenTimeSaveEvery) return;
         _screenTimeUnsaved = 0;
         QueueSave();
     }
 
+    // Every day's screen time is deleted, today's and the history's.
     internal void ResetScreenTime()
     {
         Settings.ScreenTimeDate = "";
         Settings.ScreenTimeApps = [];
+        Settings.ScreenTimeHours = [.. new int[24]];
+        Settings.ScreenTimeHistory = [];
+        Settings.ScreenTimePaths = [];
         QueueSave();
     }
 
