@@ -23,15 +23,26 @@ internal sealed class MonitorRows : StackPanel
     private readonly ColumnGraph? _cores;
     private readonly ShareBar? _memoryBar, _gpuBar;
     private readonly TextBlock? _memoryNote;
-    private readonly Border? _gpuSwitch;
+    private readonly Border? _gpuSwitch, _address, _modeChip;
+    private readonly TextBlock? _health;
+    private readonly List<Border> _chips = [];
+    private readonly ShowMenu? _menu;
     private GpuSample? _nextGpu;
     private MonitorSnapshot? _last;
+    // The power slider's mode: the battery's reading of it where there is one, else asked once (it can wait on the power service).
+    private PowerMode? _mode;
+    // The local address, looked up again after AddressLife.
+    private static (string Text, DateTime At)? _ip;
+    private static readonly TimeSpan AddressLife = TimeSpan.FromSeconds(30);
+
+    // A drop-down under an anchor: its items with the chosen one, and what a pick does (MainWindow.ShowAnchoredMenu).
+    public delegate void ShowMenu(FrameworkElement anchor, IReadOnlyList<(string Label, bool Chosen)> items, Action<int> pick);
 
     // Which rows: the parts the plan has a place for, in its order. battery: the machine has one (its own row after the power).
     public MonitorRows(IReadOnlyList<ExpandedItem> order, MonitorColors colors, MonitorLayout layout, bool temperatures, PowerOptions? power,
-        bool frames, Action<GpuSample> gpuChanged, CoreDisplay coreDisplay)
+        bool frames, Action<GpuSample> gpuChanged, CoreDisplay coreDisplay, ShowMenu? menu = null)
     {
-        _colors = colors; _body = layout.Body; _caption = layout.Caption; _temperatures = temperatures; _gpuChanged = gpuChanged;
+        _colors = colors; _body = layout.Body; _caption = layout.Caption; _temperatures = temperatures; _gpuChanged = gpuChanged; _menu = menu;
         _low = power?.Low ?? 20;
         foreach (var item in order)
         {
@@ -51,21 +62,30 @@ internal sealed class MonitorRows : StackPanel
                 case ExpandedItem.Gpu when _gpu is null:
                     _gpuBar = new ShareBar { Margin = new Thickness(0, 6, 0, 0) };
                     _gpu = Add("GPU", "gpu", colors.Gpu, _gpuBar);
-                    _gpuSwitch = new Border { Padding = new Thickness(5, 0, 5, 1), Margin = new Thickness(6, 0, 0, 0), CornerRadius = new CornerRadius(4), Cursor = Cursors.Hand,
-                        VerticalAlignment = VerticalAlignment.Center, Visibility = Visibility.Collapsed, Child = new TextBlock { FontSize = _caption - .5 },
-                        ToolTip = Loc.T("切换显卡", "Switch GPU") };
-                    _gpuSwitch.MouseLeftButtonUp += (_, e) => { e.Handled = true; if (_nextGpu is { } next) _gpuChanged(next); };
-                    _gpu.Head.Children.Add(_gpuSwitch);
+                    // With more than one adapter, the name and the counter both show the next one.
+                    _gpuSwitch = Chip(_gpu, Loc.T("切换显卡", "Switch GPU"), SwitchGpu);
+                    _gpuSwitch.Visibility = Visibility.Collapsed;
+                    _gpu.Detail.MouseLeftButtonUp += (_, e) => { if (_nextGpu is null) return; e.Handled = true; SwitchGpu(); };
                     break;
                 case ExpandedItem.Download or ExpandedItem.Upload when _network is null:
                     _network = Add(Loc.T("网络", "Net"), "network", colors.Download, null);
+                    _address = Chip(_network, Loc.T("点击运行 ipconfig", "Click to run ipconfig"), () => Start("cmd.exe", "/k ipconfig"));
+                    _address.Visibility = Visibility.Collapsed;
                     break;
                 case ExpandedItem.Frames when frames && _frames is null:
                     _frames = Add(Loc.T("帧率", "FPS"), "frames", colors[MonitorRole.Frames], null);
                     break;
                 case ExpandedItem.Power when power is not null && _power is null:
                     _power = Add(Loc.T("功耗", "Power"), "power", colors[MonitorRole.Power], null);
-                    if (power.Battery) _battery = Add(Loc.T("电池", "Battery"), "battery", colors[MonitorRole.Battery], null);
+                    if (_menu is not null) _modeChip = Chip(_power, Loc.T("电源模式", "Power mode"), PickMode);
+                    if (power.Battery)
+                    {
+                        _battery = Add(Loc.T("电池", "Battery"), "battery", colors[MonitorRole.Battery], null);
+                        _health = new TextBlock { FontSize = _caption + .5, FontWeight = FontWeights.SemiBold, Cursor = Cursors.Hand, Margin = new Thickness(8, 0, 0, 0),
+                            VerticalAlignment = VerticalAlignment.Center, ToolTip = Loc.T("点击打开电池报告", "Click to open the battery report") };
+                        _health.MouseLeftButtonUp += (_, e) => { e.Handled = true; OpenBatteryReport(); };
+                        _battery.Extras.Children.Add(_health);
+                    }
                     break;
             }
         }
@@ -76,7 +96,68 @@ internal sealed class MonitorRows : StackPanel
     public bool ShowsFrames => _frames is not null;
 
     // A row: the icon, the name, the detail line with what goes under it, the figure.
-    private sealed record Row(Grid Grid, Border Line, FrameworkElement Icon, TextBlock Name, StackPanel Head, TextBlock Detail, TextBlock Value);
+    private sealed record Row(Grid Grid, Border Line, FrameworkElement Icon, TextBlock Name, StackPanel Extras, TextBlock Detail, TextBlock Value);
+
+    // A small rounded button after a row's detail (the GPU counter, the address, the power mode).
+    private Border Chip(Row row, string tip, Action click)
+    {
+        var chip = new Border { Padding = new Thickness(6, 1, 6, 2), Margin = new Thickness(8, 0, 0, 0), CornerRadius = new CornerRadius(4), Cursor = Cursors.Hand,
+            VerticalAlignment = VerticalAlignment.Center, Child = new TextBlock { FontSize = _caption - .5 }, ToolTip = tip };
+        System.Windows.Automation.AutomationProperties.SetName(chip, tip);
+        chip.MouseLeftButtonUp += (_, e) => { e.Handled = true; click(); };
+        row.Extras.Children.Add(chip); _chips.Add(chip);
+        return chip;
+    }
+    private static void SetChip(Border chip, string text) => ((TextBlock)chip.Child).Text = text;
+
+    private void SwitchGpu() { if (_nextGpu is { } next) _gpuChanged(next); }
+
+    private void PickMode()
+    {
+        var current = _mode ?? PowerMode.Unknown;
+        var modes = BatteryModel.SliderModes;
+        _menu!(_modeChip!, [.. modes.Select(mode => (BatteryModel.SliderName(mode), mode == current))], index =>
+        {
+            if (!Native.BatteryProvider.SetMode(modes[index])) return;
+            _mode = modes[index];
+            if (_last is not null) UpdatePower(_last);
+        });
+    }
+
+    // Opens a program; nothing happens when Windows cannot start it.
+    private static void Start(string file, string arguments)
+    {
+        try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(file, arguments) { UseShellExecute = true }); }
+        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException) { }
+    }
+    // Windows' battery report (powercfg /batteryreport), written to the temporary folder and opened in the browser.
+    private static void OpenBatteryReport() => Task.Run(() =>
+    {
+        string path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "DeckIsland battery report.html");
+        try
+        {
+            using var powercfg = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("powercfg.exe", $"/batteryreport /output \"{path}\"")
+                { UseShellExecute = false, CreateNoWindow = true });
+            if (powercfg is null || !powercfg.WaitForExit(20_000) || powercfg.ExitCode != 0 || !System.IO.File.Exists(path)) return;
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(path) { UseShellExecute = true });
+        }
+        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException or System.IO.IOException) { }
+    });
+
+    // The first IPv4 address of a connected adapter, as ipconfig lists it; looked up again every AddressLife.
+    private static string? Address()
+    {
+        if (_ip is { } known && DateTime.UtcNow - known.At < AddressLife) return known.Text.Length > 0 ? known.Text : null;
+        string text = "";
+        try
+        {
+            text = Core.ClipboardSync.LanNetwork.Interfaces().Select(adapter => adapter.Address)
+                .FirstOrDefault(address => address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)?.ToString() ?? "";
+        }
+        catch (System.Net.NetworkInformation.NetworkInformationException) { }
+        _ip = (text, DateTime.UtcNow);
+        return text.Length > 0 ? text : null;
+    }
 
     private Row Add(string name, string icon, string color, FrameworkElement? under)
     {
@@ -89,19 +170,22 @@ internal sealed class MonitorRows : StackPanel
         glyph.VerticalAlignment = VerticalAlignment.Top; glyph.HorizontalAlignment = HorizontalAlignment.Left; glyph.Margin = new Thickness(0, 1, 0, 0);
         var label = new TextBlock { Text = name, FontSize = _body + .5, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Top };
         var detail = new TextBlock { FontSize = _caption + .5, TextTrimming = TextTrimming.CharacterEllipsis, VerticalAlignment = VerticalAlignment.Center };
-        var head = new StackPanel { Orientation = Orientation.Horizontal };
-        head.Children.Add(detail);
+        // The detail takes what the chips at the right leave, cut short rather than pushing them out.
+        var extras = new StackPanel { Orientation = Orientation.Horizontal };
+        var top = new Grid();
+        top.ColumnDefinitions.Add(new ColumnDefinition());
+        top.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        Grid.SetColumn(extras, 1);
+        top.Children.Add(detail); top.Children.Add(extras);
         var middle = new StackPanel { Margin = new Thickness(0, 1, 8, 0) };
-        middle.Children.Add(head);
+        middle.Children.Add(top);
         if (under is not null) middle.Children.Add(under);
         var value = new TextBlock { FontSize = _body + 1.5, FontWeight = FontWeights.SemiBold, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Top };
         Grid.SetColumn(label, 1); Grid.SetColumn(middle, 2); Grid.SetColumn(value, 3);
         grid.Children.Add(glyph); grid.Children.Add(label); grid.Children.Add(middle); grid.Children.Add(value);
-        // The detail line takes what the name and the figure leave, cut short rather than pushing the figure out.
-        middle.SizeChanged += (_, _) => detail.MaxWidth = Math.Max(0, middle.ActualWidth - (head.Children.Count > 1 ? head.Children[1].DesiredSize.Width + 6 : 0));
         var line = new Border { Child = grid, Padding = new Thickness(0, 8, 0, 8), BorderThickness = new Thickness(0, _rows.Count == 0 ? 0 : 1, 0, 0) };
         Children.Add(line);
-        var row = new Row(grid, line, glyph, label, head, detail, value);
+        var row = new Row(grid, line, glyph, label, extras, detail, value);
         _rows.Add(row);
         return row;
     }
@@ -112,7 +196,8 @@ internal sealed class MonitorRows : StackPanel
         var hairline = UI.Brush(Look.Hairline);
         foreach (var row in _rows) { row.Line.BorderBrush = hairline; row.Name.Foreground = UI.Brush(Look.Primary); row.Detail.Foreground = UI.Brush(Look.Tertiary); }
         if (_memoryNote is not null) _memoryNote.Foreground = UI.Brush(Look.Tertiary);
-        if (_gpuSwitch is not null) { _gpuSwitch.Background = UI.Brush(Look.Fill); ((TextBlock)_gpuSwitch.Child).Foreground = UI.Brush(Look.Secondary); }
+        foreach (var chip in _chips) { chip.Background = UI.Brush(Look.FillSelected); ((TextBlock)chip.Child).Foreground = UI.Brush(Look.Secondary); }
+        if (_health is not null) _health.Foreground = UI.Brush(Look.Primary);
         _memoryBar?.SetTrack(Look.Track); _gpuBar?.SetTrack(Look.Track);
     }
 
@@ -168,6 +253,7 @@ internal sealed class MonitorRows : StackPanel
             ((TextBlock)_gpuSwitch!.Child).Text = $"{index + 1}/{snapshot.Gpus.Count}";
         }
         _gpuSwitch!.Visibility = several ? Visibility.Visible : Visibility.Collapsed;
+        _gpu!.Detail.Cursor = several ? Cursors.Hand : null;
         double? heat = _temperatures ? gpu.Temperature : null;
         string memory = gpu.DedicatedBytes.TryGet(out var used)
             ? MonitorFormat.Gigabytes(used) + (gpu.DedicatedTotal is { } total ? " / " + MonitorFormat.GigabytesCompact(total) : "") + " GB" : "";
@@ -175,7 +261,7 @@ internal sealed class MonitorRows : StackPanel
             heat is { } c ? Temperatures.Detail(c) : null, heat is { } h ? Hot(Temperatures.OfGpu(h), Look.Primary) : null);
         Value(_gpu!, MonitorFormat.Percent(gpu.Usage) + " %", Hot(ReadingLevels.OfShare(gpu.Usage), Look.Primary));
         _gpu!.Grid.ToolTip = (gpu.Name ?? "GPU") + " · " + MonitorFormat.Percent(gpu.Usage) + "%" + (memory.Length > 0 ? Loc.T(" · 显存 ", " · VRAM ") + memory : "")
-            + (_nextGpu is { } next ? "\n" + Loc.T("点击 1/2 切换到 ", "Click the counter to show ") + GpuChoice.Describe(next.Name, next.Kind) : "");
+            + (_nextGpu is { } next ? "\n" + Loc.T("点击名称切换到 ", "Click the name to show ") + GpuChoice.Describe(next.Name, next.Kind) : "");
         _gpuBar!.Set(gpu.DedicatedFraction is { } share ? [(share, _colors.Level(ReadingLevels.OfShare(share), _colors.Gpu))] : []);
     }
 
@@ -191,30 +277,39 @@ internal sealed class MonitorRows : StackPanel
         detail.Inlines.Add(new Run(up.Number + " " + up.Unit));
         var total = MonitorFormat.CompactRate(network.DownBytesPerSecond + network.UpBytesPerSecond);
         Value(_network, total.Number + total.Unit, null);
+        string? address = Address();
+        _address!.Visibility = address is null ? Visibility.Collapsed : Visibility.Visible;
+        if (address is not null) SetChip(_address, address);
     }
 
     private void UpdatePower(MonitorSnapshot snapshot)
     {
         var battery = snapshot.Battery.OrDefault;
+        // The mode: the battery reads it with every sample; without a battery it is asked once, then kept as picked.
+        _mode = battery is not null && battery.Mode != PowerMode.Unknown ? battery.Mode : _mode ?? Native.BatteryProvider.Mode;
+        if (_modeChip is not null) SetChip(_modeChip, (_mode is PowerMode.Unknown or null ? Loc.T("电源模式", "Power mode") : BatteryModel.SliderName(_mode.Value)) + " ▾");
         if (snapshot.Power.TryGet(out var power))
         {
-            string source = power.Source switch
-            {
-                PowerSource.SystemMeter => Loc.T("整机功率计", "System meter"),
-                PowerSource.Battery => Loc.T("电池放电", "Battery discharge"),
-                _ => string.Join(" + ", power.Parts.Select(part => part.Key switch { "cpu" => "CPU", "gpu" => "GPU", _ => Loc.T("内存", "memory") }).Distinct()) + Loc.T(" 估算", " estimate")
-            };
-            string parts = power.Source == PowerSource.Components ? "" : string.Join(" · ", power.Parts.Select(part => part.Name + " " + PowerText.Watts(part.Watts)));
-            Detail(_power!, string.Join(" · ", new[] { source, parts, battery is not null ? BatteryModel.ModeName(battery.Mode) : "" }.Where(part => part.Length > 0)));
+            // Where the power goes, as the battery says it: charging, discharging; on mains without a battery, where it is read.
+            string state = battery is { Charging: true } ? Loc.T("充电中", "Charging")
+                : battery is { AcOnline: false } || power.Source == PowerSource.Battery ? Loc.T("放电", "Discharge")
+                : power.Source == PowerSource.SystemMeter ? Loc.T("整机功率计", "System meter") : Loc.T("估算", "Estimate");
+            var parts = power.Parts.Where(part => part.Key is "cpu" or "gpu").GroupBy(part => part.Key)
+                .Select(group => (group.Key == "cpu" ? "CPU " : "GPU ") + PowerText.Watts(group.Sum(part => part.Watts)));
+            Detail(_power!, string.Join(" · ", parts.Prepend(state)));
+            _power!.Grid.ToolTip = PowerText.Watts(power.Watts) + (power.Estimated ? Loc.T("（估算）", " (estimated)") : Loc.T("（实测）", " (measured)"));
             Value(_power!, PowerText.Watts(power.Watts), null);
         }
         else Empty(_power!, snapshot.Power.Reason);
         if (_battery is null) return;
-        if (battery is null) { Empty(_battery, snapshot.Battery.Reason); return; }
-        string time = battery.Charging && battery.TimeToFull is { } full ? Loc.T($"{Duration(full)} 后充满", $"{Duration(full)} to full")
-            : battery.TimeLeft is { } left ? Loc.T($"剩余 {Duration(left)}", $"{Duration(left)} left")
-            : battery.Charging ? Loc.T("充电中", "Charging") : battery.AcOnline ? Loc.T("已接通电源", "Plugged in") : "";
-        Detail(_battery, time, battery.Health is { } health ? Loc.T("健康度 ", "Health ") + MonitorFormat.Percent(health) + " %" : null, Look.Secondary);
+        if (battery is null) { Empty(_battery, snapshot.Battery.Reason); _health!.Visibility = Visibility.Collapsed; return; }
+        // Plugged in: the time to full while it charges; on battery: the time left.
+        string time = battery.AcOnline
+            ? battery.Charging ? battery.TimeToFull is { } full ? Loc.T($"{Duration(full)} 后充满", $"{Duration(full)} to full") : Loc.T("充电中", "Charging") : Loc.T("已接通电源", "Plugged in")
+            : battery.TimeLeft is { } left ? Loc.T($"剩余 {Duration(left)}", $"{Duration(left)} left") : Loc.T("使用电池", "On battery");
+        Detail(_battery, time);
+        _health!.Visibility = battery.Health is null ? Visibility.Collapsed : Visibility.Visible;
+        if (battery.Health is { } health) _health.Text = Loc.T("健康度 ", "Health ") + MonitorFormat.Percent(health) + " %";
         Value(_battery, PowerText.Percent(battery.Percent).Replace("%", " %"), Hot(BatteryModel.Level(battery, _low), Look.Primary));
     }
 

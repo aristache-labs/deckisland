@@ -208,6 +208,9 @@ static class PowerTests
             BatteryModel.ModeOf(Guid.Parse("961cc777-2547-4f9d-8174-7d86181b8a7a")) == PowerMode.BestEfficiency && BatteryModel.ModeOf(Guid.Empty) == PowerMode.Balanced
             && BatteryModel.ModeOf(Guid.Parse("ded574b5-45a0-4f42-8737-46345c09c238")) == PowerMode.BestPerformance
             && BatteryModel.ModeOf(Guid.Parse("3af9b8d9-7c97-431d-ad78-34a8bfea439f")) == PowerMode.BetterPerformance && BatteryModel.ModeOf(Guid.NewGuid()) == PowerMode.Unknown);
+        check("Battery: each slider mode sets the overlay it is read back from, and Unknown sets none",
+            BatteryModel.SliderModes.All(mode => BatteryModel.OverlayOf(mode) is { } overlay && BatteryModel.ModeOf(overlay) == mode)
+            && BatteryModel.OverlayOf(PowerMode.Unknown) is null);
     }
 
     private static Reading<BatterySample> AsReading(this BatterySample sample) => sample;

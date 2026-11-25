@@ -69,7 +69,7 @@ internal sealed class MonitorView : Grid
     // temperatures are shown. main and mainChanged are kept for the callers; every row is the same size now.
     public MonitorView(ExpandedPlan plan, MonitorColors colors, MonitorMain main, ProcessSort sort, MonitorProcessView processView,
         Action<MonitorMain> mainChanged, Action<ProcessSort> sortChanged, Action<bool> hold, Action<GpuSample> gpuChanged, bool temperatures = false, bool smallTemperature = false,
-        PowerOptions? power = null, FrameworkElement? message = null, CoreDisplay coreDisplay = CoreDisplay.Auto)
+        PowerOptions? power = null, FrameworkElement? message = null, CoreDisplay coreDisplay = CoreDisplay.Auto, MonitorRows.ShowMenu? menu = null)
     {
         var layout = plan.Steps;
         _layout = layout;
@@ -81,7 +81,7 @@ internal sealed class MonitorView : Grid
         }
         var order = plan.Parts.Select(part => part.Item).ToList();
         bool showsPower = plan.Part(ExpandedItem.Power) is not null && layout.PowerLines > 0 && power is not null;
-        _rows = new MonitorRows(order, colors, layout, temperatures, showsPower ? power : null, plan.Part(ExpandedItem.Frames) is not null && layout.FrameLine, gpuChanged, coreDisplay);
+        _rows = new MonitorRows(order, colors, layout, temperatures, showsPower ? power : null, plan.Part(ExpandedItem.Frames) is not null && layout.FrameLine, gpuChanged, coreDisplay, menu);
         bool sideList = plan.List != ExpandedList.Full && layout.List == ListPlacement.Side;
         if (plan.Part(ExpandedItem.Storage) is not null && layout.StorageLines > 0)
             // In its own card: under the list at the side, otherwise under the readings. One volume per line.

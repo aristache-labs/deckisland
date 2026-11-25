@@ -138,12 +138,21 @@ public static class BatteryModel
     };
 
     // Windows' overlay scheme GUIDs (powrprof.h). Anything else (a vendor's own scheme) is unknown.
-    public static PowerMode ModeOf(Guid overlay) => overlay.ToString().ToLowerInvariant() switch
+    private static readonly (PowerMode Mode, Guid Overlay)[] Overlays =
+    [
+        (PowerMode.BestEfficiency, new("961cc777-2547-4f9d-8174-7d86181b8a7a")), (PowerMode.Balanced, Guid.Empty),
+        (PowerMode.BestPerformance, new("ded574b5-45a0-4f42-8737-46345c09c238")), (PowerMode.BetterPerformance, new("3af9b8d9-7c97-431d-ad78-34a8bfea439f"))
+    ];
+    public static PowerMode ModeOf(Guid overlay) => Overlays.FirstOrDefault(entry => entry.Overlay == overlay) is { Mode: not PowerMode.Unknown } found ? found.Mode : PowerMode.Unknown;
+    // The overlay scheme that sets a mode; null for Unknown.
+    public static Guid? OverlayOf(PowerMode mode) => Overlays.FirstOrDefault(entry => entry.Mode == mode) is { Mode: not PowerMode.Unknown } found ? found.Overlay : null;
+    // The three modes the power slider offers, in its order, with the names Windows' Settings gives them.
+    public static readonly IReadOnlyList<PowerMode> SliderModes = [PowerMode.BestEfficiency, PowerMode.Balanced, PowerMode.BestPerformance];
+    public static string SliderName(PowerMode mode) => mode switch
     {
-        "961cc777-2547-4f9d-8174-7d86181b8a7a" => PowerMode.BestEfficiency,
-        "00000000-0000-0000-0000-000000000000" => PowerMode.Balanced,
-        "ded574b5-45a0-4f42-8737-46345c09c238" => PowerMode.BestPerformance,
-        "3af9b8d9-7c97-431d-ad78-34a8bfea439f" => PowerMode.BetterPerformance,
-        _ => PowerMode.Unknown
+        PowerMode.BestEfficiency => Loc.T("节能", "Power saver"),
+        PowerMode.Balanced => Loc.T("平衡", "Balanced"),
+        PowerMode.BestPerformance => Loc.T("高性能", "High performance"),
+        _ => ModeName(mode)
     };
 }

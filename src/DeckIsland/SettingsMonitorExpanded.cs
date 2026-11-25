@@ -11,7 +11,7 @@ using DeckIsland.Core;
 namespace DeckIsland;
 
 // The expanded monitor page's choices ("展开时"): switches for what the page shows, the quick sets, and under them a sketch of the
-// page with a block for each part it keeps together (ExpandedMonitor.Blocks: CPU and GPU, memory with the network, the frame rate,
+// page with a block for each part it keeps together (ExpandedMonitor.Blocks: the CPU, the GPU, memory, the network, the frame rate,
 // the drives, power), stacked as the page stacks them. Dragging a block, or Alt+Up/Down on it, moves that part on the page. The
 // process list is drawn beside them and does not move: the page's size places it.
 public sealed partial class SettingsWindow
@@ -123,8 +123,8 @@ public sealed partial class SettingsWindow
     private static string BlockName(IReadOnlyList<ExpandedItem> block, IReadOnlyList<ExpandedReading> readings)
         => string.Join(" + ", readings.Where(reading => reading.Visible && ExpandedMonitor.BlockOf(reading.Item) == block).Select(reading => ExpandedName(reading.Item)));
 
-    // Each block's height in the sketch: the gauges are the tallest part of the page, memory and the network next.
-    private static double BlockHeight(IReadOnlyList<ExpandedItem> block) => block[0] switch { ExpandedItem.Cpu => 64, ExpandedItem.Memory => 52, _ => 32 };
+    // Each block's height in the sketch: every part is one row of the page.
+    private const double BlockHeight = 32;
 
     // The text of a block or a row of the sketch, in the accent.
     private static TextBlock SketchText(string name)
@@ -249,28 +249,13 @@ public sealed partial class SettingsWindow
         return pair;
     }
 
-    // The inside of the memory and network block when it shows more than one thing, as the page shows it at its usual sizes: memory
-    // on a row and the network on the next (a very short page puts the two on one line, in the same order), the two rates halves of
-    // the network's row. Every part is a whole row's height to take hold of. Dragged across, the two rates change sides; dragged up or
-    // down, a rate takes the network's row along. Either row dragged up or down changes places with the other inside the block, and
-    // dragged on out of it takes the whole block (grip), the change kept. swap: Memory to change memory and the network round,
-    // Download the rates.
-    private FrameworkElement MetricsInside(IReadOnlyList<ExpandedReading> readings, Action<ExpandedItem> swap, SketchGrip grip)
+    // The inside of the network block when it shows both rates: the two halves of its row. Dragged across, the two rates change
+    // sides; dragged up or down out of it, they take the whole block (grip).
+    private FrameworkElement RatesInside(IReadOnlyList<ExpandedReading> readings, Action swap, SketchGrip grip)
     {
-        var shown = readings.Where(reading => reading.Visible && ExpandedMonitor.BlockOf(reading.Item)[0] == ExpandedItem.Memory).Select(reading => reading.Item).ToList();
-        var rates = shown.Where(item => item != ExpandedItem.Memory).ToList();
-        // A rate dragged up or down takes the network's row, which changes places with memory inside the block and, dragged on out
-        // of it, takes the whole block; without memory, the rate takes the block at once.
-        Action<MouseEventArgs>? row = null;
-        FrameworkElement network = rates.Count == 1 ? SketchRow(SketchText(ExpandedName(rates[0])))
-            : SketchPair(SketchRow(SketchText(ExpandedName(rates[0]))), SketchRow(SketchText(ExpandedName(rates[1]))), () => swap(ExpandedItem.Download),
-                escape: (e, _) => { if (row is not null) row(e); else grip.Start?.Invoke(e, null); });
-        if (!shown.Contains(ExpandedItem.Memory)) return network;
-        var memory = SketchRow(SketchText(ExpandedName(ExpandedItem.Memory)));
-        void Starters(FrameworkElement part, Action<MouseEventArgs> begin) { if (part == network) row = begin; }
-        return shown[0] == ExpandedItem.Memory
-            ? SketchPair(memory, network, () => swap(ExpandedItem.Memory), vertical: true, escape: (e, pending) => grip.Start?.Invoke(e, pending), starters: Starters)
-            : SketchPair(network, memory, () => swap(ExpandedItem.Memory), vertical: true, escape: (e, pending) => grip.Start?.Invoke(e, pending), starters: Starters);
+        var rates = readings.Where(reading => reading.Visible && reading.Item is ExpandedItem.Download or ExpandedItem.Upload).Select(reading => reading.Item).ToList();
+        return SketchPair(SketchRow(SketchText(ExpandedName(rates[0]))), SketchRow(SketchText(ExpandedName(rates[1]))), swap,
+            escape: (e, pending) => grip.Start?.Invoke(e, pending));
     }
 
     // The sketch of the page: the shown blocks in the page's order, the process list beside them. Built again when what it shows
@@ -303,12 +288,12 @@ public sealed partial class SettingsWindow
                 return;
             }
             var stack = new StackPanel();
-            void Swap(ExpandedItem item) { Change(s => s.ExpandedReadings = ExpandedMonitor.Swap(s.ExpandedReadings, item)); Build(); Restorable(); }
+            void SwapRates() { Change(s => s.ExpandedReadings = ExpandedMonitor.SwapRates(s.ExpandedReadings)); Build(); Restorable(); }
             foreach (var block in blocks)
             {
-                // Memory and the network show their parts when there is more than one, to be changed round by dragging.
+                // The network shows its two rates when both are shown, to be changed round by dragging.
                 var grip = new SketchGrip();
-                var inside = block[0] == ExpandedItem.Memory && BlockName(block, readings).Contains('+') ? MetricsInside(readings, Swap, grip) : null;
+                var inside = block[0] == ExpandedItem.Download && BlockName(block, readings).Contains('+') ? RatesInside(readings, SwapRates, grip) : null;
                 stack.Children.Add(SketchBlock(block, BlockName(block, readings), inside, grip, stack,
                     order => { built = SketchKey(order, readings, processes); Change(s => s.ExpandedReadings = ExpandedMonitor.Arrange(s.ExpandedReadings, order)); Restorable(); }));
             }
@@ -353,7 +338,7 @@ public sealed partial class SettingsWindow
         label.SetResourceReference(TextBlock.ForegroundProperty, "SettingsAccentText");
         var view = new GripHandle
         {
-            Height = inside is null ? BlockHeight(block) : double.NaN, CornerRadius = new CornerRadius(7), BorderThickness = new Thickness(1), Padding = new Thickness(inside is null ? 0 : 5),
+            Height = inside is null ? BlockHeight : double.NaN, CornerRadius = new CornerRadius(7), BorderThickness = new Thickness(1), Padding = new Thickness(inside is null ? 0 : 5),
             Margin = new Thickness(0, 0, 0, SketchGap), Child = inside ?? label, Tag = block[0], Cursor = Cursors.SizeAll, Focusable = true,
             FocusVisualStyle = (Style)FindResource("SettingsFocus"), RenderTransform = new TranslateTransform()
         };

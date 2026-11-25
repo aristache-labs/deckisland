@@ -59,10 +59,10 @@ internal static class ExpandedMonitorTests
         var moved = ExpandedMonitor.Normalize(ExpandedMonitor.Order.Reverse().Select(i => new ExpandedReading { Item = i }));
         check("Expanded table: a block's items stay together in the block's own order, where its first item was",
             moved.Select(r => r.Item).SequenceEqual([ExpandedItem.Processes, ExpandedItem.Power, ExpandedItem.Storage, ExpandedItem.Frames,
-                ExpandedItem.Upload, ExpandedItem.Download, ExpandedItem.Memory, ExpandedItem.Cpu, ExpandedItem.Gpu]));
-        var swapped = ExpandedMonitor.Swap(ExpandedMonitor.Defaults(), ExpandedItem.Memory);
-        var rates = ExpandedMonitor.Swap(swapped, ExpandedItem.Download);
-        check("Expanded table: memory and the network change places, and so do the two rates, inside their block",
+                ExpandedItem.Upload, ExpandedItem.Download, ExpandedItem.Memory, ExpandedItem.Gpu, ExpandedItem.Cpu]));
+        var swapped = ExpandedMonitor.Arrange(ExpandedMonitor.Defaults(), [ExpandedItem.Download, ExpandedItem.Memory]);
+        var rates = ExpandedMonitor.SwapRates(swapped);
+        check("Expanded table: memory and the network are blocks of their own, and the two rates change places inside theirs",
             swapped.Select(r => r.Item).Skip(2).Take(3).SequenceEqual([ExpandedItem.Download, ExpandedItem.Upload, ExpandedItem.Memory])
             && rates.Select(r => r.Item).Skip(2).Take(3).SequenceEqual([ExpandedItem.Upload, ExpandedItem.Download, ExpandedItem.Memory])
             && ExpandedMonitor.Normalize(rates).Select(r => r.Item).SequenceEqual(rates.Select(r => r.Item)));
@@ -77,8 +77,8 @@ internal static class ExpandedMonitorTests
             && ExpandedMonitor.IsDefaultOrder([new() { Item = ExpandedItem.Processes }]) && ExpandedMonitor.Normalize([new() { Item = ExpandedItem.Processes }])[0].Item == ExpandedItem.Processes);
         var arranged = ExpandedMonitor.Arrange(ExpandedMonitor.Defaults(), [ExpandedItem.Storage, ExpandedItem.Cpu, ExpandedItem.Power, ExpandedItem.Memory]);
         check("Expanded table: moving blocks puts them in the places those blocks held, the others stay",
-            arranged.Select(r => r.Item).SequenceEqual([ExpandedItem.Storage, ExpandedItem.Cpu, ExpandedItem.Gpu, ExpandedItem.Frames, ExpandedItem.Power,
-                ExpandedItem.Memory, ExpandedItem.Download, ExpandedItem.Upload, ExpandedItem.Processes])
+            arranged.Select(r => r.Item).SequenceEqual([ExpandedItem.Storage, ExpandedItem.Gpu, ExpandedItem.Cpu, ExpandedItem.Download, ExpandedItem.Upload,
+                ExpandedItem.Frames, ExpandedItem.Power, ExpandedItem.Memory, ExpandedItem.Processes])
             && arranged.Select(r => r.Visible).SequenceEqual(ExpandedMonitor.Normalize(arranged).Select(r => r.Visible)));
         var content = new ExpandedContent(1, 1);
         var split = ExpandedMonitor.Normalize([new() { Item = ExpandedItem.Memory }, new() { Item = ExpandedItem.Download, Visible = false }, new() { Item = ExpandedItem.Cpu }]);
@@ -89,7 +89,7 @@ internal static class ExpandedMonitorTests
         check("Expanded table: the download keeps the number the network had", (int)ExpandedItem.Download == 3 && (int)ExpandedItem.Upload > (int)ExpandedItem.Processes);
         var old = SettingsMigrations.Read("{\"AppVersion\":\"9.0.0\",\"ExpandedReadings\":[{\"Item\":3,\"Visible\":true},{\"Item\":0,\"Visible\":true}]}");
         check("Expanded settings: a saved network (number 3) reads as the download and the upload follows it",
-            old.ExpandedReadings.Take(5).Select(r => r.Item).SequenceEqual([ExpandedItem.Download, ExpandedItem.Upload, ExpandedItem.Memory, ExpandedItem.Cpu, ExpandedItem.Gpu]) && old.ExpandedReadings[1].Visible);
+            old.ExpandedReadings.Take(5).Select(r => r.Item).SequenceEqual([ExpandedItem.Download, ExpandedItem.Upload, ExpandedItem.Cpu, ExpandedItem.Gpu, ExpandedItem.Memory]) && old.ExpandedReadings[1].Visible);
         var both = ExpandedLayout.For([ExpandedItem.Download, ExpandedItem.Upload], 620, 200, content);
         var down = ExpandedLayout.For([ExpandedItem.Download], 620, 200, content);
         var up = ExpandedLayout.For([ExpandedItem.Upload], 620, 200, content);

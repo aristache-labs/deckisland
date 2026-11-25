@@ -349,6 +349,15 @@ internal sealed class BatteryProvider
     [StructLayout(LayoutKind.Sequential)]
     private struct SystemPowerStatus { public byte ACLineStatus, BatteryFlag, BatteryLifePercent, SystemStatusFlag; public uint BatteryLifeTime, BatteryFullLifeTime; }
     [DllImport("kernel32.dll")] private static extern bool GetSystemPowerStatus(out SystemPowerStatus status);
+    // The power slider's mode now (Settings > System > Power), and setting it as the slider does; false when Windows refuses.
+    public static PowerMode Mode => BatteryModel.ModeOf(Overlay());
+    public static bool SetMode(PowerMode mode)
+    {
+        if (BatteryModel.OverlayOf(mode) is not { } overlay) return false;
+        try { return PowerSetActiveOverlayScheme(overlay) == 0; }
+        catch (Exception ex) when (ex is EntryPointNotFoundException or DllNotFoundException) { return false; }
+    }
     [DllImport("powrprof.dll")] private static extern uint PowerGetEffectiveOverlayScheme(out Guid scheme);
+    [DllImport("powrprof.dll")] private static extern uint PowerSetActiveOverlayScheme(Guid scheme);
     [DllImport("powrprof.dll")] private static extern int PowerRegisterForEffectivePowerModeNotifications(uint version, ModeChanged callback, IntPtr context, out IntPtr registration);
 }

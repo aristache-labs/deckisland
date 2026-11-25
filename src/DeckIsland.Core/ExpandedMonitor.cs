@@ -41,12 +41,12 @@ public static class ExpandedMonitor
             Visible = item switch { ExpandedItem.Processes => processes, ExpandedItem.Storage => storage, ExpandedItem.Power => power, ExpandedItem.Frames => frames, _ => true }
         })];
 
-    // The parts the page keeps together, in the default order: the gauges (CPU and GPU share one band), memory with the network (one
-    // band), then the frame rate, the drives, power and the process list, one each. The settings move a block whole, so the table's
+    // The parts the page keeps together, in the default order: the CPU, the GPU, memory, the network (its two rates, one row), then
+    // the frame rate, the drives, power and the process list, one each. The settings move a block whole, so the table's
     // order is always one the page can show.
     public static readonly IReadOnlyList<IReadOnlyList<ExpandedItem>> Blocks =
     [
-        [ExpandedItem.Cpu, ExpandedItem.Gpu], [ExpandedItem.Memory, ExpandedItem.Download, ExpandedItem.Upload],
+        [ExpandedItem.Cpu], [ExpandedItem.Gpu], [ExpandedItem.Memory], [ExpandedItem.Download, ExpandedItem.Upload],
         [ExpandedItem.Frames], [ExpandedItem.Storage], [ExpandedItem.Power], [ExpandedItem.Processes]
     ];
     public static IReadOnlyList<ExpandedItem> BlockOf(ExpandedItem item) => Blocks.First(block => block.Contains(item));
@@ -55,8 +55,7 @@ public static class ExpandedMonitor
 
     // Every item once, block by block: unknown and repeated items are dropped, missing ones join at the end as the default table has
     // them, and each block's items stand together where the first of them was saved. Inside a block the order is the block's own,
-    // but memory and the network (the two rates together) keep their saved order, and so do the download and the upload: the page
-    // shows those either way round. Unlike the collapsed row there is no reading that must stay: a table with nothing shown is kept
+    // but the download and the upload keep their saved order: the page shows them either way round. Unlike the collapsed row there is no reading that must stay: a table with nothing shown is kept
     // as it is (the page then says there is nothing to show).
     public static List<ExpandedReading> Normalize(IEnumerable<ExpandedReading?>? readings)
     {
@@ -71,14 +70,13 @@ public static class ExpandedMonitor
         var byItem = list.ToDictionary(reading => reading.Item);
         IEnumerable<ExpandedItem> Inside(IReadOnlyList<ExpandedItem> block)
         {
-            if (block[0] != ExpandedItem.Memory) return block;
-            ExpandedItem[] network = at[ExpandedItem.Download] < at[ExpandedItem.Upload] ? [ExpandedItem.Download, ExpandedItem.Upload] : [ExpandedItem.Upload, ExpandedItem.Download];
-            return at[ExpandedItem.Memory] < at[network[0]] ? [ExpandedItem.Memory, .. network] : [.. network, ExpandedItem.Memory];
+            if (block[0] != ExpandedItem.Download) return block;
+            return at[ExpandedItem.Download] < at[ExpandedItem.Upload] ? [ExpandedItem.Download, ExpandedItem.Upload] : [ExpandedItem.Upload, ExpandedItem.Download];
         }
         return [.. Blocks.OrderBy(block => block.Min(item => at[item])).SelectMany(block => Inside(block).Select(item => byItem[item]))];
     }
 
-    // The table in the default order (blocks, memory above the network, the download before the upload), each item still shown or
+    // The table in the default order (blocks, the download before the upload), each item still shown or
     // hidden as it was: the hidden ones go back to their places as well, for when they are shown again.
     public static List<ExpandedReading> InDefaultOrder(IEnumerable<ExpandedReading?>? readings)
     {
@@ -90,18 +88,12 @@ public static class ExpandedMonitor
     public static bool IsDefaultOrder(IEnumerable<ExpandedReading?>? readings)
         => Normalize(readings).Select(reading => reading.Item).Where(item => item != ExpandedItem.Processes).SequenceEqual(Order.Where(item => item != ExpandedItem.Processes));
 
-    // Memory and the network change places (item Memory), or the download and the upload do (Download or Upload), in their block.
-    public static List<ExpandedReading> Swap(IEnumerable<ExpandedReading?>? readings, ExpandedItem item)
+    // The download and the upload change places in their block.
+    public static List<ExpandedReading> SwapRates(IEnumerable<ExpandedReading?>? readings)
     {
         var list = Normalize(readings);
-        int start = list.FindIndex(reading => BlockOf(reading.Item)[0] == ExpandedItem.Memory);
-        var part = list.GetRange(start, 3);
-        var memory = part.First(reading => reading.Item == ExpandedItem.Memory);
-        var network = part.Where(reading => reading.Item != ExpandedItem.Memory).ToList();
-        List<ExpandedReading> next;
-        if (item == ExpandedItem.Memory) next = part[0] == memory ? [.. network, memory] : [memory, .. network];
-        else { network.Reverse(); next = part[0] == memory ? [memory, .. network] : [.. network, memory]; }
-        list.RemoveRange(start, 3); list.InsertRange(start, next);
+        int start = list.FindIndex(reading => BlockOf(reading.Item)[0] == ExpandedItem.Download);
+        (list[start], list[start + 1]) = (list[start + 1], list[start]);
         return list;
     }
 
