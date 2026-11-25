@@ -269,6 +269,9 @@ internal sealed class ScreenTimeHours(IReadOnlyList<int> hours, int hourNow, Pan
 public partial class MainWindow
 {
     private FrameworkElement? _compactScreenTime;
+    // The collapsed figures beside a mark (the weather's degrees, the screen time): a little larger than the row's other text, so the
+    // figure stands about as tall as its mark.
+    private const double CompactFigureSize = 12.5;
 
     private FrameworkElement? CompactScreenTime(double scale, bool vertical = false)
     {
@@ -276,8 +279,10 @@ public partial class MainWindow
         if (!Settings.ShowsScreenTime(EffectiveStyle)) return null;
         var s = _app.Settings;
         int total = ScreenTime.Total(ScreenTime.Today(s.ScreenTimeDate, s.ScreenTimeApps, DateTime.Now));
-        var text = WeatherText(ScreenTime.Duration(total), CompactMusicLayout.CollapsedTextSize(Settings.QuotaRingStyle, scale, 11));
-        var mark = MonitorIcons.Icon("hourglass", Math.Round(13 * scale), UI.Brush(Look.Accent));
+        var text = WeatherText(ScreenTime.Duration(total), CompactMusicLayout.CollapsedTextSize(Settings.QuotaRingStyle, scale, CompactFigureSize));
+        // As tall as the weather's mark beside it, so the row's marks line up.
+        double size = Settings.QuotaRingStyle == QuotaRingStyle.Nested ? CompactMusicLayout.Whole(CompactMusicLayout.StatusRingSize(Settings.QuotaRingStyle, scale) * .9) : Math.Round(14 * scale);
+        var mark = MonitorIcons.Icon("hourglass", size, UI.Brush(Look.Accent));
         mark.Margin = vertical ? new Thickness(0, 0, 0, 2 * scale) : new Thickness(0, 0, 4 * scale, 0);
         mark.VerticalAlignment = VerticalAlignment.Center;
         var content = new StackPanel { Orientation = vertical ? Orientation.Vertical : Orientation.Horizontal, Children = { mark, text } };

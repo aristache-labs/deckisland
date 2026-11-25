@@ -794,6 +794,13 @@ public partial class MainWindow : Window
             _compactEqualizer = null; _compactMarquee = null; _quotaCarousel = null; _stripCarousel = null; _compactClock = null; _compactStrip = null;
             _columnCarousel = null; _columnReadings.Clear(); _columnStrips.Clear();
             if (FocusCompactOnly && _alert is not null) { _alertTimer.Stop(); _alert = null; }
+            if (CalendarNoticeRow)
+            {
+                CompactAlert.Visibility = Visibility.Visible; CompactRings.Visibility = Visibility.Collapsed;
+                ApplyCollapsedLayout();
+                BuildCalendarNoticeRow();
+                return;
+            }
             if (_alert is not null)
             {
                 CompactAlert.Visibility = Visibility.Visible; CompactRings.Visibility = Visibility.Collapsed;

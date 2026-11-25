@@ -324,75 +324,82 @@ public partial class MainWindow
     }
 }
 
-// The notice before an event, as Crest's: in the island's alert card (the reminders' ReminderAlertContent), the calendar icon on a
-// tint of the event's calendar colour, the title and its start time, Join for a meeting link and ✕, and a bar in that colour that
-// runs down to the start. App.Calendar takes it down when the event starts.
+// The notice before an event, as Crest's: it takes the collapsed row's place (as the quota notice does, below it in rank) with the
+// calendar icon in the event's colour, the title cut with an ellipsis, the start time, ✕, and a bar in that colour that runs down to
+// the start. Pointing at the island opens the panel as always; a click on the notice opens the Calendar page; only ✕ (or the start,
+// App.Calendar) takes it away.
 public partial class MainWindow
 {
     internal CalendarEvent? CalendarNoticeShown { get; private set; }
+    // The next opening of the panel goes to the Calendar page: the notice was clicked (ApplyDefaultMusicPage).
+    private bool _calendarNoticeOpens;
 
-    internal bool ShowCalendarNotice(CalendarEvent item)
+    internal void ShowCalendarNotice(CalendarEvent? item)
     {
-        if (!CanShowReminder || _poweringOff) return false;
-        string color = _app.Settings.CalendarSources.FirstOrDefault(source => source.Id == item.Source)?.Color ?? Look.Accent;
-        var icon = new Border { Width = 40, Height = 40, CornerRadius = new CornerRadius(Corner(20)), Background = UI.Brush(MonitorDraw.Faint(color, .22)),
-            Margin = new Thickness(0, 0, 12, 0), Child = CalendarIcon(19, color) };
-        ((FrameworkElement)icon.Child).HorizontalAlignment = HorizontalAlignment.Center; ((FrameworkElement)icon.Child).VerticalAlignment = VerticalAlignment.Center;
-        var title = WeatherText(item.Title.Length > 0 ? item.Title : Loc.T("（无标题）", "(No title)"), 15);
-        title.FontWeight = FontWeights.SemiBold; title.TextTrimming = TextTrimming.CharacterEllipsis; title.TextWrapping = TextWrapping.NoWrap; title.ToolTip = item.Title;
-        var time = WeatherText(CalendarClock(item.Start, _app.Settings) + (item.Location.Length > 0 && !item.Location.StartsWith("http", StringComparison.OrdinalIgnoreCase) ? " · " + item.Location : ""), 12.5);
-        time.Foreground = UI.Brush(Look.Secondary); time.FontWeight = FontWeights.SemiBold; time.TextTrimming = TextTrimming.CharacterEllipsis;
-        var details = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Children = { title, time } };
-
-        var buttons = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(12, 0, 0, 0) };
-        if (item.MeetingLink is { } link)
-        {
-            var join = ReminderButton(Loc.T("加入", "Join"), () =>
-            {
-                try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(link) { UseShellExecute = true }); }
-                catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException) { }
-                CloseCalendarNotice();
-            });
-            join.Height = 30; join.Padding = new Thickness(12, 0, 12, 0); join.FontSize = 13; join.Margin = new Thickness(0, 0, 8, 0);
-            join.Background = UI.Brush(Look.Accent); join.Foreground = UI.Brush(Look.Hex("onAccent"));
-            buttons.Children.Add(join);
-        }
-        var close = ReminderButton("✕", CloseCalendarNotice);
-        close.Width = close.Height = 30; close.Padding = new Thickness(0); close.FontSize = 13; close.Margin = new Thickness(0);
-        close.Background = UI.Brush(Look.FillSelected); close.Foreground = UI.Brush(Look.Primary);
-        AutomationProperties.SetName(close, Loc.T("关闭", "Close"));
-        buttons.Children.Add(close);
-
-        var row = new DockPanel { Children = { icon, buttons, details } };
-        DockPanel.SetDock(icon, System.Windows.Controls.Dock.Left); DockPanel.SetDock(buttons, System.Windows.Controls.Dock.Right);
-        // The time left before the start, from the notice's lead, as a bar that empties.
-        double lead = Math.Max(1, _app.Settings.CalendarNoticeMinutes * 60);
-        double left = Math.Clamp((item.Start - DateTime.Now).TotalSeconds, 0, lead);
-        var fill = new Border { Height = 3, CornerRadius = new CornerRadius(1.5), Background = UI.Brush(color), RenderTransformOrigin = new Point(0, .5),
-            RenderTransform = new ScaleTransform(left / lead, 1) };
-        var track = new Grid { Height = 3, Margin = new Thickness(0, 10, 0, 0), Children = { new Border { CornerRadius = new CornerRadius(1.5), Background = UI.Brush(Look.Track) }, fill } };
-        ((ScaleTransform)fill.RenderTransform).BeginAnimation(ScaleTransform.ScaleXProperty,
-            new System.Windows.Media.Animation.DoubleAnimation(left / lead, 0, TimeSpan.FromSeconds(left)));
-        var content = new StackPanel { Margin = new Thickness(16, 0, 16, 0), VerticalAlignment = VerticalAlignment.Center, Children = { row, track } };
-        AutomationProperties.SetName(content, $"{Loc.T("即将开始", "Starting soon")} · {time.Text} · {item.Title}");
-        AutomationProperties.SetLiveSetting(content, AutomationLiveSetting.Assertive);
-
-        ReminderAlertContent.Child = content;
-        ReminderAlertId = new Guid(System.Security.Cryptography.MD5.HashData(System.Text.Encoding.UTF8.GetBytes(item.Id)));
+        if (CalendarNoticeShown?.Id == item?.Id) return;
         CalendarNoticeShown = item;
-        _handover.Drop();
-        _hover.Stop();
-        _leave.Stop();
-        WatchOutsidePress(false);
-        SetExpanded(true);
-        return _expanded;
+        if (!_expanded) RenderCompact();
     }
 
-    // ✕, Join or the event's start: the notice goes and is not shown again.
-    internal void CloseCalendarNotice()
+    private bool CalendarNoticeRow => CalendarNoticeShown is not null && _alert is null && !FocusCompactOnly && !CompactColumnMode && CanShowReminder;
+
+    // The row: built into CompactAlert, which the quota notice uses too (only one shows at a time).
+    private void BuildCalendarNoticeRow()
     {
-        if (CalendarNoticeShown is not { } shown) return;
-        _app.DismissCalendarNotice(shown.Id);
-        SetExpanded(false);
+        var item = CalendarNoticeShown!;
+        CompactAlert.Children.Clear();
+        double scale = CompactMusicLayout.SafeScale(Collapsed.Scale);
+        double width = Math.Max(40, CompactContentWidth(Collapsed));
+        string color = _app.Settings.CalendarSources.FirstOrDefault(source => source.Id == item.Source)?.Color ?? Look.Accent;
+        double font = CompactMusicLayout.CollapsedTextSize(Settings.QuotaRingStyle, scale, 11.5);
+
+        var icon = CalendarIcon(Math.Round(14 * scale), color);
+        icon.VerticalAlignment = VerticalAlignment.Center; icon.Margin = new Thickness(0, 0, 7 * scale, 0);
+        var title = new TextBlock { Text = item.Title.Length > 0 ? item.Title : Loc.T("（无标题）", "(No title)"), FontSize = font, FontWeight = FontWeights.SemiBold,
+            Foreground = UI.Brush(Look.Primary), TextWrapping = TextWrapping.NoWrap, TextTrimming = TextTrimming.CharacterEllipsis, VerticalAlignment = VerticalAlignment.Center };
+        var time = new TextBlock { Text = CalendarClock(item.Start, _app.Settings), FontSize = font, Foreground = UI.Brush(Look.Secondary), TextWrapping = TextWrapping.NoWrap,
+            VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(7 * scale, 0, 0, 0) };
+        var close = new Border { Width = Math.Round(18 * scale), Height = Math.Round(18 * scale), CornerRadius = new CornerRadius(Math.Round(9 * scale)), Background = UI.Brush(Look.FillSelected),
+            Margin = new Thickness(7 * scale, 0, 0, 0), Cursor = Cursors.Hand, VerticalAlignment = VerticalAlignment.Center, ToolTip = Loc.T("关闭", "Close"),
+            Child = new Path { Data = Geometry.Parse("M 6,6 L 18,18 M 18,6 L 6,18"), Stroke = UI.Brush(Look.Primary), StrokeThickness = 2.4, StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round,
+                Width = Math.Round(8 * scale), Height = Math.Round(8 * scale), Stretch = Stretch.Uniform, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center } };
+        AutomationProperties.SetName(close, Loc.T("关闭日程提醒", "Close the event notice"));
+        close.MouseLeftButtonDown += (_, e) => e.Handled = true;
+        close.MouseLeftButtonUp += (_, e) => { e.Handled = true; _app.DismissCalendarNotice(item.Id); };
+
+        var line = new DockPanel { VerticalAlignment = VerticalAlignment.Center, LastChildFill = true };
+        DockPanel.SetDock(icon, System.Windows.Controls.Dock.Left); DockPanel.SetDock(close, System.Windows.Controls.Dock.Right); DockPanel.SetDock(time, System.Windows.Controls.Dock.Right);
+        line.Children.Add(icon); line.Children.Add(close); line.Children.Add(time); line.Children.Add(title);
+
+        // The time left before the start, out of the notice's lead, as a bar that empties under the row.
+        double lead = Math.Max(1, _app.Settings.CalendarNoticeMinutes * 60);
+        double left = Math.Clamp((item.Start - DateTime.Now).TotalSeconds, 0, lead);
+        var fill = new Border { CornerRadius = new CornerRadius(1), Background = UI.Brush(color), RenderTransformOrigin = new Point(0, .5), RenderTransform = new ScaleTransform(left / lead, 1) };
+        var track = new Grid { Height = Math.Max(1.5, 2 * scale), Margin = new Thickness(0, 3 * scale, 0, 0), Children = { new Border { CornerRadius = new CornerRadius(1), Background = UI.Brush(Look.Track) }, fill } };
+        if (left > 0) ((ScaleTransform)fill.RenderTransform).BeginAnimation(ScaleTransform.ScaleXProperty,
+            new System.Windows.Media.Animation.DoubleAnimation(left / lead, 0, TimeSpan.FromSeconds(left)));
+
+        var notice = new StackPanel { Width = width, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Background = Brushes.Transparent,
+            Cursor = Cursors.Hand, Children = { line, track } };
+        AutomationProperties.SetName(notice, $"{Loc.T("即将开始", "Starting soon")} · {time.Text} · {title.Text}");
+        AutomationProperties.SetLiveSetting(notice, AutomationLiveSetting.Polite);
+        // A click opens the panel on the Calendar page; pointing at it opens the panel as always.
+        notice.MouseLeftButtonDown += (_, e) =>
+        {
+            if (!DeckPages.Shown(Settings, DeckPage.Calendar)) return;
+            e.Handled = true;
+            _calendarNoticeOpens = true;
+            if (_expanded) OpenCalendarDay(DateOnly.FromDateTime(DateTime.Now)); else SetExpanded(true);
+        };
+        CompactAlert.Children.Add(notice);
+    }
+
+    // Asked by ApplyDefaultMusicPage as the panel opens.
+    private bool OpensOnCalendarNotice()
+    {
+        if (!_calendarNoticeOpens) return false;
+        _calendarNoticeOpens = false;
+        _calendarPicked = null; _calendarMonth = new(DateTime.Now.Year, DateTime.Now.Month, 1);
+        return true;
     }
 }

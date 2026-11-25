@@ -100,7 +100,7 @@ public partial class App
         CalendarChanged();
     }
 
-    internal void DismissCalendarNotice(string id) => _calendarDismissed.Add(id);
+    internal void DismissCalendarNotice(string id) { _calendarDismissed.Add(id); CalendarNoticeStep(); }
 
     private void CalendarMinute()
     {
@@ -111,20 +111,17 @@ public partial class App
         foreach (var deck in Decks) deck.CalendarChanged(page: false);
     }
 
-    // The notice before an event: shown on one panel that can show it while none shows an alert card; taken down when its event starts.
+    // The notice before an event: every panel's collapsed row shows it from CalendarNoticeMinutes before the start until the start,
+    // unless its ✕ was pressed (DismissCalendarNotice).
     private void CalendarNoticeStep()
     {
-        var now = DateTime.Now;
-        foreach (var deck in Decks)
-            if (deck.CalendarNoticeShown is { } shown && (shown.Start <= now || !Settings.CalendarNotice)) deck.CloseCalendarNotice();
-        if (!Settings.CalendarNotice || Decks.Any(deck => deck.ReminderAlertId is not null)) return;
-        if (CalendarFeed.Due(CalendarEvents, now, Settings.CalendarNoticeMinutes, _calendarDismissed) is not { } due) return;
-        var target = Decks.FirstOrDefault(panel => panel.IsOpenForHotkey && panel.CanShowReminder) ?? Decks.FirstOrDefault(panel => panel.CanShowReminder);
-        if (target?.ShowCalendarNotice(due) == true) _calendarDismissed.Add(due.Id);
+        var due = Settings.CalendarNotice ? CalendarFeed.Due(CalendarEvents, DateTime.Now, Settings.CalendarNoticeMinutes, _calendarDismissed) : null;
+        foreach (var deck in Decks) deck.ShowCalendarNotice(due);
     }
 
     private void CalendarChanged()
     {
+        CalendarNoticeStep();
         foreach (var deck in Decks) deck.CalendarChanged(page: true);
     }
 }

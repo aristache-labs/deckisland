@@ -124,7 +124,7 @@ public partial class MainWindow
         // Opened from the file transfer's count on the island, the panel opens on the clipboard and file transfer page.
         var wanted = _hotkeyPage ?? (DeckPages.Shown(Settings, DeckPage.Clipboard) && OpensOnTransfer() ? DeckPage.Clipboard : (DeckPage?)null)
             ?? (DeckPages.Shown(Settings, DeckPage.ScreenTime) && PointerOnScreenTime() ? DeckPage.ScreenTime : (DeckPage?)null)
-            ?? (DeckPages.Shown(Settings, DeckPage.Calendar) && PointerOnNextEvent() ? DeckPage.Calendar : (DeckPage?)null) ?? DeckPages.Opening(Settings.DefaultPage) ?? _page;
+            ?? (DeckPages.Shown(Settings, DeckPage.Calendar) && (OpensOnCalendarNotice() || PointerOnNextEvent()) ? DeckPage.Calendar : (DeckPage?)null) ?? DeckPages.Opening(Settings.DefaultPage) ?? _page;
         if (wanted != _page && DeckPages.Shown(Settings, wanted)) SelectPage(wanted, remember: _hotkeyPage is not null);
         // The clipboard page builds nothing while the panel is closed (RenderShelf), the page switch just above included: it is
         // built now, as the panel opens on it.

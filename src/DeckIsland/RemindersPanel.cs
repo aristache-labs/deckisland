@@ -88,7 +88,6 @@ public partial class MainWindow
     {
         if (ReminderAlertId is null) return;
         ReminderAlertId = null;
-        CalendarNoticeShown = null;
         _reminderAlertSnooze = null;
         ReminderAlertContent.Child = null;
         _app.StopReminderAlarm();
@@ -96,8 +95,7 @@ public partial class MainWindow
 
     private void ReminderChanged()
     {
-        // A calendar notice shares the alert card (CalendarPanel.ShowCalendarNotice); a change of the reminders leaves it alone.
-        if (CalendarNoticeShown is null && ReminderAlertId is { } id && !_app.OrderedReminders.Any(item => item.Id == id && item.Due <= DateTimeOffset.Now))
+        if (ReminderAlertId is { } id && !_app.OrderedReminders.Any(item => item.Id == id && item.Due <= DateTimeOffset.Now))
             SetExpanded(false);
         if (Settings.RemindersPage && CurrentPage == DeckPage.Reminders && _reminderRows is not null)
             FillReminderRows();

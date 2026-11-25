@@ -42,7 +42,9 @@ public partial class MainWindow
     {
         if (value is not { } temperature) return "—";
         bool fahrenheit = Settings.WeatherFahrenheit;
-        return $"{(fahrenheit ? temperature * 1.8 + 32 : temperature):0}°{(unit ? fahrenheit ? "F" : "C" : "")}";
+        // Rounded to a whole degree as an integer: -0.3 is 0°, never "-0°" (a double formats its negative zero with the sign).
+        int degrees = (int)Math.Round(fahrenheit ? temperature * 1.8 + 32 : temperature, MidpointRounding.AwayFromZero);
+        return $"{degrees}°{(unit ? fahrenheit ? "F" : "C" : "")}";
     }
 
     private static string WeatherPlace(WeatherReading reading) => reading.Place.Name.Length == 0
@@ -73,7 +75,7 @@ public partial class MainWindow
         var (icon, condition) = WeatherCondition(reading.Code, reading.Daylight);
         string temperature = WeatherTemperature(reading.Temperature);
         var text = WeatherText($"{temperature}{(_app.WeatherStale ? "*" : "")}",
-            CompactMusicLayout.CollapsedTextSize(Settings.QuotaRingStyle, scale, 11));
+            CompactMusicLayout.CollapsedTextSize(Settings.QuotaRingStyle, scale, CompactFigureSize));
         bool nested = Settings.QuotaRingStyle == QuotaRingStyle.Nested && icon != "–";
         double statusSize = CompactMusicLayout.StatusRingSize(Settings.QuotaRingStyle, scale);
         double iconHeight = nested ? CompactMusicLayout.Whole(statusSize * .9) : 14 * scale;
