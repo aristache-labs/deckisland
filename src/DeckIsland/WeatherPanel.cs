@@ -86,6 +86,7 @@ public partial class MainWindow
         if (nested && mark is Path path && path.Data.Bounds is { Height: > 0 } bounds)
             path.Width = Math.Min(statusSize, path.StrokeThickness + (iconHeight - path.StrokeThickness) * bounds.Width / bounds.Height);
         mark.Margin = vertical ? new Thickness(0, 0, 0, 2 * scale) : new Thickness(0, 0, (Settings.QuotaRingStyle == QuotaRingStyle.Nested ? 5 : 3) * scale, 0);
+        if (!vertical) CenterDigits(text, VisualTreeHelper.GetDpi(this).PixelsPerDip);
         var content = new StackPanel { Orientation = vertical ? Orientation.Vertical : Orientation.Horizontal, Children = { mark, text } };
         if (vertical) { mark.HorizontalAlignment = text.HorizontalAlignment = HorizontalAlignment.Center; }
         content.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));

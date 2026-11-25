@@ -272,6 +272,16 @@ public partial class MainWindow
     // The collapsed figures beside a mark (the weather's degrees, the screen time): a little larger than the row's other text, so the
     // figure stands about as tall as its mark.
     private const double CompactFigureSize = 12.5;
+
+    // Moves a figure so the middle of its digits sits on its line's middle, level with the mark beside it: a text's box also keeps
+    // room for descenders that digits do not have, which left them looking off centre.
+    private static void CenterDigits(TextBlock text, double pixelsPerDip)
+    {
+        var face = new Typeface(text.FontFamily, text.FontStyle, text.FontWeight, text.FontStretch);
+        var formatted = new FormattedText(text.Text, System.Globalization.CultureInfo.CurrentUICulture, FlowDirection.LeftToRight, face, text.FontSize, Brushes.Black, pixelsPerDip);
+        double shift = formatted.Height / 2 - (formatted.Baseline - face.CapsHeight * text.FontSize / 2);
+        text.RenderTransform = new TranslateTransform(0, Math.Round(shift * pixelsPerDip) / pixelsPerDip);
+    }
     // The collapsed clock follows the ring style as the row's text does: as it is with nested rings, smaller by the same share as the
     // text with single ones (CollapsedTextSize: 11.5 against 13).
     private double CompactClockScale(double scale) => Settings.QuotaRingStyle == QuotaRingStyle.Nested ? scale
@@ -286,6 +296,7 @@ public partial class MainWindow
         var text = WeatherText(ScreenTime.Duration(total), CompactMusicLayout.CollapsedTextSize(Settings.QuotaRingStyle, scale, CompactFigureSize));
         // The panel's regular face, as the system readings beside it are drawn (MonitorDraw), not the window's heavier one.
         var face = Fonts.Face(UiFontRole.Panel); text.FontFamily = face.FontFamily; text.FontWeight = FontWeights.Normal;
+        if (!vertical) CenterDigits(text, VisualTreeHelper.GetDpi(this).PixelsPerDip);
         // A little smaller than the weather's mark: the hourglass fills its box where the weather marks leave air around them.
         double size = Settings.QuotaRingStyle == QuotaRingStyle.Nested ? CompactMusicLayout.Whole(CompactMusicLayout.StatusRingSize(Settings.QuotaRingStyle, scale) * .78) : Math.Round(12 * scale);
         var mark = MonitorIcons.Icon("hourglass", size, UI.Brush(Look.Accent));
