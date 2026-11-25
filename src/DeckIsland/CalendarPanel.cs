@@ -19,7 +19,7 @@ public partial class MainWindow
 {
     internal static string CalendarTitle => Loc.T("日历", "Calendar");
     private const int CalendarAgendaDays = 7;
-    private const double CalendarMonthWidth = 222, CalendarCell = 28, CalendarTodaySize = 19, CalendarTimeWidth = 104;
+    private const double CalendarMonthWidth = 222, CalendarCell = 30, CalendarTodaySize = 20, CalendarTimeWidth = 104;
     // The day the agenda starts from; null is today, so it moves on at midnight.
     private DateOnly? _calendarPicked;
     private DateOnly _calendarMonth = new(DateTime.Now.Year, DateTime.Now.Month, 1);
@@ -138,16 +138,16 @@ public partial class MainWindow
                 Foreground = UI.Brush(isToday ? Look.Fill : inMonth ? Look.Primary : MonitorDraw.Faint(Look.Tertiary, .6)),
                 HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, TextAlignment = TextAlignment.Center };
             Typography.SetNumeralAlignment(number, FontNumeralAlignment.Tabular);
-            var circle = new Grid { Width = CalendarTodaySize, Height = CalendarTodaySize, HorizontalAlignment = HorizontalAlignment.Center };
+            var circle = new Grid { Width = CalendarTodaySize, Height = CalendarTodaySize, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
             if (isToday) circle.Children.Add(new Ellipse { Fill = UI.Brush(Look.Primary) });
             circle.Children.Add(number);
-            var dots = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center, Height = 5, Margin = new Thickness(0, 3, 0, 0) };
+            var dots = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Bottom, Margin = new Thickness(0, 0, 0, 1.5) };
             foreach (var source in CalendarFeed.On(_app.CalendarEvents, date).Select(e => e.Source).Distinct().Take(3))
                 dots.Children.Add(new Ellipse { Width = 4, Height = 4, Margin = new Thickness(1, 0, 1, 0), Opacity = inMonth ? 1 : .4,
                     Fill = UI.Brush(colors.GetValueOrDefault(source, Look.Accent)), VerticalAlignment = VerticalAlignment.Center });
             var cell = new Border
             {
-                Child = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Children = { circle, dots } }, Width = CalendarCell, Height = CalendarCell + 4, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 1, 0, 1),
+                Child = new Grid { Children = { circle, dots } }, Width = CalendarCell, Height = CalendarCell, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 1, 0, 1),
                 Cursor = Cursors.Hand, CornerRadius = new CornerRadius(Corner(6)), Background = isPicked ? UI.Brush(Look.FillSelected) : Brushes.Transparent
             };
             cell.MouseEnter += (_, _) => { if (!isPicked) cell.Background = UI.Brush(Look.Fill); };
@@ -169,7 +169,7 @@ public partial class MainWindow
     private Button CalendarAction(string data, string label, bool enabled, Action click)
     {
         var button = new Button { Style = (Style)FindResource("PanelGlyphButton"), Width = 26, Height = 24, IsEnabled = enabled, Opacity = enabled ? 1 : .4, ToolTip = label, Margin = new Thickness(2, 0, 0, 0),
-            Content = new Path { Data = Geometry.Parse(data), Width = 13, Height = 13, Stretch = Stretch.Uniform, Stroke = UI.Brush(Look.Secondary), StrokeThickness = 2.2,
+            Content = new Path { Data = Geometry.Parse(data), Width = 13, Height = 13, Stretch = Stretch.Uniform, Stroke = UI.Brush(Look.Secondary), StrokeThickness = 1.5,
                 StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round, StrokeLineJoin = PenLineJoin.Round } };
         AutomationProperties.SetName(button, label);
         button.Click += (_, _) => click();
@@ -244,7 +244,7 @@ public partial class MainWindow
         var when = new TextBlock { Text = time, FontSize = 12.5, Foreground = UI.Brush(Look.Tertiary), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(10, 0, 0, 0) };
         Typography.SetNumeralAlignment(when, FontNumeralAlignment.Tabular);
         Grid.SetColumn(when, 1); row.Children.Add(when);
-        var title = new TextBlock { FontSize = 12.5, Foreground = UI.Brush(past ? Look.Secondary : Look.Primary), TextTrimming = TextTrimming.CharacterEllipsis, VerticalAlignment = VerticalAlignment.Center };
+        var title = new TextBlock { TextWrapping = TextWrapping.NoWrap, FontSize = 12.5, Foreground = UI.Brush(past ? Look.Secondary : Look.Primary), TextTrimming = TextTrimming.CharacterEllipsis, VerticalAlignment = VerticalAlignment.Center };
         title.Inlines.Add(new Run(item.Title.Length > 0 ? item.Title : Loc.T("（无标题）", "(No title)")));
         if (item.Location.Length > 0 && !item.Location.StartsWith("http", StringComparison.OrdinalIgnoreCase))
             title.Inlines.Add(new Run(" · " + item.Location) { Foreground = UI.Brush(Look.Tertiary) });
