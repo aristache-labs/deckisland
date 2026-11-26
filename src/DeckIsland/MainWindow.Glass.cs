@@ -48,6 +48,8 @@ public partial class MainWindow
         if (!want) return;
         var look = GlassLook.For(Settings);
         Island.GlassZoom = look.Zoom; Island.GlassRim = look.Rim;
+        // Plain properties: a slider moved shows at once, not only with the next picture.
+        Island.InvalidateVisual();
         _glassTimer!.Interval = TimeSpan.FromSeconds(1d / Math.Clamp(Settings.GlassFps, GlassLook.MinFps, GlassLook.MaxFps));
         _glassTimer.Start();
         GlassTick(null, EventArgs.Empty);
@@ -66,17 +68,33 @@ public partial class MainWindow
     }
 }
 
+public partial class MainWindow
+{
+    // A picture of the island as DeckIsland draws it, glass included, saved with the screenshots and opened: the island is left out of
+    // real screenshots while the glass is on, so this is how it can be shown. Null when the island is not drawn yet.
+    internal string? SaveIslandPicture()
+    {
+        if (Stage.ActualWidth < 1 || Stage.ActualHeight < 1) return null;
+        double dpi = 96 * VisualTreeHelper.GetDpi(this).DpiScaleX;
+        var picture = new RenderTargetBitmap((int)Math.Ceiling(Stage.ActualWidth * dpi / 96), (int)Math.Ceiling(Stage.ActualHeight * dpi / 96), dpi, dpi, PixelFormats.Pbgra32);
+        picture.Render(Stage);
+        picture.Freeze();
+        return ScreenShots.Save(picture, jpeg: false);
+    }
+}
+
 // What the glass settings mean when drawn.
 internal readonly record struct GlassLook(double Tint, double Zoom, double Rim, double Shrink)
 {
     public const int MinFps = 5, MaxFps = 30, MaxTransparency = 40, ReadableTransparency = 13;
-    // Transparency 0 to 40 %: how much of the theme's surface gives way to the glass (twice the figure, so 40 % leaves a fifth of it);
-    // refraction: up to 12 % enlargement from the middle; frost: the picture shrunk 2 to 16 times as it is read; rim: the edge's light.
+    // Transparency 0 to 40 %: the theme's surface over the glass goes from 85 % covering at 0 to 20 % at 40 %, so even the least lets
+    // the glass be seen; refraction: up to 12 % enlargement from the middle; frost: the picture shrunk 1.5 to 10 times as it is read
+    // (the shrinking is the blur); rim: the edge's light.
     public static GlassLook For(DeckSettings settings) => new(
-        1 - Math.Clamp(settings.GlassTransparency, 0, MaxTransparency) * 2 / 100d,
+        .85 - Math.Clamp(settings.GlassTransparency, 0, MaxTransparency) / (double)MaxTransparency * .65,
         1 + Math.Clamp(settings.GlassRefraction, 0, 100) / 100d * .12,
         Math.Clamp(settings.GlassRim, 0, 100) / 100d,
-        2 + Math.Clamp(settings.GlassFrost, 0, 100) / 100d * 14);
+        1.5 + Math.Clamp(settings.GlassFrost, 0, 100) / 100d * 8.5);
 }
 
 // The screen's pixels in a rectangle, shrunk as they are read (Windows averages them, which blurs), as a frozen picture.

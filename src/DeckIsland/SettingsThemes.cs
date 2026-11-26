@@ -80,6 +80,10 @@ public sealed partial class SettingsWindow
                 Loc.T("⚠ 更耗电：屏幕每次变化 Windows 都要多做一些工作。", "⚠ Uses more battery: Windows does more work every time the screen changes.")),
             Describe(Toggle(Loc.T("状态提示", "Status alerts"), S.GlassAlerts, value => Change(s => s.GlassAlerts = value)),
                 Loc.T("音量、亮度等提示也显示为玻璃。", "Volume, brightness and the other alerts as glass too.")),
+            Row(Loc.T("保存玻璃效果图片", "Save a picture"), Outline(ActionButton(Loc.T("保存", "Save"), () =>
+            {
+                if (_app.Deck.SaveIslandPicture() is { } path) UI.OpenUrl(path);
+            })), TextLine(Loc.T("开启玻璃时截图里看不到灵动岛；这里保存一张它的图片，可以分享。", "While the glass is on the island is left out of screenshots; this saves a picture of it to share."), 12, TextTertiary)),
             Describe(InlineSlider(Loc.T("每秒帧数", "Frames per second"), S.GlassFps, GlassLook.MinFps, GlassLook.MaxFps, 1, "", value => Change(s => s.GlassFps = (int)value)),
                 Loc.T("⚠ 数值越高越耗电。", "⚠ A higher value uses more battery.")));
     }
