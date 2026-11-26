@@ -11,7 +11,8 @@ public enum ScreenEdge { Top, Bottom, Left, Right }
 // What the notch or the line hangs from on its edge where a taskbar is: the screen's edge, over the taskbar, or the taskbar's inner
 // edge. Without a taskbar on that edge the two are the same line. See DeckSettings.Dock.
 public enum EdgeAnchor { Screen, Taskbar }
-public enum WindowBehavior { Normal, Line, Hide }
+// LineOverTabs: Normal, but the indicator while a tab of the window sits under the island (Behavior's tabsUnder).
+public enum WindowBehavior { Normal, Line, Hide, LineOverTabs }
 // BackgroundFullscreen: a full-screen window on the panel's monitor that is not the foreground window.
 // Occupied: a window that neither is maximized nor fills the screen overlaps the place of the collapsed panel.
 public enum ScreenContext { Desktop, Maximized, Borderless, Exclusive, BackgroundFullscreen, Occupied }
@@ -1039,8 +1040,7 @@ public sealed class DeckSettings
     // Media is detected for the expanded music page, the chosen style's music or equalizer, or an indicator that shows playback
     // progress; a window rule can turn any style into the indicator.
     [JsonIgnore] public bool MediaWanted => MusicPage || ShowsMusic(Style) || ShowsEqualizer(Style) || MusicIndicatorProgress
-        && (Style == CompactStyle.Line || Maximized == WindowBehavior.Line || Borderless == WindowBehavior.Line || Exclusive == WindowBehavior.Line
-            || Occupied == WindowBehavior.Line);
+        && (Style == CompactStyle.Line || new[] { Maximized, Borderless, Exclusive, Occupied }.Any(b => b is WindowBehavior.Line or WindowBehavior.LineOverTabs));
     // The switched-on applications. Their quotas are read for the AI usage page or for the rings of the chosen compact
     // style; the two are shown independently, so either one keeps the data current.
     [JsonIgnore] public IReadOnlyList<AppEntry> ConfiguredApps => Apps.Where(app => app.Enabled).Take(AppPresets.MaximumShownApps).ToList();
@@ -1064,7 +1064,15 @@ public sealed class DeckSettings
     // A background full screen has no rules of its own: backgroundKind, the way the window behind the foreground one fills
     // the screen (Maximized or Borderless), picks the rule, the app's own first and the global one after it, as if that
     // window were in front. Without a kind nothing fills the screen, and the panel stays as it is.
+    // tabsUnder answers LineOverTabs: the indicator while a tab of that window sits under the island, the panel's style otherwise.
     public WindowBehavior Behavior(ScreenContext context, string? processName = null, string? imagePath = null,
+        ScreenContext? backgroundKind = null, bool tabsUnder = false)
+    {
+        var raw = RawBehavior(context, processName, imagePath, backgroundKind);
+        return raw is WindowBehavior.LineOverTabs ? tabsUnder ? WindowBehavior.Line : WindowBehavior.Normal : raw;
+    }
+    // The chosen behavior before LineOverTabs is answered.
+    public WindowBehavior RawBehavior(ScreenContext context, string? processName = null, string? imagePath = null,
         ScreenContext? backgroundKind = null)
     {
         var kind = context == ScreenContext.BackgroundFullscreen ? backgroundKind ?? ScreenContext.Desktop : context;

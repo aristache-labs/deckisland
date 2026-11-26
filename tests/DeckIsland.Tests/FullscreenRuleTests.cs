@@ -38,6 +38,16 @@ internal static class FullscreenRuleTests
             && mixed.Behavior(ScreenContext.Exclusive, "Sahhpire") == WindowBehavior.Line);
         check("A desktop context has no rule and no override",
             mixed.Behavior(ScreenContext.Desktop, "Sahhpire") == WindowBehavior.Normal);
+        var tabs = new DeckSettings { FullscreenRules = [new FullscreenRule("chrome") { Maximized = WindowBehavior.LineOverTabs }] };
+        check("An app's indicator-over-tabs rule keeps the style until a tab is under the island",
+            tabs.Behavior(ScreenContext.Maximized, "chrome") == WindowBehavior.Normal
+            && tabs.Behavior(ScreenContext.Maximized, "chrome", tabsUnder: true) == WindowBehavior.Line
+            && tabs.RawBehavior(ScreenContext.Maximized, "chrome") == WindowBehavior.LineOverTabs
+            && tabs.Behavior(ScreenContext.Maximized, "explorer", tabsUnder: true) == WindowBehavior.Line); // global Line
+        var globalTabs = new DeckSettings { Maximized = WindowBehavior.LineOverTabs };
+        check("The global indicator-over-tabs rule answers by tabsUnder",
+            globalTabs.Behavior(ScreenContext.Maximized, "Any") == WindowBehavior.Normal
+            && globalTabs.Behavior(ScreenContext.Maximized, "Any", tabsUnder: true) == WindowBehavior.Line);
         // A panel that is an ordinary window follows the same rules: the global ones, and an app's own first.
         var ordinary = new DeckSettings
         {

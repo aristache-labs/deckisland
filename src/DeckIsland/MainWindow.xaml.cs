@@ -108,11 +108,11 @@ public partial class MainWindow : Window
     private bool Animates => Soft.For(Settings);
     private bool TextScrolls => Soft.Scrolls(Settings);
     public bool IsExpanded => _expanded;
-    public bool IsSuppressed => !_preview && (Settings.Behavior(_context, _host.App.Name, _host.App.Path, _host.BackgroundKind) == WindowBehavior.Hide || HiddenByUser);
+    public bool IsSuppressed => !_preview && (Settings.Behavior(_context, _host.App.Name, _host.App.Path, _host.BackgroundKind, _host.TabsUnder) == WindowBehavior.Hide || HiddenByUser);
     // The panel is a topmost overlay: kept above other windows, or an ordinary panel a window rule turns into the indicator,
     // which shows above the window that fills the screen.
     private bool KeepsAbove => Settings.AlwaysOnTop
-        || !_preview && Settings.Behavior(_context, _host.App.Name, _host.App.Path, _host.BackgroundKind) == WindowBehavior.Line;
+        || !_preview && Settings.Behavior(_context, _host.App.Name, _host.App.Path, _host.BackgroundKind, _host.TabsUnder) == WindowBehavior.Line;
     public IReadOnlyList<ProviderSnapshot> Snapshots { get; private set; } = [];
     // Set when the first read has ended, with data or without (RefreshAsync); until then the usage page shows its skeleton.
     private bool _firstReadEnded;
@@ -125,7 +125,7 @@ public partial class MainWindow : Window
     {
         _app = app; _lead = lead;
         _host = new WindowsHost(() => MonitorHandle, () => new WindowInteropHelper(this).Handle, IslandStrip,
-            () => Settings.ForceTopmost, () => Settings.BackgroundWindows, () => KeepsAbove, OccupiedArea);
+            () => Settings.ForceTopmost, () => Settings.BackgroundWindows, () => KeepsAbove, OccupiedArea, TabArea);
         UpdateCollapsedGeometry();
         _hover = new(Dispatcher, () =>
         {
@@ -206,11 +206,13 @@ public partial class MainWindow : Window
             var context = _host.Current;
             if (context == ScreenContext.Desktop) return;
             var before = Settings.Behavior(context, previous.Name, previous.Path, previous.Kind);
-            var after = Settings.Behavior(context, _host.App.Name, _host.App.Path, _host.BackgroundKind);
+            var after = Settings.Behavior(context, _host.App.Name, _host.App.Path, _host.BackgroundKind, _host.TabsUnder);
             if (before == after) return;
             _context = context;
             ApplySettings(!_expanded);
         };
+        // A tab reached under the island or left it, while the rule for the window asks for the indicator over tabs.
+        _host.TabsChanged += () => ApplySettings(!_expanded);
         // The user went to another window while a hotkey had given the panel the keyboard: it keeps the foreground it was given.
         Deactivated += (_, _) => ReleaseKeyboard(giveBack: false);
         Closed += (_, _) => WatchOutsidePress(false);
@@ -278,9 +280,12 @@ public partial class MainWindow : Window
     // Occupied rule (DeckSettings.Occupied). Null while that rule keeps the style. The place is kept from the last time the panel
     // had its own style, so that the indicator's smaller place does not let the window go and bring the panel back at once.
     private Rect? _ownArea;
-    private Rect? OccupiedArea()
+    private Rect? OccupiedArea() => Settings.Occupied == WindowBehavior.Normal ? null : OwnArea();
+    // The same place for LineOverTabs: a tab of the window under it turns the panel into the indicator. Null while no rule asks.
+    private Rect? TabArea() => !_preview && Settings.RawBehavior(_context, _host.App.Name, _host.App.Path, _host.BackgroundKind)
+        == WindowBehavior.LineOverTabs ? OwnArea() : null;
+    private Rect? OwnArea()
     {
-        if (Settings.Occupied == WindowBehavior.Normal) return null;
         if (Collapsed.Style == Settings.Style && _pixelsPerDip > 0 && Collapsed.Surface.Width > 0 && Collapsed.Surface.Height > 0)
         {
             var r = _frame.ToScreen(Collapsed.Surface);
@@ -845,7 +850,7 @@ public partial class MainWindow : Window
         if (!_expanded && !IsSuppressed) SetExpanded(false);
     }
 
-    private CompactStyle EffectiveStyle => !_preview && Settings.Behavior(_context, _host.App.Name, _host.App.Path, _host.BackgroundKind) == WindowBehavior.Line ? CompactStyle.Line : Settings.Style;
+    private CompactStyle EffectiveStyle => !_preview && Settings.Behavior(_context, _host.App.Name, _host.App.Path, _host.BackgroundKind, _host.TabsUnder) == WindowBehavior.Line ? CompactStyle.Line : Settings.Style;
     // One animated track: where it starts and ends, as fractions of the configured duration.
     private readonly record struct Track(double Start, double End);
     // The collapsed island at rest clips its content to a rectangle (IslandBorder.SettledClip): the content keeps clear of its

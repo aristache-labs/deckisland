@@ -44,7 +44,7 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
     private event Action? PaletteChanged;
 
     public static string StyleName(CompactStyle style) => style switch { CompactStyle.Notch => Loc.T("刘海", "Notch"), CompactStyle.Capsule => Loc.T("胶囊", "Capsule"), _ => Loc.T("指示条", "Indicator") };
-    public static string BehaviorName(WindowBehavior behavior) => behavior switch { WindowBehavior.Normal => Loc.T("保持原有样式", "Keep style"), WindowBehavior.Line => Loc.T("显示为指示条", "As indicator"), _ => Loc.T("隐藏", "Hide") };
+    public static string BehaviorName(WindowBehavior behavior) => behavior switch { WindowBehavior.Normal => Loc.T("保持原有样式", "Keep style"), WindowBehavior.Line => Loc.T("显示为指示条", "As indicator"), WindowBehavior.LineOverTabs => Loc.T("标签页在下方时为指示条", "Indicator over tabs"), _ => Loc.T("隐藏", "Hide") };
 
     private const double DefaultWidth = 960, DefaultHeight = 780;
     // The minimum size is 840 x 640, reduced where the screen's work area (less a 24 margin) is smaller. Returns the
@@ -856,8 +856,8 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
         var rules = new StackPanel();
         foreach (var row in new[]
         {
-            BehaviorRow(Loc.T("有窗口最大化时", "When a window is maximized"), S.Maximized, value => Change(s => s.Maximized = value)),
-            BehaviorRow(Loc.T("有应用处于无边框全屏时", "When an app is in borderless full screen"), S.Borderless, value => Change(s => s.Borderless = value)),
+            BehaviorRow(Loc.T("有窗口最大化时", "When a window is maximized"), S.Maximized, value => Change(s => s.Maximized = value), tabs: true),
+            BehaviorRow(Loc.T("有应用处于无边框全屏时", "When an app is in borderless full screen"), S.Borderless, value => Change(s => s.Borderless = value), tabs: true),
             BehaviorRow(Loc.T("有应用处于独占全屏时", "When an app is in exclusive full screen"), S.Exclusive, value => Change(s => s.Exclusive = value)),
             BehaviorRow(Loc.T("有窗口与 DeckIsland 重叠时", "When a window overlaps DeckIsland"), S.Occupied, value => Change(s => s.Occupied = value),
                 Loc.T("DeckIsland 收起时，有窗口移到它所在的位置就生效，移开后恢复。最大化和全屏窗口按上面的规则处理。",
@@ -1492,12 +1492,14 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
             "Where the panel opens when hovered, if the notch or capsule is wider than the expanded panel."));
     }
 
-    private FrameworkElement BehaviorRow(string title, WindowBehavior selected, Action<WindowBehavior> changed, string? help = null)
+    // tabs offers LineOverTabs too, for the contexts whose window has a tab strip at the top.
+    private FrameworkElement BehaviorRow(string title, WindowBehavior selected, Action<WindowBehavior> changed, string? help = null, bool tabs = false)
     {
         // 270 leaves the long rule names room in the General card at the window's narrowest.
-        var options = new UniformGrid { Columns = 3, Width = 270 };
+        var options = new UniformGrid { Columns = tabs ? 4 : 3, Width = tabs ? 360 : 270 };
         foreach (var behavior in Enum.GetValues<WindowBehavior>())
         {
+            if (behavior == WindowBehavior.LineOverTabs && !tabs) continue;
             var option = new RadioButton { Content = BehaviorName(behavior), Style = (Style)FindResource("SettingsSegment"), GroupName = "Behavior" + title, IsChecked = selected == behavior };
             AutomationProperties.SetName(option, title + " · " + BehaviorName(behavior)); option.Checked += (_, _) => changed(behavior); options.Children.Add(option);
         }

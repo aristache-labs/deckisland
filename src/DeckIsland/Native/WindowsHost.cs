@@ -50,10 +50,10 @@ public sealed class WindowsHost : IDisposable
     // alwaysOnTop says whether the panel is a topmost overlay; off, it is an ordinary window (see WatchDesktop).
     // occupiedArea gives the place a window must overlap for the Occupied context; null while that rule is not in use.
     public WindowsHost(Func<IntPtr> monitor, Func<IntPtr> window, Func<Rect?> island, Func<bool>? forceTopmost = null,
-        Func<bool>? backgroundWindows = null, Func<bool>? alwaysOnTop = null, Func<Rect?>? occupiedArea = null)
+        Func<bool>? backgroundWindows = null, Func<bool>? alwaysOnTop = null, Func<Rect?>? occupiedArea = null, Func<Rect?>? tabArea = null)
     {
         _monitor = monitor; _window = window; _island = island; _forceTopmost = forceTopmost; _backgroundWindows = backgroundWindows;
-        _alwaysOnTop = alwaysOnTop; _occupiedArea = occupiedArea;
+        _alwaysOnTop = alwaysOnTop; _occupiedArea = occupiedArea; _tabArea = tabArea;
         _timer.Tick += (_, _) => Poll();
         _timer.Start();
         DisplayPower.Changed += DisplayChanged;
@@ -120,6 +120,7 @@ public sealed class WindowsHost : IDisposable
         var context = DetectNow();
         _taken = null;
         var change = ScreenPolicy.WhatChanged(context, _resolvedName, _resolvedPath, Current, _raisedName, _raisedPath, taken);
+        CheckTabs();
         if (change == ScreenPolicy.ForegroundChange.None) { WatchOrder(_window()); return; }
         var previous = (_raisedName, _raisedPath, _raisedKind);
         Current = context; _raisedName = _resolvedName; _raisedPath = _resolvedPath; _raisedKind = _backgroundKind;
@@ -396,14 +397,45 @@ public sealed class WindowsHost : IDisposable
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
     }
+    // tabArea gives the place a tab of the resolved window must reach for LineOverTabs, in screen physical pixels; null while no
+    // rule asks. UI Automation is slow, so one read runs at a time off this thread, at most every TabInterval for the same window.
+    private readonly Func<Rect?>? _tabArea;
+    private static readonly TimeSpan TabInterval = TimeSpan.FromMilliseconds(800);
+    private IntPtr _resolvedWindow, _tabWindow;
+    private DateTime _tabsReadAt;
+    private bool _tabsReading;
+    public bool TabsUnder { get; private set; }
+    public event Action? TabsChanged;
+    private void CheckTabs()
+    {
+        var area = _tabArea?.Invoke();
+        var window = _resolvedWindow;
+        if (area is null || window == IntPtr.Zero) { _tabWindow = IntPtr.Zero; SetTabsUnder(false); return; }
+        if (_tabsReading || window == _tabWindow && DateTime.UtcNow - _tabsReadAt < TabInterval) return;
+        if (window != _tabWindow) { _tabWindow = window; SetTabsUnder(false); }
+        _tabsReading = true; _tabsReadAt = DateTime.UtcNow;
+        var place = area.Value;
+        Task.Run(() => TabStrip.Covers(window, place)).ContinueWith(read =>
+        {
+            _tabsReading = false;
+            if (window == _tabWindow) SetTabsUnder(read.IsCompletedSuccessfully && read.Result);
+        }, TaskScheduler.FromCurrentSynchronizationContext());
+    }
+    private void SetTabsUnder(bool under)
+    {
+        if (TabsUnder == under) return;
+        TabsUnder = under;
+        TabsChanged?.Invoke();
+    }
     // The context right now, without raising ContextChanged; a caller applies it itself, for instance at startup.
     public ScreenContext DetectNow()
     {
         var context = Detect(_monitor());
         // A background full screen is answered for by the window behind the foreground one; every other context by the
         // foreground app the detection has just read.
-        (_resolvedName, _resolvedPath) = context == ScreenContext.BackgroundFullscreen
-            ? (_backgroundName, _backgroundPath) : (_appName, _appPath);
+        (_resolvedName, _resolvedPath, _resolvedWindow) = context == ScreenContext.BackgroundFullscreen
+            ? (_backgroundName, _backgroundPath, _backgroundWindow) : (_appName, _appPath,
+                context is ScreenContext.Maximized or ScreenContext.Borderless or ScreenContext.Exclusive ? _identityWindow : IntPtr.Zero);
         _taken = context;
         return context;
     }

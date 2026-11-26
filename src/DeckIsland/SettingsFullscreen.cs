@@ -165,9 +165,9 @@ public sealed partial class SettingsWindow
         column.Children.Add(row);
         var picks = new StackPanel { Margin = new Thickness(26, 0, 0, 8) };
         picks.Children.Add(RulePick(name, Loc.T("窗口最大化时", "Maximized"), rule.Maximized,
-            choice => Change(s => { var i = At(s); if (i >= 0) s.FullscreenRules[i] = s.FullscreenRules[i] with { Maximized = choice }; })));
+            choice => Change(s => { var i = At(s); if (i >= 0) s.FullscreenRules[i] = s.FullscreenRules[i] with { Maximized = choice }; }), tabs: true));
         picks.Children.Add(RulePick(name, Loc.T("无边框全屏时", "Borderless full screen"), rule.Borderless,
-            choice => Change(s => { var i = At(s); if (i >= 0) s.FullscreenRules[i] = s.FullscreenRules[i] with { Borderless = choice }; })));
+            choice => Change(s => { var i = At(s); if (i >= 0) s.FullscreenRules[i] = s.FullscreenRules[i] with { Borderless = choice }; }), tabs: true));
         picks.Children.Add(RulePick(name, Loc.T("独占全屏时", "Exclusive full screen"), rule.Exclusive,
             choice => Change(s => { var i = At(s); if (i >= 0) s.FullscreenRules[i] = s.FullscreenRules[i] with { Exclusive = choice }; })));
         column.Children.Add(picks);
@@ -200,14 +200,16 @@ public sealed partial class SettingsWindow
     }
 
     // One context's pick: the label, then a four-way segment — Follow and the three behaviours the global rules offer.
-    private FrameworkElement RulePick(string app, string title, WindowBehavior? selected, Action<WindowBehavior?> changed)
+    // tabs adds LineOverTabs, for the contexts whose window has a tab strip at the top.
+    private FrameworkElement RulePick(string app, string title, WindowBehavior? selected, Action<WindowBehavior?> changed, bool tabs = false)
     {
-        var options = new UniformGrid { Columns = 4, Width = 428 };
+        var options = new UniformGrid { Columns = tabs ? 5 : 4, Width = tabs ? 535 : 428 };
         foreach (var choice in new (WindowBehavior? Value, string Label)[]
         {
             (null, Loc.T("跟随全局", "Follow")), (WindowBehavior.Normal, BehaviorName(WindowBehavior.Normal)),
-            (WindowBehavior.Line, BehaviorName(WindowBehavior.Line)), (WindowBehavior.Hide, BehaviorName(WindowBehavior.Hide))
-        })
+            (WindowBehavior.Line, BehaviorName(WindowBehavior.Line)), (WindowBehavior.Hide, BehaviorName(WindowBehavior.Hide)),
+            (WindowBehavior.LineOverTabs, BehaviorName(WindowBehavior.LineOverTabs))
+        }.Where(choice => tabs || choice.Value != WindowBehavior.LineOverTabs))
         {
             var option = new RadioButton { Content = choice.Label, Style = (Style)FindResource("SettingsSegment"), GroupName = "Rule" + app + title, IsChecked = selected == choice.Value };
             AutomationProperties.SetName(option, app + " · " + title + " · " + choice.Label);
