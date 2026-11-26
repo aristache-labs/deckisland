@@ -1496,13 +1496,17 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
     private FrameworkElement BehaviorRow(string title, WindowBehavior selected, Action<WindowBehavior> changed, string? help = null, bool tabs = false)
     {
         // 270 leaves the long rule names room in the General card at the window's narrowest.
-        var options = new UniformGrid { Columns = tabs ? 4 : 3, Width = tabs ? 360 : 270 };
+        // Each option 90 wide; Indicator over tabs takes the width its one line needs.
+        var options = new StackPanel { Orientation = Orientation.Horizontal };
         foreach (var behavior in Enum.GetValues<WindowBehavior>())
         {
             if (behavior == WindowBehavior.LineOverTabs && !tabs) continue;
-            var option = new RadioButton { Content = BehaviorName(behavior), Style = (Style)FindResource("SettingsSegment"), GroupName = "Behavior" + title, IsChecked = selected == behavior };
+            var option = new RadioButton { Content = SegmentText(BehaviorName(behavior)), Style = (Style)FindResource("SettingsSegment"), GroupName = "Behavior" + title, IsChecked = selected == behavior };
+            if (behavior != WindowBehavior.LineOverTabs) option.Width = 90;
             AutomationProperties.SetName(option, title + " · " + BehaviorName(behavior)); option.Checked += (_, _) => changed(behavior); options.Children.Add(option);
         }
         return help is null ? Row(title, SegmentBorder(options)) : Row(title, SegmentBorder(options), help: () => help);
     }
+    // A segment's label on one line.
+    private static TextBlock SegmentText(string text) => new() { Text = text, TextWrapping = TextWrapping.NoWrap };
 }

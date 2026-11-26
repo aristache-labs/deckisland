@@ -203,7 +203,8 @@ public sealed partial class SettingsWindow
     // tabs adds LineOverTabs, for the contexts whose window has a tab strip at the top.
     private FrameworkElement RulePick(string app, string title, WindowBehavior? selected, Action<WindowBehavior?> changed, bool tabs = false)
     {
-        var options = new UniformGrid { Columns = tabs ? 5 : 4, Width = tabs ? 535 : 428 };
+        // Each option 107 wide; Indicator over tabs takes the width its one line needs.
+        var options = new StackPanel { Orientation = Orientation.Horizontal };
         foreach (var choice in new (WindowBehavior? Value, string Label)[]
         {
             (null, Loc.T("跟随全局", "Follow")), (WindowBehavior.Normal, BehaviorName(WindowBehavior.Normal)),
@@ -211,7 +212,8 @@ public sealed partial class SettingsWindow
             (WindowBehavior.LineOverTabs, BehaviorName(WindowBehavior.LineOverTabs))
         }.Where(choice => tabs || choice.Value != WindowBehavior.LineOverTabs))
         {
-            var option = new RadioButton { Content = choice.Label, Style = (Style)FindResource("SettingsSegment"), GroupName = "Rule" + app + title, IsChecked = selected == choice.Value };
+            var option = new RadioButton { Content = SegmentText(choice.Label), Style = (Style)FindResource("SettingsSegment"), GroupName = "Rule" + app + title, IsChecked = selected == choice.Value };
+            if (choice.Value != WindowBehavior.LineOverTabs) option.Width = 107;
             AutomationProperties.SetName(option, app + " · " + title + " · " + choice.Label);
             WindowBehavior? picked = choice.Value;
             option.Checked += (_, _) => changed(picked);
