@@ -1,0 +1,131 @@
+{
+  // Colors from Solarized Light (https://ethanschoonover.com/solarized/, MIT License).
+  "formatVersion": 1,
+  "id": "solarized-light",
+  "name": "Solarized Light",
+  "description": "Solarized 浅色：精确调校的低对比暖底色。",
+  "descriptionEn": "Solarized Light: precision colours on a warm, low-glare base.",
+  "author": "Ethan Schoonover",
+  "license": "MIT",
+  "homepage": "https://ethanschoonover.com/solarized/",
+  "base": "light",
+  "colors": {
+    "surface": "#FDF6E3",
+    "textPrimary": "#073642",
+    "textSecondary": "#50636A",
+    "textTertiary": "#60747C",
+    "accent": "#268BD2",
+    "onAccent": "#271D03",
+    "danger": "#DA2925",
+    "liked": "#DC322F",
+    "clock": "#073642",
+    "equalizer": "#268BD2",
+    "hairline": "#EEE8D5",
+    "track": "#EFECE2",
+    "ringTrack": "#EFECE2",
+    "fill": "#EEE8D5",
+    "fillSelected": "#E4DDC8",
+    "hover": "#EEE8D5",
+    "pressed": "#E4DDC8",
+    "outline": "#E4DDC8",
+    "popup": "#FDF6E3",
+    "popupBorder": "#E4DDC8",
+    "input": "#EEE8D5",
+    "rangeFill": "#40268BD2",
+    "coverPlaceholder": "#EEE8D5",
+    "coverOutline": "#E4DDC8",
+    "scrollThumb": "#BCB08A",
+    "rim": "#E4DDC8",
+    "shadow": "#073642",
+    "indicator": "#657B83",
+    "indicatorProgress": "#073642",
+    "switchFill": "#EEE8D5",
+    "seekRail": "#E4DDC8",
+    "rowDivider": "#EEE8D5",
+    "rowHover": "#EEE8D5",
+    "menuDetail": "#586E75",
+    "tooltip": "#EEE8D5",
+    "tooltipBorder": "#E4DDC8",
+    "bubble": "#EEE8D5",
+    "bubbleBorder": "#E4DDC8"
+  },
+  "apps": {
+    "claude": "#CB4B16",
+    "codex": "#859800",
+    "antigravity": "#268BD2",
+    "cursor": "#586E75",
+    "zcode": "#299E96",
+    "dsh": "#268BD2",
+    "grokBot": "#586E75",
+    "kimi": "#299E96",
+    "opencode": "#657B83",
+    "codeagent": "#299E96",
+    "commandcode": "#6C71C4",
+    "workbuddy": "#859800",
+    "mimo": "#CB4B16",
+    "manual": "#6C71C4",
+    "other": "#586E75",
+    "warning": "#8F6C00",
+    "critical": "#DA2925"
+  },
+  "clock": {
+    "style": "minimal",
+    "color": "default",
+    "palette": {
+      "amber": "#C14715",
+      "cyan": "#207C75",
+      "pink": "#C8337C",
+      "lime": "#687700"
+    },
+    "gradients": [
+      {
+        "name": "日落",
+        "nameEn": "Sunset",
+        "stops": [
+          "#8B6900",
+          "#C14715",
+          "#D3302D"
+        ]
+      },
+      {
+        "name": "海洋",
+        "nameEn": "Ocean",
+        "stops": [
+          "#207C75",
+          "#2073AE",
+          "#6368B4"
+        ]
+      },
+      {
+        "name": "极光",
+        "nameEn": "Aurora",
+        "stops": [
+          "#687700",
+          "#207C75",
+          "#2073AE"
+        ]
+      },
+      {
+        "name": "火焰",
+        "nameEn": "Ember",
+        "stops": [
+          "#8B6900",
+          "#C14715",
+          "#D3302D"
+        ]
+      },
+      {
+        "name": "霓虹",
+        "nameEn": "Neon",
+        "stops": [
+          "#6368B4",
+          "#2073AE",
+          "#207C75"
+        ]
+      }
+    ]
+  },
+  "effects": {
+    "shadowOpacity": 0.12
+  }
+}

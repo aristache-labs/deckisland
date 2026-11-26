@@ -1,0 +1,131 @@
+{
+  // Colors from Catppuccin Mocha (https://github.com/catppuccin/catppuccin, MIT License).
+  "formatVersion": 1,
+  "id": "catppuccin-mocha",
+  "name": "Catppuccin Mocha",
+  "description": "Catppuccin Mocha：柔和的深色粉彩，温暖舒适。",
+  "descriptionEn": "Catppuccin Mocha: soothing pastels on a warm dark base.",
+  "author": "Catppuccin",
+  "license": "MIT",
+  "homepage": "https://github.com/catppuccin/catppuccin",
+  "base": "dark",
+  "colors": {
+    "surface": "#1E1E2E",
+    "textPrimary": "#CDD6F4",
+    "textSecondary": "#BAC2DE",
+    "textTertiary": "#949AB2",
+    "accent": "#CBA6F7",
+    "onAccent": "#1E1E2E",
+    "danger": "#F38BA8",
+    "liked": "#F38BA8",
+    "clock": "#CDD6F4",
+    "equalizer": "#CBA6F7",
+    "hairline": "#313244",
+    "track": "#45475A",
+    "ringTrack": "#45475A",
+    "fill": "#313244",
+    "fillSelected": "#45475A",
+    "hover": "#313244",
+    "pressed": "#45475A",
+    "outline": "#45475A",
+    "popup": "#313244",
+    "popupBorder": "#45475A",
+    "input": "#313244",
+    "rangeFill": "#40CBA6F7",
+    "coverPlaceholder": "#313244",
+    "coverOutline": "#45475A",
+    "scrollThumb": "#4B4E62",
+    "rim": "#45475A",
+    "shadow": "#000000",
+    "indicator": "#9399B2",
+    "indicatorProgress": "#D0D9F5",
+    "switchFill": "#313244",
+    "seekRail": "#45475A",
+    "rowDivider": "#313244",
+    "rowHover": "#313244",
+    "menuDetail": "#BAC2DE",
+    "tooltip": "#313244",
+    "tooltipBorder": "#45475A",
+    "bubble": "#313244",
+    "bubbleBorder": "#45475A"
+  },
+  "apps": {
+    "claude": "#FAB387",
+    "codex": "#A6E3A1",
+    "antigravity": "#89B4FA",
+    "cursor": "#BAC2DE",
+    "zcode": "#94E2D5",
+    "dsh": "#89B4FA",
+    "grokBot": "#BAC2DE",
+    "kimi": "#94E2D5",
+    "opencode": "#9399B2",
+    "codeagent": "#94E2D5",
+    "commandcode": "#CBA6F7",
+    "workbuddy": "#A6E3A1",
+    "mimo": "#FAB387",
+    "manual": "#CBA6F7",
+    "other": "#BAC2DE",
+    "warning": "#FAB387",
+    "critical": "#F38BA8"
+  },
+  "clock": {
+    "style": "minimal",
+    "color": "default",
+    "palette": {
+      "amber": "#FAB387",
+      "cyan": "#94E2D5",
+      "pink": "#F5C2E7",
+      "lime": "#A6E3A1"
+    },
+    "gradients": [
+      {
+        "name": "日落",
+        "nameEn": "Sunset",
+        "stops": [
+          "#F9E2AF",
+          "#FAB387",
+          "#F38BA8"
+        ]
+      },
+      {
+        "name": "海洋",
+        "nameEn": "Ocean",
+        "stops": [
+          "#94E2D5",
+          "#89B4FA",
+          "#CBA6F7"
+        ]
+      },
+      {
+        "name": "极光",
+        "nameEn": "Aurora",
+        "stops": [
+          "#A6E3A1",
+          "#94E2D5",
+          "#89B4FA"
+        ]
+      },
+      {
+        "name": "火焰",
+        "nameEn": "Ember",
+        "stops": [
+          "#F9E2AF",
+          "#FAB387",
+          "#F38BA8"
+        ]
+      },
+      {
+        "name": "霓虹",
+        "nameEn": "Neon",
+        "stops": [
+          "#CBA6F7",
+          "#89B4FA",
+          "#94E2D5"
+        ]
+      }
+    ]
+  },
+  "effects": {
+    "shadowOpacity": 0.4
+  }
+}

@@ -344,7 +344,7 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
             }
             int target=i; bool selected=page==i;
             var row = new StackPanel { Orientation = Orientation.Horizontal };
-            var icon = NavigationIcon(i, selected ? TextPrimary : TextSecondary); icon.Margin = new Thickness(0,0,10,0); row.Children.Add(icon);
+            var icon = NavigationIcon(i, S.ColouredIcons ? NavigationColor(i) : selected ? TextPrimary : TextSecondary); icon.Margin = new Thickness(0,0,10,0); row.Children.Add(icon);
             row.Children.Add(TextLine(i == 7 ? "DeckIsland" : _pages[i],12.5,selected ? TextPrimary : TextSecondary,selected ? FontWeights.Medium : FontWeights.Normal));
             if (i == 7) { _updateBadge = UpdateBadge(); row.Children.Add(_updateBadge); }
             var button=new Button { Style=(Style)FindResource("SettingsNav"),Content=row,Margin=new Thickness(0,0,0,4),Tag=selected ? "Selected" : null };
@@ -395,6 +395,18 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
     }
     // The scroll position of the page being rebuilt by a theme change, whose scroll viewer is replaced.
     private double _keptOffset;
+    // Each settings page's icon colour with Coloured icons on, after Crest's sidebar; the pages of a part of the island take its page's.
+    private static string NavigationColor(int page) => page switch
+    {
+        0 => "#94A3B8", 1 => "#60A5FA", 2 => "#818CF8", 3 => DeckPages.IconColor(DeckPage.Usage), 4 => "#34D399", 5 or 6 or MusicGesturesPage => DeckPages.IconColor(DeckPage.Music),
+        7 => "#A78BFA", ThemePage => "#F472B6", MonitorSettingsPage or SensorsPage => DeckPages.IconColor(DeckPage.Monitor), HotkeysPage => "#FBBF24",
+        DevicesSettingsPage => DeckPages.IconColor(DeckPage.Devices), ClipboardSettingsPage or TransferSettingsPage or ShelfLayoutSettingsPage or ClipboardSyncSettingsPage => DeckPages.IconColor(DeckPage.Clipboard),
+        ProfilesPage => "#FB923C", WeatherSettingsPage => DeckPages.IconColor(DeckPage.Weather), FocusSettingsPage => "#F97316", RemindersSettingsPage => DeckPages.IconColor(DeckPage.Reminders),
+        WidgetsSettingsPage => DeckPages.IconColor(DeckPage.Widgets), NotificationsSettingsPage => DeckPages.IconColor(DeckPage.Notifications), CallsSettingsPage => DeckPages.IconColor(DeckPage.Calls),
+        ScratchpadSettingsPage => DeckPages.IconColor(DeckPage.Scratchpad), ConverterSettingsPage => DeckPages.IconColor(DeckPage.Converter), TerminalSettingsPage => DeckPages.IconColor(DeckPage.Terminal),
+        ConnectionsSettingsPage => "#2DD4BF", _ => "#94A3B8"
+    };
+
     private static Path NavigationIcon(int page, string color) => Stroke(page switch
     {
         0 => "M 1,4 H 15 M 1,12 H 15 M 5,1 V 7 M 11,9 V 15",

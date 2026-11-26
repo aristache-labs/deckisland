@@ -1,0 +1,131 @@
+{
+  // Colors from Everforest (https://github.com/sainnhe/everforest, MIT License).
+  "formatVersion": 1,
+  "id": "everforest",
+  "name": "Everforest",
+  "description": "Everforest：舒适的森林绿色调。",
+  "descriptionEn": "Everforest: a green-based colour scheme, comfortable and pleasant.",
+  "author": "sainnhe",
+  "license": "MIT",
+  "homepage": "https://github.com/sainnhe/everforest",
+  "base": "dark",
+  "colors": {
+    "surface": "#2D353B",
+    "textPrimary": "#DDD2BC",
+    "textSecondary": "#BFB5A0",
+    "textTertiary": "#9FAAA2",
+    "accent": "#7FBBB3",
+    "onAccent": "#2D353B",
+    "danger": "#E98E90",
+    "liked": "#E67E80",
+    "clock": "#D3C6AA",
+    "equalizer": "#7FBBB3",
+    "hairline": "#343F44",
+    "track": "#475258",
+    "ringTrack": "#475258",
+    "fill": "#343F44",
+    "fillSelected": "#3D484D",
+    "hover": "#343F44",
+    "pressed": "#3D484D",
+    "outline": "#3D484D",
+    "popup": "#343F44",
+    "popupBorder": "#3D484D",
+    "input": "#343F44",
+    "rangeFill": "#407FBBB3",
+    "coverPlaceholder": "#343F44",
+    "coverOutline": "#3D484D",
+    "scrollThumb": "#55636A",
+    "rim": "#3D484D",
+    "shadow": "#000000",
+    "indicator": "#859289",
+    "indicatorProgress": "#D6CAB1",
+    "switchFill": "#343F44",
+    "seekRail": "#3D484D",
+    "rowDivider": "#343F44",
+    "rowHover": "#343F44",
+    "menuDetail": "#B5AA92",
+    "tooltip": "#343F44",
+    "tooltipBorder": "#3D484D",
+    "bubble": "#343F44",
+    "bubbleBorder": "#3D484D"
+  },
+  "apps": {
+    "claude": "#E69875",
+    "codex": "#A7C080",
+    "antigravity": "#7FBBB3",
+    "cursor": "#B5AA92",
+    "zcode": "#83C092",
+    "dsh": "#7FBBB3",
+    "grokBot": "#B5AA92",
+    "kimi": "#83C092",
+    "opencode": "#859289",
+    "codeagent": "#83C092",
+    "commandcode": "#D699B6",
+    "workbuddy": "#A7C080",
+    "mimo": "#E69875",
+    "manual": "#D699B6",
+    "other": "#B5AA92",
+    "warning": "#E69875",
+    "critical": "#E67E80"
+  },
+  "clock": {
+    "style": "minimal",
+    "color": "default",
+    "palette": {
+      "amber": "#E69875",
+      "cyan": "#83C092",
+      "pink": "#D699B6",
+      "lime": "#A7C080"
+    },
+    "gradients": [
+      {
+        "name": "日落",
+        "nameEn": "Sunset",
+        "stops": [
+          "#DBBC7F",
+          "#E69875",
+          "#E68183"
+        ]
+      },
+      {
+        "name": "海洋",
+        "nameEn": "Ocean",
+        "stops": [
+          "#83C092",
+          "#7FBBB3",
+          "#D699B6"
+        ]
+      },
+      {
+        "name": "极光",
+        "nameEn": "Aurora",
+        "stops": [
+          "#A7C080",
+          "#83C092",
+          "#7FBBB3"
+        ]
+      },
+      {
+        "name": "火焰",
+        "nameEn": "Ember",
+        "stops": [
+          "#DBBC7F",
+          "#E69875",
+          "#E68183"
+        ]
+      },
+      {
+        "name": "霓虹",
+        "nameEn": "Neon",
+        "stops": [
+          "#D699B6",
+          "#7FBBB3",
+          "#83C092"
+        ]
+      }
+    ]
+  },
+  "effects": {
+    "shadowOpacity": 0.4
+  }
+}

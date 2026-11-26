@@ -502,6 +502,8 @@ public sealed class DeckSettings
     public bool QuotaRingRemaining { get; set; }
     // A line under each quota's bar with where it is heading at the current pace (QuotaPace).
     public bool QuotaForecast { get; set; } = true;
+    // The page switch's icons each in a colour of its own (DeckPages.IconColor) rather than the text's.
+    public bool ColouredIcons { get; set; }
     // A readout when a quota that had been used reaches its reset, not during Do not disturb.
     public bool QuotaResetNotify { get; set; } = true;
     public bool CapsuleMusic { get; set; } = true;

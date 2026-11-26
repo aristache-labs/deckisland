@@ -1,0 +1,131 @@
+{
+  // Colors from Gruvbox Dark (https://github.com/morhetz/gruvbox, MIT License).
+  "formatVersion": 1,
+  "id": "gruvbox-dark",
+  "name": "Gruvbox Dark",
+  "description": "Gruvbox：复古的暖色调深色主题。",
+  "descriptionEn": "Gruvbox: retro groove colours on a warm dark base.",
+  "author": "Pavel Pertsev",
+  "license": "MIT",
+  "homepage": "https://github.com/morhetz/gruvbox",
+  "base": "dark",
+  "colors": {
+    "surface": "#282828",
+    "textPrimary": "#EBDBB2",
+    "textSecondary": "#D5C4A1",
+    "textTertiary": "#A89984",
+    "accent": "#83A598",
+    "onAccent": "#282828",
+    "danger": "#FC6755",
+    "liked": "#FB4934",
+    "clock": "#EBDBB2",
+    "equalizer": "#83A598",
+    "hairline": "#3C3836",
+    "track": "#504945",
+    "ringTrack": "#504945",
+    "fill": "#32302F",
+    "fillSelected": "#3C3836",
+    "hover": "#32302F",
+    "pressed": "#3C3836",
+    "outline": "#3C3836",
+    "popup": "#32302F",
+    "popupBorder": "#3C3836",
+    "input": "#32302F",
+    "rangeFill": "#4083A598",
+    "coverPlaceholder": "#32302F",
+    "coverOutline": "#3C3836",
+    "scrollThumb": "#5D5450",
+    "rim": "#3C3836",
+    "shadow": "#000000",
+    "indicator": "#A89984",
+    "indicatorProgress": "#EBDBB2",
+    "switchFill": "#32302F",
+    "seekRail": "#3C3836",
+    "rowDivider": "#3C3836",
+    "rowHover": "#32302F",
+    "menuDetail": "#D5C4A1",
+    "tooltip": "#32302F",
+    "tooltipBorder": "#3C3836",
+    "bubble": "#32302F",
+    "bubbleBorder": "#3C3836"
+  },
+  "apps": {
+    "claude": "#FE8019",
+    "codex": "#B8BB26",
+    "antigravity": "#83A598",
+    "cursor": "#D5C4A1",
+    "zcode": "#8EC07C",
+    "dsh": "#83A598",
+    "grokBot": "#D5C4A1",
+    "kimi": "#8EC07C",
+    "opencode": "#A89984",
+    "codeagent": "#8EC07C",
+    "commandcode": "#D3869B",
+    "workbuddy": "#B8BB26",
+    "mimo": "#FE8019",
+    "manual": "#D3869B",
+    "other": "#D5C4A1",
+    "warning": "#FABD2F",
+    "critical": "#FB533F"
+  },
+  "clock": {
+    "style": "minimal",
+    "color": "default",
+    "palette": {
+      "amber": "#FE8019",
+      "cyan": "#8EC07C",
+      "pink": "#D3869B",
+      "lime": "#B8BB26"
+    },
+    "gradients": [
+      {
+        "name": "日落",
+        "nameEn": "Sunset",
+        "stops": [
+          "#FABD2F",
+          "#FE8019",
+          "#FB5844"
+        ]
+      },
+      {
+        "name": "海洋",
+        "nameEn": "Ocean",
+        "stops": [
+          "#8EC07C",
+          "#83A598",
+          "#D3869B"
+        ]
+      },
+      {
+        "name": "极光",
+        "nameEn": "Aurora",
+        "stops": [
+          "#B8BB26",
+          "#8EC07C",
+          "#83A598"
+        ]
+      },
+      {
+        "name": "火焰",
+        "nameEn": "Ember",
+        "stops": [
+          "#FABD2F",
+          "#FE8019",
+          "#FB5844"
+        ]
+      },
+      {
+        "name": "霓虹",
+        "nameEn": "Neon",
+        "stops": [
+          "#D3869B",
+          "#83A598",
+          "#8EC07C"
+        ]
+      }
+    ]
+  },
+  "effects": {
+    "shadowOpacity": 0.4
+  }
+}

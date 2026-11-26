@@ -17,6 +17,15 @@ public static class DeckPages
         DeckPage.Scratchpad => settings.ScratchpadPage, DeckPage.Converter => settings.ConverterPage, DeckPage.Terminal => settings.TerminalPage, DeckPage.Colour => settings.ColourTool, DeckPage.Capture => settings.CapturePage, DeckPage.Vault => settings.VaultPage, DeckPage.ScreenTime => settings.ScreenTimePage, DeckPage.Calendar => settings.CalendarPage, _ => false
     };
 
+    // Each page's icon colour with Coloured icons on, after Crest's.
+    public static string IconColor(DeckPage page) => page switch
+    {
+        DeckPage.Usage => "#A78BFA", DeckPage.Music => "#F472B6", DeckPage.Monitor => "#F87171", DeckPage.Clipboard => "#2DD4BF", DeckPage.Devices => "#4ADE80",
+        DeckPage.Weather => "#60A5FA", DeckPage.Reminders => "#FBBF24", DeckPage.Widgets => "#818CF8", DeckPage.Notifications => "#FACC15", DeckPage.Calls => "#34D399",
+        DeckPage.ScreenTime => "#E879F9", DeckPage.Calendar => "#FB7185", DeckPage.Scratchpad => "#A3E635", DeckPage.Converter => "#F472B6", DeckPage.Terminal => "#CBD5E1",
+        DeckPage.Colour => "#E879F9", DeckPage.Capture => "#38BDF8", DeckPage.Vault => "#F59E0B", _ => "#94A3B8"
+    };
+
     public static IReadOnlyList<DeckPage> Visible(DeckSettings settings) => settings.PageOrder.Where(page => Shown(settings, page)).ToList();
 
     // The page shown when wanted is asked for: wanted while it is shown, otherwise the first shown page in switch order.

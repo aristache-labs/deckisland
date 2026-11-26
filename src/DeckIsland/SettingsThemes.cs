@@ -46,6 +46,9 @@ public sealed partial class SettingsWindow
         ThemeSection(Loc.T("更多主题", "More themes"), Loc.T("带有自己配色和效果的主题。", "Themes with colors and effects of their own."));
         ThemeCards([.. PanelThemes.BuiltIns.Where(t => t.Kind == PanelThemeKind.Extension).Select(Card)], chosen);
         CustomSection(users, chosen);
+        ThemeSection(Loc.T("图标", "Icons"), Loc.T("页面切换栏的图标。", "The page switch's icons."));
+        Group(Describe(Toggle(Loc.T("彩色图标", "Coloured icons"), S.ColouredIcons, value => { Change(s => s.ColouredIcons = value); Dispatcher.BeginInvoke(() => ShowPage(_page)); }),
+            Loc.T("页面切换栏和设置侧栏的图标使用各自的颜色。", "The page switch's and the settings sidebar's icons each in a colour of its own.")));
         _themeDetails = Collect(() => ThemeDetails(chosen, users)); _content.Children.Add(_themeDetails);
         // Miniatures of cards no longer on the page (a theme file renamed or removed) are let go.
         var cards = new[] { PanelThemes.SystemId }.Concat(PanelThemes.BuiltIns.Select(t => t.Id)).Concat(users.Where(t => t.Usable).Select(t => t.Id)).ToHashSet();

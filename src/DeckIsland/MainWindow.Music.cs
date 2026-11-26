@@ -291,7 +291,8 @@ public partial class MainWindow
         {
             bool current = CurrentPage == page || page == DeckPage.Widgets && CurrentPage == DeckPage.Reminders;
             button.Visibility = DeckPages.Shown(Settings, page) && (page != DeckPage.Reminders || !Settings.WidgetsPage) ? Visibility.Visible : Visibility.Collapsed;
-            button.Foreground = UI.Brush(current ? Look.Primary : Look.Secondary);
+            // With Coloured icons each page keeps its own colour, kept readable on the theme; the chosen one is marked by the capsule.
+            button.Foreground = UI.Brush(Settings.ColouredIcons ? Look.Readable(DeckPages.IconColor(page), 3) : current ? Look.Primary : Look.Secondary);
         }
         PlacePageCapsule();
         UpdateShelfPageButton();

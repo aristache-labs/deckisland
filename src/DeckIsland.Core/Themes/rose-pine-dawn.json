@@ -1,0 +1,131 @@
+{
+  // Colors from Rosé Pine Dawn (https://rosepinetheme.com, MIT License).
+  "formatVersion": 1,
+  "id": "rose-pine-dawn",
+  "name": "Rosé Pine Dawn",
+  "description": "Rosé Pine Dawn：清晨的浅色版本。",
+  "descriptionEn": "Rosé Pine Dawn: the light variant, like early morning.",
+  "author": "Rosé Pine",
+  "license": "MIT",
+  "homepage": "https://rosepinetheme.com",
+  "base": "light",
+  "colors": {
+    "surface": "#FAF4ED",
+    "textPrimary": "#534F74",
+    "textSecondary": "#68657F",
+    "textTertiary": "#716D8C",
+    "accent": "#286983",
+    "onAccent": "#FAF4ED",
+    "danger": "#AD546E",
+    "liked": "#B4637A",
+    "clock": "#575279",
+    "equalizer": "#286983",
+    "hairline": "#F2E9E1",
+    "track": "#F9F8F7",
+    "ringTrack": "#F9F8F7",
+    "fill": "#FFFAF3",
+    "fillSelected": "#F2E9E1",
+    "hover": "#FFFAF3",
+    "pressed": "#F2E9E1",
+    "outline": "#F2E9E1",
+    "popup": "#FAF4ED",
+    "popupBorder": "#F2E9E1",
+    "input": "#FFFAF3",
+    "rangeFill": "#40286983",
+    "coverPlaceholder": "#FFFAF3",
+    "coverOutline": "#F2E9E1",
+    "scrollThumb": "#B8ADAB",
+    "rim": "#F2E9E1",
+    "shadow": "#575279",
+    "indicator": "#797593",
+    "indicatorProgress": "#4B4668",
+    "switchFill": "#FFFAF3",
+    "seekRail": "#F2E9E1",
+    "rowDivider": "#F2E9E1",
+    "rowHover": "#FFFAF3",
+    "menuDetail": "#6E6A86",
+    "tooltip": "#FFFAF3",
+    "tooltipBorder": "#F2E9E1",
+    "bubble": "#FFFAF3",
+    "bubbleBorder": "#F2E9E1"
+  },
+  "apps": {
+    "claude": "#C97C15",
+    "codex": "#56949F",
+    "antigravity": "#286983",
+    "cursor": "#6E6A86",
+    "zcode": "#56949F",
+    "dsh": "#286983",
+    "grokBot": "#6E6A86",
+    "kimi": "#56949F",
+    "opencode": "#797593",
+    "codeagent": "#56949F",
+    "commandcode": "#907AA9",
+    "workbuddy": "#56949F",
+    "mimo": "#C97C15",
+    "manual": "#907AA9",
+    "other": "#6E6A86",
+    "warning": "#9F6310",
+    "critical": "#AD546E"
+  },
+  "clock": {
+    "style": "minimal",
+    "color": "default",
+    "palette": {
+      "amber": "#966421",
+      "cyan": "#45767F",
+      "pink": "#9B5E5B",
+      "lime": "#45767F"
+    },
+    "gradients": [
+      {
+        "name": "日落",
+        "nameEn": "Sunset",
+        "stops": [
+          "#966421",
+          "#966421",
+          "#A0586D"
+        ]
+      },
+      {
+        "name": "海洋",
+        "nameEn": "Ocean",
+        "stops": [
+          "#45767F",
+          "#286983",
+          "#79668E"
+        ]
+      },
+      {
+        "name": "极光",
+        "nameEn": "Aurora",
+        "stops": [
+          "#45767F",
+          "#45767F",
+          "#286983"
+        ]
+      },
+      {
+        "name": "火焰",
+        "nameEn": "Ember",
+        "stops": [
+          "#966421",
+          "#966421",
+          "#A0586D"
+        ]
+      },
+      {
+        "name": "霓虹",
+        "nameEn": "Neon",
+        "stops": [
+          "#79668E",
+          "#286983",
+          "#45767F"
+        ]
+      }
+    ]
+  },
+  "effects": {
+    "shadowOpacity": 0.12
+  }
+}

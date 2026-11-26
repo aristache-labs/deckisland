@@ -1,0 +1,131 @@
+{
+  // Colors from Nord (https://www.nordtheme.com, MIT License).
+  "formatVersion": 1,
+  "id": "nord",
+  "name": "Nord",
+  "description": "Nord：北极般清冷的蓝灰色调。",
+  "descriptionEn": "Nord: an arctic, north-bluish palette.",
+  "author": "Arctic Ice Studio",
+  "license": "MIT",
+  "homepage": "https://www.nordtheme.com",
+  "base": "dark",
+  "colors": {
+    "surface": "#2E3440",
+    "textPrimary": "#ECEFF4",
+    "textSecondary": "#D8DEE9",
+    "textTertiary": "#A5AEBE",
+    "accent": "#88C0D0",
+    "onAccent": "#2E3440",
+    "danger": "#D89FA4",
+    "liked": "#BF616A",
+    "clock": "#ECEFF4",
+    "equalizer": "#88C0D0",
+    "hairline": "#3B4252",
+    "track": "#4C566A",
+    "ringTrack": "#4C566A",
+    "fill": "#3B4252",
+    "fillSelected": "#434C5E",
+    "hover": "#3B4252",
+    "pressed": "#434C5E",
+    "outline": "#434C5E",
+    "popup": "#3B4252",
+    "popupBorder": "#434C5E",
+    "input": "#3B4252",
+    "rangeFill": "#4088C0D0",
+    "coverPlaceholder": "#3B4252",
+    "coverOutline": "#434C5E",
+    "scrollThumb": "#566177",
+    "rim": "#434C5E",
+    "shadow": "#000000",
+    "indicator": "#A3ACBD",
+    "indicatorProgress": "#EEF0F5",
+    "switchFill": "#3B4252",
+    "seekRail": "#434C5E",
+    "rowDivider": "#3B4252",
+    "rowHover": "#3B4252",
+    "menuDetail": "#D8DEE9",
+    "tooltip": "#3B4252",
+    "tooltipBorder": "#434C5E",
+    "bubble": "#3B4252",
+    "bubbleBorder": "#434C5E"
+  },
+  "apps": {
+    "claude": "#D08770",
+    "codex": "#A3BE8C",
+    "antigravity": "#81A1C1",
+    "cursor": "#D8DEE9",
+    "zcode": "#8FBCBB",
+    "dsh": "#81A1C1",
+    "grokBot": "#D8DEE9",
+    "kimi": "#8FBCBB",
+    "opencode": "#A3ACBD",
+    "codeagent": "#8FBCBB",
+    "commandcode": "#B48EAD",
+    "workbuddy": "#A3BE8C",
+    "mimo": "#D08770",
+    "manual": "#B48EAD",
+    "other": "#D8DEE9",
+    "warning": "#EBCB8B",
+    "critical": "#CF888F"
+  },
+  "clock": {
+    "style": "minimal",
+    "color": "default",
+    "palette": {
+      "amber": "#D28C76",
+      "cyan": "#8FBCBB",
+      "pink": "#B793B0",
+      "lime": "#A3BE8C"
+    },
+    "gradients": [
+      {
+        "name": "日落",
+        "nameEn": "Sunset",
+        "stops": [
+          "#EBCB8B",
+          "#D28C76",
+          "#D08C92"
+        ]
+      },
+      {
+        "name": "海洋",
+        "nameEn": "Ocean",
+        "stops": [
+          "#8FBCBB",
+          "#81A1C1",
+          "#B793B0"
+        ]
+      },
+      {
+        "name": "极光",
+        "nameEn": "Aurora",
+        "stops": [
+          "#A3BE8C",
+          "#8FBCBB",
+          "#81A1C1"
+        ]
+      },
+      {
+        "name": "火焰",
+        "nameEn": "Ember",
+        "stops": [
+          "#EBCB8B",
+          "#D28C76",
+          "#D08C92"
+        ]
+      },
+      {
+        "name": "霓虹",
+        "nameEn": "Neon",
+        "stops": [
+          "#B793B0",
+          "#81A1C1",
+          "#8FBCBB"
+        ]
+      }
+    ]
+  },
+  "effects": {
+    "shadowOpacity": 0.4
+  }
+}

@@ -128,7 +128,7 @@ public static partial class PanelThemes
     // name, which a test keeps equal to the id inside the file.
     private const string ThemeResources = ".Themes.";
     // Dark and light first, then the ported editor themes, then DeckIsland's own extensions with the custom demo last.
-    private static readonly string[] BuiltInOrder = [Dark, Light, "one-dark-pro", "github-dark", "github-light", "dracula", "night-owl", IslandHoliday, IslandHoliday2, PixelBlocks, Demo];
+    private static readonly string[] BuiltInOrder = [Dark, Light, "one-dark-pro", "github-dark", "github-light", "dracula", "night-owl", "catppuccin-mocha", "catppuccin-latte", "nord", "rose-pine", "rose-pine-dawn", "gruvbox-dark", "solarized-light", "everforest", IslandHoliday, IslandHoliday2, PixelBlocks, Demo];
     private static (string Id, string Resource)[]? _builtInIndex;
     private static (string Id, string Resource)[] BuiltInIndex => _builtInIndex ??= [.. typeof(PanelThemes).Assembly.GetManifestResourceNames()
         .Where(name => name.Contains(ThemeResources, StringComparison.Ordinal) && name.EndsWith(".json", StringComparison.Ordinal))
