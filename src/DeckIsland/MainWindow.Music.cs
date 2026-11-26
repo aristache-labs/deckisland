@@ -1324,7 +1324,7 @@ public partial class MainWindow
         double transferWidth = transfer?.Width ?? 0;
         double fixedFace = FixedFace(unit, clock?.ReservedWidth ?? 0, transferWidth, devicesWidth, focus?.Width ?? 0, weather?.Width ?? 0, screenTime?.Width ?? 0, nextEvent?.Width ?? 0);
         // The system readings ask for the width of everything chosen, on whole device pixels; the whole ones that fit their region show.
-        var strip = !FocusCompactOnly && Show(CompactPart.Monitor) && Settings.ShowsMonitor(EffectiveStyle) ? new MonitorStrip(Settings.CompactReadings, MonitorThemeColors.Strip(Settings, Look), scale,
+        var strip = !FocusCompactOnly && Show(CompactPart.Monitor) && ShowsStrip ? new MonitorStrip(StripReadings, MonitorThemeColors.Strip(Settings, Look), scale,
             !(media && showCover) && !equalizer && apps.Count == 0 && text.Length == 0 && clock is null && transfer is null && devices is null, _stripPresence, dpi, _stripUnavailable = _stripAdmission.Hidden, _stripAdmission,
             coreDisplay: Settings.CoreDisplay, quotaStyle: Settings.QuotaRingStyle) : null;
         _stripLayout = _stripAdmission.Layout;

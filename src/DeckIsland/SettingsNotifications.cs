@@ -53,7 +53,26 @@ public sealed partial class SettingsWindow
             Describe(Toggle(Loc.T("蓝牙设备", "Bluetooth devices"), S.HudBluetooth, value => Change(s => s.HudBluetooth = value),
                 help: Loc.T("设备连接与断开，设备报告电量时一并显示。", "Connect and disconnect, with battery level when the device reports one.")), Loc.T("连接与断开。", "Connect and disconnect.")),
             Describe(Toggle(Loc.T("大小写锁定与数字锁定", "Caps Lock and Num Lock"), S.HudLocks, value => Change(s => s.HudLocks = value),
-                help: Loc.T("Caps Lock、Num Lock 或 Scroll Lock 开关时显示。", "Show when Caps Lock, Num Lock or Scroll Lock is turned on or off.")), Loc.T("锁定键开关时。", "When a lock key goes on or off.")));
+                help: Loc.T("Caps Lock、Num Lock 或 Scroll Lock 开关时显示。", "Show when Caps Lock, Num Lock or Scroll Lock is turned on or off.")), Loc.T("锁定键开关时。", "When a lock key goes on or off.")),
+            Describe(Toggle(Loc.T("节能与电源模式", "Energy saver and power mode"), S.HudPowerMode, value => Change(s => s.HudPowerMode = value)),
+                Loc.T("节能开关或更改电源模式时。", "When Energy saver turns on or off, or you change the power mode.")),
+            Describe(Toggle(Loc.T("网络", "Network"), S.HudNetwork, value => Change(s => s.HudNetwork = value)), Loc.T("断网和恢复时。", "When the internet drops and comes back.")),
+            Describe(Toggle(Loc.T("飞行模式", "Airplane mode"), S.HudAirplane, value => Change(s => s.HudAirplane = value)), Loc.T("飞行模式开关时。", "When airplane mode turns on or off.")),
+            Describe(Toggle(Loc.T("输出设备", "Output device"), S.HudOutput, value => Change(s => s.HudOutput = value)),
+                Loc.T("Windows 把声音切换到其他扬声器或耳机时。", "When Windows moves the sound to other speakers or headphones.")),
+            Describe(Toggle(Loc.T("显示器", "Monitors"), S.HudMonitors, value => Change(s => s.HudMonitors = value)),
+                Loc.T("连接或断开显示器时，显示刷新率。", "When a monitor is connected or disconnected, with its refresh rate.")),
+            Describe(Toggle(Loc.T("Insert 键", "Insert key"), S.HudInsert, value => Change(s => s.HudInsert = value)),
+                Loc.T("单独按下时；Shift+Insert 等快捷键不算。", "When pressed alone; shortcuts like Shift+Insert are ignored.")),
+            Describe(Toggle(Loc.T("勿扰", "Do not disturb"), S.HudDoNotDisturb, value => Change(s => s.HudDoNotDisturb = value)),
+                Loc.T("勿扰开关时。", "When Do not disturb turns on or off.")),
+            Describe(Toggle(Loc.T("复制", "Copy"), S.HudCopy, value => Change(s => s.HudCopy = value)),
+                Loc.T("复制文本、链接、图片或文件时。", "When you copy text, a link, an image or files.")),
+            Describe(Toggle(Loc.T("隐藏 Windows 指示器", "Hide the Windows indicator"), S.HudHideWindows, value => Change(s => s.HudHideWindows = value)),
+                Loc.T("运行时隐藏 Windows 的音量和亮度指示器；需要打开音量和亮度。", "Hides Windows' volume and brightness indicator while DeckIsland runs; needs Volume and Brightness on.")),
+            Describe(Toggle(Loc.T("全局显示", "Show everywhere"), S.HudEverywhere, value => Change(s => s.HudEverywhere = value)),
+                Loc.T("音量、亮度、锁定键、麦克风和复制也显示在全屏应用上方和灵动岛隐藏时。", "Volume, brightness, the lock keys, the microphone and Copy also over full-screen apps and while the island is hidden.")),
+            Describe(Row(Loc.T("游戏模式", "Gaming mode"), GamingChoice()), Loc.T("收起时显示帧率和占用。", "FPS and usage in the collapsed island.")));
 
         SectionTitle(Loc.T("实时活动", "Live activities"), description: Loc.T("进行中的事情，持续时一直显示。", "Things in progress, shown while they last."));
         var ignored = new StackPanel();
@@ -94,6 +113,17 @@ public sealed partial class SettingsWindow
     }
 
     // A quiet outline button, as the General page's Exit.
+    // Gaming mode: off, while an app is full screen, or always.
+    private FrameworkElement GamingChoice()
+    {
+        var modes = new[] { (GamingMode.Off, Loc.T("关闭", "Off")), (GamingMode.FullScreen, Loc.T("全屏时", "In full screen")), (GamingMode.Always, Loc.T("始终", "Always")) };
+        var box = new ComboBox { Width = 150, Style = (Style)FindResource("SettingsCombo"), ItemsSource = modes.Select(mode => mode.Item2).ToList(),
+            SelectedIndex = Math.Max(0, Array.FindIndex(modes, mode => mode.Item1 == S.GamingMode)) };
+        box.SelectionChanged += (_, _) => { if (box.SelectedIndex >= 0) Change(s => s.GamingMode = modes[box.SelectedIndex].Item1); };
+        AutomationProperties.SetName(box, Loc.T("游戏模式", "Gaming mode"));
+        return box;
+    }
+
     private Button Outline(Button button) { button.Style = (Style)FindResource("SettingsOutlineButton"); return button; }
 
     private void NotificationSizeControls() => PageSizeControls(DeckPage.Notifications, Loc.T("通知", "Notifications"));

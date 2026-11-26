@@ -35,6 +35,15 @@ internal sealed class HudWindow : Window
         [HudIcon.MicOff] = "M10,2.5 A2.5,2.5 0 0 1 12.5,5 V10 A2.5,2.5 0 0 1 7.5,10 V5 A2.5,2.5 0 0 1 10,2.5 Z M5,9.5 A5,5 0 0 0 15,9.5 M10,14.5 V17.5 M3,3 L17,17",
         [HudIcon.Cancel] = "M5,5 L15,15 M15,5 L5,15",
         [HudIcon.Done] = "M4,10 L8.5,14.5 L16,6",
+        [HudIcon.PowerMode] = "M3,13 A7,7 0 0 1 17,13 M10,13 L13.5,8.5 M5,13 H6.5 M13.5,13 H15",
+        [HudIcon.Network] = "M2.5,8 A11,11 0 0 1 17.5,8 M5,11 A7.5,7.5 0 0 1 15,11 M7.5,14 A4,4 0 0 1 12.5,14 M10,16.5 V16.6",
+        [HudIcon.NetworkOff] = "M2.5,8 A11,11 0 0 1 17.5,8 M5,11 A7.5,7.5 0 0 1 15,11 M7.5,14 A4,4 0 0 1 12.5,14 M3,3 L17,17",
+        [HudIcon.Airplane] = "M10,2 V8 L17,12 V13.5 L10,11.5 V15.5 L12.5,17 V18 L10,17.3 L7.5,18 V17 L10,15.5 V11.5 L3,13.5 V12 L10,8 Z",
+        [HudIcon.Speaker] = "M5,2.5 H15 V17.5 H5 Z M10,12 A2.5,2.5 0 1 0 10.01,12 M10,5.5 V5.6",
+        [HudIcon.Display] = "M2,3.5 H18 V13.5 H2 Z M7,17 H13 M10,13.5 V17",
+        [HudIcon.Insert] = "M3,5 H17 V15 H3 Z M7,8 V12 M10,8 V12 M13,8 V12",
+        [HudIcon.DoNotDisturb] = "M15.5,12.5 A6.5,6.5 0 1 1 7.5,4.5 A5,5 0 0 0 15.5,12.5 Z",
+        [HudIcon.Copy] = "M7,7 H16 V17 H7 Z M4,13 V3.5 H13",
         [HudIcon.Notice] = "M3.5,14.5 C6,12.5 5.5,11.5 5.5,8.5 A4.5,4.5 0 0 1 14.5,8.5 C14.5,11.5 14,12.5 16.5,14.5 Z M8,17 A2,2 0 0 0 12,17"
     };
 

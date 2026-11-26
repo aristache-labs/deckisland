@@ -554,9 +554,9 @@ public partial class App : Application
         bool strip = _stripMonitor.Count > 0;
         // Each panel's collapsed row shows its own profile's readings; what any of them shows is read.
         var rows = _heldStrip.Select(deck => deck.PanelSettings).Distinct().ToList();
-        var held = rows.Aggregate(CompactMonitorItems.None, (items, settings) => items | Core.CompactMonitor.Shown(settings.CompactReadings));
+        var held = _heldStrip.Aggregate(CompactMonitorItems.None, (items, deck) => items | Core.CompactMonitor.Shown(deck.StripReadings));
         // A row that shows its readings is among the held ones (PresentMonitor).
-        var shown = strip ? _stripMonitor.Select(deck => deck.PanelSettings).Distinct().Aggregate(CompactMonitorItems.None, (items, settings) => items | Core.CompactMonitor.Shown(settings.CompactReadings)) : CompactMonitorItems.None;
+        var shown = strip ? _stripMonitor.Aggregate(CompactMonitorItems.None, (items, deck) => items | Core.CompactMonitor.Shown(deck.StripReadings)) : CompactMonitorItems.None;
         bool Heat(CompactMonitorItems item, CompactMonitorItems among) => (among & item) != 0 && rows.Any(settings => settings.CompactReadings.FirstOrDefault(reading => reading.Item == item) is { } reading
             && (item == CompactMonitorItems.Storage || reading.ShowValue) && CompactFigures.Shows(reading, CompactFigures.Temperature));
         bool stripDrives = (shown & CompactMonitorItems.Storage) != 0;

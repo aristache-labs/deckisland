@@ -87,6 +87,8 @@ public enum QuotaRingStyle { Nested = 0, Single = 1 }
 // The parts of the collapsed notch and capsule that are put in order, left to right. The cover stays at the left; Music places
 // only the title or lyric. Saved as numbers, so new members go at the end.
 // 9 was the retired Reminders part, still found in saved files, so Date is 10.
+// FPS and usage in the collapsed row: never, while an app is full screen, or always.
+public enum GamingMode { Off, FullScreen, Always }
 public enum CompactPart { Rings, Music, Monitor, Equalizer, Clock, Transfer, Devices, Weather, Focus, Date = 10, ScreenTime = 11, NextEvent = 12 }
 public static class CompactParts
 {
@@ -848,6 +850,19 @@ public sealed class DeckSettings
     public bool HudBluetooth { get; set; } = true;
     public bool HudLocks { get; set; } = true;
     public bool HudDownloads { get; set; } = true;
+    // The status alerts after Crest's: the power mode and Energy saver, the internet, airplane mode, the output device, monitors, the
+    // Insert key, Do not disturb and copying; hiding Windows' own indicator, showing the quick ones everywhere, and gaming mode.
+    public bool HudPowerMode { get; set; } = true;
+    public bool HudNetwork { get; set; } = true;
+    public bool HudAirplane { get; set; } = true;
+    public bool HudOutput { get; set; } = true;
+    public bool HudMonitors { get; set; } = true;
+    public bool HudInsert { get; set; }
+    public bool HudDoNotDisturb { get; set; } = true;
+    public bool HudCopy { get; set; }
+    public bool HudHideWindows { get; set; }
+    public bool HudEverywhere { get; set; }
+    public GamingMode GamingMode { get; set; }
     public bool SensorIndicator { get; set; } = true;
     public List<string> SensorIgnoredApps { get; set; } = [];
     public ReminderSound ReminderSound { get; set; } = ReminderSound.Once;
@@ -1253,6 +1268,7 @@ public sealed class DeckSettings
             .ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.OrdinalIgnoreCase);
         if (ExpandedUnderList is { } under && (!Enum.IsDefined(under) || under == ExpandedItem.Processes)) ExpandedUnderList = ExpandedItem.Storage;
         if (ExpandedUnderList is { } block) ExpandedUnderList = ExpandedMonitor.BlockOf(block)[0];
+        if (!Enum.IsDefined(GamingMode)) GamingMode = GamingMode.Off;
         CalendarSources = CalendarFeed.Normalize(CalendarSources);
         if (!CalendarFeed.Horizons.Contains(CalendarHorizon)) CalendarHorizon = CalendarFeed.DefaultHorizon;
         if (CalendarNoticeMinutes is not (5 or 10)) CalendarNoticeMinutes = 10;

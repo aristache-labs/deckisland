@@ -22,6 +22,8 @@ public partial class App
     private void ShowHud(HudMessage message)
     {
         message = message with { Hold = message.Hold ?? HudHold };
+        // The quick readouts stay off full-screen apps and a hidden island unless "Show everywhere" is on.
+        if (!Settings.HudEverywhere && EverywhereKind(message.Key) && !Decks.Any(deck => deck.IsVisible && !deck.IsSuppressed && !deck.OverFullScreen)) return;
         if (message.Key != "call" && message.Hold is { } hold && hold > TimeSpan.Zero) _hudTransientUntil = DateTime.UtcNow + hold;
         bool inline = false;
         foreach (var deck in Decks.ToList()) inline |= deck.ShowHudInline(message);
@@ -48,6 +50,7 @@ public partial class App
         StartCalls();
         StartSensors();
         StartNotifications();
+        StartMoreHuds();
     }
 
     // ----- Caps, Num and Scroll Lock -----
@@ -67,6 +70,11 @@ public partial class App
                     ShowHud(new($"lock:{key}", key switch { "num" => HudIcon.NumLock, "scroll" => HudIcon.ScrollLock, _ => HudIcon.Lock }, $"{HudFormat.LockName(key)} {(on ? "on" : "off")}", On: on, Lit: on, Reserve: $"{HudFormat.LockName(key)} off"));
                 state[key] = on;
             }
+            // Insert pressed alone: its toggle changed with neither Shift nor Ctrl down (Shift+Insert and Ctrl+Insert paste and copy).
+            bool insert = (GetKeyState(0x2D) & 1) != 0;
+            if (state.TryGetValue("insert", out bool was) && was != insert && Settings.HudInsert && (GetKeyState(0x10) & 0x8000) == 0 && (GetKeyState(0x11) & 0x8000) == 0)
+                ShowHud(new("insert", HudIcon.Insert, insert ? "Insert on" : "Insert off", On: insert, Lit: insert, Reserve: "Insert off"));
+            state["insert"] = insert;
         };
         timer.Start();
         _hudKeep.Add(timer);
@@ -137,6 +145,7 @@ public partial class App
     {
         bool? plugged = null;
         int lowestAlert = 101;
+        int? lastPercent = null;
         var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(5) };
         timer.Tick += (_, _) =>
         {
@@ -146,6 +155,10 @@ public partial class App
             if (plugged is { } before && before != nowPlugged && Settings.HudBattery)
                 ShowHud(new("battery", nowPlugged ? HudIcon.Charging : HudIcon.Battery, nowPlugged ? "Charging" : "On battery", Figure: $"{percent}%", Lit: nowPlugged, IconLevel: percent / 100.0, FigureColor: percent <= 20 && !nowPlugged ? null : "#30D158"));
             plugged = nowPlugged;
+            // Finished charging on the charger.
+            if (nowPlugged && percent >= 100 && lastPercent is < 100 && Settings.HudBattery)
+                ShowHud(new("battery", HudIcon.Charging, "Fully charged", Figure: "100%", Lit: true, IconLevel: 1, FigureColor: "#30D158"));
+            lastPercent = percent;
             if (nowPlugged) { lowestAlert = 101; return; }
             foreach (int threshold in new[] { 20, 10, 5 })
                 if (percent <= threshold && lowestAlert > threshold)

@@ -45,7 +45,7 @@ public partial class MainWindow
         // only hidden for now (the panel open, or a notice in its place, which leaves no row built: RenderCompact) keeps its
         // temperatures read while the sampler runs (App.UpdateMonitorExtras). A row whose only chosen reading is the battery reads the
         // devices (UpdateDevicesDemand), not the system.
-        bool heldStrip = !FocusCompactOnly && StripNeedsSystem && (_compactStrip is not null || StripAwaits() || _alert is not null && Settings.ShowsMonitor(EffectiveStyle)) && IsVisible && !IsSuppressed && !DisplayPower.Off && EffectiveStyle != CompactStyle.Line;
+        bool heldStrip = !FocusCompactOnly && StripNeedsSystem && (_compactStrip is not null || StripAwaits() || _alert is not null && ShowsStrip) && IsVisible && !IsSuppressed && !DisplayPower.Off && EffectiveStyle != CompactStyle.Line;
         bool strip = heldStrip && !_expanded && _alert is null;
         if (!shown)
         {
@@ -85,8 +85,8 @@ public partial class MainWindow
     // Whether this surface shows the system readings and waits for the first figures of one it does not show yet.
     private bool StripAwaits()
     {
-        if (!Settings.ShowsMonitor(EffectiveStyle)) return false;
-        return _stripAdmission.Awaits(Settings.CompactReadings, _app.Monitor?.Latest, StripSensors);
+        if (!ShowsStrip) return false;
+        return _stripAdmission.Awaits(StripReadings, _app.Monitor?.Latest, StripSensors);
     }
     // animate: the page is built for the first time, not for a new size, so its power rows come in (PowerOptions.Animate).
     private PowerOptions PowerBlockFor(bool animate) => Native.BatteryProvider.SystemHasBattery
@@ -129,14 +129,23 @@ public partial class MainWindow
     {
         var (hidden, arriving) = UpdateStripAdmission(snapshot);
         // Open, the row is not on screen; it is built with the new readings when the panel collapses.
-        if (_expanded || !(_compactStrip is not null || Settings.ShowsMonitor(EffectiveStyle)) || hidden == _stripUnavailable && _stripAdmission.Layout == _stripLayout) return false;
+        if (_expanded || !(_compactStrip is not null || ShowsStrip) || hidden == _stripUnavailable && _stripAdmission.Layout == _stripLayout) return false;
         _stripPresence.Arrive(arriving); RenderCompact();
         return true;
     }
     private (CompactMonitorItems Hidden, CompactMonitorItems Arriving) UpdateStripAdmission(MonitorSnapshot? snapshot)
-        => _stripAdmission.Update(snapshot, Settings.CompactReadings, StripSensors);
+        => _stripAdmission.Update(snapshot, StripReadings, StripSensors);
+    // Over a full-screen app (borderless or exclusive), for gaming mode and "Show everywhere".
+    internal bool OverFullScreen => _context is ScreenContext.Borderless or ScreenContext.Exclusive;
+    // Gaming mode on now: always, or while an app is full screen.
+    private bool GamingActive => Settings.GamingMode == GamingMode.Always || Settings.GamingMode == GamingMode.FullScreen && OverFullScreen;
+    private static readonly List<CompactReading> GamingReadings =
+        [new() { Item = CompactMonitorItems.Frames }, new() { Item = CompactMonitorItems.Cpu }, new() { Item = CompactMonitorItems.Gpu }];
+    // The collapsed row's readings: the chosen ones, or FPS and usage in gaming mode; and whether the row shows them at all.
+    internal List<CompactReading> StripReadings => GamingActive ? GamingReadings : Settings.CompactReadings;
+    private bool ShowsStrip => GamingActive && EffectiveStyle is CompactStyle.Notch or CompactStyle.Capsule || Settings.ShowsMonitor(EffectiveStyle);
     // Whether the collapsed row's chosen readings need the system sampler.
-    private bool StripNeedsSystem => CompactMonitor.Shown(Settings.CompactReadings) != 0;
+    private bool StripNeedsSystem => CompactMonitor.Shown(StripReadings) != 0;
 
     // The page's bottom margin for a page of this height; its sides are the header's inset.
     private static double MonitorBottom(double height) => height < 170 ? 10 : 16;
