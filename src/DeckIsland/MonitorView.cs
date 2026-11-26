@@ -54,6 +54,9 @@ internal sealed class MonitorView : Grid
     private readonly MonitorRows? _rows;
     private readonly StorageBlock? _storage;
     private readonly ProcessListView? _list;
+    // The block shown in a card under the list at the side, when it is one of the rows (not the drives).
+    private readonly MonitorRows? _under;
+    private readonly bool _drivesUnder;
     private readonly Canvas _overlay = new() { IsHitTestVisible = false };
     private ProcessCard? _card;
     private ProcessList? _processes;
@@ -69,7 +72,7 @@ internal sealed class MonitorView : Grid
     // temperatures are shown. main and mainChanged are kept for the callers; every row is the same size now.
     public MonitorView(ExpandedPlan plan, MonitorColors colors, MonitorMain main, ProcessSort sort, MonitorProcessView processView,
         Action<MonitorMain> mainChanged, Action<ProcessSort> sortChanged, Action<bool> hold, Action<GpuSample> gpuChanged, bool temperatures = false, bool smallTemperature = false,
-        PowerOptions? power = null, FrameworkElement? message = null, CoreDisplay coreDisplay = CoreDisplay.Auto, MonitorRows.ShowMenu? menu = null, IReadOnlyList<ExpandedItem>? tableOrder = null)
+        PowerOptions? power = null, FrameworkElement? message = null, CoreDisplay coreDisplay = CoreDisplay.Auto, MonitorRows.ShowMenu? menu = null, IReadOnlyList<ExpandedItem>? tableOrder = null, ExpandedItem? underList = ExpandedItem.Storage)
     {
         var layout = plan.Steps;
         _layout = layout;
@@ -83,8 +86,18 @@ internal sealed class MonitorView : Grid
         var order = plan.Parts.Select(part => part.Item).ToList();
         if (tableOrder is not null) order = [.. order.OrderBy(item => tableOrder.ToList().IndexOf(item) is var at and >= 0 ? at : int.MaxValue)];
         bool showsPower = plan.Part(ExpandedItem.Power) is not null && layout.PowerLines > 0 && power is not null;
-        _rows = new MonitorRows(order, colors, layout, temperatures, showsPower ? power : null, plan.Part(ExpandedItem.Frames) is not null && layout.FrameLine, gpuChanged, coreDisplay, menu);
+        bool frames = plan.Part(ExpandedItem.Frames) is not null && layout.FrameLine;
         bool sideList = plan.List != ExpandedList.Full && layout.List == ListPlacement.Side;
+        // With the list at the side, the chosen block leaves the left column for a card under the list (ExpandedUnderList).
+        var underBlock = sideList && underList is { } chosen ? ExpandedMonitor.BlockOf(chosen) : [];
+        _drivesUnder = underBlock.Contains(ExpandedItem.Storage);
+        var moved = underBlock.Contains(ExpandedItem.Storage) ? [] : order.Where(underBlock.Contains).ToList();
+        _rows = new MonitorRows([.. order.Where(item => !moved.Contains(item))], colors, layout, temperatures, showsPower ? power : null, frames, gpuChanged, coreDisplay, menu);
+        if (moved.Count > 0)
+        {
+            _under = new MonitorRows(moved, colors, layout, temperatures, showsPower ? power : null, frames, gpuChanged, coreDisplay, menu);
+            if (_under.Children.Count == 0) _under = null;
+        }
         if (plan.Part(ExpandedItem.Storage) is not null && layout.StorageLines > 0)
             // In its own card: under the list at the side, otherwise under the readings. One volume per line.
             _storage = new StorageBlock(colors, layout.Body, layout.Caption, layout.StorageRow, layout.StorageLines * layout.StorageColumns, 1, temperatures);
@@ -109,7 +122,12 @@ internal sealed class MonitorView : Grid
                 ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(CardGap) });
                 ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(MonitorLayout.ListShare / (1 - MonitorLayout.ListShare), GridUnitType.Star),
                     MinWidth = MonitorLayout.ListMinimum, MaxWidth = MonitorLayout.ListMaximum });
-                listSide = WithDrives(listSide);
+                if (_drivesUnder) listSide = WithDrives(listSide);
+                else
+                {
+                    if (_under is not null) listSide = Under(listSide, Card(_under, top: true));
+                    readings = WithDrives(readings);
+                }
                 SetColumn(listSide, 2);
             }
             else
@@ -135,6 +153,17 @@ internal sealed class MonitorView : Grid
         card.Loaded += (_, _) => { var look = PanelLook.Of(card); card.Background = UI.Brush(look.Fill); card.CornerRadius = new CornerRadius(look.Corner(10)); };
         return card;
     }
+    // The list with the chosen block's card under it.
+    private static FrameworkElement Under(FrameworkElement above, FrameworkElement card)
+    {
+        var column = new Grid();
+        column.RowDefinitions.Add(new RowDefinition());
+        column.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        card.Margin = new Thickness(0, CardGap, 0, 0);
+        SetRow(card, 1);
+        column.Children.Add(above); column.Children.Add(card);
+        return column;
+    }
     // The given part with the drives' card under it, when the page shows the drives.
     private FrameworkElement WithDrives(FrameworkElement? above)
     {
@@ -156,15 +185,16 @@ internal sealed class MonitorView : Grid
         if (_card is not null && !_card.IsMouseOver && _list?.PointerOnRow != true) CloseCard(animate: true);
     }
     // Whether the page has the power row (the layout had room for it): the power is read only then.
-    public bool ShowsPower => _rows?.ShowsPower == true;
+    public bool ShowsPower => _rows?.ShowsPower == true || _under?.ShowsPower == true;
     // Whether the page has the frame rate's row (the layout had room for it): the frame rate is read for it only then.
-    public bool ShowsFrames => _rows?.ShowsFrames == true;
+    public bool ShowsFrames => _rows?.ShowsFrames == true || _under?.ShowsFrames == true;
 
     public void Update(MonitorSnapshot snapshot, bool motion)
     {
         _motion = motion;
         _cores = Math.Max(1, snapshot.LogicalProcessors);
         _rows?.Update(snapshot, motion);
+        _under?.Update(snapshot, motion);
         _storage?.Set(snapshot.Storage, motion);
         _list?.Set(snapshot.Processes, _cores, motion);
         _processes = snapshot.Processes.OrDefault;

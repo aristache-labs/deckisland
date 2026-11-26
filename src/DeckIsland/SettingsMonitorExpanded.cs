@@ -273,9 +273,12 @@ public sealed partial class SettingsWindow
         void Build()
         {
             var readings = ExpandedMonitor.Normalize(S.ExpandedReadings);
-            var blocks = ExpandedMonitor.BlocksIn(readings).Where(block => block[0] != ExpandedItem.Processes && BlockName(block, readings).Length > 0).ToList();
+            var shown = ExpandedMonitor.BlocksIn(readings).Where(block => block[0] != ExpandedItem.Processes && BlockName(block, readings).Length > 0).ToList();
             bool processes = ExpandedOf(S, ExpandedItem.Processes).Visible;
-            string key = string.Join("|", blocks.Select(block => BlockName(block, readings))) + "|" + processes + "|" + Loc.Language;
+            // The block chosen for under the process list stands there in the sketch, not in the left column.
+            var underBlock = processes && S.ExpandedUnderList is { } chosen ? shown.FirstOrDefault(block => block.Contains(chosen)) : null;
+            var blocks = shown.Where(block => block != underBlock).ToList();
+            string key = string.Join("|", blocks.Select(block => BlockName(block, readings))) + "|" + processes + "|" + (underBlock is null ? "" : BlockName(underBlock, readings)) + "|" + Loc.Language;
             if (key == built) return;
             built = key;
             var grid = new Grid();
@@ -307,6 +310,20 @@ public sealed partial class SettingsWindow
                 var name = TextLine(ExpandedName(ExpandedItem.Processes), 12.5, TextSecondary);
                 name.HorizontalAlignment = HorizontalAlignment.Center; name.VerticalAlignment = VerticalAlignment.Center;
                 list.Children.Add(outline); list.Children.Add(name);
+                if (underBlock is not null)
+                {
+                    // The list's column: the list, then the chosen block under it.
+                    var column = new Grid { Margin = list.Margin };
+                    list.Margin = new Thickness(0);
+                    column.RowDefinitions.Add(new RowDefinition()); column.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+                    var below = new Border { Height = 32, CornerRadius = new CornerRadius(7), BorderThickness = new Thickness(1), Margin = new Thickness(0, SketchGap, 0, 0),
+                        Background = (Brush)FindResource("SettingsAccentTint"), BorderBrush = UI.Brush(_palette.Accent), ToolTip = Loc.T("在进程列表下方", "Under the process list"),
+                        Child = TextLine(BlockName(underBlock, readings), 12.5, _palette.Accent) };
+                    ((TextBlock)below.Child).HorizontalAlignment = HorizontalAlignment.Center; ((TextBlock)below.Child).VerticalAlignment = VerticalAlignment.Center;
+                    Grid.SetRow(below, 1);
+                    column.Children.Add(list); column.Children.Add(below);
+                    list = column;
+                }
                 grid.ColumnDefinitions.Add(new ColumnDefinition { Width = blocks.Count > 0 ? new GridLength(Loc.IsEnglish ? 140 : 120) : new GridLength(1, GridUnitType.Star) });
                 Grid.SetColumn(list, grid.ColumnDefinitions.Count - 1); grid.Children.Add(list);
             }
@@ -314,12 +331,43 @@ public sealed partial class SettingsWindow
         }
         refresh.Add(Build);
 
+        // Which block stands under the process list: none, or one of the shown blocks (the drives by default).
+        var under = new ComboBox { Width = 200, Style = (Style)FindResource("SettingsCombo") };
+        var choices = new List<ExpandedItem?>();
+        bool fillingUnder = false;
+        void FillUnder()
+        {
+            fillingUnder = true;
+            var readings = ExpandedMonitor.Normalize(S.ExpandedReadings);
+            choices = [null, .. ExpandedMonitor.BlocksIn(readings).Where(block => block[0] != ExpandedItem.Processes && BlockName(block, readings).Length > 0).Select(block => (ExpandedItem?)block[0])];
+            if (S.ExpandedUnderList is { } current && !choices.Contains(current)) choices.Add(current);
+            under.ItemsSource = choices.Select(item => item is { } block ? ExpandedName(block) is var single && BlockName(ExpandedMonitor.BlockOf(block), readings) is { Length: > 0 } both ? both : single : Loc.T("无", "None")).ToList();
+            under.SelectedIndex = Math.Max(0, choices.IndexOf(S.ExpandedUnderList));
+            under.IsEnabled = ExpandedOf(S, ExpandedItem.Processes).Visible;
+            fillingUnder = false;
+        }
+        under.SelectionChanged += (_, _) =>
+        {
+            if (fillingUnder || under.SelectedIndex < 0) return;
+            Change(s => s.ExpandedUnderList = choices[under.SelectedIndex]);
+            built = ""; Build();
+        };
+        refresh.Add(FillUnder);
+        FillUnder();
+        AutomationProperties.SetName(under, Loc.T("进程列表下方", "Under the process list"));
+        var underRow = new Grid { Margin = new Thickness(0, 0, 0, 8) };
+        underRow.ColumnDefinitions.Add(new ColumnDefinition()); underRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        var underLabel = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Children = { SettingLabel(Loc.T("进程列表下方", "Under the process list"), null),
+            TextLine(Loc.T("进程列表在右侧时，在它下方显示的一项。", "One part shown under the process list when the list stands at the side."), 12, TextTertiary) } };
+        Grid.SetColumn(under, 1);
+        underRow.Children.Add(underLabel); underRow.Children.Add(under);
+
         var title = new Grid { Margin = new Thickness(0, 12, 0, 0) };
         title.ColumnDefinitions.Add(new ColumnDefinition()); title.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         title.Children.Add(SettingLabel(Loc.T("页面顺序", "Order on the page"), null));
         Grid.SetColumn(restore, 1); title.Children.Add(restore);
         var panel = new StackPanel();
-        panel.Children.Add(title); panel.Children.Add(host);
+        panel.Children.Add(title); panel.Children.Add(host); panel.Children.Add(underRow);
         return KeepPreview(panel);
     }
 

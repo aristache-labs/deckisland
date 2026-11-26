@@ -920,6 +920,9 @@ public sealed class DeckSettings
         get => _expanded ?? ExpandedMonitor.Defaults(MonitorProcesses, MonitorStorage, MonitorPower, MonitorFrames);
         set => _expanded = value;
     }
+    // The one block of the expanded page shown in a card under the process list when the list stands at the side (any of the left
+    // column's: the drives by default); null leaves every block at the left. Named by the block's first item (ExpandedMonitor.Blocks).
+    public ExpandedItem? ExpandedUnderList { get; set; } = ExpandedItem.Storage;
     // The notch and the capsule each switch the system readings on; what they show is shared.
     public bool NotchMonitor { get; set; }
     public bool CapsuleMonitor { get; set; }
@@ -1248,6 +1251,8 @@ public sealed class DeckSettings
         var named = ScreenTimeApps.Keys.Concat(ScreenTimeHistory.Values.SelectMany(day => day.Apps.Keys)).ToHashSet(StringComparer.OrdinalIgnoreCase);
         ScreenTimePaths = (ScreenTimePaths ?? []).Where(pair => named.Contains(pair.Key) && !string.IsNullOrWhiteSpace(pair.Value) && pair.Value.Length <= 400)
             .ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.OrdinalIgnoreCase);
+        if (ExpandedUnderList is { } under && (!Enum.IsDefined(under) || under == ExpandedItem.Processes)) ExpandedUnderList = ExpandedItem.Storage;
+        if (ExpandedUnderList is { } block) ExpandedUnderList = ExpandedMonitor.BlockOf(block)[0];
         CalendarSources = CalendarFeed.Normalize(CalendarSources);
         if (!CalendarFeed.Horizons.Contains(CalendarHorizon)) CalendarHorizon = CalendarFeed.DefaultHorizon;
         if (CalendarNoticeMinutes is not (5 or 10)) CalendarNoticeMinutes = 10;
