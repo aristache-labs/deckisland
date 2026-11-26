@@ -19,9 +19,22 @@ public partial class App
     private readonly List<object> _hudKeep = [];
 
     // The collapsed island shows it in place and takes its width; a panel that cannot (open, hidden, a line) gets the floating one.
+    private string? _hudShownKey;
+    private static bool Follows(string key) => key is "output" || key.StartsWith("monitor:", StringComparison.Ordinal);
     private void ShowHud(HudMessage message)
     {
         message = message with { Hold = message.Hold ?? HudHold };
+        // What follows from another change (the sound moving to the speakers after headphones disconnect, a monitor after a dock) waits
+        // until the readout on show has had its time, so the cause shows first and then its effect.
+        if (Follows(message.Key) && _hudShownKey is { } shown && shown != message.Key && !Follows(shown) && DateTime.UtcNow < _hudTransientUntil)
+        {
+            var wait = new DispatcherTimer { Interval = _hudTransientUntil - DateTime.UtcNow + TimeSpan.FromMilliseconds(250) };
+            var later = message;
+            wait.Tick += (_, _) => { wait.Stop(); _hudShownKey = null; ShowHud(later); };
+            wait.Start();
+            return;
+        }
+        _hudShownKey = message.Key;
         // The quick readouts stay off full-screen apps and a hidden island unless "Show everywhere" is on.
         if (!Settings.HudEverywhere && EverywhereKind(message.Key) && !Decks.Any(deck => deck.IsVisible && !deck.IsSuppressed && !deck.OverFullScreen)) return;
         if (message.Key != "call" && message.Hold is { } hold && hold > TimeSpan.Zero) _hudTransientUntil = DateTime.UtcNow + hold;
@@ -192,8 +205,7 @@ public partial class App
                         if (!listed || !Settings.HudBluetooth) return;
                         bool connected = sender.ConnectionStatus == BluetoothConnectionStatus.Connected;
                         int? percent = Devices?.All.FirstOrDefault(item => string.Equals(item.Name, sender.Name, StringComparison.OrdinalIgnoreCase))?.Percent;
-                        ShowHud(new($"bluetooth:{sender.DeviceId}", HudIcon.Bluetooth, sender.Name,
-                            Figure: connected ? (percent is { } value ? $"{value}%" : "Connected") : "Disconnected", Lit: connected));
+                        BluetoothHud(sender.DeviceId, sender.Name, connected, percent);
                     });
                 }
                 catch (Exception error) when (error is COMException or InvalidOperationException) { }
@@ -205,6 +217,52 @@ public partial class App
             }));
         }
         catch (Exception error) when (error is COMException or InvalidOperationException or UnauthorizedAccessException) { }
+        StartBluetoothLowEnergy();
+    }
+
+    // Phones and many newer devices connect over Bluetooth Low Energy, which the classic watcher above does not see.
+    private void StartBluetoothLowEnergy()
+    {
+        try
+        {
+            var watcher = DeviceInformation.CreateWatcher(global::Windows.Devices.Bluetooth.BluetoothLEDevice.GetDeviceSelectorFromPairingState(true));
+            bool listed = false;
+            watcher.EnumerationCompleted += (_, _) => listed = true;
+            watcher.Added += async (_, info) =>
+            {
+                try
+                {
+                    var device = await global::Windows.Devices.Bluetooth.BluetoothLEDevice.FromIdAsync(info.Id);
+                    if (device is null) return;
+                    _hudKeep.Add(device);
+                    device.ConnectionStatusChanged += (sender, _) => Dispatcher.BeginInvoke(() =>
+                    {
+                        if (!listed || !Settings.HudBluetooth) return;
+                        bool connected = sender.ConnectionStatus == BluetoothConnectionStatus.Connected;
+                        int? percent = Devices?.All.FirstOrDefault(item => string.Equals(item.Name, sender.Name, StringComparison.OrdinalIgnoreCase))?.Percent;
+                        BluetoothHud(sender.DeviceId, sender.Name, connected, percent);
+                    });
+                }
+                catch (Exception error) when (error is COMException or InvalidOperationException) { }
+            };
+            watcher.Start();
+            _hudSources.Add(new Disposer(() =>
+            {
+                if (watcher.Status is DeviceWatcherStatus.Started or DeviceWatcherStatus.EnumerationCompleted) watcher.Stop();
+            }));
+        }
+        catch (Exception error) when (error is COMException or InvalidOperationException or UnauthorizedAccessException) { }
+    }
+
+    // "AirPods · Connected" at the left next to the icon, so a long name has the room; the battery at the right when it is known. A device
+    // seen by both watchers (classic and Low Energy) shows once: the same name within two seconds is the same change.
+    private (string Name, bool Connected, DateTime At) _bluetoothShown;
+    private void BluetoothHud(string id, string name, bool connected, int? percent)
+    {
+        if (_bluetoothShown.Name == name && _bluetoothShown.Connected == connected && DateTime.UtcNow - _bluetoothShown.At < TimeSpan.FromSeconds(2)) return;
+        _bluetoothShown = (name, connected, DateTime.UtcNow);
+        ShowHud(new($"bluetooth:{name}", HudIcon.Bluetooth, $"{name} · {(connected ? "Connected" : "Disconnected")}",
+            Figure: connected && percent is { } value ? $"{value}%" : null, Lit: connected));
     }
 
     // ----- Downloads: a browser's partial file grows, then takes its final name -----

@@ -85,12 +85,15 @@ public partial class MainWindow
         double side = textless ? glyph + gap : Math.Max(glyph, Math.Ceiling(right.DesiredSize.Width)) + gap;
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(side) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(textless ? 0 : side) });
+        // A device's name stands next to its icon instead, so a long one has the room; the right keeps only what its figure needs.
+        bool leftText = hud.Key.StartsWith("bluetooth:", StringComparison.Ordinal);
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(textless ? 0 : leftText ? Math.Ceiling(right.DesiredSize.Width) + (right.DesiredSize.Width > 0 ? gap : 0) : side) });
+        if (leftText) grid.ColumnDefinitions[0].Width = new GridLength(glyph + gap);
         grid.Children.Add(mark);
         if (!textless)
         {
             var text = UI.Fixed(hud.Text, font, line, Look.Primary, FontWeights.SemiBold);
-            text.TextTrimming = TextTrimming.CharacterEllipsis; text.ToolTip = hud.Text; text.TextAlignment = TextAlignment.Center;
+            text.TextTrimming = TextTrimming.CharacterEllipsis; text.ToolTip = hud.Text; text.TextAlignment = leftText ? TextAlignment.Left : TextAlignment.Center;
             text.ClearValue(FrameworkElement.WidthProperty); text.HorizontalAlignment = HorizontalAlignment.Stretch;
             Grid.SetColumn(text, 1); grid.Children.Add(text);
             Grid.SetColumn(right, 2); grid.Children.Add(right);
