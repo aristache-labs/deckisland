@@ -635,6 +635,17 @@ public sealed class DeckSettings
     // surface and its theme layers are see-through; text, icons and the rim are drawn as before.
     public int SurfaceTransparency { get; set; }
     public const int MaxSurfaceTransparency = 90;
+    // Glass (MainWindow.Glass.cs): the screen behind shows through the open panel, blurred; its transparency (0 to 40 %, readable up to
+    // 13 %), refraction, frost and rim light (0 to 100); also on the closed notch and capsule, and under the status alerts; and how many
+    // times a second the screen behind is read.
+    public bool Glass { get; set; }
+    public int GlassTransparency { get; set; } = 9;
+    public int GlassRefraction { get; set; } = 40;
+    public int GlassFrost { get; set; } = 60;
+    public int GlassRim { get; set; } = 70;
+    public bool GlassCollapsed { get; set; }
+    public bool GlassAlerts { get; set; } = true;
+    public int GlassFps { get; set; } = 10;
     public int OpenDelay { get; set; } = 0;
     // The collapsed panel opens on a click instead of on hover; OpenDelay then does not apply.
     public bool ClickToExpand { get; set; }
@@ -1218,6 +1229,8 @@ public sealed class DeckSettings
         ClipboardExcluded = ClipboardExclusions.Normalize(ClipboardExcluded);
         PanelScale = PanelScales.Fit(PanelScale);
         SurfaceTransparency = Math.Clamp(SurfaceTransparency, 0, MaxSurfaceTransparency);
+        GlassTransparency = Math.Clamp(GlassTransparency, 0, 40); GlassRefraction = Math.Clamp(GlassRefraction, 0, 100);
+        GlassFrost = Math.Clamp(GlassFrost, 0, 100); GlassRim = Math.Clamp(GlassRim, 0, 100); GlassFps = Math.Clamp(GlassFps, 5, 30);
         if (!Enum.IsDefined(MonitorPalette)) MonitorPalette = MonitorPalette.Theme;
         MonitorCustomColors ??= new();
         MonitorCustomColors.Normalize();

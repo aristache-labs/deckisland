@@ -51,6 +51,15 @@ public sealed class IslandBorder : Border
     public static readonly DependencyProperty BevelBrushProperty = DependencyProperty.Register(
         nameof(BevelBrush), typeof(Brush), typeof(IslandBorder), new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender));
 
+    // Glass (MainWindow.Glass.cs): a picture of the screen behind the island, already blurred by its capture, drawn first inside the
+    // outline and a little enlarged from the middle (GlassZoom) so its edges bend what is behind, as a lens does; GlassRim is how
+    // brightly the glass's edge shines (0 to 1). Null draws no glass.
+    public static readonly DependencyProperty GlassProperty = DependencyProperty.Register(
+        nameof(Glass), typeof(ImageSource), typeof(IslandBorder), new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender));
+    public ImageSource? Glass { get => (ImageSource?)GetValue(GlassProperty); set => SetValue(GlassProperty, value); }
+    public double GlassZoom { get; set; } = 1;
+    public double GlassRim { get; set; }
+
     private Pen? _rim;
     private (Size Size, double Shoulder, CornerRadius Corners, double Inset, double Step, double Rim)? _outlineKey;
     private Geometry _outline = Geometry.Empty;
@@ -83,6 +92,7 @@ public sealed class IslandBorder : Border
     protected override void OnRender(DrawingContext drawingContext)
     {
         var outline = Outline();
+        if (Glass is { } glass) DrawGlass(drawingContext, outline, glass);
         double material = Math.Clamp(MaterialOpacity, 0, 1), surface = Math.Clamp(SurfaceOpacity, 0, 1);
         // Only a fading material needs the opacity layer; fully shown, the layers draw straight onto the surface.
         bool fading = material < 1;
@@ -94,6 +104,7 @@ public sealed class IslandBorder : Border
             Layers(drawingContext, outline);
             Rim(drawingContext, outline);
             if (fading) drawingContext.Pop();
+            GlassEdge(drawingContext, outline);
             return;
         }
         // See-through: the base color and the layers together take the surface's opacity, and the rim keeps its own strength so
@@ -107,10 +118,29 @@ public sealed class IslandBorder : Border
             if (fading) drawingContext.Pop();
         }
         drawingContext.Pop();
+        GlassEdge(drawingContext, outline);
         if (material <= 0) return;
         if (fading) drawingContext.PushOpacity(material);
         Rim(drawingContext, outline);
         if (fading) drawingContext.Pop();
+    }
+
+    private void DrawGlass(DrawingContext drawingContext, Geometry outline, ImageSource glass)
+    {
+        double width = RenderSize.Width, height = RenderSize.Height, zoom = Math.Max(1, GlassZoom);
+        drawingContext.PushClip(outline);
+        drawingContext.DrawImage(glass, new Rect(width * (1 - zoom) / 2, height * (1 - zoom) / 2, width * zoom, height * zoom));
+        drawingContext.Pop();
+    }
+
+    // The glass's edge: a light line brightest at the top, fading down the sides.
+    private void GlassEdge(DrawingContext drawingContext, Geometry outline)
+    {
+        if (Glass is null || GlassRim <= 0) return;
+        byte top = (byte)Math.Round(255 * Math.Clamp(GlassRim, 0, 1) * .55), low = (byte)Math.Round(top * .25);
+        var brush = new LinearGradientBrush(Color.FromArgb(top, 255, 255, 255), Color.FromArgb(low, 255, 255, 255), 90);
+        brush.Freeze();
+        drawingContext.DrawGeometry(null, new Pen(brush, 1.2), outline);
     }
 
     private void Layers(DrawingContext drawingContext, Geometry outline)

@@ -49,11 +49,39 @@ public sealed partial class SettingsWindow
         ThemeSection(Loc.T("图标", "Icons"), Loc.T("页面切换栏的图标。", "The page switch's icons."));
         Group(Describe(Toggle(Loc.T("彩色图标", "Coloured icons"), S.ColouredIcons, value => { Change(s => s.ColouredIcons = value); Dispatcher.BeginInvoke(() => ShowPage(_page)); }),
             Loc.T("页面切换栏和设置侧栏的图标使用各自的颜色。", "The page switch's and the settings sidebar's icons each in a colour of its own.")));
+        GlassSection();
         _themeDetails = Collect(() => ThemeDetails(chosen, users)); _content.Children.Add(_themeDetails);
         // Miniatures of cards no longer on the page (a theme file renamed or removed) are let go.
         var cards = new[] { PanelThemes.SystemId }.Concat(PanelThemes.BuiltIns.Select(t => t.Id)).Concat(users.Where(t => t.Usable).Select(t => t.Id)).ToHashSet();
         foreach (var key in _themePreviews.Keys.Where(key => !cards.Contains(key.Card) || key.Language != Loc.Language).ToList()) _themePreviews.Remove(key);
         static (string Id, string Name, PanelThemeInfo Theme) Card(PanelThemeInfo theme) => (theme.Id, theme.DisplayName, theme);
+    }
+
+    // Glass (MainWindow.Glass.cs): the switch, how it looks, where it shows, and how often the screen behind is read.
+    private void GlassSection()
+    {
+        ThemeSection(Loc.T("玻璃", "Glass"), Loc.T("展开的面板透出背后的屏幕，像玻璃一样。", "The open panel lets the screen behind it show through, like glass."));
+        var warning = TextLine(Loc.T("开启时，灵动岛不会出现在截图、录屏和屏幕共享中；NVIDIA 即时重放会因此自动关闭，需要在 NVIDIA 应用中重新打开。",
+            "While it is on, the island is left out of screenshots, recordings and screen sharing. NVIDIA's Instant Replay switches off when it sees that, and stays off until you switch it on again in the NVIDIA app."), 12, TextTertiary);
+        warning.TextWrapping = TextWrapping.Wrap; warning.Margin = new Thickness(0, 0, 0, 10);
+        Group(
+            Describe(Toggle(Loc.T("玻璃", "Glass"), S.Glass, value => Change(s => s.Glass = value)),
+                Loc.T("展开的面板透出背后的屏幕。", "The open panel lets the screen behind it show through.")),
+            warning,
+            Describe(InlineSlider(Loc.T("透明度", "Transparency"), S.GlassTransparency, 0, GlassLook.MaxTransparency, 1, "%", value => Change(s => s.GlassTransparency = (int)value)),
+                Loc.T($"不超过 {GlassLook.ReadableTransparency}% 时，文字在任何背景上都清晰可读。", $"Up to {GlassLook.ReadableTransparency} %, all text stays readable over any background.")),
+            Describe(InlineSlider(Loc.T("折射", "Refraction"), S.GlassRefraction, 0, 100, 5, "%", value => Change(s => s.GlassRefraction = (int)value)),
+                Loc.T("边缘对背后内容的弯折程度。", "How strongly the edge bends what is behind.")),
+            Describe(InlineSlider(Loc.T("磨砂", "Frost"), S.GlassFrost, 0, 100, 5, "%", value => Change(s => s.GlassFrost = (int)value)),
+                Loc.T("背景模糊的程度。", "How much the background blurs.")),
+            Describe(InlineSlider(Loc.T("边缘光", "Rim light"), S.GlassRim, 0, 100, 5, "%", value => Change(s => s.GlassRim = (int)value)),
+                Loc.T("玻璃边缘的亮度。", "How brightly the glass's edge shines.")),
+            Describe(Toggle(Loc.T("收起的刘海和胶囊也使用", "Also the closed notch and capsule"), S.GlassCollapsed, value => Change(s => s.GlassCollapsed = value)),
+                Loc.T("⚠ 更耗电：屏幕每次变化 Windows 都要多做一些工作。", "⚠ Uses more battery: Windows does more work every time the screen changes.")),
+            Describe(Toggle(Loc.T("状态提示", "Status alerts"), S.GlassAlerts, value => Change(s => s.GlassAlerts = value)),
+                Loc.T("音量、亮度等提示也显示为玻璃。", "Volume, brightness and the other alerts as glass too.")),
+            Describe(InlineSlider(Loc.T("每秒帧数", "Frames per second"), S.GlassFps, GlassLook.MinFps, GlassLook.MaxFps, 1, "", value => Change(s => s.GlassFps = (int)value)),
+                Loc.T("⚠ 数值越高越耗电。", "⚠ A higher value uses more battery.")));
     }
 
     // A section title with a divider under it, as the other pages' groups start.

@@ -147,6 +147,8 @@ public partial class MainWindow : Window
         }) { Interval = TimeSpan.FromSeconds(1) };
         InitializeComponent();
         VaultContent.IsVisibleChanged += (_, _) => { if (!VaultContent.IsVisible) ClearVaultView(); };
+        IsVisibleChanged += (_, _) => UpdateGlass();
+        Closed += (_, _) => { _glassTimer?.Stop(); _glassHold?.Dispose(); };
         // Out of sight until the boot (or, without animations, until it has its place): the window shows before it is placed.
         HoverZone.Opacity = 0;
         // The island stays in sight over a taskbar that Start or search has lifted above every application window, and above
@@ -404,6 +406,7 @@ public partial class MainWindow : Window
         MonitorFormat.Megabits = Settings.NetworkMegabits;
         ApplyTheme();
         ApplySurface();
+        UpdateGlass();
         // A panel holding the keyboard stays one that can be active, whatever the setting (PanelKeyboard).
         WindowsHost.SetCapturable(this, Settings.WindowCapture || PanelKeys.Holding);
         // Made ordinary, at startup too, the panel goes beneath the window in use like a closed one; so does an ordinary panel
@@ -703,7 +706,7 @@ public partial class MainWindow : Window
     // shadow is cast by an opaque copy of the surface that would show through it, so a see-through surface casts none.
     private void ApplySurface()
     {
-        double opacity = 1 - Settings.SurfaceTransparency / 100d;
+        double opacity = _glassOn ? GlassLook.For(Settings).Tint : 1 - Settings.SurfaceTransparency / 100d;
         bool clear = opacity < 1;
         Island.SurfaceOpacity = opacity;
         if (Look.Current.Effects.Pixel <= 0)
@@ -882,6 +885,8 @@ public partial class MainWindow : Window
     // keyboard: a hotkey or Escape asked for it (motion-review C4), so the move is quicker and has no give.
     public void SetExpanded(bool expanded, bool instant = false, bool keyboard = false)
     {
+        // The glass follows the panel opening and closing, once the change has been made.
+        Dispatcher.BeginInvoke(DispatcherPriority.Background, UpdateGlass);
         if (expanded && IsSuppressed || _poweringOff) return;
         if (ReminderAlertId is not null && IsSuppressed) ClearReminderAlert();
         bool reminderAlert = expanded && ReminderAlertId is not null;

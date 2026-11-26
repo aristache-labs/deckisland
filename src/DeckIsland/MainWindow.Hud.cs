@@ -37,6 +37,7 @@ public partial class MainWindow
         }
         RenderCompact();
         if (CompactColumnMode) Dispatcher.BeginInvoke(DispatcherPriority.Background, FitCompactToContent);
+        UpdateGlass();
         return true;
     }
 
@@ -53,6 +54,7 @@ public partial class MainWindow
         if (_hudMessage is null) return;
         _hudMessage = null;
         RenderCompact();
+        UpdateGlass();
         if (CompactColumnMode) Dispatcher.BeginInvoke(DispatcherPriority.Background, FitCompactToContent);
     }
 
