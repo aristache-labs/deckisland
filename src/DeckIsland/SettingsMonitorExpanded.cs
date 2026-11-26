@@ -291,6 +291,32 @@ public sealed partial class SettingsWindow
                 return;
             }
             var stack = new StackPanel();
+            // The slot under the process list: the chosen block, or a dashed place to drop one on.
+            Border? slot = null;
+            if (processes && blocks.Count + (underBlock is null ? 0 : 1) > 0)
+            {
+                var slotText = TextLine(underBlock is null ? Loc.T("拖动一项到这里", "Drag a section here") : BlockName(underBlock, readings), 12.5, underBlock is null ? TextTertiary : _palette.Accent);
+                slotText.HorizontalAlignment = HorizontalAlignment.Center; slotText.VerticalAlignment = VerticalAlignment.Center; slotText.TextAlignment = TextAlignment.Center;
+                slot = new Border { Height = BlockHeight, CornerRadius = new CornerRadius(7), BorderThickness = new Thickness(1), Margin = new Thickness(0, SketchGap, 0, 0), Child = slotText,
+                    Background = underBlock is null ? Brushes.Transparent : (Brush)FindResource("SettingsAccentTint"), BorderBrush = UI.Brush(underBlock is null ? TextTertiary : _palette.Accent),
+                    ToolTip = Loc.T("进程列表下方：拖动一项到这里，拖回左侧即可移出", "Under the process list: drag a section here, drag it back to the left to take it out"), Opacity = .9 };
+                AutomationProperties.SetName(slot, Loc.T("进程列表下方", "Under the process list"));
+                if (underBlock is not null)
+                {
+                    // The block in the slot, dragged out over the left column, goes back there.
+                    slot.Cursor = Cursors.SizeAll;
+                    slot.MouseLeftButtonDown += (_, e) => { e.Handled = slot.CaptureMouse(); };
+                    slot.MouseLeftButtonUp += (_, e) =>
+                    {
+                        if (!slot.IsMouseCaptured) return;
+                        slot.ReleaseMouseCapture(); e.Handled = true;
+                        var at = e.GetPosition(stack);
+                        if (at.X >= 0 && at.X <= Math.Max(stack.ActualWidth, 1) && stack.ActualWidth > 0 || blocks.Count == 0 && e.GetPosition(slot).Y < -6)
+                        { Change(s => s.ExpandedUnderList = null); built = ""; Build(); }
+                    };
+                }
+            }
+            void ToSlot(ExpandedItem item) { Change(s => s.ExpandedUnderList = ExpandedMonitor.BlockOf(item)[0]); built = ""; Build(); }
             void SwapRates() { Change(s => s.ExpandedReadings = ExpandedMonitor.SwapRates(s.ExpandedReadings)); Build(); Restorable(); }
             foreach (var block in blocks)
             {
@@ -298,7 +324,8 @@ public sealed partial class SettingsWindow
                 var grip = new SketchGrip();
                 var inside = block[0] == ExpandedItem.Download && BlockName(block, readings).Contains('+') ? RatesInside(readings, SwapRates, grip) : null;
                 stack.Children.Add(SketchBlock(block, BlockName(block, readings), inside, grip, stack,
-                    order => { built = SketchKey(order, readings, processes); Change(s => s.ExpandedReadings = ExpandedMonitor.Arrange(s.ExpandedReadings, order)); Restorable(); }));
+                    order => { built = SketchKey(order, readings, processes); Change(s => s.ExpandedReadings = ExpandedMonitor.Arrange(s.ExpandedReadings, order)); Restorable(); },
+                    slot, ToSlot));
             }
             if (blocks.Count > 0) { grid.ColumnDefinitions.Add(new ColumnDefinition()); grid.Children.Add(stack); }
             if (processes)
@@ -310,18 +337,15 @@ public sealed partial class SettingsWindow
                 var name = TextLine(ExpandedName(ExpandedItem.Processes), 12.5, TextSecondary);
                 name.HorizontalAlignment = HorizontalAlignment.Center; name.VerticalAlignment = VerticalAlignment.Center;
                 list.Children.Add(outline); list.Children.Add(name);
-                if (underBlock is not null)
+                if (slot is not null)
                 {
-                    // The list's column: the list, then the chosen block under it.
+                    // The list's column: the list, then the slot under it.
                     var column = new Grid { Margin = list.Margin };
                     list.Margin = new Thickness(0);
                     column.RowDefinitions.Add(new RowDefinition()); column.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-                    var below = new Border { Height = 32, CornerRadius = new CornerRadius(7), BorderThickness = new Thickness(1), Margin = new Thickness(0, SketchGap, 0, 0),
-                        Background = (Brush)FindResource("SettingsAccentTint"), BorderBrush = UI.Brush(_palette.Accent), ToolTip = Loc.T("在进程列表下方", "Under the process list"),
-                        Child = TextLine(BlockName(underBlock, readings), 12.5, _palette.Accent) };
-                    ((TextBlock)below.Child).HorizontalAlignment = HorizontalAlignment.Center; ((TextBlock)below.Child).VerticalAlignment = VerticalAlignment.Center;
-                    Grid.SetRow(below, 1);
-                    column.Children.Add(list); column.Children.Add(below);
+                    slot.Margin = new Thickness(0, SketchGap, 0, SketchGap);
+                    Grid.SetRow(slot, 1);
+                    column.Children.Add(list); column.Children.Add(slot);
                     list = column;
                 }
                 grid.ColumnDefinitions.Add(new ColumnDefinition { Width = blocks.Count > 0 ? new GridLength(Loc.IsEnglish ? 140 : 120) : new GridLength(1, GridUnitType.Star) });
@@ -331,44 +355,29 @@ public sealed partial class SettingsWindow
         }
         refresh.Add(Build);
 
-        // Which block stands under the process list: none, or one of the shown blocks (the drives by default).
-        var under = new ComboBox { Width = 200, Style = (Style)FindResource("SettingsCombo") };
-        var choices = new List<ExpandedItem?>();
-        bool fillingUnder = false;
-        void FillUnder()
-        {
-            fillingUnder = true;
-            var readings = ExpandedMonitor.Normalize(S.ExpandedReadings);
-            choices = [null, .. ExpandedMonitor.BlocksIn(readings).Where(block => block[0] != ExpandedItem.Processes && BlockName(block, readings).Length > 0).Select(block => (ExpandedItem?)block[0])];
-            if (S.ExpandedUnderList is { } current && !choices.Contains(current)) choices.Add(current);
-            under.ItemsSource = choices.Select(item => item is { } block ? ExpandedName(block) is var single && BlockName(ExpandedMonitor.BlockOf(block), readings) is { Length: > 0 } both ? both : single : Loc.T("无", "None")).ToList();
-            under.SelectedIndex = Math.Max(0, choices.IndexOf(S.ExpandedUnderList));
-            under.IsEnabled = ExpandedOf(S, ExpandedItem.Processes).Visible;
-            fillingUnder = false;
-        }
-        under.SelectionChanged += (_, _) =>
-        {
-            if (fillingUnder || under.SelectedIndex < 0) return;
-            Change(s => s.ExpandedUnderList = choices[under.SelectedIndex]);
-            built = ""; Build();
-        };
-        refresh.Add(FillUnder);
-        FillUnder();
-        AutomationProperties.SetName(under, Loc.T("进程列表下方", "Under the process list"));
-        var underRow = new Grid { Margin = new Thickness(0, 0, 0, 8) };
-        underRow.ColumnDefinitions.Add(new ColumnDefinition()); underRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        var underLabel = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Children = { SettingLabel(Loc.T("进程列表下方", "Under the process list"), null),
-            TextLine(Loc.T("进程列表在右侧时，在它下方显示的一项。", "One part shown under the process list when the list stands at the side."), 12, TextTertiary) } };
-        Grid.SetColumn(under, 1);
-        underRow.Children.Add(underLabel); underRow.Children.Add(under);
 
         var title = new Grid { Margin = new Thickness(0, 12, 0, 0) };
         title.ColumnDefinitions.Add(new ColumnDefinition()); title.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         title.Children.Add(SettingLabel(Loc.T("页面顺序", "Order on the page"), null));
         Grid.SetColumn(restore, 1); title.Children.Add(restore);
         var panel = new StackPanel();
-        panel.Children.Add(title); panel.Children.Add(host); panel.Children.Add(underRow);
+        panel.Children.Add(title); panel.Children.Add(host);
         return KeepPreview(panel);
+    }
+
+    // Whether the pointer is over the slot under the process list.
+    private static bool OverSlot(FrameworkElement? slot, MouseEventArgs e)
+    {
+        if (slot is null || !slot.IsVisible) return false;
+        var at = e.GetPosition(slot);
+        return at.X >= 0 && at.Y >= -6 && at.X <= slot.ActualWidth && at.Y <= slot.ActualHeight + 6;
+    }
+    // The slot lit while a block is held over it.
+    private void SlotHover(Border? slot, bool over)
+    {
+        if (slot is null) return;
+        slot.BorderThickness = new Thickness(over ? 2 : 1);
+        slot.Opacity = over ? 1 : .9;
     }
 
     private static string SketchKey(IEnumerable<ExpandedItem> order, IReadOnlyList<ExpandedReading> readings, bool processes)
@@ -380,7 +389,9 @@ public sealed partial class SettingsWindow
 
     // A block of the sketch, in the accent's tint and outline, named by what it shows (or showing its parts: inside). moved: the shown
     // blocks' new order (each named by its first item), after a drag or Alt+Up/Down.
-    private Border SketchBlock(IReadOnlyList<ExpandedItem> block, string name, FrameworkElement? inside, SketchGrip? grip, StackPanel stack, Action<List<ExpandedItem>> moved)
+    // slot: the place under the process list a block can be dropped on (toSlot then puts it there); none without the list.
+    private Border SketchBlock(IReadOnlyList<ExpandedItem> block, string name, FrameworkElement? inside, SketchGrip? grip, StackPanel stack, Action<List<ExpandedItem>> moved,
+        Border? slot = null, Action<ExpandedItem>? toSlot = null)
     {
         var label = new TextBlock { Text = name, FontSize = 12.5, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
         label.SetResourceReference(TextBlock.ForegroundProperty, "SettingsAccentText");
@@ -447,12 +458,13 @@ public sealed partial class SettingsWindow
         // Takes the whole block, pressed on it or carried on from a part inside it (grip). Held where it was pressed: a part that hands
         // its drag on after the pointer has moved, the block jumps to the pointer and follows it, rather than trailing behind.
         double press = 0;
-        view.PreviewMouseLeftButtonDown += (_, e) => press = e.GetPosition(stack).Y;
+        double pressX = 0;
+        view.PreviewMouseLeftButtonDown += (_, e) => { press = e.GetPosition(stack).Y; pressX = e.GetPosition(stack).X; };
         void Begin(MouseEventArgs e)
         {
             Measure();
             from = target = Array.IndexOf(blocks, view);
-            if (from < 0 || blocks.Length < 2) { from = -1; return; }
+            if (from < 0 || blocks.Length < 2 && slot is null) { from = -1; return; }
             grab = press - tops[from] - RowTransform(view).Y;
             view.Focus(); Panel.SetZIndex(view, 2);
             if (!view.CaptureMouse()) { from = -1; Panel.SetZIndex(view, 0); }
@@ -468,9 +480,21 @@ public sealed partial class SettingsWindow
             // block's bottom passes its middle. (Their middles alone kept a tall block from ever passing a short last one.)
             int to = Enumerable.Range(0, blocks.Length).Count(i => i < from ? top >= tops[i] + heights[i] / 2 : i > from && top + heights[from] > tops[i] + heights[i] / 2);
             if (to != target) { target = to; Arrange(to); }
+            // With a slot to reach, the block follows the pointer sideways too.
+            if (slot is not null) RowTransform(view).X = e.GetPosition(stack).X - pressX;
+            SlotHover(slot, OverSlot(slot, e));
         }
         view.MouseMove += (_, e) => Follow(e);
-        view.MouseLeftButtonUp += (_, e) => { if (from >= 0) { End(true); e.Handled = true; } };
+        view.MouseLeftButtonUp += (_, e) =>
+        {
+            if (from < 0) return;
+            e.Handled = true;
+            bool dropped = OverSlot(slot, e) && toSlot is not null;
+            SlotHover(slot, false);
+            RowTransform(view).X = 0;
+            End(!dropped);
+            if (dropped) toSlot!(block[0]);
+        };
         // LostMouseCapture bubbles: a part inside handing its drag on to the block loses the capture to it, and that must not end the
         // block's drag that has just begun. Only the block's own loss ends it.
         view.LostMouseCapture += (_, e) => { if (e.OriginalSource == view) End(false); };
