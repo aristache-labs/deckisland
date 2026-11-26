@@ -220,6 +220,34 @@ public partial class App
         }
         catch (Exception error) when (error is COMException or InvalidOperationException or UnauthorizedAccessException) { }
         StartBluetoothLowEnergy();
+        StartBluetoothRadio();
+    }
+
+    // The Bluetooth radio itself: "Bluetooth on" or "off". Turning it on or off makes Windows report every paired device's status as it
+    // finds them, including ones that are switched off, so the devices' readouts wait out a few seconds after the radio changes, and
+    // none shows while it is off.
+    private static readonly TimeSpan BluetoothSettle = TimeSpan.FromSeconds(8);
+    private DateTime _bluetoothRadioChanged = DateTime.MinValue;
+    private bool _bluetoothRadioOn = true;
+    private async void StartBluetoothRadio()
+    {
+        try
+        {
+            var radios = await global::Windows.Devices.Radios.Radio.GetRadiosAsync();
+            foreach (var radio in radios.Where(radio => radio.Kind == global::Windows.Devices.Radios.RadioKind.Bluetooth))
+            {
+                _hudKeep.Add(radio);
+                _bluetoothRadioOn = radio.State == global::Windows.Devices.Radios.RadioState.On;
+                radio.StateChanged += (sender, _) => Dispatcher.BeginInvoke(() =>
+                {
+                    bool on = sender.State == global::Windows.Devices.Radios.RadioState.On;
+                    if (on == _bluetoothRadioOn) return;
+                    _bluetoothRadioOn = on; _bluetoothRadioChanged = DateTime.UtcNow;
+                    if (Settings.HudBluetooth) ShowHud(new("bluetooth-radio", HudIcon.Bluetooth, on ? "Bluetooth on" : "Bluetooth off", On: on, Lit: on, Reserve: "Bluetooth off"));
+                });
+            }
+        }
+        catch (Exception error) when (error is COMException or InvalidOperationException or UnauthorizedAccessException) { }
     }
 
     // Phones and many newer devices connect over Bluetooth Low Energy, which the classic watcher above does not see.
@@ -263,6 +291,7 @@ public partial class App
     private (string Name, bool Connected, DateTime At) _bluetoothShown;
     private void BluetoothHud(string id, string name, bool connected, int? percent, HudIcon icon)
     {
+        if (!_bluetoothRadioOn || DateTime.UtcNow - _bluetoothRadioChanged < BluetoothSettle) return;
         if (_bluetoothShown.Name == name && _bluetoothShown.Connected == connected && DateTime.UtcNow - _bluetoothShown.At < TimeSpan.FromSeconds(2)) return;
         _bluetoothShown = (name, connected, DateTime.UtcNow);
         ShowHud(new($"bluetooth:{name}", icon, $"{name} · {(connected ? "Connected" : "Disconnected")}",

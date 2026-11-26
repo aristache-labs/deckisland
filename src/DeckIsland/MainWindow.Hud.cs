@@ -83,6 +83,15 @@ public partial class MainWindow
         right.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
         // Both sides are as wide as the wider one, so the text stands in the middle of the row.
         double side = textless ? glyph + gap : Math.Max(glyph, Math.Ceiling(right.DesiredSize.Width)) + gap;
+        // A text longer than the usual width widens the row (to the room there is), so a device's whole name shows.
+        if (!textless)
+        {
+            var natural = UI.Fixed(hud.Text, font, line, Look.Primary, FontWeights.SemiBold);
+            natural.ClearValue(FrameworkElement.WidthProperty);
+            natural.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            total = Math.Min(maxWidth, Math.Max(total, Math.Ceiling(natural.DesiredSize.Width) + 2 * side + 2));
+            grid.Width = total;
+        }
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(side) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         // A device's name stands next to its icon instead, so a long one has the room; the right keeps only what its figure needs.
