@@ -237,11 +237,15 @@ public partial class App
             foreach (var radio in radios.Where(radio => radio.Kind == global::Windows.Devices.Radios.RadioKind.Bluetooth))
             {
                 _hudKeep.Add(radio);
-                _bluetoothRadioOn = radio.State == global::Windows.Devices.Radios.RadioState.On;
+                // The state read at the start is not trusted to silence the devices (without radio access Windows may say Off):
+                // only a change seen here does.
+                var last = radio.State;
                 radio.StateChanged += (sender, _) => Dispatcher.BeginInvoke(() =>
                 {
-                    bool on = sender.State == global::Windows.Devices.Radios.RadioState.On;
-                    if (on == _bluetoothRadioOn) return;
+                    var state = sender.State;
+                    if (state == last || state is not (global::Windows.Devices.Radios.RadioState.On or global::Windows.Devices.Radios.RadioState.Off)) return;
+                    last = state;
+                    bool on = state == global::Windows.Devices.Radios.RadioState.On;
                     _bluetoothRadioOn = on; _bluetoothRadioChanged = DateTime.UtcNow;
                     if (Settings.HudBluetooth) ShowHud(new("bluetooth-radio", HudIcon.Bluetooth, on ? "Bluetooth on" : "Bluetooth off", On: on, Lit: on, Reserve: "Bluetooth off"));
                 });
