@@ -500,6 +500,10 @@ public sealed class DeckSettings
     private QuotaRingStyle _quotaRingStyle = QuotaRingStyle.Single;
     // The rings' arcs show what is left of each quota instead of what is used. Off by default; a file without it reads as off.
     public bool QuotaRingRemaining { get; set; }
+    // A line under each quota's bar with where it is heading at the current pace (QuotaPace).
+    public bool QuotaForecast { get; set; } = true;
+    // A readout when a quota that had been used reaches its reset, not during Do not disturb.
+    public bool QuotaResetNotify { get; set; } = true;
     public bool CapsuleMusic { get; set; } = true;
     // The notch and the capsule each switch the equalizer on. It shows while a song plays (or is paused), or, with EqualizerAlways,
     // at all times: then it reads the whole system's sound while no song plays.

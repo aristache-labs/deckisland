@@ -60,7 +60,9 @@ public partial class MainWindow
         };
         public double NumberRow => Math.Ceiling(Number * 1.2);
         public double FootRow => Math.Ceiling(Foot * 1.5);
-        public double QuotaHeight => LabelRow + RowGap + NumberRow + RowGap + Track;
+        // The forecast's line under the bar (QuotaPace), on tiers with a footer while the setting is on.
+        public double Forecast { get; init; }
+        public double QuotaHeight => LabelRow + RowGap + NumberRow + RowGap + Track + (Forecast > 0 ? RowGap + Forecast : 0);
         public double FooterHeight(bool inline) => Footer ? FootTop + 1 + FootBottom + (inline ? 1 : 2) * FootRow : 0;
         public double Required(int slots, bool inline) => Head + slots * QuotaHeight + Math.Max(0, slots - 1) * QuotaGap + FooterHeight(inline);
     }
@@ -91,11 +93,11 @@ public partial class MainWindow
         int count = Math.Min(columns.Count, pageSize);
         double columnWidth = (width - EdgeInset * 2) / count;
         var views = columns.Select(x => Quotas(x.Entry, x.Quota)).ToList();
-        var (layout, inline, wide) = Fit(count, views.Max(view => view.Slots), columnWidth, height);
+        var (layout, inline, wide) = Fit(count, views.Max(view => view.Slots), columnWidth, height, Settings.QuotaForecast);
         return (layout, inline, wide, count, columnWidth, views);
     }
 
-    private static (Layout Layout, bool Inline, bool Wide) Fit(int count, int slots, double columnWidth, double panelHeight)
+    private static (Layout Layout, bool Inline, bool Wide) Fit(int count, int slots, double columnWidth, double panelHeight, bool forecast)
     {
         bool wide = count == 1 && columnWidth >= 480 && slots <= 2;
         // Width limits the tier first; extra height only enlarges columns that are wide enough for it.
@@ -104,6 +106,7 @@ public partial class MainWindow
         for (var tier = start; tier <= Tier.Tiny; tier++)
         {
             var layout = Layout.For(tier); if (wide) layout = layout.Wide();
+            if (forecast && layout.Footer) layout = layout with { Forecast = Math.Ceiling(layout.Reset * 1.35) };
             // Totals sit side by side only when a column is wide enough for both groups at that tier's size.
             bool inline = columnWidth >= (tier == Tier.Grand ? 440 : tier == Tier.Roomy ? 400 : tier == Tier.Default ? 340 : 300) && count <= 2;
             double available = panelHeight - layout.Toolbar - layout.Bottom - ColumnTopInset;
@@ -698,6 +701,23 @@ public partial class MainWindow
         block.Children.Add(numbers);
         var track = new QuotaBar($"{entry.InstanceId:N}:{slot}", (left ? 100 - used : used) / 100, color, Animates); Grid.SetRow(track, 4);
         block.Children.Add(track);
+        if (layout.Forecast > 0)
+        {
+            // Where the quota is heading at this pace: its share at the reset, or when it reaches the limit (in the warning color).
+            block.RowDefinitions.Add(new RowDefinition { Height = new GridLength(layout.RowGap) });
+            block.RowDefinitions.Add(new RowDefinition { Height = new GridLength(layout.Forecast) });
+            if (quota.Kind is MetricKind.Percent && quota.UsedPercent is { } usedShare && quota.ResetAt is { } resetAt && QuotaPace.WindowOf(quota.Label) is { } window
+                && QuotaPace.Forecast(usedShare, resetAt, window, DateTimeOffset.Now) is { } pace)
+            {
+                bool over = pace.LimitAt is not null;
+                string when = pace.LimitAt is { } at ? at.LocalDateTime.ToString(Settings.Uses24HourClock ? "ddd HH:mm" : "ddd h:mm tt", Loc.Culture) : "";
+                var forecast = UI.Fixed(over ? Loc.T($"按此速度约在 {when} 达到上限", $"At this pace you reach the limit around {when}")
+                    : Loc.T($"按此速度重置时约用 {Math.Min(100, pace.Projected):0}%", $"On pace for {Math.Min(100, pace.Projected):0}% at reset"),
+                    layout.Reset, layout.Forecast, over ? Look.WarningDefault : Look.Tertiary);
+                forecast.HorizontalAlignment = HorizontalAlignment.Left; forecast.TextTrimming = TextTrimming.CharacterEllipsis; forecast.ToolTip = forecast.Text;
+                Grid.SetRow(forecast, 6); block.Children.Add(forecast);
+            }
+        }
         return block;
     }
 

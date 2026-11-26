@@ -790,7 +790,7 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
                 // The categories and phrases are the user's own data, not settings; the other page has nothing to restore.
                 case ClipboardSettingsPage:s.ClipboardDecode=defaults.ClipboardDecode;s.ClipboardPresentationMode=defaults.ClipboardPresentationMode;s.ClipboardRecord=defaults.ClipboardRecord;s.ClipboardExcluded=[];s.ClipboardKeepHistory=defaults.ClipboardKeepHistory;s.ClipboardKeepFor=defaults.ClipboardKeepFor;break;
                 // The current theme's application colors go back to its own; the other themes keep what was saved for them.
-                case 3:{var previous=s.Apps;s.QuotaAlerts=defaults.QuotaAlerts;s.IncludeWsl=defaults.IncludeWsl;s.QuotaRingStyle=defaults.QuotaRingStyle;s.QuotaRingRemaining=defaults.QuotaRingRemaining;s.QuotaRingLetters=defaults.QuotaRingLetters;s.Apps=defaults.Apps;PanelThemes.CarryAppChoices(s,previous);break;}
+                case 3:{var previous=s.Apps;s.QuotaAlerts=defaults.QuotaAlerts;s.IncludeWsl=defaults.IncludeWsl;s.QuotaRingStyle=defaults.QuotaRingStyle;s.QuotaRingRemaining=defaults.QuotaRingRemaining;s.QuotaForecast=defaults.QuotaForecast;s.QuotaResetNotify=defaults.QuotaResetNotify;s.QuotaRingLetters=defaults.QuotaRingLetters;s.Apps=defaults.Apps;PanelThemes.CarryAppChoices(s,previous);break;}
                 case 5:s.EqualizerAlways=defaults.EqualizerAlways;s.EqualizerBars=defaults.EqualizerBars;s.EqualizerMode=defaults.EqualizerMode;s.EqualizerColor=defaults.EqualizerColor;s.EqualizerCustomColor=defaults.EqualizerCustomColor;
                     s.MusicText=defaults.MusicText;s.MusicEqualizerBars=defaults.MusicEqualizerBars;s.MusicTrackNotice=defaults.MusicTrackNotice;s.MusicPausedHide=defaults.MusicPausedHide;s.MusicInstrumentalTitle=defaults.MusicInstrumentalTitle;s.MusicLyricAutoWidth=defaults.MusicLyricAutoWidth;s.MusicTitleAutoWidth=defaults.MusicTitleAutoWidth;s.MusicCompactCover=defaults.MusicCompactCover;s.MusicPageCover=defaults.MusicPageCover;s.LyricsEnabled=defaults.LyricsEnabled;s.MusicLyricsLayout=defaults.MusicLyricsLayout;s.MusicLyricsAlign=defaults.MusicLyricsAlign;
                     s.MusicLyricColor=defaults.MusicLyricColor;s.MusicLyricCustomColor=defaults.MusicLyricCustomColor;break;
@@ -900,6 +900,11 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
         Group(Toggle(Loc.T("预警和告警提示", "Warning and critical notices"), S.QuotaAlerts, v => Change(s => s.QuotaAlerts = v), help:
             Loc.T($"开启后，某个应用的已用比例升到预警（{AppPresets.WarningPercent:0}%）或告警（{AppPresets.CriticalPercent:0}%）时，收起的刘海或胶囊会短暂显示该应用的名称、比例和重置时间，约 5 秒后恢复。比例按“配额显示”中的设置显示已用或剩余。",
                 $"When on, and an app's used share rises to the warning ({AppPresets.WarningPercent:0}%) or critical ({AppPresets.CriticalPercent:0}%) level, the collapsed notch or capsule briefly shows the app's name, used share and reset time, then returns after about 5 seconds.")));
+        SectionTitle(Loc.T("配额预测", "Quota forecast"));
+        Group(Describe(Toggle(Loc.T("在进度条下方预测", "Forecast under the bars"), S.QuotaForecast, v => Change(s => s.QuotaForecast = v)),
+            Loc.T("按当前速度，显示重置时的用量或何时达到上限。", "Shows when you would reach the limit at your current pace.")),
+            Describe(Toggle(Loc.T("额度重置时提醒", "Notify when a limit resets"), S.QuotaResetNotify, v => Change(s => s.QuotaResetNotify = v)),
+                Loc.T("勿扰时不提醒。", "Not during Do not disturb.")));
         SectionTitle(Loc.T("数据来源", "Data sources"), description: Loc.T("用量统计从哪里读取。", "Where usage is read from."));
         Group(Toggle(Loc.T("同步 WSL 中的用量统计", "Include usage from WSL"), S.IncludeWsl, v => Change(s => s.IncludeWsl = v), help:
             Loc.T("开启后，会读取已安装的 WSL 子系统中 Claude Code 和 Codex CLI 的会话记录，并计入 Token 用量与费用统计。读取时会唤醒尚未运行的 WSL 子系统，默认关闭。",

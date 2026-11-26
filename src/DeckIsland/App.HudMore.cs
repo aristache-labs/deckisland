@@ -22,6 +22,7 @@ public partial class App
         StartDoNotDisturb();
         StartCopy();
         StartWindowsIndicator();
+        StartQuotaResets();
     }
 
     // A timer kept with the HUD's sources, ticking `every` seconds.
@@ -150,6 +151,36 @@ public partial class App
                 ShowHud(new("dnd", HudIcon.DoNotDisturb, now ? "Do not disturb on" : "Do not disturb off", On: now, Lit: now, Reserve: "Do not disturb off"));
             on = now;
         });
+    }
+
+    // ----- A quota that had been used reaching its reset -----
+    // Each quota's last reset time and use, by app and quota; a reset that passes with some of it used is announced once.
+    private readonly Dictionary<string, (DateTimeOffset Reset, double Used)> _quotaResets = [];
+    private readonly HashSet<string> _resetsAnnounced = [];
+    private void StartQuotaResets()
+    {
+        Every(30, () =>
+        {
+            var now = DateTimeOffset.Now;
+            bool quiet = DoNotDisturbOn();
+            foreach (var snapshot in Deck?.Snapshots ?? [])
+                foreach (var metric in snapshot.Metrics.Where(metric => metric.Kind == MetricKind.Percent && metric.ResetAt is not null))
+                {
+                    string key = $"{snapshot.Id}:{(metric.Id.Length > 0 ? metric.Id : metric.Label)}";
+                    if (_quotaResets.TryGetValue(key, out var seen) && seen.Reset <= now && seen.Used >= 1 && _resetsAnnounced.Add($"{key}@{seen.Reset:O}")
+                        && Settings.QuotaResetNotify && !quiet)
+                        ShowHud(new($"reset:{key}", HudIcon.Done, $"{snapshot.Name} · {Loc.Label(metric.Label)} reset", Figure: "100% left", Lit: true, FigureColor: "#30D158"));
+                    // A reading taken after the reset carries the next one; until then the old one is kept, so its passing is seen.
+                    if (!_quotaResets.TryGetValue(key, out var kept) || metric.ResetAt!.Value > kept.Reset || kept.Reset > now)
+                        _quotaResets[key] = (metric.ResetAt!.Value, metric.UsedPercent ?? 0);
+                }
+        });
+    }
+
+    private static bool DoNotDisturbOn()
+    {
+        try { return Registry.GetValue(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Notifications\Settings", "NOC_GLOBAL_SETTING_TOASTS_ENABLED", 1) is int enabled && enabled == 0; }
+        catch (Exception error) when (error is System.Security.SecurityException or UnauthorizedAccessException or System.IO.IOException) { return false; }
     }
 
     // ----- Copying: text, a link, an image or files -----
