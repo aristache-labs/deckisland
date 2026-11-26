@@ -14,5 +14,11 @@ static class HudScrollTests
         check("Notification scroll: a very long one stops at the limit, still read at the end",
             hold == 10 && scroll == 10 - HudScroll.Lead - HudScroll.Tail);
         check("Notification scroll: a limit below the chosen time never shortens it", HudScroll.Plan(HudScroll.Speed * 60, 12, 5).Hold == 12);
+        check("Device icons: a phone, earphones and anything else by class or name",
+            HudDevices.ForBluetooth("iPhone", false, false) == HudIcon.Phone && HudDevices.ForBluetooth("Adrian's AirPods - Find My", false, false) == HudIcon.Headphones
+            && HudDevices.ForBluetooth("Desk", false, true) == HudIcon.Headphones && HudDevices.ForBluetooth("MX Keys", false, false) == HudIcon.Bluetooth);
+        check("Device icons: an output is headphones by its form factor or name, else speakers",
+            HudDevices.ForOutput("Headphones (Adrian's AirPods - Find My)", null) == HudIcon.Headphones && HudDevices.ForOutput("Realtek", 3) == HudIcon.Headphones
+            && HudDevices.ForOutput("Speakers (Realtek(R) Audio)", 1) == HudIcon.Speaker);
     }
 }

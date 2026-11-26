@@ -1,7 +1,26 @@
 namespace DeckIsland.Core;
 
 public enum HudIcon { Volume, Muted, Brightness, Battery, Charging, Bluetooth, Lock, Download, Done, Notice, NumLock, ScrollLock, Cancel, Mic, MicOff,
-    PowerMode, Network, NetworkOff, Airplane, Speaker, Display, Insert, DoNotDisturb, Copy }
+    PowerMode, Network, NetworkOff, Airplane, Speaker, Display, Insert, DoNotDisturb, Copy, Phone, Headphones }
+
+// What kind of thing a Bluetooth device or a sound output is, for its readout's icon: from what the device says of itself (its class,
+// its form factor) and, failing that, from its name.
+public static class HudDevices
+{
+    private static readonly string[] Ears = ["airpods", "headphone", "headset", "earbud", "buds", "earphone", "wh-", "wf-", "beats", "jabra", "bose qc", "pods"];
+    private static readonly string[] Phones = ["iphone", "phone", "galaxy", "pixel", "xiaomi", "redmi", "oneplus", "huawei", "honor", "motorola"];
+
+    public static HudIcon ForBluetooth(string name, bool phoneClass, bool audioClass)
+    {
+        if (phoneClass || Phones.Any(word => name.Contains(word, StringComparison.OrdinalIgnoreCase))) return HudIcon.Phone;
+        if (audioClass || Ears.Any(word => name.Contains(word, StringComparison.OrdinalIgnoreCase))) return HudIcon.Headphones;
+        return HudIcon.Bluetooth;
+    }
+
+    // formFactor: Windows' endpoint form factor (3 headphones, 5 headset), null when unknown.
+    public static HudIcon ForOutput(string name, int? formFactor) =>
+        formFactor is 3 or 5 || Ears.Any(word => name.Contains(word, StringComparison.OrdinalIgnoreCase)) ? HudIcon.Headphones : HudIcon.Speaker;
+}
 
 // One readout the island shows under the collapsed row: an icon, a line of text, and on the right a level bar, an on/off dot or a
 // short figure. Reserve is the longest text the same readout can say, whose room is kept so the surface does not change size between them. IconLevel is the charge a battery icon holds, FigureColor the color (a hex) of the figure. Body and Picture make it a card (a notification: its app's picture, the title in Text and the message under it). Label names a readout without text (volume) for the tooltip and screen readers. Lit colors the icon: something that has just been switched on, never its switching off. A message with the same Key as the one shown updates it in place (a volume key held down moves the bar).

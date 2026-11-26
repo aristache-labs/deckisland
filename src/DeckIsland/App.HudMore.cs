@@ -102,7 +102,13 @@ public partial class App
                 {
                     var device = enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
                     if (id is not null && id != device.ID && Settings.HudOutput)
-                        ShowHud(new("output", HudIcon.Speaker, device.FriendlyName, Lit: true));
+                    {
+                        // Headphones or speakers, as the endpoint says of itself (its form factor) or its name.
+                        int? form = null;
+                        try { if (device.Properties.Contains(PropertyKeys.PKEY_AudioEndpoint_FormFactor)) form = Convert.ToInt32(device.Properties[PropertyKeys.PKEY_AudioEndpoint_FormFactor].Value); }
+                        catch (Exception error) when (error is COMException or InvalidCastException or FormatException) { }
+                        ShowHud(new("output", HudDevices.ForOutput(device.FriendlyName, form), device.FriendlyName, Lit: true));
+                    }
                     id = device.ID;
                 }
                 catch (Exception error) when (error is COMException or InvalidOperationException) { }

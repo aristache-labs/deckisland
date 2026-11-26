@@ -205,7 +205,9 @@ public partial class App
                         if (!listed || !Settings.HudBluetooth) return;
                         bool connected = sender.ConnectionStatus == BluetoothConnectionStatus.Connected;
                         int? percent = Devices?.All.FirstOrDefault(item => string.Equals(item.Name, sender.Name, StringComparison.OrdinalIgnoreCase))?.Percent;
-                        BluetoothHud(sender.DeviceId, sender.Name, connected, percent);
+                        var major = sender.ClassOfDevice.MajorClass;
+                        BluetoothHud(sender.DeviceId, sender.Name, connected, percent, HudDevices.ForBluetooth(sender.Name,
+                            major == global::Windows.Devices.Bluetooth.BluetoothMajorClass.Phone, major == global::Windows.Devices.Bluetooth.BluetoothMajorClass.AudioVideo));
                     });
                 }
                 catch (Exception error) when (error is COMException or InvalidOperationException) { }
@@ -240,7 +242,9 @@ public partial class App
                         if (!listed || !Settings.HudBluetooth) return;
                         bool connected = sender.ConnectionStatus == BluetoothConnectionStatus.Connected;
                         int? percent = Devices?.All.FirstOrDefault(item => string.Equals(item.Name, sender.Name, StringComparison.OrdinalIgnoreCase))?.Percent;
-                        BluetoothHud(sender.DeviceId, sender.Name, connected, percent);
+                        var category = sender.Appearance?.Category ?? 0;
+                        BluetoothHud(sender.DeviceId, sender.Name, connected, percent, HudDevices.ForBluetooth(sender.Name,
+                            category == global::Windows.Devices.Bluetooth.BluetoothLEAppearanceCategories.Phone, false));
                     });
                 }
                 catch (Exception error) when (error is COMException or InvalidOperationException) { }
@@ -257,11 +261,11 @@ public partial class App
     // "AirPods · Connected" at the left next to the icon, so a long name has the room; the battery at the right when it is known. A device
     // seen by both watchers (classic and Low Energy) shows once: the same name within two seconds is the same change.
     private (string Name, bool Connected, DateTime At) _bluetoothShown;
-    private void BluetoothHud(string id, string name, bool connected, int? percent)
+    private void BluetoothHud(string id, string name, bool connected, int? percent, HudIcon icon)
     {
         if (_bluetoothShown.Name == name && _bluetoothShown.Connected == connected && DateTime.UtcNow - _bluetoothShown.At < TimeSpan.FromSeconds(2)) return;
         _bluetoothShown = (name, connected, DateTime.UtcNow);
-        ShowHud(new($"bluetooth:{name}", HudIcon.Bluetooth, $"{name} · {(connected ? "Connected" : "Disconnected")}",
+        ShowHud(new($"bluetooth:{name}", icon, $"{name} · {(connected ? "Connected" : "Disconnected")}",
             Figure: connected && percent is { } value ? $"{value}%" : null, Lit: connected));
     }
 

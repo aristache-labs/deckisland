@@ -44,6 +44,8 @@ internal sealed class HudWindow : Window
         [HudIcon.Insert] = "M3,5 H17 V15 H3 Z M7,8 V12 M10,8 V12 M13,8 V12",
         [HudIcon.DoNotDisturb] = "M15.5,12.5 A6.5,6.5 0 1 1 7.5,4.5 A5,5 0 0 0 15.5,12.5 Z",
         [HudIcon.Copy] = "M7,7 H16 V17 H7 Z M4,13 V3.5 H13",
+        [HudIcon.Phone] = "M6.5,2 H13.5 A1.5,1.5 0 0 1 15,3.5 V16.5 A1.5,1.5 0 0 1 13.5,18 H6.5 A1.5,1.5 0 0 1 5,16.5 V3.5 A1.5,1.5 0 0 1 6.5,2 Z M9,15.5 H11",
+        [HudIcon.Headphones] = "M3,13 V10 A7,7 0 0 1 17,10 V13 M3,12 H5.5 V17 H4 A1,1 0 0 1 3,16 Z M17,12 H14.5 V17 H16 A1,1 0 0 1 17,16 Z",
         [HudIcon.Notice] = "M3.5,14.5 C6,12.5 5.5,11.5 5.5,8.5 A4.5,4.5 0 0 1 14.5,8.5 C14.5,11.5 14,12.5 16.5,14.5 Z M8,17 A2,2 0 0 0 12,17"
     };
 

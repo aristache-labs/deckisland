@@ -86,7 +86,15 @@ public partial class MainWindow
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(side) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         // A device's name stands next to its icon instead, so a long one has the room; the right keeps only what its figure needs.
-        bool leftText = hud.Key.StartsWith("bluetooth:", StringComparison.Ordinal);
+        // Only when it would not fit in the middle: a short one stays centred like every readout.
+        bool leftText = false;
+        if (!textless && hud.Key.StartsWith("bluetooth:", StringComparison.Ordinal))
+        {
+            var probe = UI.Fixed(hud.Text, font, line, Look.Primary, FontWeights.SemiBold);
+            probe.ClearValue(FrameworkElement.WidthProperty);
+            probe.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            leftText = probe.DesiredSize.Width > total - 2 * side;
+        }
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(textless ? 0 : leftText ? Math.Ceiling(right.DesiredSize.Width) + (right.DesiredSize.Width > 0 ? gap : 0) : side) });
         if (leftText) grid.ColumnDefinitions[0].Width = new GridLength(glyph + gap);
         grid.Children.Add(mark);
