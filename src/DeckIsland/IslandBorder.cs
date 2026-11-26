@@ -125,11 +125,37 @@ public sealed class IslandBorder : Border
         if (fading) drawingContext.Pop();
     }
 
+    // The glass: the picture behind, a band along the edge enlarged more than the middle (the bend a lens gives its rim), a smoke on a
+    // dark surface so the glass stays dark glass rather than a gray, and a sheen from the top that fades by the middle.
     private void DrawGlass(DrawingContext drawingContext, Geometry outline, ImageSource glass)
     {
-        double width = RenderSize.Width, height = RenderSize.Height, zoom = Math.Max(1, GlassZoom);
+        double width = RenderSize.Width, height = RenderSize.Height, zoom = Math.Max(1, GlassZoom), bend = (zoom - 1) / .12;
+        Rect Zoomed(double z) => new(width * (1 - z) / 2, height * (1 - z) / 2, width * z, height * z);
         drawingContext.PushClip(outline);
-        drawingContext.DrawImage(glass, new Rect(width * (1 - zoom) / 2, height * (1 - zoom) / 2, width * zoom, height * zoom));
+        drawingContext.DrawImage(glass, Zoomed(zoom));
+        if (bend > 0)
+        {
+            // The edge's bend fades in from the middle (no seam): the more enlarged picture over the plain one, through a mask that is
+            // clear in the middle and full at the edge.
+            var mask = new RadialGradientBrush { Center = new Point(.5, .5), GradientOrigin = new Point(.5, .5), RadiusX = .5, RadiusY = .5 };
+            mask.GradientStops.Add(new GradientStop(Color.FromArgb(0, 0, 0, 0), .55));
+            mask.GradientStops.Add(new GradientStop(Color.FromArgb(255, 0, 0, 0), 1));
+            mask.Freeze();
+            drawingContext.PushOpacityMask(mask);
+            drawingContext.DrawImage(glass, Zoomed(zoom + .1 * bend));
+            drawingContext.Pop();
+        }
+        // A dark surface's glass is smoked, a light one's left clear.
+        if (Background is SolidColorBrush { Color: var surface } && .2126 * surface.R + .7152 * surface.G + .0722 * surface.B < 128)
+            drawingContext.DrawRectangle(new SolidColorBrush(Color.FromArgb(70, 0, 0, 0)), null, new Rect(RenderSize));
+        if (GlassRim > 0)
+        {
+            var sheen = new LinearGradientBrush { StartPoint = new Point(0, 0), EndPoint = new Point(0, 1) };
+            sheen.GradientStops.Add(new GradientStop(Color.FromArgb((byte)Math.Round(46 * Math.Clamp(GlassRim, 0, 1)), 255, 255, 255), 0));
+            sheen.GradientStops.Add(new GradientStop(Color.FromArgb(0, 255, 255, 255), .55));
+            sheen.Freeze();
+            drawingContext.DrawRectangle(sheen, null, new Rect(RenderSize));
+        }
         drawingContext.Pop();
     }
 
@@ -137,10 +163,10 @@ public sealed class IslandBorder : Border
     private void GlassEdge(DrawingContext drawingContext, Geometry outline)
     {
         if (Glass is null || GlassRim <= 0) return;
-        byte top = (byte)Math.Round(255 * Math.Clamp(GlassRim, 0, 1) * .55), low = (byte)Math.Round(top * .25);
+        byte top = (byte)Math.Round(255 * Math.Clamp(GlassRim, 0, 1) * .8), low = (byte)Math.Round(top * .3);
         var brush = new LinearGradientBrush(Color.FromArgb(top, 255, 255, 255), Color.FromArgb(low, 255, 255, 255), 90);
         brush.Freeze();
-        drawingContext.DrawGeometry(null, new Pen(brush, 1.2), outline);
+        drawingContext.DrawGeometry(null, new Pen(brush, 1.5), outline);
     }
 
     private void Layers(DrawingContext drawingContext, Geometry outline)
