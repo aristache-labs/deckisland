@@ -29,6 +29,7 @@ public sealed class DockSettings
     public int Size { get; set; } = 52;
     // The pinned apps in their order; null until they are first taken from the Windows taskbar's pins.
     public List<DockPin>? Pins { get; set; }
+    public bool ImportedTaskbarPins { get; set; }
     // The Start button at the left end, and the Trash and Show desktop buttons at the right.
     public bool ShowStart { get; set; } = true;
     public bool ShowTrash { get; set; } = true;

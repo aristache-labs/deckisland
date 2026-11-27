@@ -11,9 +11,7 @@ namespace DeckIsland.Native;
 
 // The windows and apps DeckIsland Dock shows, after lumabar's apps.rs: the windows the Windows taskbar would show (the Alt+Tab
 // rules), the taskbar's own pins, launching, focusing and closing, and the apps' icons.
-// shortcut: windows are grouped by exe path only; Store apps, web apps and apps sharing one exe (by AppUserModelID) are not told
-// apart yet. Upgrade when the dock reads window AppUserModelIDs.
-internal static class DockAppWindows
+internal static partial class DockAppWindows
 {
     private const int GwlExStyle = -20, DwmCloaked = 14;
     private const long ExAppWindow = 0x40000, ExToolWindow = 0x80, ExNoActivate = 0x08000000;
@@ -57,8 +55,15 @@ internal static class DockAppWindows
             var exe = AppIdentity.ImagePath((int)pid);
             if (exe.Length == 0) continue;
             // Store apps run inside ApplicationFrameHost; the app is the process of one of its child windows.
-            if (exe.EndsWith(@"\ApplicationFrameHost.exe", StringComparison.OrdinalIgnoreCase) && StoreAppExe(window, pid) is { } real) exe = real;
-            found.Add(new DockWindowInfo(window, exe.ToLowerInvariant(), exe, Title(window), IsIconic(window), z));
+            string? appId;
+            if (exe.EndsWith(@"\ApplicationFrameHost.exe", StringComparison.OrdinalIgnoreCase))
+            {
+                if (StoreAppExe(window, pid) is { } real) exe = real;
+                appId = AppIdentity.WindowId(window);
+            }
+            else appId = AppIdentity.PackagedId(pid);
+            string key = (appId is null ? exe : AppsFolder + appId).ToLowerInvariant();
+            found.Add(new DockWindowInfo(window, key, exe, Title(window), IsIconic(window), z, appId));
         }
         return found;
     }
@@ -90,16 +95,14 @@ internal static class DockAppWindows
     private static string Title(nint window) { var text = new StringBuilder(256); GetWindowText(window, text, text.Capacity); return text.ToString(); }
     private static string ClassName(nint window) { var name = new StringBuilder(64); GetClassName(window, name, name.Capacity); return name.ToString(); }
 
-    // The shortcuts pinned to the Windows taskbar, one per app, by name.
+    // The shortcuts pinned to the Windows taskbar, one per app.
     public static List<DockPin> TaskbarPins()
     {
         var folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), @"Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar");
-        if (!Directory.Exists(folder)) return [];
         var seen = new HashSet<string>(StringComparer.Ordinal);
-        return Directory.EnumerateFiles(folder, "*.lnk").Select(path => new DockPin(path, Path.GetFileNameWithoutExtension(path)))
-            .OrderBy(pin => pin.Name, StringComparer.OrdinalIgnoreCase)
-            // The folder often keeps stale copies ("Google Chrome (2).lnk"); one per app.
-            .Where(pin => seen.Add(PinKey(pin))).ToList();
+        var shortcuts = Directory.Exists(folder) ? Directory.EnumerateFiles(folder, "*.lnk")
+            .Order(StringComparer.OrdinalIgnoreCase).Select(path => new DockPin(path, Path.GetFileNameWithoutExtension(path))).ToList() : [];
+        return WindowsPins(shortcuts).Where(pin => seen.Add(PinKey(pin))).ToList();
     }
 
     private static readonly Dictionary<string, string> PinKeys = new(StringComparer.OrdinalIgnoreCase);
@@ -149,6 +152,7 @@ internal static class DockAppWindows
     // The app's name for a window: its exe's description, else the exe's file name.
     public static string AppName(DockWindowInfo window)
     {
+        if (window.AppId is { } id && AppIdentity.RegisteredName(id) is { } name) return name;
         try
         {
             var description = FileVersionInfo.GetVersionInfo(window.Exe).FileDescription;
@@ -212,6 +216,9 @@ internal static class DockAppWindows
     [DllImport("gdi32.dll")] private static extern int GetObject(nint handle, int size, out Bitmap bitmap);
     [DllImport("gdi32.dll")] private static extern bool DeleteObject(nint handle);
     private static readonly Dictionary<string, ImageSource?> Icons = new(StringComparer.OrdinalIgnoreCase);
+
+    public static ImageSource? Icon(DockApp app, int size) =>
+        Icon(app.Launch, size) ?? (app.Windows.FirstOrDefault() is { } window ? Icon(window.Exe, size) : null);
 
     // The shell's picture for a shortcut, exe, folder or shell item at this pixel size, with its transparency; null when there is
     // none. Cached unless the picture changes (the Recycle Bin's).

@@ -5,7 +5,7 @@ public sealed record DockPin(string Path, string Name);
 
 // A window the Windows taskbar would show a button for. Key groups the windows of one app (the lower-cased exe path); Z is its
 // place in the desktop's z-order, 0 on top.
-public sealed record DockWindowInfo(long Handle, string Key, string Exe, string Title, bool Minimized, int Z);
+public sealed record DockWindowInfo(long Handle, string Key, string Exe, string Title, bool Minimized, int Z, string? AppId = null);
 
 // One tile on the dock: a pinned app, with or without windows, or a running app that is not pinned.
 // WindowTile marks a window's own tile (Ungroup), which is never pinned.
@@ -43,7 +43,7 @@ public static class DockApps
         foreach (var key in kept)
         {
             var list = groups[key];
-            apps.Add(new DockApp(key, name(list[0]), false, list[0].Exe, list, ActiveIn(list)));
+            apps.Add(new DockApp(key, name(list[0]), false, list[0].AppId is { } id ? @"shell:AppsFolder\" + id : list[0].Exe, list, ActiveIn(list)));
         }
         return (apps, kept);
     }

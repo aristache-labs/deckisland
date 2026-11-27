@@ -53,6 +53,26 @@ internal static class AppIdentity
         finally { CloseHandle(handle); }
     }
 
+    public static string? PackagedId(uint pid)
+    {
+        var handle = OpenProcess(ProcessQueryLimitedInformation, false, pid);
+        if (handle == 0) return null;
+        try { return Read(handle, GetApplicationUserModelId); }
+        finally { CloseHandle(handle); }
+    }
+
+    public static string? WindowId(nint window)
+    {
+        try
+        {
+            _resolver ??= (IApplicationResolver)Activator.CreateInstance(Type.GetTypeFromCLSID(ResolverClass, true)!)!;
+            if (_resolver.GetAppIdForWindow(window, out var id, out _, out _, out _) != 0 || id == 0) return null;
+            try { return Marshal.PtrToStringUni(id); }
+            finally { Marshal.FreeCoTaskMem(id); }
+        }
+        catch (Exception ex) when (ex is COMException or InvalidCastException) { return null; }
+    }
+
     // A process's name as Process.ProcessName gives it (the executable's file name, without ".exe" only), which the saved window
     // rules and clipboard exclusions are compared with, and its executable's path, both read from the process handle. The path is
     // "" for a process that cannot be opened (it ended, or is protected); its name is then asked of Process, which lists every

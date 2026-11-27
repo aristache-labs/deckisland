@@ -31,10 +31,9 @@ internal sealed partial class DockWindow
         // Nor while the tray grid is open: it hangs from its arrow, which a rebuild would take away.
         if (_dragging || _press is not null || _trayPopup is { IsOpen: true }) return;
         var settings = _app.DockSettings;
-        if (settings.Pins is null)
+        if (!settings.ImportedTaskbarPins)
         {
-            var seeded = settings.Copy(); seeded.Pins = DockAppWindows.TaskbarPins();
-            _app.UpdateDockSettings(seeded);
+            ImportTaskbarPins();
             settings = _app.DockSettings;
         }
         var pins = PinKeys(settings);
@@ -62,6 +61,16 @@ internal sealed partial class DockWindow
     }
 
     private static List<(DockPin Pin, string Key)> PinKeys(DockSettings settings) => (settings.Pins ?? []).Select(pin => (pin, DockAppWindows.PinKey(pin))).ToList();
+
+    private void ImportTaskbarPins()
+    {
+        var copy = _app.DockSettings.Copy();
+        var keys = PinKeys(copy).Select(entry => entry.Key).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        copy.Pins ??= [];
+        copy.Pins.AddRange(DockAppWindows.TaskbarPins().Where(pin => keys.Add(DockAppWindows.PinKey(pin))));
+        copy.ImportedTaskbarPins = true;
+        _app.UpdateDockSettings(copy);
+    }
 
     // Read again soon after an action, so the dot follows without waiting for the next second.
     private void RefreshSoon() => Dispatcher.BeginInvoke(() => { _signature = ""; RefreshApps(); }, System.Windows.Threading.DispatcherPriority.Background);
@@ -128,7 +137,7 @@ internal sealed partial class DockWindow
     {
         var settings = _app.DockSettings;
         double iconSize = Math.Round(tile * DockGeometry.IconShare(settings.IconSize));
-        var icon = new Image { Width = iconSize, Height = iconSize, Source = DockAppWindows.Icon(app.Pinned ? app.Launch : app.Windows[0].Exe, 64) };
+        var icon = new Image { Width = iconSize, Height = iconSize, Source = DockAppWindows.Icon(app, 64) };
         RenderOptions.SetBitmapScalingMode(icon, BitmapScalingMode.HighQuality);
         // The open marker (DockIndicator): a dot, a larger dot, or a line; wider under the app in front.
         var (dotWidth, dotHeight) = settings.Indicator switch

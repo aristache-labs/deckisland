@@ -48,7 +48,7 @@ internal sealed class DockSwitcher : Window
         for (int i = 0; i < _apps.Count; i++)
         {
             var app = _apps[i];
-            var icon = new Image { Width = 44, Height = 44, Source = DockAppWindows.Icon(app.Pinned ? app.Launch : app.Windows[0].Exe, 64) };
+            var icon = new Image { Width = 44, Height = 44, Source = DockAppWindows.Icon(app, 64) };
             var name = new TextBlock { Text = app.Name, FontSize = 11.5, Width = 76, TextAlignment = TextAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis,
                 Margin = new Thickness(0, 6, 0, 0), Foreground = UI.Brush(i == _app ? _look.Text : _look.Dim) };
             var tile = new StackPanel(); tile.Children.Add(icon); tile.Children.Add(name);

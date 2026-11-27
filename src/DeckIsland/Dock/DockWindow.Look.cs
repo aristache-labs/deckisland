@@ -143,6 +143,7 @@ internal sealed partial class DockWindow
             }
         };
         Add(Loc.T("Dock 设置", "Settings"), () => _app.OpenSettingsPage(SettingsWindow.DockSettingsPage));
+        if (!_app.DockSettings.Locked) Add(Loc.T("导入任务栏固定应用", "Import taskbar pins"), ImportTaskbarPins);
         Add(Loc.T("任务管理器", "Task Manager"), () => DockAppWindows.Launch("taskmgr.exe"));
         menu.Items.Add(new Separator());
         Add(Loc.T("关闭 Dock", "Close dock"), _app.TurnOffDock, "#FF453A");

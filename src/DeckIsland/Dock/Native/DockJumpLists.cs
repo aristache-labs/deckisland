@@ -23,18 +23,24 @@ internal static partial class DockJumpLists
     // Every section the app's jump list holds; empty when it has none or it cannot be read.
     public static List<Section> For(DockApp app)
     {
-        var sections = new List<Section>();
+        Section? fallback = null;
         foreach (var appId in AppIds(app))
         {
+            var sections = new List<Section>();
             var pinned = Read(() => Pinned(appId));
             if (pinned is not null) sections.Add(pinned);
-            var custom = Read(() => Custom(appId));
+            var custom = Read(() => Custom(appId, app, pinned));
             if (custom is not null) sections.AddRange(custom);
-            var recent = Read(() => Recent(appId, app, pinned));
-            if (recent is { Items.Count: > 0 }) sections.Add(recent);
-            if (sections.Count > 0) break;
+            var recent = Read(() => Recent(appId, app, pinned, frequent: false));
+            if (sections.Count > 0)
+            {
+                if (recent is { Items.Count: > 0 } && !sections.Any(section => section.Title == recent.Title))
+                    sections.Add(recent);
+                return sections;
+            }
+            if (recent is { Items.Count: > 0 }) fallback ??= recent;
         }
-        return sections;
+        return fallback is null ? [] : [fallback];
     }
 
     private static T? Read<T>(Func<T?> read) where T : class
@@ -46,8 +52,14 @@ internal static partial class DockJumpLists
     private static IEnumerable<string> AppIds(DockApp app)
     {
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        const string appsFolder = @"shell:AppsFolder\";
+        if (app.Launch.StartsWith(appsFolder, StringComparison.OrdinalIgnoreCase) && seen.Add(app.Launch[appsFolder.Length..]))
+            yield return app.Launch[appsFolder.Length..];
         foreach (var window in app.Windows)
+        {
             if (WindowAppId((nint)window.Handle) is { Length: > 0 } id && seen.Add(id)) yield return id;
+            if (AppIdentity.WindowId((nint)window.Handle) is { Length: > 0 } resolved && seen.Add(resolved)) yield return resolved;
+        }
         if (app.Launch.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase) && LinkAppId(app.Launch) is { Length: > 0 } linked && seen.Add(linked)) yield return linked;
         string exe = app.Windows.Count > 0 ? app.Windows[0].Exe : app.Key;
         if (exe.EndsWith("\\explorer.exe", StringComparison.OrdinalIgnoreCase) && seen.Add("Microsoft.Windows.Explorer")) yield return "Microsoft.Windows.Explorer";
@@ -65,7 +77,7 @@ internal static partial class DockJumpLists
 
     // The custom destinations file: categories one after another, each a type (0 custom with a name, 1 a known category, 2 tasks), its
     // shortcuts as a class id followed by the persisted object, and a closing mark.
-    private static List<Section> Custom(string appId)
+    private static List<Section> Custom(string appId, DockApp app, Section? pinned)
     {
         var path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), @"Microsoft\Windows\Recent\CustomDestinations", DockJumpList.FileId(appId) + ".customDestinations-ms");
         var sections = new List<Section>();
@@ -79,7 +91,14 @@ internal static partial class DockJumpLists
             int type = reader.ReadInt32();
             string title;
             if (type == 0) title = new string(reader.ReadChars(reader.ReadUInt16()));
-            else if (type == 1) { reader.ReadInt32(); reader.ReadUInt32(); continue; }
+            else if (type == 1)
+            {
+                int category = reader.ReadInt32();
+                reader.ReadUInt32();
+                if (category is 0 or 1 && Read(() => Recent(appId, app, pinned, frequent: category == 0)) is { Items.Count: > 0 } known)
+                    sections.Add(known);
+                continue;
+            }
             else if (type == 2) title = Loc.T("任务", "Tasks");
             else break;
             int count = reader.ReadInt32();
@@ -94,7 +113,7 @@ internal static partial class DockJumpLists
                 try
                 {
                     ((IPersistStream)link).Load(stream);
-                    if (LinkItem(link) is { } item) items.Add(item);
+                    if (LinkItem(link, destination: type == 0) is { } item) items.Add(item);
                 }
                 finally { Marshal.ReleaseComObject(link); }
             }
@@ -132,14 +151,14 @@ internal static partial class DockJumpLists
         return new Item(title, () => Start(file, args, directory), file);
     }
 
-    private static Section? Recent(string appId, DockApp app, Section? pinned)
+    private static Section? Recent(string appId, DockApp app, Section? pinned, bool frequent)
     {
         var lists = (IApplicationDocumentLists)new ApplicationDocumentLists();
         try
         {
             lists.SetAppID(appId);
             var iid = typeof(IObjectArray).GUID;
-            if (lists.GetList(0, MaxRecent, ref iid, out var found) != 0 || found is not IObjectArray array) return null;
+            if (lists.GetList(frequent ? 1 : 0, MaxRecent, ref iid, out var found) != 0 || found is not IObjectArray array) return null;
             array.GetCount(out var count);
             var items = new List<Item>();
             var itemIid = typeof(IShellItem).GUID;
@@ -153,7 +172,7 @@ internal static partial class DockJumpLists
                 // Opened with the app, as the taskbar does; a folder goes to Explorer.
                 items.Add(new Item(name, () => { if (Directory.Exists(path) || !File.Exists(exe)) Start(path, "", ""); else Start(exe, Quote(path), ""); }, path));
             }
-            return new Section(Loc.T("最近", "Recent"), items);
+            return new Section(frequent ? Loc.T("常用", "Frequent") : Loc.T("最近", "Recent"), items);
         }
         finally { Marshal.ReleaseComObject(lists); }
     }
