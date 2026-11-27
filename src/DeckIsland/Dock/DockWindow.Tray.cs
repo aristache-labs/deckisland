@@ -92,7 +92,7 @@ internal sealed partial class DockWindow
         var image = new Image { Source = icon.Icon, Width = 20, Height = 20, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
         RenderOptions.SetBitmapScalingMode(image, BitmapScalingMode.HighQuality);
         var cell = new Border { Width = 36, Height = 36, CornerRadius = new CornerRadius(8), Background = UI.Brush("#00000000"), Child = image, ToolTip = icon.Title };
-        cell.MouseEnter += (_, _) => { cell.Background = UI.Brush(_look.CardHover); Place(icon, cell); icon.IconMouseEnter(CursorParam()); };
+        cell.MouseEnter += (_, _) => { cell.Background = UI.Brush(_look.Text == "#FF1D1D1F" ? "#17000000" : "#24FFFFFF"); Place(icon, cell); icon.IconMouseEnter(CursorParam()); };
         cell.MouseLeave += (_, _) => { cell.Background = UI.Brush("#00000000"); icon.IconMouseLeave(CursorParam()); };
         cell.MouseMove += (_, _) => icon.IconMouseMove(CursorParam());
         cell.MouseDown += (_, e) => { e.Handled = true; Place(icon, cell); icon.IconMouseDown(e.ChangedButton, CursorParam(), (int)GetDoubleClickTime()); };

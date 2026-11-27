@@ -137,6 +137,13 @@ internal sealed partial class DockWindow
                 e.Handled = true;
             };
         }
+        // Widgets that do something on a click (and the tray arrow) shade under the pointer, as app tiles do.
+        if (click is not null || widget.Kind == DockWidgetKind.Tray)
+        {
+            var rest = frame.Background;
+            frame.MouseEnter += (_, _) => frame.Background = UI.Brush(_look.CardHover);
+            frame.MouseLeave += (_, _) => frame.Background = rest;
+        }
         frame.PreviewMouseLeftButtonDown += (_, e) =>
         {
             if (badge?.IsMouseOver == true) return;

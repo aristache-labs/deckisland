@@ -68,10 +68,14 @@ internal sealed partial class DockWindow
         if (_startTile is not null)
         {
             // Start always sits on a card, app cards or not.
-            _startTile.Background = UI.Brush(_look.Card);
-            _startTile.BorderBrush = UI.Brush(_look.CardRim);
-            _startTile.BorderThickness = new Thickness(1);
-            _startTile.MouseLeave += (_, _) => _startTile.Background = UI.Brush(_look.Card);
+            // On light bars a dark card with a white logo; on dark bars the style's card.
+            bool light = _look.Text == "#FF1D1D1F";
+            string card = light ? "#FF2C2C2E" : _look.Card, hover = light ? "#FF3A3A3D" : _look.CardHover;
+            _startTile.Background = UI.Brush(card);
+            _startTile.BorderBrush = UI.Brush(light ? "#00000000" : _look.CardRim);
+            _startTile.BorderThickness = new Thickness(light ? 0 : 1);
+            _startTile.MouseEnter += (_, _) => _startTile.Background = UI.Brush(hover);
+            _startTile.MouseLeave += (_, _) => _startTile.Background = UI.Brush(card);
             _apps.Children.Add(_startTile);
         }
         foreach (var app in apps) _apps.Children.Add(Tile(app, tile));
@@ -151,7 +155,7 @@ internal sealed partial class DockWindow
         // Follows the icon size setting, a little under an app icon since the four squares fill their box.
         double s = Math.Round(tile * DockGeometry.IconShare(_app.DockSettings.IconSize) * 0.85);
         return new System.Windows.Shapes.Path { Data = Geometry.Parse("M 0,0 H 7 V 7 H 0 Z M 9,0 H 16 V 7 H 9 Z M 0,9 H 7 V 16 H 0 Z M 9,9 H 16 V 16 H 9 Z"),
-            Fill = UI.Brush(_look.Text), Opacity = 0.85, Width = s, Height = s, Stretch = Stretch.Uniform };
+            Fill = UI.Brush(_look.Text == "#FF1D1D1F" ? "#FFFFFFFF" : _look.Text), Opacity = 0.9, Width = s, Height = s, Stretch = Stretch.Uniform };
     }
 
     private System.Windows.Shapes.Path DesktopGlyph(double tile)

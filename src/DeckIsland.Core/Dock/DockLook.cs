@@ -19,7 +19,8 @@ public sealed record DockLook(string Bar, string Rim, string Card, string CardHo
     // Rims stay faint, as lumabar's: a hairline that separates the bar and its cards from what is behind, never a white frame.
     public static DockLook For(DockStyle style, DockClearCards clear) => style switch
     {
-        DockStyle.White => new("#FAF5F5F7", "#12000000", "#FFFFFFFF", "#FFF0F0F2", "#FFE5E5E8", "#0D000000", "#FF1D1D1F", "#FF6E6E73", "#1F000000", false),
+        // White: a white bar, light grey cards with a hairline.
+        DockStyle.White => new("#FAFFFFFF", "#12000000", "#FFF2F2F4", "#FFE6E6E9", "#FFE6E6E9", "#14000000", "#FF1D1D1F", "#FF6E6E73", "#1F000000", false),
         DockStyle.Liquid => new("#8C1A1C23", "#2EFFFFFF", "#1AFFFFFF", "#26FFFFFF", "#33FFFFFF", "#12FFFFFF", "#FFF5F5F7", "#B3F5F5F7", "#26FFFFFF", true),
         DockStyle.IOS => new("#59505A6E", "#40FFFFFF", "#24FFFFFF", "#30FFFFFF", "#3DFFFFFF", "#1FFFFFFF", "#FFF5F5F7", "#BFF5F5F7", "#2EFFFFFF", true),
         DockStyle.Midnight => new("#E00F1013", "#17FFFFFF", "#14FFFFFF", "#1FFFFFFF", "#2BFFFFFF", "#0DFFFFFF", "#FFF5F5F7", "#A6F5F5F7", "#1FFFFFFF", true),
