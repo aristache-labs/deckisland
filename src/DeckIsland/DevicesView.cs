@@ -7,7 +7,8 @@ namespace DeckIsland;
 
 // The devices page, set out by DevicesLayout: a ring per device whose arc is the charge, with the device's icon inside, and under it
 // the figure, the name and a line (the earbuds' parts, charging, low, no battery reported, or where the reading comes from); one
-// device alone, its ring with the figure, name and kind beside it; many, a line each in columns that scroll. The ring is in the
+// device alone, its ring with the figure, name and kind beside it (earbuds that report their parts: a ring per bud and the case,
+// DrawBuds); many, a line each in columns that scroll. The ring is in the
 // text color, in the collapsed readings' warning or critical color when getting low or low, and green (Charging) with a bolt at
 // its lower right while charging; the figure and the words say the same, so color is never the only sign.
 // As the monitor page does, it draws itself in one element: a new reading changes what it draws, never the layout. Within a
@@ -310,6 +311,7 @@ internal sealed class DevicesView : FrameworkElement
     {
         var s = _layout.Single;
         var device = card.Device;
+        if (device.Parts.Any(part => part.Part != BatteryPart.Case)) { DrawBuds(drawing, card, new Rect(0, r.Y, ActualWidth, r.Height), ppd); return; }
         string ring = _inks.Ring(device), accent = _inks.Figure(device);
         var center = new Point(r.X + s.Ring / 2, r.Y + s.Ring / 2);
         Ring(drawing, center, s.Ring, s.Stroke, device.Lowest is null ? null : Math.Clamp(card.Fill.At(now), 0, 1), ring, look: Look);
@@ -323,6 +325,59 @@ internal sealed class DevicesView : FrameworkElement
         top += s.FigureLine + 2;
         drawing.DrawText(name, new Point(x, Math.Round(top + (s.NameLine - name.Height) / 2)));
         drawing.DrawText(detail!, new Point(x, Math.Round(top + s.NameLine + (s.DetailLine - detail!.Height) / 2)));
+    }
+
+    // Earbuds alone, as wpods shows AirPods: the name and "● Connected · AirPods 3" at the left, then a ring each for the left bud,
+    // the right and the case that have a reading, with the figure in it and under it the part and where the bud is (In case / In ear / Out) or, for the case,
+    // Charging; a part that charges has the bolt on its ring and its ring green. r: the page's whole width at the card's height, so
+    // three rings and the name all fit and nothing is cut (the name is, only when the page is narrower than it).
+    private void DrawBuds(DrawingContext drawing, Card card, Rect r, double ppd)
+    {
+        var s = _layout.Single;
+        var device = card.Device;
+        double ring = Math.Min(84, Math.Max(32, s.Ring - 33)), stroke = Math.Max(3, Math.Round(ring / 14)), column = Math.Max(ring, 64), spacing = 14;
+        // Only the parts with a reading: a bud in its closed case or a case whose level the buds do not send is left out, not shown empty.
+        var shown = device.Parts.Where(p => p.Percent is not null).OrderBy(p => p.Part).ToList();
+        double rings = shown.Count * column + Math.Max(0, shown.Count - 1) * spacing, gap = s.Gap;
+        string status = Loc.T("已连接", "Connected") + " · " + (device.Model ?? Devices.KindName(device.Kind));
+        const double dot = 10;
+        double wanted = Math.Max(MonitorDraw.Text(device.Name, s.Name, Look.Primary, ppd).WidthIncludingTrailingWhitespace,
+            dot + MonitorDraw.Text(status, s.Detail, Look.Secondary, ppd).WidthIncludingTrailingWhitespace);
+        double text = Math.Max(40, Math.Min(Math.Min(wanted, 240), r.Width - rings - gap));
+        double left = Math.Round(r.X + Math.Max(0, (r.Width - text - gap - rings) / 2)), middle = r.Y + r.Height / 2;
+        var (name, detail) = Texts(card, device.Name, status, text, s.Name, s.Detail, Look.Primary, Look.Secondary, ppd);
+        double block = s.NameLine + s.DetailLine, top = Math.Round(middle - block / 2);
+        drawing.DrawText(name, new Point(left, Math.Round(top + (s.NameLine - name.Height) / 2)));
+        double detailY = Math.Round(top + s.NameLine + (s.DetailLine - detail!.Height) / 2);
+        drawing.DrawEllipse(UI.Brush(ChargingOn(Look)), null, new Point(left + 3.5, detailY + detail.Height / 2), 3.5, 3.5);
+        drawing.DrawText(detail, new Point(left + dot, detailY));
+        double x = left + text + gap, ringTop = Math.Round(middle - (ring + 4 + 15 + 14) / 2);
+        foreach (var read in shown)
+        {
+            var part = read.Part;
+            // The part's own level picks the ring's color as the device's would (low, getting low); charging is green.
+            var alone = device with { Parts = [], Percent = read.Percent, Charging = read.Charging };
+            string color = _inks.Ring(alone), figureColor = _inks.Figure(alone);
+            var center = new Point(x + column / 2, ringTop + ring / 2);
+            Ring(drawing, center, ring, stroke, Devices.Clamp(read.Percent!.Value) / 100.0, color, look: Look);
+            if (read.Charging) Badge(drawing, center, (ring - stroke) / 2, Math.Round(ring * .3), color, look: Look);
+            var number = MonitorDraw.Text(Devices.Clamp(read.Percent!.Value).ToString(System.Globalization.CultureInfo.InvariantCulture), Math.Round(ring * .25), figureColor, ppd, display: true);
+            var unit = MonitorDraw.Text("%", Math.Round(ring * .13), Look.Secondary, ppd);
+            double width = number.WidthIncludingTrailingWhitespace + unit.WidthIncludingTrailingWhitespace, numberY = Math.Round(center.Y - number.Height / 2);
+            drawing.DrawText(number, new Point(Math.Round(center.X - width / 2), numberY));
+            MonitorDraw.Baseline(drawing, unit, Math.Round(center.X - width / 2) + number.WidthIncludingTrailingWhitespace, numberY + number.Baseline);
+            string label = part switch { BatteryPart.Left => Loc.T("左耳", "Left"), BatteryPart.Right => Loc.T("右耳", "Right"), _ => Loc.T("充电盒", "Case") };
+            string where = read.InCase is { } inCase ? (inCase ? Loc.T("在盒中", "In case") : read.InEar == true ? Loc.T("佩戴中", "In ear") : Loc.T("已取出", "Out")) : read.Charging ? Loc.T("充电中", "Charging") : "";
+            if (part == BatteryPart.Case) where = read.Charging ? Loc.T("充电中", "Charging") : "";
+            var labelText = MonitorDraw.Trimmed(label, 11.5, Look.Primary, column, ppd);
+            drawing.DrawText(labelText, new Point(Math.Round(center.X - labelText.WidthIncludingTrailingWhitespace / 2), ringTop + ring + 4));
+            if (where.Length > 0)
+            {
+                var whereText = MonitorDraw.Trimmed(where, 10.5, Look.Secondary, column, ppd);
+                drawing.DrawText(whereText, new Point(Math.Round(center.X - whereText.WidthIncludingTrailingWhitespace / 2), ringTop + ring + 4 + 15));
+            }
+            x += column + spacing;
+        }
     }
 
     // A line of the list: the icon, the name and the line under it, then a small ring (with a bolt in it while charging) and the

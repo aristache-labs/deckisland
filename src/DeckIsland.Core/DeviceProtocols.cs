@@ -1993,17 +1993,20 @@ public static class HidBattery
 public static class AppleAdvert
 {
     public const ushort Company = 0x004C;
+    // The model by name, as Apple sells it ("AirPods 3"), so the page can say which AirPods these are; the family check (AppleBatteries)
+    // only looks for "AirPods" or "Beats" in it. The ids are wpods' table (Models.cs), read big endian here.
     public static string? Model(byte[] data) => data.Length >= 5 ? ((data[3] << 8) | data[4]) switch
     {
-        0x0220 => "AirPods", 0x0F20 => "AirPods", 0x1320 => "AirPods", 0x0E20 => "AirPods Pro", 0x1420 or 0x2420 => "AirPods Pro", 0x2720 => "AirPods Pro",
-        0x0A20 => "AirPods Max", 0x0B20 => "Powerbeats Pro", 0x0520 => "BeatsX", 0x1020 => "Beats Flex", 0x0620 => "Beats Solo", 0x0920 => "Beats Studio",
+        0x0220 => "AirPods", 0x0F20 => "AirPods 2", 0x1320 => "AirPods 3", 0x1920 => "AirPods 4", 0x1B20 => "AirPods 4 (ANC)",
+        0x0E20 => "AirPods Pro", 0x1420 or 0x2420 => "AirPods Pro 2", 0x2720 => "AirPods Pro 3", 0x0A20 or 0x1F20 => "AirPods Max",
+        0x0B20 => "Powerbeats Pro", 0x0520 => "BeatsX", 0x1020 => "Beats Flex", 0x0620 => "Beats Solo", 0x0920 => "Beats Studio",
         0x0320 => "Powerbeats", _ => null
     } : null;
 
     private static bool IsProximity(byte[] data) => data.Length >= 8 && data[0] == 0x07 && data[1] == 0x19;
     private static int? Level(int nibble) => nibble <= 10 ? nibble * 10 : null;
     // One piece, without buds or a case of its own: AirPods Max, Beats Solo, Studio and Flex, BeatsX, Powerbeats 3.
-    public static bool IsSingle(byte[] data) => data.Length >= 5 && ((data[3] << 8) | data[4]) is 0x0A20 or 0x0620 or 0x0920 or 0x0520 or 0x1020 or 0x0320;
+    public static bool IsSingle(byte[] data) => data.Length >= 5 && ((data[3] << 8) | data[4]) is 0x0A20 or 0x1F20 or 0x0620 or 0x0920 or 0x0520 or 0x1020 or 0x0320;
 
     // A single-unit model's one level, and charging (bit 0x01); null for earbuds, another advertisement, or no reading.
     public static BatteryRead? Single(byte[] data)
@@ -2019,13 +2022,36 @@ public static class AppleAdvert
         int high = data[6] >> 4, low = data[6] & 0x0F, caseLevel = data[7] & 0x0F, charging = data[7] >> 4;
         int left = flipped ? high : low, right = flipped ? low : high;
         bool leftCharging = (charging & (flipped ? 0x02 : 0x01)) != 0, rightCharging = (charging & (flipped ? 0x01 : 0x02)) != 0, caseCharging = (charging & 0x04) != 0;
+        // Which bud sits in the case, from byte 5 as wpods reads it (Proximity.cs): 0x04 both, 0x40 the bud sending this advertisement,
+        // 0x10 one of the two (the other one, when the sender's own bit is clear). The sender is the bud whose level is the low
+        // nibble: the left when not flipped.
+        int status = data[5];
+        bool both = (status & 0x04) != 0, self = (status & 0x40) != 0, other = (status & 0x10) != 0 && !self;
+        bool leftInCase = both || (flipped ? other : self), rightInCase = both || (flipped ? self : other);
+        // In the ear: 0x02 the sending bud, 0x08 the other one, swapped while the sender sits in its case (then 0x02 is the bud
+        // outside), as AirPods 3 send it: left in an ear and right in the case gave 0x33 from the left and 0x53 from the right.
+        bool selfEar = (status & (self ? 0x08 : 0x02)) != 0, otherEar = (status & (self ? 0x02 : 0x08)) != 0;
+        bool leftInEar = !leftInCase && (flipped ? otherEar : selfEar), rightInEar = !rightInCase && (flipped ? selfEar : otherEar);
         var parts = new List<PartBattery>();
         if (Level(left) is not null || Level(right) is not null)
         {
-            parts.Add(new(BatteryPart.Left, Level(left), leftCharging));
-            parts.Add(new(BatteryPart.Right, Level(right), rightCharging));
+            parts.Add(new(BatteryPart.Left, Level(left), leftCharging, leftInCase, leftInEar));
+            parts.Add(new(BatteryPart.Right, Level(right), rightCharging, rightInCase, rightInEar));
         }
         if (Level(caseLevel) is not null) parts.Add(new(BatteryPart.Case, Level(caseLevel), caseCharging));
         return parts;
+    }
+
+    // The buds take turns sending, and not each one knows every part: with one bud in the case only one of them sends the case's
+    // level. So a part missing from this advertisement keeps the one last heard (seen, per part) for Hold; one not heard for that
+    // long (a bud in its closed case, the case once both buds are out) is left out.
+    public static readonly TimeSpan HoldFor = TimeSpan.FromSeconds(10);
+    public static IReadOnlyList<PartBattery> Hold(IReadOnlyList<PartBattery> parts, IDictionary<BatteryPart, (PartBattery Read, DateTimeOffset At)> seen, DateTimeOffset now)
+    {
+        foreach (var part in parts) if (part.Percent is not null) seen[part.Part] = (part, now);
+        var held = new List<PartBattery>();
+        foreach (var part in new[] { BatteryPart.Left, BatteryPart.Right, BatteryPart.Case })
+            if (seen.TryGetValue(part, out var last) && now - last.At <= HoldFor) held.Add(last.Read);
+        return held;
     }
 }

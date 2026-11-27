@@ -609,13 +609,37 @@ static class DeviceProtocolTests
         // case 3 (30 %) charging, as OpenPods and AirPodsDesktop read it.
         byte[] advert = [0x07, 0x19, 0x01, 0x0E, 0x20, 0x2B, 0x86, 0x43, 0, 0];
         var parts = AppleAdvert.Parts(advert)!;
-        check("AirPods: the model and each part's level", AppleAdvert.Model(advert) == "AirPods Pro" && parts.Count == 3 && parts[0] == new PartBattery(BatteryPart.Left, 60, false)
-            && parts[1] == new PartBattery(BatteryPart.Right, 80, false) && parts[2] == new PartBattery(BatteryPart.Case, 30, true) && AppleAdvert.Single(advert) is null);
+        check("AirPods: the model and each part's level", AppleAdvert.Model(advert) == "AirPods Pro" && parts.Count == 3 && parts[0] == new PartBattery(BatteryPart.Left, 60, false, false, true)
+            && parts[1] == new PartBattery(BatteryPart.Right, 80, false, false, true) && parts[2] == new PartBattery(BatteryPart.Case, 30, true) && AppleAdvert.Single(advert) is null);
         // Flipped (0x20 clear): the left is the high nibble, and its charging bit is 0x02; the right charges here.
         byte[] flipped = [0x07, 0x19, 0x01, 0x0E, 0x20, 0x0B, 0x86, 0x1F, 0, 0];
         var swapped = AppleAdvert.Parts(flipped)!;
-        check("AirPods: flipped buds swap with their charging, a missing case is left out", swapped.Count == 2 && swapped[0] == new PartBattery(BatteryPart.Left, 80, false)
-            && swapped[1] == new PartBattery(BatteryPart.Right, 60, true));
+        check("AirPods: flipped buds swap with their charging, a missing case is left out", swapped.Count == 2 && swapped[0] == new PartBattery(BatteryPart.Left, 80, false, false, true)
+            && swapped[1] == new PartBattery(BatteryPart.Right, 60, true, false, true));
+        // In the case, from byte 5 (wpods' reading): 0x04 both, 0x40 the sending bud (the left when 0x20 is set), 0x10 the other one.
+        bool?[] InCase(byte status) => [.. AppleAdvert.Parts([0x07, 0x19, 0x01, 0x13, 0x20, status, 0xAA, 0x65])!.Take(2).Select(part => part.InCase)];
+        check("AirPods 3: the model by name, which bud is in its case", AppleAdvert.Model([0x07, 0x19, 0x01, 0x13, 0x20]) == "AirPods 3"
+            && InCase(0x24).SequenceEqual(new bool?[] { true, true }) && InCase(0x60).SequenceEqual(new bool?[] { true, false })
+            && InCase(0x30).SequenceEqual(new bool?[] { false, true }) && InCase(0x50).SequenceEqual(new bool?[] { false, true })
+            && InCase(0x10).SequenceEqual(new bool?[] { true, false }) && InCase(0x20).SequenceEqual(new bool?[] { false, false }));
+        // In the ear: 0x02 the sending bud, 0x08 the other; a bud in its case is never in an ear.
+        bool?[] InEar(byte status) => [.. AppleAdvert.Parts([0x07, 0x19, 0x01, 0x13, 0x20, status, 0xAA, 0x65])!.Take(2).Select(part => part.InEar)];
+        check("AirPods 3: which bud is in an ear", InEar(0x22).SequenceEqual(new bool?[] { true, false }) && InEar(0x28).SequenceEqual(new bool?[] { false, true })
+            && InEar(0x02).SequenceEqual(new bool?[] { false, true }) && InEar(0x6A).SequenceEqual(new bool?[] { false, true }));
+        // What a pair of AirPods 3 sent: left in an ear and right in the open case, from the left (0x33) and from the right (0x53,
+        // whose 0x02 is then the bud outside); right in an ear and left in the case, from the left (0x73) and the right (0x13).
+        check("AirPods 3: a bud in its case speaks of the other's ear with 0x02", InEar(0x33).SequenceEqual(new bool?[] { true, false })
+            && InEar(0x53).SequenceEqual(new bool?[] { true, false }) && InEar(0x73).SequenceEqual(new bool?[] { false, true }) && InEar(0x13).SequenceEqual(new bool?[] { false, true }));
+        // Hold: the case heard from one bud stays while the other bud's advertisement lacks it, and goes once not heard for HoldFor.
+        var seen = new Dictionary<BatteryPart, (PartBattery Read, DateTimeOffset At)>();
+        var at = DateTimeOffset.UnixEpoch;
+        var withCase = AppleAdvert.Parts([0x07, 0x19, 0x01, 0x13, 0x20, 0x53, 0xAA, 0xD9])!;
+        var noCase = AppleAdvert.Parts([0x07, 0x19, 0x01, 0x13, 0x20, 0x33, 0xFA, 0xAF])!;
+        AppleAdvert.Hold(withCase, seen, at);
+        var held = AppleAdvert.Hold(noCase, seen, at + TimeSpan.FromSeconds(1));
+        var later = AppleAdvert.Hold(noCase, seen, at + AppleAdvert.HoldFor + TimeSpan.FromSeconds(1));
+        check("AirPods: a part one bud does not send keeps its last reading for a while", held.Count == 3 && held[2].Part == BatteryPart.Case && held[2].Percent == 90
+            && held[1].Percent == 100 && later.Count == 1 && later[0].Part == BatteryPart.Left);
         // AirPods Max: one level (byte 6's low nibble, 7 = 70 %), charging, no parts.
         byte[] max = [0x07, 0x19, 0x01, 0x0A, 0x20, 0x2B, 0x07, 0x1F, 0, 0];
         check("AirPods Max and the one-piece Beats: one level, no left and right", AppleAdvert.Model(max) == "AirPods Max" && AppleAdvert.Parts(max) is { Count: 0 }

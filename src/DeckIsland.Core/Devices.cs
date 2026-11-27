@@ -12,9 +12,10 @@ public enum DeviceKind { Mouse, Keyboard, Headphones, Earbuds, Controller, Pen, 
 // reading of the first in this order that has a percentage (DeviceRoster.Merge).
 public enum DeviceSource { PhoneLink, Logitech, Razer, SteelSeries, HyperX, Sony, Apple, Gatt, Gaming, Hid, Bluetooth }
 
-// The parts of earbuds that report their own charge.
+// The parts of earbuds that report their own charge. InCase / InEar: whether a bud sits in its case or in an ear, null where the
+// source does not say (only AirPods and Beats do).
 public enum BatteryPart { Left, Right, Case }
-public readonly record struct PartBattery(BatteryPart Part, int? Percent, bool Charging);
+public readonly record struct PartBattery(BatteryPart Part, int? Percent, bool Charging, bool? InCase = null, bool? InEar = null);
 
 // One device's reading. Key is the device's own: "bt:<address>" for anything Bluetooth (12 hex digits, upper case), so the
 // several Bluetooth sources meet on one entry; other sources key by what identifies the device on its link. Percent is null
@@ -32,10 +33,12 @@ public sealed record DeviceBattery(string Key, string Name, DeviceKind Kind, Dev
     // controller and as a Bluetooth device is one device.
     public string? Hardware { get; init; }
     public IReadOnlyList<PartBattery> Parts { get; init; } = [];
+    // The model by name where the source knows it ("AirPods 3", from Apple's advertisement), for the earbuds' card.
+    public string? Model { get; init; }
     // The lowest of the parts with a reading (the earbuds, not the case), or the device's own.
     public int? Lowest => Parts.Where(part => part.Part != BatteryPart.Case && part.Percent is not null).Select(part => part.Percent).Min() ?? Percent;
     public bool Same(DeviceBattery other) => Key == other.Key && Name == other.Name && Kind == other.Kind && Source == other.Source && Percent == other.Percent
-        && Charging == other.Charging && Coarse == other.Coarse && Asleep == other.Asleep && Parts.SequenceEqual(other.Parts);
+        && Charging == other.Charging && Coarse == other.Coarse && Asleep == other.Asleep && Model == other.Model && Parts.SequenceEqual(other.Parts);
 }
 
 // A device's own choices (DeckSettings.DeviceChoices): a name of the user's (Label, null for the device's own), and whether it

@@ -23,8 +23,10 @@ internal sealed class AppleBatteries(Dispatcher dispatcher, Action<DeviceSource,
     private DeviceDemand _demand;
     private DeviceBattery? _target;
     // The parts of earbuds, or the one level of a single-unit model (AirPods Max, the one-piece Beats).
-    private (IReadOnlyList<PartBattery> Parts, BatteryRead? Single, DateTimeOffset At)? _last;
+    private (IReadOnlyList<PartBattery> Parts, BatteryRead? Single, string Model, DateTimeOffset At)? _last;
     private DispatcherTimer? _retry;
+    // Each part as last heard from either bud (AppleAdvert.Hold).
+    private readonly Dictionary<BatteryPart, (PartBattery Read, DateTimeOffset At)> _seen = [];
     private TimeSpan _backOff = FirstRetry;
 
     // It adds to what the Bluetooth source lists; it never lists a device of its own.
@@ -32,7 +34,7 @@ internal sealed class AppleBatteries(Dispatcher dispatcher, Action<DeviceSource,
     private DispatcherTimer? _stale;
 
     public void Start(DeviceDemand demand) { _demand = demand; Update(); }
-    public void Stop() { _demand = DeviceDemand.None; _target = null; _last = null; Update(); report(DeviceSource.Apple, []); }
+    public void Stop() { _demand = DeviceDemand.None; _target = null; _last = null; _seen.Clear(); Update(); report(DeviceSource.Apple, []); }
     public void Refresh() { }
     public void ReadNow() { }
     public void Dispose() => Stop();
@@ -43,7 +45,7 @@ internal sealed class AppleBatteries(Dispatcher dispatcher, Action<DeviceSource,
     public void Consider(IReadOnlyList<DeviceBattery> connected)
     {
         var target = connected.FirstOrDefault(device => device.Address is not null && IsApple(device.Name));
-        if (target?.Key != _target?.Key) _last = null;
+        if (target?.Key != _target?.Key) { _last = null; _seen.Clear(); }
         _target = target is null ? null : target with { Source = DeviceSource.Bluetooth };
         Update();
     }
@@ -109,9 +111,9 @@ internal sealed class AppleBatteries(Dispatcher dispatcher, Action<DeviceSource,
         {
             if (data.CompanyId != AppleAdvert.Company) continue;
             var bytes = data.Data.ToArray();
-            if (AppleAdvert.Parts(bytes) is not { } parts || AppleAdvert.Model(bytes) is not { } model) continue;
+            if (AppleAdvert.Parts(bytes) is not { } heard || AppleAdvert.Model(bytes) is not { } model) continue;
             var single = AppleAdvert.Single(bytes);
-            if (parts.Count == 0 && single is null) continue;
+            if (heard.Count == 0 && single is null) continue;
             dispatcher.BeginInvoke(DispatcherPriority.Background, () =>
             {
                 // A scan that hears again has recovered: a later abort starts the back-off from the beginning.
@@ -119,8 +121,9 @@ internal sealed class AppleBatteries(Dispatcher dispatcher, Action<DeviceSource,
                 // The family must be the connected device's: AirPods for "Koooki's AirPods Pro", Beats for "Powerbeats Pro".
                 string family = model.Contains("Beats", StringComparison.OrdinalIgnoreCase) || model.Contains("beats", StringComparison.Ordinal) ? "beats" : "AirPods";
                 if (_target is not { } target || !target.Name.Contains(family, StringComparison.OrdinalIgnoreCase)) return;
-                bool same = _last is { } last && last.Parts.SequenceEqual(parts) && last.Single == single;
-                _last = (parts, single, DateTimeOffset.UtcNow);
+                var parts = AppleAdvert.Hold(heard, _seen, DateTimeOffset.UtcNow);
+                bool same = _last is { } last && last.Parts.SequenceEqual(parts) && last.Single == single && last.Model == model;
+                _last = (parts, single, model, DateTimeOffset.UtcNow);
                 if (!same) Publish();
             });
         }
@@ -141,13 +144,13 @@ internal sealed class AppleBatteries(Dispatcher dispatcher, Action<DeviceSource,
         // A single-unit model shows its one level, without parts.
         if (last.Single is { } single)
         {
-            report(DeviceSource.Apple, [target with { Source = DeviceSource.Apple, Percent = single.Percent, Parts = [], Coarse = true, Charging = single.Charging }]);
+            report(DeviceSource.Apple, [target with { Source = DeviceSource.Apple, Percent = single.Percent, Parts = [], Coarse = true, Charging = single.Charging, Model = last.Model }]);
             return;
         }
         var buds = last.Parts.Where(part => part.Part != BatteryPart.Case && part.Percent is not null).ToList();
         report(DeviceSource.Apple, [target with
         {
-            Source = DeviceSource.Apple, Percent = buds.Count > 0 ? buds.Min(part => part.Percent) : target.Percent, Parts = last.Parts, Coarse = true,
+            Source = DeviceSource.Apple, Percent = buds.Count > 0 ? buds.Min(part => part.Percent) : target.Percent, Parts = last.Parts, Coarse = true, Model = last.Model,
             Charging = buds.Count > 0 && buds.All(part => part.Charging)
         }]);
     }
