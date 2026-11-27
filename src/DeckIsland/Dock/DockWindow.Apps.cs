@@ -42,10 +42,22 @@ internal sealed partial class DockWindow
         if (!settings.GroupWindows) apps = DockApps.Ungroup(apps, foreground);
         bool trashFull = settings.ShowTrash && DockShell.RecycleBinHasItems();
         var signature = $"{settings.Style}{settings.ClearCards}{Accent}{settings.CleanWidgets}{settings.Corner}|{settings.Size}|{settings.Spacing}|{settings.IconSize}|{settings.AppCards}{settings.NamesOnHover}{settings.Indicator}{settings.WindowPreviews}|"
-            + $"{settings.ShowStart}{settings.ShowTrash}{settings.ShowDesktopButton}{trashFull}|{_app.DockPickerOpen}|{string.Join(",", settings.Widgets.Select(w => $"{w.Id}:{w.Placement}:{w.Option}"))}|"
-            + string.Join(";", apps.Select(a => $"{a.Key},{a.Pinned},{a.Windows.Count},{a.Active}"));
+            + $"{settings.ShowStart}{settings.ShowTrash}{settings.ShowDesktopButton}{settings.FullWidth}{trashFull}|{_app.DockPickerOpen}|{string.Join(",", settings.Widgets.Select(w => $"{w.Id}:{w.Placement}:{w.Option}:{w.BeforeApp}"))}|"
+            + string.Join(";", apps.Select(a => $"{a.Key},{a.Pinned},{a.Windows.Count}"));
         _shown = apps;
-        if (signature == _signature) return;
+        if (signature == _signature)
+        {
+            foreach (var frame in _apps.Children.OfType<Border>())
+                if (frame.Tag is DockApp previous && Current(previous) is { } current && previous.Active != current.Active)
+                {
+                    frame.Tag = current;
+                    if (!frame.IsMouseOver) frame.Background = UI.Brush(Rest(current.Active));
+                    var dot = (Rectangle)((Grid)frame.Child).Children[1];
+                    dot.Width = IndicatorWidth(settings.Indicator, _tileSize, current.Active);
+                    dot.Opacity = current.Active ? 1 : 0.8;
+                }
+            return;
+        }
         _signature = signature;
         _apps.Children.Clear();
         double tile = _tileSize = settings.Size - 10;
@@ -57,6 +69,11 @@ internal sealed partial class DockWindow
             _apps.Children.Add(new Rectangle { Width = 1, Height = tile * 0.6, Fill = UI.Brush(_look.Divider), Margin = new Thickness(5, 0, 5, 0) });
         if (settings.ShowTrash) _apps.Children.Add(Trash(tile));
         if (_handle != IntPtr.Zero && Math.Abs(NaturalWidth() - _barWidth) >= 1) Place();
+        if (_dropOrigins is { } origins)
+        {
+            _dropOrigins = null;
+            AnimateTilePositions(origins);
+        }
     }
 
     private static List<(DockPin Pin, string Key)> PinKeys(DockSettings settings) => (settings.Pins ?? []).Select(pin => (pin, DockAppWindows.PinKey(pin))).ToList();
@@ -72,7 +89,7 @@ internal sealed partial class DockWindow
     }
 
     // Read again soon after an action, so the dot follows without waiting for the next second.
-    private void RefreshSoon() => Dispatcher.BeginInvoke(() => { _signature = ""; RefreshApps(); }, System.Windows.Threading.DispatcherPriority.Background);
+    private void RefreshSoon() => Dispatcher.BeginInvoke(RefreshApps, System.Windows.Threading.DispatcherPriority.Background);
 
     private Border Frame(UIElement content, double tile, string name) => new()
     {
@@ -141,9 +158,9 @@ internal sealed partial class DockWindow
         // The open marker (DockIndicator): a dot, a larger dot, or a line; wider under the app in front.
         var (dotWidth, dotHeight) = settings.Indicator switch
         {
-            DockIndicator.LargeDot => (app.Active ? 14.0 : 6.0, 6.0),
-            DockIndicator.Line => (app.Active ? tile * 0.6 : tile * 0.35, 2.5),
-            _ => (app.Active ? 12.0 : 4.0, 3.0)
+            DockIndicator.LargeDot => (IndicatorWidth(settings.Indicator, tile, app.Active), 6.0),
+            DockIndicator.Line => (IndicatorWidth(settings.Indicator, tile, app.Active), 2.5),
+            _ => (IndicatorWidth(settings.Indicator, tile, app.Active), 3.0)
         };
         var dot = new Rectangle { Height = dotHeight, Width = dotWidth, RadiusX = dotHeight / 2, RadiusY = dotHeight / 2, Fill = UI.Brush(Accent), Opacity = app.Active ? 1 : 0.8,
             VerticalAlignment = VerticalAlignment.Bottom, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 0, 0, 2),
@@ -155,7 +172,8 @@ internal sealed partial class DockWindow
         frame.Tag = app; frame.Background = UI.Brush(rest);
         // The preview shows the window titles, so the tooltip would only repeat them.
         if (app.Open && _app.DockSettings.WindowPreviews) frame.ToolTip = null;
-        Hover(frame, rest);
+        frame.MouseEnter += (_, _) => frame.Background = UI.Brush(_look.CardHover);
+        frame.MouseLeave += (_, _) => frame.Background = UI.Brush(Rest(Current(app).Active));
         frame.MouseEnter += (_, _) => { if (!_dragging && _app.DockSettings.WindowPreviews) _preview.Show(Current(app), frame); };
         frame.MouseLeave += (_, _) => _preview.HideSoon();
         frame.MouseLeftButtonDown += (_, e) =>
@@ -168,7 +186,7 @@ internal sealed partial class DockWindow
         frame.LostMouseCapture += (_, _) =>
         {
             if (_press?.Tile != frame) return;
-            _press = null; _dragging = false; frame.Opacity = 1; RefreshSoon();
+            _press = null; _dragging = false; frame.Opacity = 1; _signature = ""; RefreshSoon();
         };
         frame.MouseLeftButtonUp += (_, e) => { Release(frame, Current(app), e.GetPosition(this)); e.Handled = true; };
         frame.MouseUp += (_, e) =>
@@ -176,7 +194,8 @@ internal sealed partial class DockWindow
             if (e.ChangedButton != MouseButton.Middle) return;
             DockAppWindows.Launch(Current(app).Launch); e.Handled = true; RefreshSoon();
         };
-        frame.ContextMenu = AppMenu(app);
+        // Reading Windows jump lists can touch several files and shell objects; defer it until the menu is opened.
+        frame.ContextMenu = new ContextMenu();
         frame.ContextMenuClosing += (_, _) => _menuOpen = false;
         frame.ContextMenuOpening += (_, _) =>
         {
@@ -190,6 +209,13 @@ internal sealed partial class DockWindow
     }
 
     private DockApp Current(DockApp app) => _shown.FirstOrDefault(a => a.Key == app.Key) ?? app;
+
+    private static double IndicatorWidth(DockIndicator indicator, double tile, bool active) => indicator switch
+    {
+        DockIndicator.LargeDot => active ? 14 : 6,
+        DockIndicator.Line => tile * (active ? 0.6 : 0.35),
+        _ => active ? 12 : 4
+    };
 
     // While the button is held, a move past the threshold starts a drag: the tile follows the pointer along the apps.
     private void Drag(Border frame, Point at)
@@ -208,9 +234,19 @@ internal sealed partial class DockWindow
             int otherIndex = _apps.Children.IndexOf(other);
             if ((otherIndex > index && at.X > centre) || (otherIndex < index && at.X < centre))
             {
-                _apps.Children.Remove(frame); _apps.Children.Insert(otherIndex, frame);
+                var origins = TileOrigins();
+                // Move the neighbours around the held tile so its mouse capture survives the reorder.
+                int step = Math.Sign(otherIndex - index);
+                while (index != otherIndex)
+                {
+                    var neighbour = _apps.Children[index + step];
+                    _apps.Children.RemoveAt(index + step);
+                    _apps.Children.Insert(index, neighbour);
+                    index += step;
+                }
                 // Laid out now, so the next move compares against where the tiles are.
                 _apps.UpdateLayout();
+                AnimateTilePositions(origins);
                 return;
             }
         }
@@ -234,7 +270,13 @@ internal sealed partial class DockWindow
         var pins = PinKeys(_app.DockSettings);
         var copy = _app.DockSettings.Copy();
         if (off) { if (app.Pinned) copy.Pins = DockApps.Unpin(pins, app.Key); }
-        else copy.Pins = DockApps.Arrange(pins, _apps.Children.OfType<Border>().Select(child => child.Tag).OfType<DockApp>().ToList());
+        else
+        {
+            _dropOrigins = TileOrigins();
+            var tiles = _apps.Children.OfType<Border>().Select(child => child.Tag).OfType<DockApp>().ToList();
+            _order = tiles.Select(tile => tile.Key).ToList();
+            copy.Pins = DockApps.Arrange(pins, tiles);
+        }
         _app.UpdateDockSettings(copy);
         RefreshSoon();
     }
@@ -329,8 +371,21 @@ internal sealed partial class DockWindow
                 double centre = tile.TranslatePoint(new Point(tile.ActualWidth / 2, 0), this).X;
                 scale = DockGeometry.Magnify(point.X - centre, (_tileSize + _spacing) * 2.5, settings.MagnificationSize);
             }
-            if (tile.RenderTransform is not ScaleTransform transform) continue;
-            var animation = new System.Windows.Media.Animation.DoubleAnimation(scale, duration) { EasingFunction = new System.Windows.Media.Animation.QuadraticEase() };
+            var transform = tile.RenderTransform switch
+            {
+                ScaleTransform direct => direct,
+                TransformGroup group => group.Children.OfType<ScaleTransform>().FirstOrDefault(),
+                _ => null
+            };
+            if (transform is null) continue;
+            double previous = (double)transform.GetAnimationBaseValue(ScaleTransform.ScaleXProperty);
+            if (previous == scale || scale != 1 && Math.Abs(previous - scale) < 0.015) continue;
+            var animation = new System.Windows.Media.Animation.DoubleAnimation(transform.ScaleX, scale, duration)
+            {
+                EasingFunction = new System.Windows.Media.Animation.QuadraticEase(),
+                FillBehavior = System.Windows.Media.Animation.FillBehavior.Stop
+            };
+            transform.ScaleX = transform.ScaleY = scale;
             transform.BeginAnimation(ScaleTransform.ScaleXProperty, animation);
             transform.BeginAnimation(ScaleTransform.ScaleYProperty, animation);
         }

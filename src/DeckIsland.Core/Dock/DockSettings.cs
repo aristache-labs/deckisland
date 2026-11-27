@@ -42,9 +42,9 @@ public sealed class DockSettings
     // How far the bar sits from the screen edge, the space between tiles and inside the bar's ends, in DIPs; the corners' roundness
     // in percent of half the bar's height (0 square, 100 a pill).
     public int Distance { get; set; }
-    public int Spacing { get; set; } = 4;
-    public int Padding { get; set; } = 4;
-    public int Corner { get; set; } = 30;
+    public int Spacing { get; set; } = 3;
+    public int Padding { get; set; } = 3;
+    public int Corner { get; set; } = 55;
     // Across the whole screen edge, like the taskbar, rather than a bar sized to its tiles.
     public bool FullWidth { get; set; }
     // Slides away until the pointer touches the screen edge; Show on desktop keeps it up while nothing but the desktop is in front.

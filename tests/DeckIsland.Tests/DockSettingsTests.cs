@@ -35,14 +35,15 @@ internal static class DockSettingsTests
         check("Dock strip sits on the chosen edge",
             DockGeometry.Strip(screen, DockEdge.Bottom, 60) == new PixelRect(0, 1020, 1920, 1080) && DockGeometry.Strip(screen, DockEdge.Top, 60) == new PixelRect(0, 0, 1920, 60));
         var bar = DockGeometry.Bar(new PixelRect(0, 1020, 1920, 1080), DockEdge.Bottom, 400, 52);
-        check("Dock bar is centred in its strip", bar == new PixelRect(760, 1024, 1160, 1076));
+        check("Floating dock is centred horizontally and meets the edge at zero distance", bar == new PixelRect(760, 1028, 1160, 1080)
+            && DockGeometry.Bar(new PixelRect(0, 0, 1920, 60), DockEdge.Top, 400, 52) == new PixelRect(760, 0, 1160, 52));
         check("Dock bar keeps its minimum and side margins",
             DockGeometry.Bar(new PixelRect(0, 0, 1920, 60), DockEdge.Top, 10, 52).Width == DockGeometry.MinBarWidth && DockGeometry.Bar(new PixelRect(0, 0, 1920, 60), DockEdge.Top, 5000, 52).Width == 1920 - 2 * DockGeometry.SideMargin);
         check("Dock keeps its height on a strip the shell moved",
             DockGeometry.KeepHeight(new PixelRect(0, 900, 1920, 1040), DockEdge.Bottom, 60) == new PixelRect(0, 980, 1920, 1040));
         check("Dock bar keeps its distance from the edge on either edge",
-            DockGeometry.Bar(new PixelRect(0, 1000, 1920, 1080), DockEdge.Bottom, 400, 52, 20) is { Bottom: 1056, Height: 52 }
-            && DockGeometry.Bar(new PixelRect(0, 0, 1920, 80), DockEdge.Top, 400, 52, 20) is { Top: 24, Height: 52 });
+            DockGeometry.Bar(new PixelRect(0, 1000, 1920, 1080), DockEdge.Bottom, 400, 52, 20) is { Bottom: 1060, Height: 52 }
+            && DockGeometry.Bar(new PixelRect(0, 0, 1920, 80), DockEdge.Top, 400, 52, 20) is { Top: 20, Height: 52 });
         check("Dock full width fills both ends and touches the chosen edge regardless of floating distance",
             DockGeometry.Bar(new PixelRect(0, 1020, 1920, 1080), DockEdge.Bottom, 400, 52, 20, true) == new PixelRect(0, 1028, 1920, 1080)
             && DockGeometry.Bar(new PixelRect(-1920, -180, 0, -100), DockEdge.Top, 400, 52, 20, true) == new PixelRect(-1920, -180, 0, -128));
@@ -157,6 +158,16 @@ internal static class DockSettingsTests
             && normalizedTray[0].Widgets.SequenceEqual(trayAndClock)
             && normalizedTray[0].Widgets[0].Placement == DockWidgetPlacement.DateAndClock
             && normalizedTray[0].Widgets[1].Placement == DockWidgetPlacement.NextToDesktop);
+        var cpuTile = new DockWidget("cpu", DockWidgetKind.Cpu);
+        var mainDrop = DockWidgets.Drop([combined[2], tray, cpuTile], tray.Id, DockWidgetPlacement.MainBar, "explorer.exe", cpuTile.Id);
+        var rightDrop = DockWidgets.Drop(mainDrop, cpuTile.Id, DockWidgetPlacement.BeforeClock, null, null);
+        var anotherRightDrop = DockWidgets.Drop(rightDrop, tray.Id, DockWidgetPlacement.BeforeClock, null, cpuTile.Id);
+        var (normalizedDrops, _) = DockWidgets.Normalize([new DockProfile("drop", "Drop", anotherRightDrop)], "drop");
+        check("Dock drag placement anchors widgets between apps, orders widgets on the right and preserves clock replacement",
+            mainDrop[1].BeforeApp == "explorer.exe" && DockWidgets.EffectivePlacement(mainDrop[1], true) == DockWidgetPlacement.Bar
+            && normalizedDrops[0].Widgets.SequenceEqual(anotherRightDrop)
+            && anotherRightDrop[0].Placement == DockWidgetPlacement.DateAndClock
+            && anotherRightDrop.Skip(1).Select(w => (w.Id, w.Placement)).SequenceEqual([(tray.Id, DockWidgetPlacement.BeforeClock), (cpuTile.Id, DockWidgetPlacement.BeforeClock)]));
         check("Dock remembers a clock placement and reads old widgets as bar widgets",
             System.Text.Json.JsonSerializer.Deserialize<DockWidget>(serializedClock) == combined[2]
             && System.Text.Json.JsonSerializer.Deserialize<DockWidget>("""{"Id":"date","Kind":"Date"}""") == timeWidgets[0]);

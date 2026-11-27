@@ -28,14 +28,27 @@ internal sealed partial class DockWindow
             return WidgetFrame(widget, content, tile);
         }
         var placement = (DockWidget widget) => DockWidgets.EffectivePlacement(widget, settings.FullWidth);
+        var appTiles = _apps.Children.OfType<Border>().Where(frame => frame.Tag is DockApp)
+            .ToDictionary(frame => ((DockApp)frame.Tag).Key);
         foreach (var widget in settings.Widgets.Where(w => placement(w) == DockWidgetPlacement.Bar))
-            _apps.Children.Add(Build(widget));
+        {
+            var tileFrame = Build(widget);
+            if (widget.BeforeApp is { } key && appTiles.TryGetValue(key, out var before))
+                _apps.Children.Insert(_apps.Children.IndexOf(before), tileFrame);
+            else _apps.Children.Add(tileFrame);
+        }
 
         _trailing.Children.Clear();
         foreach (var tray in settings.Widgets.Where(w => placement(w) == DockWidgetPlacement.NextToDesktop))
             _trailing.Children.Add(Build(tray));
         if (settings.ShowDesktopButton)
-            _trailing.Children.Add(Button(DesktopGlyph(tile), Loc.T("显示桌面", "Show desktop"), tile, DockShell.ToggleDesktop));
+        {
+            _desktopTile = Button(DesktopGlyph(tile), Loc.T("显示桌面", "Show desktop"), tile, DockShell.ToggleDesktop);
+            _trailing.Children.Add(_desktopTile);
+        }
+        else _desktopTile = null;
+        foreach (var widget in settings.Widgets.Where(w => placement(w) == DockWidgetPlacement.BeforeClock))
+            _trailing.Children.Add(Build(widget));
         _trailing.Children.Add(_clockArea);
         foreach (var tray in settings.Widgets.Where(w => placement(w) == DockWidgetPlacement.NextToClock))
             _trailing.Children.Add(Build(tray));
@@ -99,10 +112,11 @@ internal sealed partial class DockWindow
     {
         int width = DockWidgets.Info(widget.Kind).Width;
         var grid = new Grid(); grid.Children.Add(content);
+        Border? badge = null;
         if (_app.DockPickerOpen)
         {
             // Edit mode: a badge removes the widget.
-            var badge = new Border { Width = 16, Height = 16, CornerRadius = new CornerRadius(8), Background = UI.Brush("#FF8E8E93"), Cursor = Cursors.Hand,
+            badge = new Border { Width = 16, Height = 16, CornerRadius = new CornerRadius(8), Background = UI.Brush("#FF8E8E93"), Cursor = Cursors.Hand,
                 HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(-5, -5, 0, 0),
                 Child = new Rectangle { Width = 8, Height = 1.6, Fill = Brushes.White } };
             badge.MouseLeftButtonDown += (_, e) => e.Handled = true;
@@ -144,42 +158,38 @@ internal sealed partial class DockWindow
                 e.Handled = true;
             };
         }
-        bool onBar = DockWidgets.EffectivePlacement(widget, _app.DockSettings.FullWidth) == DockWidgetPlacement.Bar;
-        if (!onBar && !expandable) return frame;
-        frame.MouseLeftButtonDown += (_, e) => { e.Handled = true; _press = (frame, e.GetPosition(this)); frame.CaptureMouse(); };
-        if (onBar) frame.MouseMove += (_, e) => Drag(frame, e.GetPosition(this));
-        frame.LostMouseCapture += (_, _) =>
+        frame.PreviewMouseLeftButtonDown += (_, e) =>
+        {
+            if (badge?.IsMouseOver == true) return;
+            _press = (frame, e.GetPosition(this));
+        };
+        frame.MouseLeftButtonDown += (_, e) =>
+        {
+            if (_press?.Tile != frame || _app.DockSettings.Locked) return;
+            frame.CaptureMouse();
+            e.Handled = true;
+        };
+        frame.LostMouseCapture += (_, e) =>
+        {
+            if (_press?.Tile != frame || e.OriginalSource != frame) return;
+            EndWidgetDrag(frame);
+        };
+        frame.PreviewMouseLeftButtonUp += (_, e) =>
         {
             if (_press?.Tile != frame) return;
-            _press = null; _dragging = false; frame.Opacity = 1; RefreshSoon();
+            if (_dragging)
+            {
+                ReleaseWidget(frame, widget, e.GetPosition(this));
+                e.Handled = true;
+            }
+            else
+            {
+                _press = null;
+                if (frame.IsMouseCaptured) frame.ReleaseMouseCapture();
+                if (expandable && frame.IsMouseOver) { ToggleWidgetDetails(frame, widget.Kind); e.Handled = true; }
+            }
         };
-        frame.MouseLeftButtonUp += (_, e) => { ReleaseWidget(frame, widget); e.Handled = true; };
         return frame;
-    }
-
-    private void ReleaseWidget(Border frame, DockWidget widget)
-    {
-        if (_press?.Tile != frame) return;
-        bool dragged = _dragging;
-        _press = null; _dragging = false; frame.Opacity = 1;
-        frame.ReleaseMouseCapture();
-        if (!dragged)
-        {
-            if (HasWidgetDetails(widget.Kind) && frame.IsMouseOver) ToggleWidgetDetails(frame, widget.Kind);
-            return;
-        }
-        var order = _apps.Children.OfType<Border>().Select(child => child.Tag).OfType<DockWidget>().ToList();
-        var settings = _app.DockSettings;
-        var widgets = settings.Widgets;
-        bool OnBar(DockWidget widget) => DockWidgets.EffectivePlacement(widget, settings.FullWidth) == DockWidgetPlacement.Bar;
-        if (!order.Select(w => w.Id).ToHashSet().SetEquals(widgets.Where(OnBar).Select(w => w.Id)))
-        {
-            RefreshSoon();
-            return;
-        }
-        int barIndex = 0;
-        _app.UpdateDockSettings(settings.WithWidgets(widgets.Select(w => OnBar(w) ? order[barIndex++] : w).ToList()));
-        RefreshSoon();
     }
 
     private TextBlock Label(string text, double size, bool bold = false, bool dim = false) => new()

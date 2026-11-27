@@ -32,8 +32,7 @@ public static class DockGeometry
     {
         if (fullWidth) return Strip(strip, edge, Math.Min(barHeight, strip.Height));
         int height = Math.Min(barHeight, Math.Max(1, strip.Height - distance));
-        int gap = Math.Max(0, (strip.Height - distance - height) / 2);
-        int top = edge == DockEdge.Top ? strip.Top + distance + gap : strip.Bottom - distance - gap - height;
+        int top = edge == DockEdge.Top ? strip.Top + distance : strip.Bottom - distance - height;
         int width = Math.Clamp(barWidth, MinBarWidth, Math.Max(MinBarWidth, strip.Width - 2 * SideMargin));
         int left = strip.Left + (strip.Width - width) / 2;
         return new PixelRect(left, top, left + width, top + height);
@@ -46,7 +45,7 @@ public static class DockGeometry
     public static double CornerRadius(int percent, double barHeight) => Math.Clamp(percent, 0, 100) / 100.0 * barHeight / 2;
 
     // The share of a tile its icon fills.
-    public static double IconShare(DockIconSize size) => size switch { DockIconSize.Small => 0.58, DockIconSize.Large => 0.82, _ => 0.7 };
+    public static double IconShare(DockIconSize size) => size switch { DockIconSize.Small => 0.54, DockIconSize.Large => 0.78, _ => 0.65 };
 
     // A tile's scale under magnification: 1 + size at the pointer, falling off smoothly to 1 at reach from the tile's centre.
     public static double Magnify(double distance, double reach, int sizePercent)

@@ -89,10 +89,17 @@ internal sealed partial class DockWindow : Window
         };
         _bar.ContextMenuClosing += (_, _) => _menuOpen = false;
         _root.Children.Add(_bar);
+        _root.Children.Add(_dropMarker);
         Content = _root;
+        PreviewMouseMove += (_, e) => MoveWidgetDrag(e);
         _bar.AllowDrop = true;
         _bar.Drop += (_, e) => { if (!_app.DockSettings.Locked) DropFiles(e); };
-        _bar.MouseLeftButtonDown += (_, e) => { if (!_app.DockSettings.Locked) { _snapPress = e.GetPosition(this); _bar.CaptureMouse(); } };
+        _bar.MouseLeftButtonDown += (_, e) =>
+        {
+            if (_app.DockSettings.Locked || _press is not null) return;
+            _snapPress = e.GetPosition(this);
+            _bar.CaptureMouse();
+        };
         _bar.MouseLeftButtonUp += (_, _) => Snap();
         _bar.LostMouseCapture += (_, _) => _snapPress = null;
         _apps.MouseMove += (_, e) => Magnify(e.GetPosition(this));

@@ -53,7 +53,7 @@ internal sealed partial class DockWindow
         var settings = _app.DockSettings;
         _look = DockLook.For(DockSmart.Effective(settings.Style, settings.SunsetDarkMode, _app.DockDaylight), settings.ClearCards);
         _tint.Background = UI.Brush(_look.Bar);
-        _bar.BorderBrush = UI.Brush(_look.Rim);
+        _bar.BorderBrush = UI.Brush(!settings.FullWidth && settings.Style == DockStyle.Black ? "#24FFFFFF" : _look.Rim);
         _bar.BorderThickness = new Thickness(settings.Style == DockStyle.Clear ? 0 : 1);
         if (!_look.Glass) _bar.Background = Brushes.Transparent;
         Foreground = UI.Brush(_look.Text);
@@ -100,7 +100,7 @@ internal sealed partial class DockWindow
 
     private void GlassTick()
     {
-        if (!_glassOn || _reveal <= 0 || _bar.ActualWidth < 4 || PresentationSource.FromVisual(_bar) is null) return;
+        if (!_glassOn || _dragging || _reveal <= 0 || _bar.ActualWidth < 4 || PresentationSource.FromVisual(_bar) is null) return;
         var from = _bar.PointToScreen(new Point(0, 0));
         var to = _bar.PointToScreen(new Point(_bar.ActualWidth, _bar.ActualHeight));
         int x = (int)Math.Floor(from.X), y = (int)Math.Floor(from.Y), width = (int)Math.Ceiling(to.X - from.X), height = (int)Math.Ceiling(to.Y - from.Y);
