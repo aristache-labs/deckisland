@@ -17,7 +17,10 @@ internal sealed partial class DockWindow
     private readonly Border _tint = new();
     private readonly DispatcherTimer _glass = new(DispatcherPriority.Render) { Interval = TimeSpan.FromMilliseconds(120) };
     private DockBackdrop? _backdrop;
-    private bool _glassOn;
+    private bool _glassOn, _readGlass;
+    private byte[]? _lastGlass;
+    // Liquid's soft blur: the screen behind read at a sixth of its size and stretched back, a light frost.
+    private const double LiquidShrink = 6;
     private DockLook _look = DockLook.For(DockStyle.Black, DockClearCards.Black);
 
     // The style's colours on the bar, the clock and (through RefreshSoon) the tiles; glass started or stopped to match.
@@ -35,19 +38,25 @@ internal sealed partial class DockWindow
             _bar.BorderThickness = new Thickness(1.5);
         }
         _bar.Background = Brushes.Transparent;
+        _lastGlass = null;
         Foreground = UI.Brush(_look.Text);
         // The tiles were drawn in the previous style's colours.
         _signature = "";
         if (_handle == IntPtr.Zero) return;
-        // Liquid is clear glass: the screen shows through its light tint unblurred, so it needs no backdrop.
-        bool blur = _look.Glass && DockSmart.Effective(settings.Style, settings.SunsetDarkMode, _app.DockDaylight) != DockStyle.Liquid;
-        if (blur != _glassOn)
+        // Liquid reads the screen behind it for a soft blur (Windows' own blur is too strong for its clear glass); iOS and Midnight
+        // use Windows' blur in a backdrop window.
+        bool read = _look.Glass && DockSmart.Effective(settings.Style, settings.SunsetDarkMode, _app.DockDaylight) == DockStyle.Liquid;
+        if (_look.Glass != _glassOn || read != _readGlass)
         {
-            _glassOn = blur;
-            if (_glassOn) _glass.Start(); else { _glass.Stop(); _backdrop?.Hide(); }
+            _glassOn = _look.Glass;
+            _readGlass = read;
+            _lastGlass = null;
+            _backdrop?.Hide();
+            if (_glassOn) _glass.Start(); else _glass.Stop();
         }
-        // Glass comes from the backdrop window now, so the dock shows in captures unless the island's setting hides it.
-        ScreenShots.Exclude(this, _app.Settings.HideFromCapture);
+        // Reading the screen would read the dock too, so while it does the dock is left out of captures; otherwise as the island's
+        // setting says.
+        ScreenShots.Exclude(this, _readGlass || _app.Settings.HideFromCapture);
         if (_glassOn) GlassTick();
     }
 
@@ -90,7 +99,8 @@ internal sealed partial class DockWindow
         return brush;
     }
 
-    // Keeps the acrylic backdrop on the bar's rectangle (it follows slides, resizes and moves); hidden when there is no glass.
+    // Glass under the bar: Liquid's soft blur read from the screen, or the backdrop window kept on the bar's rectangle (it follows
+    // slides, resizes and moves); the backdrop hidden when there is no glass.
     private void GlassTick()
     {
         if (!_glassOn || _reveal <= 0 || _handle == IntPtr.Zero || _bar.ActualWidth < 4 || PresentationSource.FromVisual(_bar) is null)
@@ -100,9 +110,29 @@ internal sealed partial class DockWindow
         }
         var from = _bar.PointToScreen(new Point(0, 0));
         var to = _bar.PointToScreen(new Point(_bar.ActualWidth, _bar.ActualHeight));
+        if (_readGlass)
+        {
+            if (!_dragging) ReadGlass(from, to);
+            return;
+        }
         double scale = (to.X - from.X) / _bar.ActualWidth;
         (_backdrop ??= new DockBackdrop()).Show(_handle, (int)Math.Round(from.X), (int)Math.Round(from.Y),
             (int)Math.Round(to.X - from.X), (int)Math.Round(to.Y - from.Y), (int)Math.Round(_bar.CornerRadius.TopLeft * scale));
+    }
+
+    private void ReadGlass(Point from, Point to)
+    {
+        int x = (int)Math.Floor(from.X), y = (int)Math.Floor(from.Y), width = (int)Math.Ceiling(to.X - from.X), height = (int)Math.Ceiling(to.Y - from.Y);
+        if (GlassCapture.Grab(x, y, width, height, LiquidShrink) is not { } picture) return;
+        int stride = picture.PixelWidth * ((picture.Format.BitsPerPixel + 7) / 8);
+        var pixels = new byte[stride * picture.PixelHeight];
+        picture.CopyPixels(pixels, stride, 0);
+        if (_lastGlass is not null && pixels.AsSpan().SequenceEqual(_lastGlass)) return;
+        _lastGlass = pixels;
+        var brush = new ImageBrush(picture) { Stretch = Stretch.Fill };
+        RenderOptions.SetBitmapScalingMode(brush, BitmapScalingMode.HighQuality);
+        brush.Freeze();
+        _bar.Background = brush;
     }
 
     // The bar's own menu, on its empty parts.
