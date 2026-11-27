@@ -43,6 +43,9 @@ public sealed class DockSettings
     public int Distance { get; set; }
     public int Spacing { get; set; } = 3;
     public int Padding { get; set; } = 3;
+    // The bar's outer height: Size sets the tiles (Size - 6 tall), Padding adds room around them, so at the default 3 the bar is
+    // Size tall and more padding grows the bar instead of shrinking what is in it.
+    [JsonIgnore] public int BarHeight => Size - 6 + 2 * Padding;
     public int Corner { get; set; } = 55;
     // Across the whole screen edge, like the taskbar, rather than a bar sized to its tiles.
     public bool FullWidth { get; set; }

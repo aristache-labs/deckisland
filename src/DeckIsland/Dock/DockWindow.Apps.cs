@@ -61,8 +61,7 @@ internal sealed partial class DockWindow
         }
         _signature = signature;
         _apps.Children.Clear();
-        // The tile fits inside the bar's padding at the top and bottom.
-        double tile = _tileSize = Math.Min(settings.Size - (settings.FullWidth ? 10 : 6), settings.Size - 2 * settings.Padding);
+        double tile = _tileSize = settings.Size - (settings.FullWidth ? 10 : 6);
         _spacing = settings.Spacing;
         _startTile = settings.ShowStart ? Button(StartGlyph(tile), Loc.T("开始", "Start"), tile, DockShell.OpenStart) : null;
         if (_startTile is not null)
