@@ -23,6 +23,9 @@ public partial class App
     private DateTime _hudTransientUntil;
 
     internal bool MicMuted => _micMuted == true;
+    // Teams' own mute and camera (TeamsCall), read while Teams has the call; null when not known.
+    private (bool? Muted, bool? Camera) _teams;
+    private bool TeamsCallLive => _micLiveApp == "Microsoft Teams";
     internal string MicLiveApp => _micLiveApp;
     internal TimeSpan? MicLiveFor => _micLiveSince is { } since ? TimeSpan.FromMilliseconds(Environment.TickCount64 - since) : null;
 
@@ -71,12 +74,15 @@ public partial class App
         try
         {
             bool mutedChanged = ReadMicMute();
-            var active = await Task.Run(() =>
+            bool teams = TeamsCallLive;
+            (var active, var teamsState) = await Task.Run(() =>
             {
                 var names = CallAudio.ActiveInputApps();
                 names.AddRange(ReadSensorApps("microphone"));
-                return names;
+                return (names, teams ? TeamsCall.Read() : default);
             });
+            if (!teams) TeamsCall.Forget();
+            if (teamsState != _teams) { _teams = teamsState; mutedChanged = true; }
             if (Exiting) return;
             _sensorMicrophoneApps = active;
             UpdateSensorIndicator();
@@ -107,9 +113,10 @@ public partial class App
         {
             if (DateTime.UtcNow < _hudTransientUntil) return;
             string time = HudFormat.Duration(span);
-            bool off = MicMuted;
+            bool off = MicMuted || TeamsCallLive && _teams.Muted == true;
+            bool camera = TeamsCallLive && _teams.Camera is { } filming ? filming : CameraLive;
             ShowHud(new("call", off ? HudIcon.MicOff : HudIcon.Mic, time, Figure: off ? "muted" : "live", FigureColor: off ? null : LiveGreen, Lit: !off,
-                Hold: TimeSpan.Zero, Label: $"{(off ? "Muted call" : "Call")} {time}"));
+                Hold: TimeSpan.Zero, Label: $"{(off ? "Muted call" : "Call")} {time}{(camera ? ", camera on" : "")}", Camera: camera));
             _callShown = true;
         }
         else if (_callShown)

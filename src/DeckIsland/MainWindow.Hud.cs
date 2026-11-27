@@ -38,6 +38,7 @@ public partial class MainWindow
         RenderCompact();
         if (CompactColumnMode) Dispatcher.BeginInvoke(DispatcherPriority.Background, FitCompactToContent);
         UpdateGlass();
+        PlaceSensorIndicator();
         return true;
     }
 
@@ -55,6 +56,7 @@ public partial class MainWindow
         _hudMessage = null;
         RenderCompact();
         UpdateGlass();
+        PlaceSensorIndicator();
         if (CompactColumnMode) Dispatcher.BeginInvoke(DispatcherPriority.Background, FitCompactToContent);
     }
 

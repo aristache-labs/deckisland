@@ -60,6 +60,7 @@ public partial class MainWindow
     private void InitializeCalls()
     {
         IslandContent.SizeChanged += (_, _) => PlaceSensorIndicator();
+        Compact.SizeChanged += (_, _) => PlaceSensorIndicator();
         _app.CallsChanged += CallsChanged;
         CallsContent.IsVisibleChanged += (_, _) =>
         {

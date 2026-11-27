@@ -1,7 +1,7 @@
 namespace DeckIsland.Core;
 
 public enum HudIcon { Volume, Muted, Brightness, Battery, Charging, Bluetooth, Lock, Download, Done, Notice, NumLock, ScrollLock, Cancel, Mic, MicOff,
-    PowerMode, Network, NetworkOff, Airplane, Speaker, Display, Insert, DoNotDisturb, Copy, Phone, Headphones }
+    PowerMode, Network, NetworkOff, Airplane, Speaker, Display, Insert, DoNotDisturb, Copy, Phone, Headphones, Camera, CameraOff }
 
 // What kind of thing a Bluetooth device or a sound output is, for its readout's icon: from what the device says of itself (its class,
 // its form factor) and, failing that, from its name.
@@ -26,7 +26,8 @@ public static class HudDevices
 // short figure. Reserve is the longest text the same readout can say, whose room is kept so the surface does not change size between them. IconLevel is the charge a battery icon holds, FigureColor the color (a hex) of the figure. Body and Picture make it a card (a notification: its app's picture, the title in Text and the message under it). Label names a readout without text (volume) for the tooltip and screen readers. Lit colors the icon: something that has just been switched on, never its switching off. A message with the same Key as the one shown updates it in place (a volume key held down moves the bar).
 public sealed record HudMessage(string Key, HudIcon Icon, string Text, double? Level = null, bool? On = null, string? Figure = null,
     TimeSpan? Hold = null, bool Lit = false, string? Reserve = null, string? Label = null,
-    string? Body = null, byte[]? Picture = null, double? IconLevel = null, string? FigureColor = null);
+    string? Body = null, byte[]? Picture = null, double? IconLevel = null, string? FigureColor = null,
+    bool? Camera = null);
 
 // A notification's line too long for its card scrolls left once, at one speed, after a short wait, as Crest's do; the card stays until
 // it has scrolled and been read (Tail), never past the limit chosen for long texts. A line that would take longer stops where it got.

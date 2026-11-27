@@ -40,7 +40,8 @@ public partial class App
         if (message.Key != "call" && message.Hold is { } hold && hold > TimeSpan.Zero) _hudTransientUntil = DateTime.UtcNow + hold;
         bool inline = false;
         foreach (var deck in Decks.ToList()) inline |= deck.ShowHudInline(message);
-        if (inline || message.Key == "call" && Decks.Any(deck => deck.IsVisible && deck.IsExpanded && deck.CurrentPage == DeckPage.Calls))
+        // The running call timer never floats over an open panel (it would cover the page switch); it comes back in the island on collapse.
+        if (inline || message.Key == "call" && Decks.Any(deck => deck.IsVisible && deck.IsExpanded))
         { _hud?.Clear(message.Key); return; }
         _hud ??= new HudWindow();
         _hud.Present(message, PanelTheme.Main, Settings.NotificationScrollSeconds);

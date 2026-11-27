@@ -14,6 +14,25 @@ internal static class HudGlyph
 
     public static FrameworkElement Create(HudMessage hud, PanelLook look, double size, double scale)
     {
+        var glyph = Single(hud, look, size, scale);
+        if (hud.Camera is not { } camera) return glyph;
+        // A call's pill: the camera stands after the microphone, green while it films and struck through in red when it is off.
+        double gap = Math.Round(5 * scale);
+        var lens = Line(camera ? HudIcon.Camera : HudIcon.CameraOff, camera ? Charging : look.Hex("danger"), size, scale);
+        lens.Margin = new Thickness(gap, 0, 0, 0);
+        return new StackPanel { Orientation = Orientation.Horizontal, Width = 2 * size + gap, Height = size, Children = { glyph, lens } };
+    }
+
+    // One line drawing in one colour, as the sensor icons beside the island also use.
+    internal static Path Line(HudIcon icon, string color, double size, double scale) => new()
+    {
+        Data = HudWindow.IconGeometry(icon), Stroke = UI.Brush(color), StrokeThickness = Math.Max(1, 1.4 * scale),
+        Stretch = Stretch.Uniform, Width = size, Height = size, StrokeLineJoin = PenLineJoin.Round,
+        StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round
+    };
+
+    private static FrameworkElement Single(HudMessage hud, PanelLook look, double size, double scale)
+    {
         if (hud.Icon is HudIcon.Battery or HudIcon.Charging) return Battery(hud, look, size, scale);
         // Finished and canceled: a filled disc with the mark cut out of it in the surface's color.
         if (hud.Icon is HudIcon.Done or HudIcon.Cancel)
@@ -28,12 +47,7 @@ internal static class HudGlyph
             });
             return disc;
         }
-        return new Path
-        {
-            Data = HudWindow.IconGeometry(hud.Icon), Stroke = UI.Brush(hud.Icon == HudIcon.MicOff ? look.Hex("danger") : hud.Lit ? (hud.Icon == HudIcon.Mic ? Charging : look.Hex("accent")) : look.Primary), StrokeThickness = Math.Max(1, 1.4 * scale),
-            Stretch = Stretch.Uniform, Width = size, Height = size, StrokeLineJoin = PenLineJoin.Round,
-            StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round
-        };
+        return Line(hud.Icon, hud.Icon == HudIcon.MicOff ? look.Hex("danger") : hud.Lit ? (hud.Icon == HudIcon.Mic ? Charging : look.Hex("accent")) : look.Primary, size, scale);
     }
 
     private static FrameworkElement Battery(HudMessage hud, PanelLook look, double size, double scale)

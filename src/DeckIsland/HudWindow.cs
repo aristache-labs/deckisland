@@ -33,6 +33,8 @@ internal sealed class HudWindow : Window
         [HudIcon.ScrollLock] = "M10,3 V17 M6.5,6.5 L10,3 L13.5,6.5 M6.5,13.5 L10,17 L13.5,13.5",
         [HudIcon.Mic] = "M10,2.5 A2.5,2.5 0 0 1 12.5,5 V10 A2.5,2.5 0 0 1 7.5,10 V5 A2.5,2.5 0 0 1 10,2.5 Z M5,9.5 A5,5 0 0 0 15,9.5 M10,14.5 V17.5",
         [HudIcon.MicOff] = "M10,2.5 A2.5,2.5 0 0 1 12.5,5 V10 A2.5,2.5 0 0 1 7.5,10 V5 A2.5,2.5 0 0 1 10,2.5 Z M5,9.5 A5,5 0 0 0 15,9.5 M10,14.5 V17.5 M3,3 L17,17",
+        [HudIcon.Camera] = "M2.5,5.5 H12.5 V14.5 H2.5 Z M12.5,8.5 L17.5,6 V14 L12.5,11.5",
+        [HudIcon.CameraOff] = "M2.5,5.5 H12.5 V14.5 H2.5 Z M12.5,8.5 L17.5,6 V14 L12.5,11.5 M3,3 L17,17",
         [HudIcon.Cancel] = "M5,5 L15,15 M15,5 L5,15",
         [HudIcon.Done] = "M4,10 L8.5,14.5 L16,6",
         [HudIcon.PowerMode] = "M3,13 A7,7 0 0 1 17,13 M10,13 L13.5,8.5 M5,13 H6.5 M13.5,13 H15",
