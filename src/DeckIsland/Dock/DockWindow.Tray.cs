@@ -44,7 +44,7 @@ internal sealed partial class DockWindow
         bool top = _app.DockSettings.Edge == DockEdge.Top;
         bool light = _look.Text == "#FF1D1D1F";
         var grid = new UniformGrid { Columns = TrayColumns };
-        foreach (var icon in tray.TrayIcons.Where(i => i.Icon is not null)) grid.Children.Add(TrayIcon(icon));
+        foreach (var icon in tray.AllIcons.OfType<NotifyIcon>().Where(i => i.Icon is not null)) grid.Children.Add(TrayIcon(icon));
         if (grid.Children.Count == 0)
             grid.Children.Add(new TextBlock { Text = Loc.T("没有托盘图标", "No tray icons"), Foreground = UI.Brush(_look.Dim), Margin = new Thickness(8) });
         _trayPopup = new Popup
