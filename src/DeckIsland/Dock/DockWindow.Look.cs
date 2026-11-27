@@ -32,14 +32,16 @@ internal sealed partial class DockWindow
         // A transparent rim would leave a 1px gap around the tint that shows the screen behind; no rim, no border.
         _bar.BorderThickness = new Thickness(settings.Style == DockStyle.Clear || _look.Rim.StartsWith("#00", StringComparison.Ordinal) ? 0 : 1);
         _tint.BorderThickness = new Thickness(0);
-        // The glass styles' rims are cool, see-through white (measured from lumabar). Liquid and iOS add a subtle gloss: a 1px rim
-        // brightest along the top, as glass catches light, with a faint 1px inner sheen under it that fades out by the middle.
+        // Liquid and iOS: a 2px glossy rim (UpdateGlassRim), drawn as two 1px lines so the inner one can be fainter; iOS's is a cool
+        // white and brighter, Liquid's a neutral grey.
+        _glossStrength = 0;
         switch (DockSmart.Effective(settings.Style, settings.SunsetDarkMode, _app.DockDaylight))
         {
             case DockStyle.Liquid or DockStyle.IOS:
-                _bar.BorderBrush = GlossRim(_look.Rim);
+                bool ios = DockSmart.Effective(settings.Style, settings.SunsetDarkMode, _app.DockDaylight) == DockStyle.IOS;
+                _glossStrength = ios ? 1 : 0.75;
+                _glossTint = ios ? Color.FromRgb(0xD7, 0xE1, 0xF5) : Color.FromRgb(0xC8, 0xCC, 0xD2);
                 _bar.BorderThickness = new Thickness(1);
-                _tint.BorderBrush = GlossSheen;
                 _tint.BorderThickness = new Thickness(1);
                 break;
             case DockStyle.Midnight:
@@ -52,6 +54,7 @@ internal sealed partial class DockWindow
         double radius = settings.FullWidth ? 0 : DockGeometry.CornerRadius(settings.Corner, OuterBarHeight);
         _bar.CornerRadius = new CornerRadius(radius);
         _tint.CornerRadius = new CornerRadius(Math.Max(0, radius - _bar.BorderThickness.Left));
+        UpdateGlassRim();
         _lastGlass = null;
         Foreground = UI.Brush(_look.Text);
         // The tiles were drawn in the previous style's colours.
@@ -90,27 +93,42 @@ internal sealed partial class DockWindow
         }
     }
 
-    // The style's rim colour, lit up toward the top and a little at the bottom edge.
-    private static Brush GlossRim(string rim)
+    // Liquid and iOS rims as lumabar draws them (measured): a steady cool line, a little brighter along the top than the bottom,
+    // with light caught on the top-left and bottom-right curves and the other two curves in shade. 0 for the other styles.
+    private double _glossStrength;
+    private Color _glossTint;
+
+    private void UpdateGlassRim()
     {
-        var color = (Color)ColorConverter.ConvertFromString(rim);
-        Color At(double alpha) => Color.FromArgb((byte)Math.Clamp(color.A * alpha, 0, 255), color.R, color.G, color.B);
-        var brush = new LinearGradientBrush { StartPoint = new Point(0, 0), EndPoint = new Point(0, 1), GradientStops =
-            {
-                new GradientStop(Color.FromArgb((byte)Math.Clamp(color.A * 1.5, 0, 255), 0xF2, 0xF7, 0xFF), 0),
-                new GradientStop(At(1.15), 0.3), new GradientStop(At(0.9), 0.6), new GradientStop(At(1.3), 1)
-            } };
+        if (_glossStrength <= 0 || _bar.ActualWidth < 4 || _bar.ActualHeight < 4) return;
+        double width = _bar.ActualWidth, height = _bar.ActualHeight, radius = _bar.CornerRadius.TopLeft, rim = _bar.BorderThickness.Left;
+        _bar.BorderBrush = GlassRimBrush(width, height, radius, _glossStrength, _glossTint);
+        // The inner line repeats the pattern, fainter, for the second pixel of the rim.
+        _tint.BorderBrush = GlassRimBrush(width - 2 * rim, height - 2 * rim, Math.Max(0, radius - rim), _glossStrength * 0.6, _glossTint);
+    }
+
+    private static Brush GlassRimBrush(double width, double height, double radius, double strength, Color tint)
+    {
+        byte Alpha(double share) => (byte)Math.Clamp(share * strength * 255, 0, 255);
+        var group = new DrawingGroup();
+        var line = new LinearGradientBrush(Color.FromArgb(Alpha(0.45), tint.R, tint.G, tint.B), Color.FromArgb(Alpha(0.31), tint.R, tint.G, tint.B), 90);
+        group.Children.Add(new GeometryDrawing(line, null, new RectangleGeometry(new Rect(0, 0, width, height))));
+        double reach = Math.Max(radius, height * 0.45) * 1.1;
+        void Spot(double x, double y, Color colour) => group.Children.Add(new GeometryDrawing(
+            new RadialGradientBrush(colour, Color.FromArgb(0, colour.R, colour.G, colour.B)), null, new EllipseGeometry(new Point(x, y), reach, reach)));
+        Spot(0, 0, Color.FromArgb(Alpha(0.85), 0xF5, 0xF8, 0xFF));
+        Spot(width, height, Color.FromArgb(Alpha(0.7), 0xF5, 0xF8, 0xFF));
+        Spot(width, 0, Color.FromArgb(Alpha(0.5), 0, 0, 0));
+        Spot(0, height, Color.FromArgb(Alpha(0.5), 0, 0, 0));
+        var brush = new DrawingBrush(group)
+        {
+            Stretch = Stretch.None, AlignmentX = AlignmentX.Left, AlignmentY = AlignmentY.Top,
+            ViewboxUnits = BrushMappingMode.Absolute, Viewbox = new Rect(0, 0, width, height),
+            ViewportUnits = BrushMappingMode.Absolute, Viewport = new Rect(0, 0, width, height)
+        };
         brush.Freeze();
         return brush;
     }
-
-    private static readonly Brush GlossSheen = Frozen(new LinearGradientBrush { StartPoint = new Point(0, 0), EndPoint = new Point(0, 1), GradientStops =
-        {
-            new GradientStop(Color.FromArgb(0x14, 255, 255, 255), 0), new GradientStop(Color.FromArgb(0x05, 255, 255, 255), 0.35),
-            new GradientStop(Color.FromArgb(0x00, 255, 255, 255), 0.6), new GradientStop(Color.FromArgb(0x05, 255, 255, 255), 1)
-        } });
-
-    private static Brush Frozen(Brush brush) { brush.Freeze(); return brush; }
 
     // The tiles' cards follow the bar's corners, a little tighter.
     private double TileRadius() => Math.Clamp(DockGeometry.CornerRadius(_app.DockSettings.Corner, _app.DockSettings.Size) - 4, 3, 12);

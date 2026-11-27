@@ -81,6 +81,7 @@ internal sealed partial class DockWindow : Window
         _tint.Child = _dockRow;
         _bar = new Border { BorderThickness = new Thickness(1), MinWidth = DockGeometry.MinBarWidth, Child = _tint };
         _bar.ContextMenu = BarMenu();
+        _bar.SizeChanged += (_, _) => UpdateGlassRim();
         _bar.ContextMenuOpening += (_, e) =>
         {
             // A tile's own menu opens over a tile (WPF opens the nearest menu); the bar's only needs focus on its empty parts.
