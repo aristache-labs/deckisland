@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using System.Globalization;
 using Ical.Net.CalendarComponents;
 using Ical.Net.DataTypes;
 
@@ -16,6 +17,31 @@ public sealed class CalendarSource
 
 // One occurrence of an event, in local time. Id is the event's UID with its start, so each repeat is its own.
 public sealed record CalendarEvent(string Id, Guid Source, string Title, DateTime Start, DateTime End, bool AllDay, string Location, string? MeetingLink);
+
+public sealed record LocalCalendarEvent(Guid Id, DateOnly Day, TimeOnly Time, string Title)
+{
+    public const int MaxTitleLength = 120;
+
+    public static LocalCalendarEvent? Create(DateOnly day, string time, string title, CultureInfo culture)
+    {
+        title = title.Trim();
+        if (title.Length is 0 or > MaxTitleLength) return null;
+        if (!TimeOnly.TryParse(time, culture, DateTimeStyles.None, out var start)
+            && !TimeOnly.TryParse(time, CultureInfo.InvariantCulture, DateTimeStyles.None, out start)) return null;
+        return new(Guid.NewGuid(), day, new TimeOnly(start.Hour, start.Minute), title);
+    }
+
+    public CalendarEvent ToCalendarEvent()
+    {
+        var start = Day.ToDateTime(Time, DateTimeKind.Local);
+        return new("local:" + Id.ToString("N"), Guid.Empty, Title, start, start, false, "", null);
+    }
+
+    public static List<LocalCalendarEvent> Normalize(IEnumerable<LocalCalendarEvent>? events) =>
+        (events ?? []).Where(item => item is not null && item.Id != Guid.Empty && item.Day > DateOnly.MinValue && item.Day < DateOnly.MaxValue
+            && item.Title?.Trim().Length is > 0 and <= MaxTitleLength)
+            .DistinctBy(item => item.Id).Take(CalendarFeed.MaxEvents).Select(item => item with { Title = item.Title.Trim() }).ToList();
+}
 
 public static partial class CalendarFeed
 {

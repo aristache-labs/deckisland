@@ -30,7 +30,7 @@ internal sealed partial class DockWindow
         monthPanel.Children.Add(dates);
         var aside = new Border { Background = UI.Brush(_look.Card), BorderBrush = UI.Brush(_look.CardRim),
             BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(10), Padding = new Thickness(13) };
-        var columns = new Grid { Margin = new Thickness(0, 8, 0, 0), Height = 364 };
+        var columns = new Grid { Margin = new Thickness(0, 8, 0, 0), Height = 410 };
         columns.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(3, GridUnitType.Star) });
         columns.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(16) });
         columns.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(2, GridUnitType.Star) });
@@ -49,8 +49,11 @@ internal sealed partial class DockWindow
         empty.VerticalAlignment = VerticalAlignment.Center;
         var agendaBody = new Grid { Children = { new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = agenda }, empty } };
         var agendaPanel = new DockPanel();
+        var (composer, eventTitle) = CalendarQuickEntry(() => selected, () => Render());
         DockPanel.SetDock(agendaHeader, System.Windows.Controls.Dock.Top);
+        DockPanel.SetDock(composer, System.Windows.Controls.Dock.Bottom);
         agendaPanel.Children.Add(agendaHeader);
+        agendaPanel.Children.Add(composer);
         agendaPanel.Children.Add(agendaBody);
         aside.Child = agendaPanel;
 
@@ -85,6 +88,12 @@ internal sealed partial class DockWindow
         DockPanel.SetDock(nav, System.Windows.Controls.Dock.Right);
         header.Children.Add(nav); header.Children.Add(caption);
         var root = new DockPanel();
+        root.PreviewKeyDown += (_, e) =>
+        {
+            if (e.Key != Key.N || Keyboard.Modifiers != ModifierKeys.None || e.OriginalSource is TextBox || aside.Child != agendaPanel) return;
+            eventTitle.Focus();
+            e.Handled = true;
+        };
         DockPanel.SetDock(header, System.Windows.Controls.Dock.Top);
         root.Children.Add(header);
         root.Children.Add(new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, MaxHeight = 475, Content = columns });
@@ -113,11 +122,13 @@ internal sealed partial class DockWindow
             var sources = _app.Settings.CalendarSources.ToDictionary(source => source.Id);
             caption.Text = month.ToString("Y", culture);
             legend.Children.Clear();
-            foreach (var source in sources.Values)
+            AddLegend(Loc.T("本地日程", "Local events"), Accent);
+            foreach (var source in sources.Values) AddLegend(CalendarSourceName(source), source.Color);
+            void AddLegend(string text, string color)
             {
                 var label = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 12, 2) };
-                label.Children.Add(CalendarSourceDot(source.Color, 6));
-                label.Children.Add(Label(CalendarSourceName(source), 11, dim: true));
+                label.Children.Add(CalendarSourceDot(color, 6));
+                label.Children.Add(Label(text, 11, dim: true));
                 legend.Children.Add(label);
             }
             dates.Children.Clear();
@@ -125,14 +136,14 @@ internal sealed partial class DockWindow
             for (int i = 0; i < 42; i++)
             {
                 var day = month.AddDays(i - offset);
-                if (day.Month != month.Month) { dates.Children.Add(new Border { Height = 44 }); continue; }
+                if (day.Month != month.Month) { dates.Children.Add(new Border { Height = 51 }); continue; }
                 var cell = DetailButton(day.Day.ToString(culture), day.ToString("D", culture), () =>
                 {
                     Select(day);
                     dates.Children.OfType<Button>().First(button => Equals(button.Tag, day)).Focus();
-                });
-                cell.Height = 44;
-                cell.Margin = new Thickness(0, 0, 4, 4);
+                }, radius: 9);
+                cell.Height = 51;
+                cell.Margin = new Thickness(0, 0, 5, 5);
                 cell.Tag = day;
                 cell.Background = UI.Brush(_look.Card);
                 if (day == selected)
@@ -142,28 +153,28 @@ internal sealed partial class DockWindow
                 }
                 var number = Label(day.Day.ToString(culture), 14, bold: true, dim: day < today && day != selected);
                 number.HorizontalAlignment = HorizontalAlignment.Center;
-                if (day == today) number.Foreground = UI.Brush(Accent);
+                number.VerticalAlignment = VerticalAlignment.Center;
+                if (day == today) number.Foreground = UI.Brush(ThemeColor.TryParse(Accent, out var accent) && accent.G > 195 ? "#FF171717" : "#FFFFFFFF");
+                var numberBadge = new Border { Width = 23, Height = 23, CornerRadius = new CornerRadius(7),
+                    Background = day == today ? UI.Brush(Accent) : Brushes.Transparent, Child = number };
                 var marks = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center,
-                    Height = 8, Margin = new Thickness(2, 2, 0, 0) };
-                foreach (var sourceId in CalendarFeed.On(_app.CalendarEvents, day).Select(item => item.Source).Distinct().Take(3))
-                    marks.Children.Add(CalendarSourceDot(sources.GetValueOrDefault(sourceId)?.Color ?? Accent, 5));
-                cell.Content = TimeStack(number, marks);
+                    Height = 14, Margin = new Thickness(2, 1, 0, 0) };
+                var items = CalendarFeed.On(_app.CalendarEvents, day);
+                foreach (var item in items.Take(2))
+                    marks.Children.Add(CalendarSourceDot(EventColor(item, sources), 5));
+                if (items.Count > 2) marks.Children.Add(Label($"+{items.Count - 2}", 9, bold: true, dim: true));
+                if (items.Count > 0) cell.ToolTip = CalendarDayPreview(day, items, sources);
+                cell.Content = TimeStack(numberBadge, marks);
                 dates.Children.Add(cell);
             }
             var events = CalendarFeed.On(_app.CalendarEvents, selected);
-            agendaTitle.Text = selected == today ? Loc.T("今天", "Today") : selected.ToString("ddd, MMM d", culture);
+            agendaTitle.Text = selected == today ? Loc.T("今天", "Today")
+                : selected == today.AddDays(1) ? Loc.T("明天", "Tomorrow") : selected.ToString("ddd, MMM d", culture);
             agendaCount.Text = events.Count == 0 ? Loc.T("空闲", "Free") : Loc.T($"{events.Count} 个日程", Loc.Count(events.Count, "event", "events"));
             agenda.Children.Clear();
             foreach (var item in events)
             {
-                string when = item.AllDay ? Loc.T("全天", "All day") : $"{TimeText(item.Start)} – {TimeText(item.End)}";
-                var row = new StackPanel { ToolTip = item.Title };
-                row.Children.Add(Label(when, 11, dim: true));
-                row.Children.Add(Label(item.Title, 13, bold: true));
-                if (item.Location.Length > 0) row.Children.Add(Label(item.Location, 11, dim: true));
-                agenda.Children.Add(new Border { BorderBrush = UI.Brush(sources.GetValueOrDefault(item.Source)?.Color ?? Accent),
-                    BorderThickness = new Thickness(2, 0, 0, 0), Padding = new Thickness(8, 3, 0, 3),
-                    Margin = new Thickness(0, 0, 0, 8), Child = row });
+                agenda.Children.Add(CalendarEventLine(item, sources));
             }
             empty.Visibility = events.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         }
@@ -183,6 +194,104 @@ internal sealed partial class DockWindow
             if (aside.Child != agendaPanel) refreshSources();
         });
     }
+
+    private (FrameworkElement, TextBox) CalendarQuickEntry(Func<DateOnly> day, Action refresh)
+    {
+        var culture = CultureInfo.CurrentCulture;
+        var now = DateTime.Now;
+        var rounded = now.AddMinutes((15 - now.Minute % 15) % 15);
+        var time = CalendarEntryField(Loc.T("事件时间", "Event time"), 12);
+        time.Width = 77;
+        time.Text = TimeText(rounded.Date == now.Date ? rounded : now);
+        var title = CalendarEntryField(Loc.T("事件标题", "Event title"), LocalCalendarEvent.MaxTitleLength);
+        var hint = Label(Loc.T("新日程", "New event"), 12, dim: true);
+        hint.IsHitTestVisible = false;
+        hint.VerticalAlignment = VerticalAlignment.Center;
+        hint.Margin = new Thickness(7, 0, 3, 0);
+        var field = new Grid { Children = { title, hint } };
+        var status = Label("", 11, dim: true);
+        status.TextWrapping = TextWrapping.Wrap;
+        status.Visibility = Visibility.Collapsed;
+        var add = DetailButton("+", Loc.T("添加事件", "Add event"), Add, radius: 8);
+        add.Width = 30;
+        add.Background = UI.Brush(_look.CardActive);
+        add.IsEnabled = false;
+        var row = new DockPanel { Margin = new Thickness(0, 8, 0, 0) };
+        DockPanel.SetDock(add, System.Windows.Controls.Dock.Right);
+        row.Children.Add(add);
+        time.Margin = new Thickness(0, 0, 4, 0);
+        row.Children.Add(time);
+        field.Margin = new Thickness(0, 0, 4, 0);
+        row.Children.Add(field);
+        title.TextChanged += (_, _) =>
+        {
+            hint.Visibility = title.Text.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
+            add.IsEnabled = !string.IsNullOrWhiteSpace(title.Text);
+            status.Visibility = Visibility.Collapsed;
+        };
+        void Enter(object sender, KeyEventArgs e)
+        {
+            if (e.Key != Key.Enter || !add.IsEnabled) return;
+            Add();
+            e.Handled = true;
+        }
+        time.KeyDown += Enter;
+        title.KeyDown += Enter;
+        return (new StackPanel { Children = { row, status } }, title);
+
+        void Add()
+        {
+            var item = LocalCalendarEvent.Create(day(), time.Text, title.Text, culture);
+            if (item is not null && _app.AddLocalCalendarEvent(item))
+            {
+                title.Clear();
+                refresh();
+                title.Focus();
+                return;
+            }
+            status.Text = item is null ? Loc.T("请输入有效时间和标题。", "Enter a valid time and title.")
+                : Loc.T("已达到本地事件上限。", "Local event limit reached.");
+            status.Visibility = Visibility.Visible;
+        }
+    }
+
+    private TextBox CalendarEntryField(string name, int limit)
+    {
+        var field = new TextBox { MaxLength = limit, Height = 28, FontSize = 12, Padding = new Thickness(6, 4, 3, 0),
+            Background = UI.Brush(_look.CardHover), BorderBrush = UI.Brush(_look.Divider),
+            Foreground = UI.Brush(_look.Text), CaretBrush = UI.Brush(_look.Text) };
+        AutomationProperties.SetName(field, name);
+        return field;
+    }
+
+    private ToolTip CalendarDayPreview(DateOnly day, List<CalendarEvent> events, IReadOnlyDictionary<Guid, CalendarSource> sources)
+    {
+        var preview = new StackPanel { MinWidth = 175 };
+        var title = Label(day.ToString("ddd, MMM d", CultureInfo.CurrentCulture), 12, bold: true);
+        title.Margin = new Thickness(0, 0, 0, 5);
+        preview.Children.Add(title);
+        foreach (var item in events.Take(5)) preview.Children.Add(CalendarEventLine(item, sources));
+        if (events.Count > 5) preview.Children.Add(Label($"+{events.Count - 5}", 11, dim: true));
+        return new ToolTip { Content = preview, Background = UI.Brush(_look.Card), BorderBrush = UI.Brush(_look.Divider),
+            Padding = new Thickness(9), Placement = PlacementMode.Top };
+    }
+
+    private FrameworkElement CalendarEventLine(CalendarEvent item, IReadOnlyDictionary<Guid, CalendarSource> sources)
+    {
+        string when = item.AllDay ? Loc.T("全天", "All day") : TimeText(item.Start);
+        var time = Label(when, 11, dim: true);
+        time.Width = 61;
+        time.VerticalAlignment = VerticalAlignment.Center;
+        var text = new StackPanel { Children = { Label(item.Title, 12, bold: true) } };
+        if (item.Location.Length > 0) text.Children.Add(Label(item.Location, 10, dim: true));
+        var entry = new Border { BorderBrush = UI.Brush(EventColor(item, sources)), BorderThickness = new Thickness(2, 0, 0, 0),
+            Padding = new Thickness(8, 4, 0, 4), Child = text };
+        var row = new DockPanel { Margin = new Thickness(0, 0, 0, 6), Children = { time, entry } };
+        return row;
+    }
+
+    private string EventColor(CalendarEvent item, IReadOnlyDictionary<Guid, CalendarSource> sources) =>
+        sources.GetValueOrDefault(item.Source)?.Color ?? Accent;
 
     private (FrameworkElement, Action) CalendarSubscriptions(Action done)
     {

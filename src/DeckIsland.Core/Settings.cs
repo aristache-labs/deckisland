@@ -913,6 +913,7 @@ public sealed class DeckSettings
     // The calendars read from ICS links (CalendarFeed; each link is a secret in App.Secrets under the source's Id), the Calendar page,
     // and the collapsed row's next event, shown from CalendarHorizon minutes before it starts.
     public List<CalendarSource> CalendarSources { get; set; } = [];
+    public List<LocalCalendarEvent> LocalCalendarEvents { get; set; } = [];
     public bool CalendarPage { get; set; } = true;
     public double CalendarWidth { get; set; } = 720;
     public double CalendarHeight { get; set; } = 340;
@@ -1115,6 +1116,7 @@ public sealed class DeckSettings
             pair => new ScreenTimeDay { Apps = new Dictionary<string, int>(pair.Value?.Apps ?? [], StringComparer.OrdinalIgnoreCase), Hours = [.. pair.Value?.Hours ?? []] });
         copy.ScreenTimePaths = new Dictionary<string, string>(ScreenTimePaths ?? [], StringComparer.OrdinalIgnoreCase);
         copy.CalendarSources = CalendarFeed.Normalize(CalendarSources);
+        copy.LocalCalendarEvents = [.. LocalCalendarEvents ?? []];
         copy.ScratchpadDrafts = new Dictionary<string, string>(ScratchpadDrafts ?? []);
         copy.DisplayMonitors = [.. DisplayMonitors ?? []];
         copy.ThemeChoices = (ThemeChoices ?? []).ToDictionary(pair => pair.Key, pair => pair.Value.Copy());
@@ -1299,6 +1301,7 @@ public sealed class DeckSettings
         if (ExpandedUnderList is { } block) ExpandedUnderList = ExpandedMonitor.BlockOf(block)[0];
         if (!Enum.IsDefined(GamingMode)) GamingMode = GamingMode.Off;
         CalendarSources = CalendarFeed.Normalize(CalendarSources);
+        LocalCalendarEvents = LocalCalendarEvent.Normalize(LocalCalendarEvents);
         if (!CalendarFeed.Horizons.Contains(CalendarHorizon)) CalendarHorizon = CalendarFeed.DefaultHorizon;
         if (CalendarNoticeMinutes is not (5 or 10)) CalendarNoticeMinutes = 10;
         CalendarWidth = double.IsFinite(CalendarWidth) ? Math.Clamp(CalendarWidth, DeckPages.MinWidth, DeckPages.MaxWidth) : 720;

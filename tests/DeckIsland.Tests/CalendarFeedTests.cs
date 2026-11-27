@@ -69,5 +69,20 @@ static class CalendarFeedTests
             && CalendarFeed.Due(events, soon.Start, 10, new HashSet<string>()) is null
             && CalendarFeed.Due(events, soon.Start.AddMinutes(-9), 10, new HashSet<string> { soon.Id }) is null);
         check("Calendar: saved sources are repaired", sources.Count == 1 && sources[0].Name == "Work" && sources[0].Color == CalendarFeed.Palette[0]);
+        var selectedDay = new DateOnly(2026, 11, 28);
+        var english = System.Globalization.CultureInfo.GetCultureInfo("en-US");
+        var quick = LocalCalendarEvent.Create(selectedDay, "1:15 PM", "  Team sync  ", english)!;
+        var settings = new DeckSettings { LocalCalendarEvents = [quick, quick] };
+        settings.Normalize();
+        var saved = System.Text.Json.JsonSerializer.Deserialize<DeckSettings>(System.Text.Json.JsonSerializer.Serialize(settings))!;
+        check("Calendar: quick events use the selected day, persist and appear exactly once in its agenda",
+            saved.LocalCalendarEvents.SequenceEqual([quick]) && Profiles.GlobalKeys.Contains(nameof(DeckSettings.LocalCalendarEvents))
+            && CalendarFeed.On([quick.ToCalendarEvent()], selectedDay).Single() is { Title: "Team sync", AllDay: false } item
+            && item.Start.Hour == 13 && item.Start.Minute == 15
+            && CalendarFeed.On([item], selectedDay.AddDays(-1)).Count == 0);
+        check("Calendar: quick entry accepts 24-hour time and rejects an invalid time or blank title",
+            LocalCalendarEvent.Create(selectedDay, "09:10", "Morning", english)?.Time == new TimeOnly(9, 10)
+            && LocalCalendarEvent.Create(selectedDay, "25:15", "Invalid", english) is null
+            && LocalCalendarEvent.Create(selectedDay, "13:15", "  ", english) is null);
     }
 }

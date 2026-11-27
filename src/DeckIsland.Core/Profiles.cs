@@ -76,7 +76,7 @@ public static class Profiles
         nameof(DeckSettings.DeviceChoices), nameof(DeckSettings.MemoryMode), nameof(DeckSettings.TrimMemoryWhenIdle), nameof(DeckSettings.UsageAutoSync),
         nameof(DeckSettings.SettingsWindowWidth), nameof(DeckSettings.SettingsWindowHeight), nameof(DeckSettings.SettingsWindowMaximized),
         nameof(DeckSettings.IncludeWsl), nameof(DeckSettings.Apps),
-        nameof(DeckSettings.Reminders), nameof(DeckSettings.ReminderSound),
+        nameof(DeckSettings.Reminders), nameof(DeckSettings.ReminderSound), nameof(DeckSettings.LocalCalendarEvents),
         nameof(DeckSettings.VaultLockMinutes),
         nameof(DeckSettings.WeatherEnabled), nameof(DeckSettings.ManualWeatherLocation), nameof(DeckSettings.WeatherFahrenheit), nameof(DeckSettings.WeatherCity),
         nameof(DeckSettings.Profiles), nameof(DeckSettings.CurrentProfile), nameof(DeckSettings.ReturnProfile), nameof(DeckSettings.ProfileRules),

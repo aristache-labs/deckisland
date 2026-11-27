@@ -83,7 +83,7 @@ internal sealed partial class DockWindow
         popup.IsOpen = true;
     }
 
-    private Button DetailButton(string text, string label, Action click)
+    private Button DetailButton(string text, string label, Action click, double radius = 5)
     {
         var button = new Button
         {
@@ -91,7 +91,7 @@ internal sealed partial class DockWindow
             Background = Brushes.Transparent, BorderThickness = new Thickness(1), BorderBrush = Brushes.Transparent
         };
         var border = new FrameworkElementFactory(typeof(Border));
-        border.SetValue(Border.CornerRadiusProperty, new CornerRadius(5));
+        border.SetValue(Border.CornerRadiusProperty, new CornerRadius(radius));
         border.SetValue(Border.BackgroundProperty, new TemplateBindingExtension(Control.BackgroundProperty));
         border.SetValue(Border.BorderBrushProperty, new TemplateBindingExtension(Control.BorderBrushProperty));
         border.SetValue(Border.BorderThicknessProperty, new TemplateBindingExtension(Control.BorderThicknessProperty));

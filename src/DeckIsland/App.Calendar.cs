@@ -28,6 +28,7 @@ public partial class App
 
     private void InitializeCalendar()
     {
+        SetCalendarEvents([]);
         _calendarPoll.Tick += (_, _) => { if (CalendarWanted) _ = RefreshCalendar(); };
         _calendarPoll.Start();
         // The next event comes into the horizon and goes when it starts: the collapsed rows look once a minute.
@@ -83,11 +84,27 @@ public partial class App
             }
         }));
         if (call != _calendarCall) return;
-        CalendarEvents = [.. results.SelectMany(result => result.Events).OrderBy(e => e.Start)];
+        SetCalendarEvents(results.SelectMany(result => result.Events));
         CalendarErrors = results.Where(result => result.Error is not null).ToDictionary(result => result.Id, result => result.Error!);
         CalendarFetched = DateTime.Now; CalendarLoading = false;
         _calendarNextShown = null;
         CalendarChanged();
+    }
+
+    private void SetCalendarEvents(IEnumerable<CalendarEvent> subscribed)
+    {
+        CalendarEvents = [.. subscribed.Concat(Settings.LocalCalendarEvents.Select(item => item.ToCalendarEvent())).OrderBy(item => item.Start)];
+    }
+
+    internal bool AddLocalCalendarEvent(LocalCalendarEvent item)
+    {
+        if (Settings.LocalCalendarEvents.Count >= CalendarFeed.MaxEvents) return false;
+        Settings.LocalCalendarEvents = [.. Settings.LocalCalendarEvents, item];
+        SetCalendarEvents(CalendarEvents.Where(item => item.Source != Guid.Empty));
+        QueueSave();
+        _calendarNextShown = null;
+        CalendarChanged();
+        return true;
     }
 
     // A source removed: its link leaves the secret store, and its events the list.
