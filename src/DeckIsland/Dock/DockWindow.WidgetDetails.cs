@@ -28,12 +28,7 @@ internal sealed partial class DockWindow
 
     private void ToggleWidgetDetails(FrameworkElement anchor, DockWidgetKind kind)
     {
-        bool same = _widgetPopup?.PlacementTarget == anchor;
-        CloseWidgetDetails();
-        if (same || _dismissedAnchor == anchor && Environment.TickCount64 - _dismissedAt < 350) return;
-        _dismissedAnchor = null;
-        _preview.HideNow();
-
+        if (!BeginDockPanel(anchor)) return;
         bool weather = kind == DockWidgetKind.ClockWeather || DockWidgets.IsWeather(kind);
         var (content, update) = weather ? WeatherPopupContent() : CalendarDetails();
         var close = DetailButton("×", Loc.T("关闭", "Close"), CloseWidgetDetails, radius: weather ? 5 : CalendarRadius(17, 17));
@@ -41,13 +36,31 @@ internal sealed partial class DockWindow
         if (!weather) { close.Height = 34; close.FontSize = 20; close.Background = UI.Brush(CalendarTile); }
         close.HorizontalAlignment = HorizontalAlignment.Right;
         close.VerticalAlignment = VerticalAlignment.Top;
-        var body = new Grid { Children = { content, close } };
+        ShowDockPanel(anchor, new Grid { Children = { content, close } }, update, weather ? 390 : 760, weather ? 14 : 18,
+            weather ? 14 : CalendarRadius(14, 30), close);
+    }
+
+    // Closes any open panel; false when the click was on the anchor of the panel just closed, which toggles it shut.
+    private bool BeginDockPanel(FrameworkElement anchor)
+    {
+        bool same = _widgetPopup?.PlacementTarget == anchor;
+        CloseWidgetDetails();
+        if (same || _dismissedAnchor == anchor && Environment.TickCount64 - _dismissedAt < 350) return false;
+        _dismissedAnchor = null;
+        _preview.HideNow();
+        return true;
+    }
+
+    // A panel above (or below) the bar on the dock's card: Esc or a click elsewhere closes it, and `update` runs with the widgets.
+    private void ShowDockPanel(FrameworkElement anchor, FrameworkElement body, Action update, double width, double padding, double radius,
+        FrameworkElement? focus = null)
+    {
         double workWidth = DeckIsland.Native.WindowsHost.MonitorScreen(Monitor) is { } screen
             ? screen.Work.Width / screen.Scale : SystemParameters.WorkArea.Width;
         var card = new Border
         {
-            Width = Math.Min(weather ? 390 : 760, Math.Max(300, workWidth - 24)),
-            Padding = new Thickness(weather ? 14 : 18), CornerRadius = new CornerRadius(weather ? 14 : CalendarRadius(14, 30)),
+            Width = Math.Min(width, Math.Max(300, workWidth - 24)),
+            Padding = new Thickness(padding), CornerRadius = new CornerRadius(radius),
             Background = UI.Brush(_look.Text == "#FF1D1D1F" ? "#FFF8F8FA" : "#FF202024"),
             BorderBrush = UI.Brush(_look.CardRim), BorderThickness = new Thickness(1), Child = body
         };
@@ -63,7 +76,7 @@ internal sealed partial class DockWindow
             PlacementTarget = anchor, Placement = top ? PlacementMode.Bottom : PlacementMode.Top,
             VerticalOffset = top ? 8 : -8, AllowsTransparency = true, StaysOpen = false, Child = card
         };
-        popup.Opened += (_, _) => close.Focus();
+        popup.Opened += (_, _) => (focus ?? card).Focus();
         popup.Closed += (_, _) =>
         {
             if (_widgetPopup != popup) return;

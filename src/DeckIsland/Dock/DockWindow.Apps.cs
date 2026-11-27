@@ -42,7 +42,7 @@ internal sealed partial class DockWindow
         (var apps, _order) = DockApps.Build(pins, DockAppWindows.Collect(), _order, foreground, DockAppWindows.AppName);
         if (!settings.GroupWindows) apps = DockApps.Ungroup(apps, foreground);
         bool trashFull = settings.ShowTrash && DockShell.RecycleBinHasItems();
-        var signature = $"{settings.Style}{settings.ClearCards}{Accent}{settings.CleanWidgets}{settings.Corner}|{settings.Size}|{settings.Spacing}|{settings.Padding}|{settings.IconSize}|{settings.AppCards}{settings.NamesOnHover}{settings.Indicator}{settings.WindowPreviews}|"
+        var signature = $"{settings.Style}{settings.ClearCards}{Accent}{settings.CleanWidgets}{settings.Corner}|{settings.Size}|{settings.Spacing}|{settings.Padding}|{string.Join(",", settings.ShownToggles)}|{settings.IconSize}|{settings.AppCards}{settings.NamesOnHover}{settings.Indicator}{settings.WindowPreviews}|"
             + $"{settings.ShowStart}{settings.ShowTrash}{settings.FullWidth}{trashFull}|{_app.DockPickerOpen}|{string.Join(",", settings.Widgets.Select(w => $"{w.Id}:{w.Placement}:{w.Option}:{w.BeforeApp}"))}|"
             + string.Join(";", apps.Select(a => $"{a.Key},{a.Pinned},{a.Windows.Count}"));
         _shown = apps;

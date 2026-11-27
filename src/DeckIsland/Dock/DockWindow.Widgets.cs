@@ -65,6 +65,7 @@ internal sealed partial class DockWindow
         DockWidgetKind.AiRing => AiRing(tile, widget.Option),
         DockWidgetKind.Search => SearchField(tile),
         DockWidgetKind.Tray => TrayArrow(tile),
+        DockWidgetKind.QuickToggles => QuickTogglesTile(tile),
         DockWidgetKind.ShowDesktop => (DesktopGlyph(tile), () => { }),
         DockWidgetKind.ScreenTime => ScreenTimeTile(tile),
         DockWidgetKind.TopCpu => TopProcessTile(tile, memory: false),
@@ -104,7 +105,8 @@ internal sealed partial class DockWindow
         var frame = new Border
         {
             // Widget cards fill the row inside the bar's padding (apps keep the tile); the content stays sized to the tile.
-            Width = tile * width + _spacing * (width - 1), Height = _app.DockSettings.Size - 6, CornerRadius = new CornerRadius(TileRadius()), Margin = new Thickness(_spacing / 2, 0, _spacing / 2, 0),
+            Width = widget.Kind == DockWidgetKind.QuickToggles ? Math.Round(tile * QuickStripTiles(_app.DockSettings.ShownToggles))
+                : tile * width + _spacing * (width - 1), Height = _app.DockSettings.Size - 6, CornerRadius = new CornerRadius(TileRadius()), Margin = new Thickness(_spacing / 2, 0, _spacing / 2, 0),
             // Clean widget style: no card, the content straight on the bar.
             Background = UI.Brush(_app.DockSettings.CleanWidgets ? "#00000000" : darkToday ? "#FF18181A" : _look.Card),
             BorderBrush = UI.Brush(darkToday ? "#23FFFFFF" : _look.CardRim),
@@ -122,6 +124,15 @@ internal sealed partial class DockWindow
             frame.Background = Brushes.Transparent;
         }
         if (widget.Kind == DockWidgetKind.Tray && !Cards) ShrinkCard(frame, tile);
+        if (widget.Kind == DockWidgetKind.QuickToggles)
+        {
+            frame.ContextMenu = NewMenu();
+            void Item(string header, Action action) { var item = new MenuItem { Header = header }; item.Click += (_, _) => action(); frame.ContextMenu.Items.Add(item); }
+            Item(Loc.T("快捷开关…", "Quick Toggles…"), OpenQuickToggleList);
+            Item(Loc.T("小组件…", "Widgets…"), _app.OpenDockPicker);
+            frame.ContextMenuOpening += (_, _) => { _preview.HideNow(); _menuOpen = true; DockAppWindows.Focus(_handle); ReadQuickState(force: true); };
+            frame.ContextMenuClosing += (_, _) => _menuOpen = false;
+        }
         if (widget.Kind is DockWidgetKind.WorldTime or DockWidgetKind.WorldClocks)
         {
             frame.ContextMenu = new ContextMenu();

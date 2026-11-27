@@ -152,7 +152,7 @@ public partial class App
     }
 
     // Takes effect at once; written to dock.json a moment after the last change, so a dragged slider does not write on every step.
-    internal void UpdateDockSettings(DockSettings settings)
+    internal void UpdateDockSettings(DockSettings settings, bool keepPanels = false)
     {
         settings.Normalize();
         var previous = DockSettings;
@@ -168,7 +168,7 @@ public partial class App
         if (settings.Displays != previous.Displays) SyncDocks();
         ApplyDockKeys();
         ApplyDockData();
-        foreach (var dock in _docks) dock.Apply();
+        foreach (var dock in _docks) dock.Apply(keepPanels);
         _dockPicker?.Refresh();
     }
 

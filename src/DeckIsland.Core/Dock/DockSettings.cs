@@ -93,6 +93,11 @@ public sealed class DockSettings
     public int QuietFrom { get; set; } = 22 * 60;
     public int QuietTo { get; set; } = 7 * 60;
     public bool AlertSound { get; set; } = true;
+    // The Quick Toggles widget's buttons, by name (QuickToggle); null until chosen, which shows the defaults.
+    public List<string>? QuickToggles { get; set; }
+
+    [JsonIgnore] public List<QuickToggle> ShownToggles =>
+        Core.QuickToggles.Normalize(QuickToggles?.Select(name => Enum.TryParse<QuickToggle>(name, out var t) ? t : (QuickToggle?)null).OfType<QuickToggle>());
 
     // The widgets of the profile in use.
     [JsonIgnore] public IReadOnlyList<DockWidget> Widgets => Profiles.FirstOrDefault(p => p.Id == CurrentProfile)?.Widgets ?? [];
@@ -109,6 +114,7 @@ public sealed class DockSettings
     {
         var copy = (DockSettings)MemberwiseClone();
         copy.Pins = Pins is null ? null : [.. Pins];
+        copy.QuickToggles = QuickToggles is null ? null : [.. QuickToggles];
         copy.Profiles = Profiles.Select(p => p.Copy()).ToList();
         return copy;
     }

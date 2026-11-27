@@ -209,9 +209,10 @@ internal sealed partial class DockWindow : Window
     }
 
     // After the dock's settings change: its look, its place and its tiles follow.
-    public void Apply()
+    // keepPanels: a change made from inside a panel (the Quick Toggles list) leaves it open.
+    public void Apply(bool keepPanels = false)
     {
-        CloseWidgetDetails();
+        if (!keepPanels) CloseWidgetDetails();
         ApplyStyle();
         ApplyLook();
         if (!_app.DockSettings.AutoHide) _target = _reveal = 1;

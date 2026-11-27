@@ -121,7 +121,7 @@ internal static class DockSettingsTests
             widgets.Select(w => w.Id).Distinct().Count() == 3 && DockWidgets.Move(widgets, widgets[2].Id, 0)[0].Kind == DockWidgetKind.Battery
             && DockWidgets.Remove(widgets, widgets[1].Id).Select(w => w.Kind).SequenceEqual([DockWidgetKind.Cpu, DockWidgetKind.Battery]));
         check("Dock widget search finds by name or description within a category",
-            DockWidgets.Find(DockWidgetCategory.System, "").Count == 10 && DockWidgets.Catalog.Select(i => i.Kind).Distinct().Count() == Enum.GetValues<DockWidgetKind>().Length
+            DockWidgets.Find(DockWidgetCategory.System, "").Count == 11 && DockWidgets.Catalog.Select(i => i.Kind).Distinct().Count() == Enum.GetValues<DockWidgetKind>().Length
             && DockWidgets.Find(null, "ram").Select(i => i.Kind).ToHashSet().SetEquals([DockWidgetKind.Memory, DockWidgetKind.TopRam])
             && DockWidgets.Find(DockWidgetCategory.Ai, "ram").Count == 0);
         check("Dock groups all six weather cards in their own category",

@@ -5,7 +5,7 @@ namespace DeckIsland.Core;
 public enum DockWidgetKind { Cpu, Memory, Battery, AiUsage, NextEvent, Network, Storage, Volume, Weather, AnalogClock, NowPlaying, Calendar, AiRing, Search, Tray,
     Clock, FlipClock, WorldClocks, SevenDays, WorldTime, Today, Date, DayNumber, SegmentClock, ClockWeather,
     ScreenTime, TopCpu, TopRam, Temperature, DayProgress, MonthProgress, YearProgress, SunriseSunset, ShowDesktop,
-    WeatherDetails, TodayForecast, WeatherStatus, HourlyWeather }
+    WeatherDetails, TodayForecast, WeatherStatus, HourlyWeather, QuickToggles }
 public enum DockWidgetCategory { Clocks, Productivity, System, Apps, MediaTime, Ai, Weather }
 [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<DockWidgetPlacement>))]
 // The old clock and desktop slots are read so existing profiles can be migrated to the right-side widget group.
@@ -44,6 +44,7 @@ public static class DockWidgets
         new(DockWidgetKind.Battery, DockWidgetCategory.System, Loc.T("电池", "Battery"), Loc.T("电量，以及是否在充电。", "The charge, and whether it is charging."), 1),
         new(DockWidgetKind.Tray, DockWidgetCategory.System, Loc.T("托盘", "Tray"), Loc.T("系统托盘的图标，点开箭头显示为网格。", "The system tray's icons, in a grid behind an arrow."), 1),
         new(DockWidgetKind.ShowDesktop, DockWidgetCategory.System, Loc.T("显示桌面", "Show Desktop"), Loc.T("显示桌面，再点一次恢复窗口。", "Show the desktop, or click again to restore windows."), 1),
+        new(DockWidgetKind.QuickToggles, DockWidgetCategory.System, Loc.T("快捷开关", "Quick Toggles"), Loc.T("Wi-Fi、蓝牙、声音等开关；右键选择显示哪些。", "Wi-Fi, Bluetooth, sound and more; right-click to choose which show."), 4),
         new(DockWidgetKind.Network, DockWidgetCategory.System, Loc.T("网络", "Network"), Loc.T("下载和上传速度。", "Download and upload speed."), 2),
         new(DockWidgetKind.Storage, DockWidgetCategory.System, Loc.T("存储", "Storage"), Loc.T("系统盘的剩余空间。", "Free space on the system drive."), 1),
         new(DockWidgetKind.Volume, DockWidgetCategory.MediaTime, Loc.T("音频输出", "Audio Output"), Loc.T("音量；在上面滚动可调节。", "The volume; scroll on it to change it."), 1),

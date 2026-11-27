@@ -46,7 +46,7 @@ internal sealed partial class DockWindow
         bool top = _app.DockSettings.Edge == DockEdge.Top;
         bool light = _look.Text == "#FF1D1D1F";
         var grid = new UniformGrid { Columns = TrayColumns };
-        foreach (var icon in VisibleTrayIcons(tray.AllIcons.OfType<NotifyIcon>())) grid.Children.Add(TrayIcon(icon, light));
+        foreach (var icon in VisibleTrayIcons(tray.AllIcons.OfType<NotifyIcon>()).Where(icon => !SoundInQuickToggles || icon.GUID != WindowsVolumeIcon)) grid.Children.Add(TrayIcon(icon, light));
         if (grid.Children.Count == 0)
             grid.Children.Add(new TextBlock { Text = Loc.T("没有托盘图标", "No tray icons"), Foreground = UI.Brush(light ? "#FF6E6E73" : "#A6F5F5F7"), Margin = new Thickness(8) });
         _trayPopup = new Popup
@@ -66,6 +66,11 @@ internal sealed partial class DockWindow
         DockAppWindows.Focus(_handle);
         popup.IsOpen = true;
     }
+
+    // Windows' own volume icon; left out of the grid while the Quick Toggles strip shows Sound, so sound is in one place.
+    private static readonly Guid WindowsVolumeIcon = new("7820ae73-23e3-4229-82c1-e41cb67d5b9c");
+    private bool SoundInQuickToggles => _app.DockSettings.Widgets.Any(w => w.Kind == DockWidgetKind.QuickToggles)
+        && _app.DockSettings.ShownToggles.Contains(QuickToggle.Sound);
 
     private static IEnumerable<NotifyIcon> VisibleTrayIcons(IEnumerable<NotifyIcon> icons)
     {

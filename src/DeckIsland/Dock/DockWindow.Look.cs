@@ -251,7 +251,8 @@ internal sealed partial class DockWindow
 
     private static bool FindTile(DependencyObject source)
     {
-        for (var node = source; node is not null; node = VisualTreeHelper.GetParent(node))
+        // Text runs (a forecast's dimmed low) are not visuals; they climb through the logical tree to their TextBlock.
+        for (var node = source; node is not null; node = node is Visual or System.Windows.Media.Media3D.Visual3D ? VisualTreeHelper.GetParent(node) : LogicalTreeHelper.GetParent(node))
             if (node is Border { Tag: DockApp } or Border { Tag: DockWidget, ContextMenu: not null }) return true;
         return false;
     }
