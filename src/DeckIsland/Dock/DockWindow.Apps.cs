@@ -42,7 +42,7 @@ internal sealed partial class DockWindow
         (var apps, _order) = DockApps.Build(pins, DockAppWindows.Collect(), _order, foreground, DockAppWindows.AppName);
         if (!settings.GroupWindows) apps = DockApps.Ungroup(apps, foreground);
         bool trashFull = settings.ShowTrash && DockShell.RecycleBinHasItems();
-        var signature = $"{settings.Style}{settings.ClearCards}{Accent}{settings.CleanWidgets}{settings.Corner}|{settings.Size}|{settings.Spacing}|{settings.IconSize}|{settings.AppCards}{settings.NamesOnHover}{settings.Indicator}{settings.WindowPreviews}|"
+        var signature = $"{settings.Style}{settings.ClearCards}{Accent}{settings.CleanWidgets}{settings.Corner}|{settings.Size}|{settings.Spacing}|{settings.Padding}|{settings.IconSize}|{settings.AppCards}{settings.NamesOnHover}{settings.Indicator}{settings.WindowPreviews}|"
             + $"{settings.ShowStart}{settings.ShowTrash}{settings.FullWidth}{trashFull}|{_app.DockPickerOpen}|{string.Join(",", settings.Widgets.Select(w => $"{w.Id}:{w.Placement}:{w.Option}:{w.BeforeApp}"))}|"
             + string.Join(";", apps.Select(a => $"{a.Key},{a.Pinned},{a.Windows.Count}"));
         _shown = apps;
@@ -61,7 +61,8 @@ internal sealed partial class DockWindow
         }
         _signature = signature;
         _apps.Children.Clear();
-        double tile = _tileSize = settings.Size - (settings.FullWidth ? 10 : 6);
+        // The tile fits inside the bar's padding at the top and bottom.
+        double tile = _tileSize = Math.Min(settings.Size - (settings.FullWidth ? 10 : 6), settings.Size - 2 * settings.Padding);
         _spacing = settings.Spacing;
         _startTile = settings.ShowStart ? Button(StartGlyph(tile), Loc.T("开始", "Start"), tile, DockShell.OpenStart) : null;
         if (_startTile is not null) _apps.Children.Add(_startTile);

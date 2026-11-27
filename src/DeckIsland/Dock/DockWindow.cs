@@ -226,7 +226,9 @@ internal sealed partial class DockWindow : Window
         _dockRow.InvalidateArrange();
         _bar.Height = settings.Size;
         _bar.CornerRadius = _tint.CornerRadius = new CornerRadius(settings.FullWidth ? 0 : DockGeometry.CornerRadius(settings.Corner, settings.Size));
-        _tint.Padding = new Thickness(settings.Padding, 0, settings.Padding, 0);
+        _tint.Padding = new Thickness(settings.Padding);
+        // Each tile carries half the spacing on both sides; pulled back here so the spacing falls only between tiles, never at the ends.
+        _dockRow.Margin = new Thickness(-settings.Spacing / 2.0, 0, -settings.Spacing / 2.0, 0);
         _bar.VerticalAlignment = settings.Edge == DockEdge.Top ? VerticalAlignment.Top : VerticalAlignment.Bottom;
     }
 

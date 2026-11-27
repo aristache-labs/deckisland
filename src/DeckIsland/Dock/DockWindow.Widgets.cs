@@ -103,8 +103,8 @@ internal sealed partial class DockWindow
         bool darkToday = widget.Kind == DockWidgetKind.Today && _app.DockSettings.Style == DockStyle.Black;
         var frame = new Border
         {
-            // Widget cards run the bar's full height (apps keep the tile); the content stays sized to the tile.
-            Width = tile * width + _spacing * (width - 1), Height = _app.DockSettings.Size, CornerRadius = new CornerRadius(TileRadius()), Margin = new Thickness(_spacing / 2, 0, _spacing / 2, 0),
+            // Widget cards fill the bar's height inside its padding (apps keep the tile); the content stays sized to the tile.
+            Width = tile * width + _spacing * (width - 1), Height = _app.DockSettings.Size - 2 * _app.DockSettings.Padding, CornerRadius = new CornerRadius(TileRadius()), Margin = new Thickness(_spacing / 2, 0, _spacing / 2, 0),
             // Clean widget style: no card, the content straight on the bar.
             Background = UI.Brush(_app.DockSettings.CleanWidgets ? "#00000000" : darkToday ? "#FF18181A" : _look.Card),
             BorderBrush = UI.Brush(darkToday ? "#23FFFFFF" : _look.CardRim),
