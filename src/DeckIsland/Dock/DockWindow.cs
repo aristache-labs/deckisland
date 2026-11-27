@@ -74,7 +74,7 @@ internal sealed partial class DockWindow : Window
         WindowStyle = WindowStyle.None; AllowsTransparency = true; Background = Brushes.Transparent; ShowInTaskbar = false;
         Topmost = true; ShowActivated = false; ResizeMode = ResizeMode.NoResize; Focusable = false;
         Title = "DeckIsland Dock"; FontFamily = UI.PanelFont; Foreground = UI.Brush("#F2F2F4");
-        ClockCard();
+        _glass.Tick += (_, _) => GlassTick();
         _dockRow.Children.Add(_apps);
         _dockRow.Children.Add(_trailing);
         // The bar shows the screen behind it (glass styles) or its solid colour; the tint over it carries the style's colour.
@@ -117,8 +117,6 @@ internal sealed partial class DockWindow : Window
     private void Tick()
     {
         var settings = _app.DockSettings;
-        var now = DateTime.Now;
-        UpdateClock(now, settings);
         UpdateWidgets();
         _widgetPopupUpdate?.Invoke();
         // Windows' energy saver: the dock reads its windows less often, unless the clock shows seconds.

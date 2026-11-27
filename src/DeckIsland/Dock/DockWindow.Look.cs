@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -18,34 +17,9 @@ internal sealed partial class DockWindow
     private const double GlassShrink = 7;
     private readonly Border _tint = new();
     private readonly DispatcherTimer _glass = new(DispatcherPriority.Render) { Interval = TimeSpan.FromMilliseconds(120) };
-    private readonly TextBlock _weekday = new() { FontSize = 9.5, FontWeight = FontWeights.Bold, Foreground = UI.Brush(DockLook.Weekday) };
-    private readonly TextBlock _date = new() { FontSize = 12.5, FontWeight = FontWeights.SemiBold };
-    private readonly TextBlock _time = new() { FontSize = 14, FontWeight = FontWeights.Bold, HorizontalAlignment = HorizontalAlignment.Right };
-    private readonly Border _clockCard = new() { CornerRadius = new CornerRadius(10), Padding = new Thickness(12, 0, 12, 0), Margin = new Thickness(4, 4, 0, 4) };
-    private readonly StackPanel _clockArea = new() { Orientation = Orientation.Horizontal };
-    private readonly StackPanel _clockDay = new() { VerticalAlignment = VerticalAlignment.Center };
-    private readonly System.Windows.Shapes.Rectangle _clockDivider = new() { Width = 1, Margin = new Thickness(12, 9, 12, 9) };
     private byte[]? _lastGlass;
     private bool _glassOn;
     private DockLook _look = DockLook.For(DockStyle.Black, DockClearCards.Black);
-
-    private void ClockCard()
-    {
-        _glass.Tick += (_, _) => GlassTick();
-        _clockDay.Children.Add(_weekday); _clockDay.Children.Add(_date);
-        var row = new StackPanel { Orientation = Orientation.Horizontal };
-        row.Children.Add(_clockDay); row.Children.Add(_clockDivider); row.Children.Add(_time);
-        _time.VerticalAlignment = VerticalAlignment.Center;
-        _clockCard.Child = row;
-        _clockArea.Children.Add(_clockCard);
-    }
-
-    private void UpdateClock(DateTime now, DockSettings settings)
-    {
-        _weekday.Text = now.ToString("dddd", CultureInfo.CurrentCulture).ToUpper(CultureInfo.CurrentCulture);
-        _date.Text = now.ToString("MMM d", CultureInfo.CurrentCulture);
-        _time.Text = DockGeometry.Clock(now, settings.Clock24Hour, settings.ClockSeconds, CultureInfo.CurrentCulture);
-    }
 
     // The style's colours on the bar, the clock and (through RefreshSoon) the tiles; glass started or stopped to match.
     private void ApplyLook()
@@ -57,11 +31,6 @@ internal sealed partial class DockWindow
         _bar.BorderThickness = new Thickness(settings.Style == DockStyle.Clear ? 0 : 1);
         if (!_look.Glass) _bar.Background = Brushes.Transparent;
         Foreground = UI.Brush(_look.Text);
-        _date.Foreground = _time.Foreground = UI.Brush(_look.Text);
-        _clockDivider.Fill = UI.Brush(_look.Divider);
-        _clockCard.Background = UI.Brush(settings.AppCards || settings.Style == DockStyle.Clear ? _look.Card : "#00000000");
-        _clockCard.BorderBrush = UI.Brush(_look.CardRim); _clockCard.BorderThickness = new Thickness(settings.AppCards || settings.Style == DockStyle.Clear ? 1 : 0);
-        _clockCard.CornerRadius = new CornerRadius(TileRadius());
         // The tiles were drawn in the previous style's colours.
         _signature = "";
         if (_handle == IntPtr.Zero) return;

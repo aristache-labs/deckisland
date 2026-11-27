@@ -39,34 +39,8 @@ internal sealed partial class DockWindow
         }
 
         _trailing.Children.Clear();
-        foreach (var tray in settings.Widgets.Where(w => placement(w) == DockWidgetPlacement.NextToDesktop))
-            _trailing.Children.Add(Build(tray));
-        if (settings.ShowDesktopButton)
-        {
-            _desktopTile = Button(DesktopGlyph(tile), Loc.T("显示桌面", "Show desktop"), tile, DockShell.ToggleDesktop);
-            _trailing.Children.Add(_desktopTile);
-        }
-        else _desktopTile = null;
-        foreach (var widget in settings.Widgets.Where(w => placement(w) == DockWidgetPlacement.BeforeClock))
+        foreach (var widget in settings.Widgets.Where(w => placement(w) == DockWidgetPlacement.Right))
             _trailing.Children.Add(Build(widget));
-        _trailing.Children.Add(_clockArea);
-        foreach (var tray in settings.Widgets.Where(w => placement(w) == DockWidgetPlacement.NextToClock))
-            _trailing.Children.Add(Build(tray));
-
-        _clockArea.Children.Clear();
-        var both = settings.Widgets.FirstOrDefault(w => w.Placement == DockWidgetPlacement.DateAndClock);
-        var date = settings.Widgets.FirstOrDefault(w => w.Placement == DockWidgetPlacement.Date);
-        var clock = settings.Widgets.FirstOrDefault(w => w.Placement == DockWidgetPlacement.Clock);
-        _clockDay.Visibility = date is null ? Visibility.Visible : Visibility.Collapsed;
-        _time.Visibility = clock is null ? Visibility.Visible : Visibility.Collapsed;
-        _clockDivider.Visibility = date is null && clock is null ? Visibility.Visible : Visibility.Collapsed;
-        if (both is not null) _clockArea.Children.Add(Build(both));
-        else
-        {
-            if (date is not null) _clockArea.Children.Add(Build(date));
-            if (date is null || clock is null) _clockArea.Children.Add(_clockCard);
-            if (clock is not null) _clockArea.Children.Add(Build(clock));
-        }
     }
 
     private void UpdateWidgets() { foreach (var update in _widgetUpdates) update(); }
@@ -88,6 +62,7 @@ internal sealed partial class DockWindow
         DockWidgetKind.AiRing => AiRing(tile, widget.Option),
         DockWidgetKind.Search => SearchField(tile),
         DockWidgetKind.Tray => TrayArrow(tile),
+        DockWidgetKind.ShowDesktop => (DesktopGlyph(tile), () => { }),
         DockWidgetKind.ScreenTime => ScreenTimeTile(tile),
         DockWidgetKind.TopCpu => TopProcessTile(tile, memory: false),
         DockWidgetKind.TopRam => TopProcessTile(tile, memory: true),
@@ -133,7 +108,7 @@ internal sealed partial class DockWindow
             BorderThickness = new Thickness(_app.DockSettings.CleanWidgets ? 0 : 1), Child = grid, Tag = widget,
             ToolTip = _app.DockSettings.NamesOnHover ? DockWidgets.Info(widget.Kind).Name : null
         };
-        if (DockWidgets.Placements(widget.Kind).Count > 1)
+        if (widget.Kind is DockWidgetKind.WorldTime or DockWidgetKind.WorldClocks)
         {
             frame.ContextMenu = new ContextMenu();
             frame.ContextMenuOpening += (_, _) =>
@@ -145,8 +120,9 @@ internal sealed partial class DockWindow
             };
             frame.ContextMenuClosing += (_, _) => _menuOpen = false;
         }
-        bool expandable = HasWidgetDetails(widget.Kind);
-        if (expandable)
+        Action? click = widget.Kind == DockWidgetKind.ShowDesktop ? DockShell.ToggleDesktop
+            : HasWidgetDetails(widget.Kind) ? () => ToggleWidgetDetails(frame, widget.Kind) : null;
+        if (click is not null)
         {
             frame.Cursor = Cursors.Hand;
             frame.Focusable = true;
@@ -154,7 +130,7 @@ internal sealed partial class DockWindow
             frame.KeyDown += (_, e) =>
             {
                 if (e.Key is not (Key.Enter or Key.Space)) return;
-                ToggleWidgetDetails(frame, widget.Kind);
+                click();
                 e.Handled = true;
             };
         }
@@ -186,7 +162,7 @@ internal sealed partial class DockWindow
             {
                 _press = null;
                 if (frame.IsMouseCaptured) frame.ReleaseMouseCapture();
-                if (expandable && frame.IsMouseOver) { ToggleWidgetDetails(frame, widget.Kind); e.Handled = true; }
+                if (click is not null && frame.IsMouseOver) { click(); e.Handled = true; }
             }
         };
         return frame;

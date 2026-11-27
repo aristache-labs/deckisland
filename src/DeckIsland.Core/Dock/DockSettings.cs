@@ -30,10 +30,9 @@ public sealed class DockSettings
     // The pinned apps in their order; null until they are first taken from the Windows taskbar's pins.
     public List<DockPin>? Pins { get; set; }
     public bool ImportedTaskbarPins { get; set; }
-    // The Start button at the left end, and the Trash and Show desktop buttons at the right.
+    // The Start and Trash buttons.
     public bool ShowStart { get; set; } = true;
     public bool ShowTrash { get; set; } = true;
-    public bool ShowDesktopButton { get; set; } = true;
     // Live pictures of an app's windows while the pointer rests on it.
     public bool WindowPreviews { get; set; } = true;
     // Win+1 to Win+0 open the dock's first ten apps, as on the taskbar.
@@ -111,7 +110,7 @@ public sealed class DockSettings
         return copy;
     }
 
-    public void Normalize()
+    public void Normalize(bool migrateDesktop = false)
     {
         if (!Enum.IsDefined(Edge)) Edge = DockEdge.Bottom;
         if (!Enum.IsDefined(TaskbarMode)) TaskbarMode = DockTaskbarMode.AutoHide;
@@ -123,7 +122,7 @@ public sealed class DockSettings
         if (!Enum.IsDefined(Style)) Style = DockStyle.Black;
         if (!Enum.IsDefined(ClearCards)) ClearCards = DockClearCards.Black;
         Accent = DockLook.NormalizeAccent(Accent);
-        (Profiles, CurrentProfile) = DockWidgets.Normalize(Profiles, CurrentProfile);
+        (Profiles, CurrentProfile) = DockWidgets.Normalize(Profiles, CurrentProfile, migrateDesktop);
         QuietFrom = Math.Clamp(QuietFrom, 0, 24 * 60 - 1);
         QuietTo = Math.Clamp(QuietTo, 0, 24 * 60 - 1);
         Distance = Math.Clamp(Distance, 0, MaxDistance);
@@ -155,8 +154,10 @@ public sealed class DockSettingsStore(string directory)
             var root = JsonNode.Parse(File.ReadAllText(FilePath))?.AsObject() ?? throw new JsonException("dock.json is empty");
             var settings = root.Deserialize<DockSettings>() ?? new DockSettings();
             var known = JsonSerializer.SerializeToNode(new DockSettings())!.AsObject();
-            _unknown = new JsonObject(root.Where(pair => !known.ContainsKey(pair.Key)).Select(pair => KeyValuePair.Create(pair.Key, pair.Value?.DeepClone())));
-            settings.Normalize();
+            const string oldDesktop = "ShowDesktopButton";
+            _unknown = new JsonObject(root.Where(pair => pair.Key != oldDesktop && !known.ContainsKey(pair.Key))
+                .Select(pair => KeyValuePair.Create(pair.Key, pair.Value?.DeepClone())));
+            settings.Normalize(root[oldDesktop]?.GetValueKind() == JsonValueKind.True);
             return settings;
         }
         catch (Exception ex) when (ex is JsonException or InvalidOperationException or IOException or UnauthorizedAccessException)

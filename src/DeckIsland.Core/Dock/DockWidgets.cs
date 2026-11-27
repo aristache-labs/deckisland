@@ -4,10 +4,11 @@ namespace DeckIsland.Core;
 // The catalog grows with each wave of widgets; a kind this build does not know is dropped from the settings when they are read.
 public enum DockWidgetKind { Cpu, Memory, Battery, AiUsage, NextEvent, Network, Storage, Volume, Weather, AnalogClock, NowPlaying, Calendar, AiRing, Search, Tray,
     Clock, FlipClock, WorldClocks, SevenDays, WorldTime, Today, Date, DayNumber, SegmentClock, ClockWeather,
-    ScreenTime, TopCpu, TopRam, Temperature, DayProgress, MonthProgress, YearProgress, SunriseSunset }
+    ScreenTime, TopCpu, TopRam, Temperature, DayProgress, MonthProgress, YearProgress, SunriseSunset, ShowDesktop }
 public enum DockWidgetCategory { Ai, Productivity, System, MediaTime }
 [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<DockWidgetPlacement>))]
-public enum DockWidgetPlacement { Bar, Date, Clock, DateAndClock, NextToClock, NextToDesktop, BeforeClock, MainBar }
+// The old clock and desktop slots are read so existing profiles can be migrated to the right-side widget group.
+public enum DockWidgetPlacement { Bar, Date, Clock, DateAndClock, NextToClock, NextToDesktop, BeforeClock, MainBar, Right }
 
 // Width is in tiles: 1 a square tile, more a wide card.
 public sealed record DockWidgetInfo(DockWidgetKind Kind, DockWidgetCategory Category, string Name, string Description, int Width);
@@ -44,6 +45,7 @@ public static class DockWidgets
         new(DockWidgetKind.YearProgress, DockWidgetCategory.System, Loc.T("今年的进度", "Year Progress"), Loc.T("今年已过去的比例。", "How much of the year has passed."), 2),
         new(DockWidgetKind.Battery, DockWidgetCategory.System, Loc.T("电池", "Battery"), Loc.T("电量，以及是否在充电。", "The charge, and whether it is charging."), 1),
         new(DockWidgetKind.Tray, DockWidgetCategory.System, Loc.T("托盘", "Tray"), Loc.T("系统托盘的图标，点开箭头显示为网格。", "The system tray's icons, in a grid behind an arrow."), 1),
+        new(DockWidgetKind.ShowDesktop, DockWidgetCategory.System, Loc.T("显示桌面", "Show Desktop"), Loc.T("显示桌面，再点一次恢复窗口。", "Show the desktop, or click again to restore windows."), 1),
         new(DockWidgetKind.Network, DockWidgetCategory.System, Loc.T("网络", "Network"), Loc.T("下载和上传速度。", "Download and upload speed."), 2),
         new(DockWidgetKind.Storage, DockWidgetCategory.System, Loc.T("存储", "Storage"), Loc.T("系统盘的剩余空间。", "Free space on the system drive."), 1),
         new(DockWidgetKind.Volume, DockWidgetCategory.MediaTime, Loc.T("音频输出", "Audio Output"), Loc.T("音量；在上面滚动可调节。", "The volume; scroll on it to change it."), 1),
@@ -65,45 +67,16 @@ public static class DockWidgets
     private static DockWidgetInfo Time(DockWidgetKind kind, string chinese, string name, string explanation, string description, int width)
         => new(kind, DockWidgetCategory.MediaTime, Loc.T(chinese, name), Loc.T(explanation, description), width);
 
-    public static IReadOnlyList<DockWidgetPlacement> Placements(DockWidgetKind kind) => kind switch
-    {
-        DockWidgetKind.Tray => [DockWidgetPlacement.Bar, DockWidgetPlacement.NextToClock, DockWidgetPlacement.NextToDesktop],
-        DockWidgetKind.Date or DockWidgetKind.DayNumber or DockWidgetKind.SevenDays => [DockWidgetPlacement.Bar, DockWidgetPlacement.Date],
-        DockWidgetKind.AnalogClock or DockWidgetKind.FlipClock or DockWidgetKind.WorldTime or DockWidgetKind.WorldClocks =>
-            [DockWidgetPlacement.Bar, DockWidgetPlacement.Clock],
-        DockWidgetKind.Clock or DockWidgetKind.Today or DockWidgetKind.SegmentClock or DockWidgetKind.ClockWeather =>
-            [DockWidgetPlacement.Bar, DockWidgetPlacement.Date, DockWidgetPlacement.Clock, DockWidgetPlacement.DateAndClock],
-        _ => [DockWidgetPlacement.Bar]
-    };
-
-    private static bool Overlaps(DockWidgetPlacement first, DockWidgetPlacement second) =>
-        (first is DockWidgetPlacement.Date or DockWidgetPlacement.Clock or DockWidgetPlacement.DateAndClock)
-        && (second is DockWidgetPlacement.Date or DockWidgetPlacement.Clock or DockWidgetPlacement.DateAndClock) &&
-        (first == second || first == DockWidgetPlacement.DateAndClock && second is DockWidgetPlacement.Date or DockWidgetPlacement.Clock
-            || second == DockWidgetPlacement.DateAndClock && first is DockWidgetPlacement.Date or DockWidgetPlacement.Clock);
-
     public static DockWidgetPlacement EffectivePlacement(DockWidget widget, bool fullWidth) =>
         fullWidth && widget.Kind == DockWidgetKind.Tray && widget.Placement == DockWidgetPlacement.Bar
-            ? DockWidgetPlacement.NextToClock : widget.Placement == DockWidgetPlacement.MainBar ? DockWidgetPlacement.Bar : widget.Placement;
-
-    private static bool CanPlace(DockWidgetKind kind, DockWidgetPlacement placement) =>
-        placement is DockWidgetPlacement.MainBar or DockWidgetPlacement.NextToClock or DockWidgetPlacement.NextToDesktop or DockWidgetPlacement.BeforeClock
-        || Placements(kind).Contains(placement);
-
-    public static List<DockWidget> Place(IReadOnlyList<DockWidget> widgets, string id, DockWidgetPlacement placement)
-    {
-        var widget = widgets.FirstOrDefault(w => w.Id == id);
-        if (widget is null || !CanPlace(widget.Kind, placement)) return [.. widgets];
-        return widgets.Select(w => w.Id == id ? w with { Placement = placement, BeforeApp = null }
-            : Overlaps(w.Placement, placement) ? w with { Placement = DockWidgetPlacement.Bar, BeforeApp = null } : w).ToList();
-    }
+            ? DockWidgetPlacement.Right : widget.Placement == DockWidgetPlacement.MainBar ? DockWidgetPlacement.Bar : widget.Placement;
 
     public static List<DockWidget> Drop(IReadOnlyList<DockWidget> widgets, string id, DockWidgetPlacement placement, string? beforeApp, string? beforeWidget)
     {
-        var list = Place(widgets, id, placement);
+        var list = widgets.ToList();
         int previous = list.FindIndex(w => w.Id == id);
-        if (previous < 0 || list[previous].Placement != placement) return list;
-        var widget = list[previous] with { BeforeApp = placement == DockWidgetPlacement.MainBar ? beforeApp : null };
+        if (previous < 0 || placement is not (DockWidgetPlacement.MainBar or DockWidgetPlacement.Right)) return list;
+        var widget = list[previous] with { Placement = placement, BeforeApp = placement == DockWidgetPlacement.MainBar ? beforeApp : null };
         list.RemoveAt(previous);
         int index = list.FindIndex(w => w.Id == beforeWidget);
         list.Insert(index >= 0 ? index : list.Count, widget);
@@ -147,28 +120,41 @@ public static class DockWidgets
 
     // Profiles as the settings may hold them: at least one, distinct ids, names kept short, widgets of known kinds with distinct
     // ids; the current profile one of them.
-    public static (List<DockProfile> Profiles, string Current) Normalize(IReadOnlyList<DockProfile>? profiles, string? current)
+    public static (List<DockProfile> Profiles, string Current) Normalize(IReadOnlyList<DockProfile>? profiles, string? current, bool migrateDesktop = false)
     {
+        DockWidget Desktop() => new(Guid.NewGuid().ToString("N")[..8], DockWidgetKind.ShowDesktop, Placement: DockWidgetPlacement.Right);
         var ids = new HashSet<string>(StringComparer.Ordinal);
         var kept = (profiles ?? []).Where(p => p is not null && !string.IsNullOrWhiteSpace(p.Id) && ids.Add(p.Id)).Take(MaxProfiles).Select(p =>
         {
             var widgetIds = new HashSet<string>(StringComparer.Ordinal);
             var widgets = (p.Widgets ?? []).Where(w => w is not null && Enum.IsDefined(w.Kind) && !string.IsNullOrWhiteSpace(w.Id) && widgetIds.Add(w.Id))
-                .Take(MaxWidgets).Select(w => w with { Option = w.Option ?? "" }).ToList();
-            var placements = new List<DockWidgetPlacement>();
+                .Take(MaxWidgets + (p.Widgets?.Any(w => w?.Kind == DockWidgetKind.ShowDesktop) == true ? 1 : 0))
+                .Select(w => w with { Option = w.Option ?? "" }).ToList();
+            if (migrateDesktop && !widgets.Any(w => w.Kind == DockWidgetKind.ShowDesktop)) widgets.Add(Desktop());
+            if (widgets.Any(w => LegacyOrder(w.Placement) is > 0 and not 2))
+                widgets = widgets.OrderBy(w => LegacyOrder(w.Placement)).ToList();
             for (int i = 0; i < widgets.Count; i++)
-            {
-                var widget = widgets[i];
-                if (!CanPlace(widget.Kind, widget.Placement) || placements.Any(p => Overlaps(p, widget.Placement)))
-                    widgets[i] = widget with { Placement = DockWidgetPlacement.Bar, BeforeApp = null };
-                else if (widget.Placement != DockWidgetPlacement.Bar) placements.Add(widget.Placement);
-            }
+                if (LegacyOrder(widgets[i].Placement) > 0)
+                    widgets[i] = widgets[i] with { Placement = DockWidgetPlacement.Right, BeforeApp = null };
+                else if (!Enum.IsDefined(widgets[i].Placement))
+                    widgets[i] = widgets[i] with { Placement = DockWidgetPlacement.Bar, BeforeApp = null };
             string name = string.IsNullOrWhiteSpace(p.Name) ? Loc.T("配置", "Profile") : p.Name.Trim();
             return new DockProfile(p.Id, name.Length > MaxProfileName ? name[..MaxProfileName] : name, widgets);
         }).ToList();
-        if (kept.Count == 0) kept.Add(DefaultProfile());
+        if (kept.Count == 0) kept.Add(migrateDesktop ? DefaultProfile() with { Widgets = [Desktop()] } : DefaultProfile());
         return (kept, kept.Any(p => p.Id == current) ? current! : kept[0].Id);
     }
+
+    private static int LegacyOrder(DockWidgetPlacement placement) => placement switch
+    {
+        DockWidgetPlacement.NextToDesktop => 1,
+        DockWidgetPlacement.Right => 2,
+        DockWidgetPlacement.BeforeClock => 3,
+        DockWidgetPlacement.Date or DockWidgetPlacement.DateAndClock => 4,
+        DockWidgetPlacement.Clock => 5,
+        DockWidgetPlacement.NextToClock => 6,
+        _ => 0
+    };
 }
 
 // Widget kinds are written by name. A name this build does not know (a widget from a newer version) reads as an undefined kind, which

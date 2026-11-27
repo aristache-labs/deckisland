@@ -163,8 +163,6 @@ public sealed partial class SettingsWindow
                 help: Loc.T("在最左侧打开开始菜单，与 Windows 键相同。", "Opens Start, at the left end, as the Windows key does.")), Loc.T("在最左侧。", "At the left end.")),
             Describe(Toggle(Loc.T("回收站", "Recycle Bin"), dock.ShowTrash, value => ChangeDock(d => d.ShowTrash = value),
                 help: Loc.T("拖到上面的文件会移到回收站，可以恢复。", "Files dropped on it go to the Recycle Bin, where they can be restored.")), Loc.T("可以把文件拖到上面。", "Files can be dropped on it.")),
-            Describe(Toggle(Loc.T("显示桌面按钮", "Show desktop button"), dock.ShowDesktopButton, value => ChangeDock(d => d.ShowDesktopButton = value),
-                help: Loc.T("最小化所有窗口，再点一次恢复。", "Minimizes every window; click again to bring them back.")), Loc.T("在最右侧。", "At the right end.")),
             Describe(Toggle(Loc.T("Win+T 切换应用", "Win+T app switcher"), dock.AppSwitcher, value => ChangeDock(d => d.AppSwitcher = value),
                 help: Loc.T("像任务栏一样显示打开的应用：方向键在应用间移动，Tab 在窗口间移动，回车打开。", "Shows the open apps as the taskbar does: the arrow keys move between apps, Tab between an app's windows, Enter opens one.")),
                 Loc.T("用键盘切换应用。", "Switch apps from the keyboard.")),

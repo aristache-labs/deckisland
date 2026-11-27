@@ -42,7 +42,7 @@ internal sealed partial class DockWindow
         if (!settings.GroupWindows) apps = DockApps.Ungroup(apps, foreground);
         bool trashFull = settings.ShowTrash && DockShell.RecycleBinHasItems();
         var signature = $"{settings.Style}{settings.ClearCards}{Accent}{settings.CleanWidgets}{settings.Corner}|{settings.Size}|{settings.Spacing}|{settings.IconSize}|{settings.AppCards}{settings.NamesOnHover}{settings.Indicator}{settings.WindowPreviews}|"
-            + $"{settings.ShowStart}{settings.ShowTrash}{settings.ShowDesktopButton}{settings.FullWidth}{trashFull}|{_app.DockPickerOpen}|{string.Join(",", settings.Widgets.Select(w => $"{w.Id}:{w.Placement}:{w.Option}:{w.BeforeApp}"))}|"
+            + $"{settings.ShowStart}{settings.ShowTrash}{settings.FullWidth}{trashFull}|{_app.DockPickerOpen}|{string.Join(",", settings.Widgets.Select(w => $"{w.Id}:{w.Placement}:{w.Option}:{w.BeforeApp}"))}|"
             + string.Join(";", apps.Select(a => $"{a.Key},{a.Pinned},{a.Windows.Count}"));
         _shown = apps;
         if (signature == _signature)
@@ -60,12 +60,12 @@ internal sealed partial class DockWindow
         }
         _signature = signature;
         _apps.Children.Clear();
-        double tile = _tileSize = settings.Size - 10;
+        double tile = _tileSize = settings.Size - (settings.FullWidth ? 10 : 6);
         _spacing = settings.Spacing;
         if (settings.ShowStart) _apps.Children.Add(Button(StartGlyph(tile), Loc.T("开始", "Start"), tile, DockShell.OpenStart));
         foreach (var app in apps) _apps.Children.Add(Tile(app, tile));
         AddWidgets(settings, tile);
-        if (settings.ShowTrash || settings.ShowDesktopButton && !settings.FullWidth)
+        if (settings.ShowTrash)
             _apps.Children.Add(new Rectangle { Width = 1, Height = tile * 0.6, Fill = UI.Brush(_look.Divider), Margin = new Thickness(5, 0, 5, 0) });
         if (settings.ShowTrash) _apps.Children.Add(Trash(tile));
         if (_handle != IntPtr.Zero && Math.Abs(NaturalWidth() - _barWidth) >= 1) Place();

@@ -24,27 +24,6 @@ internal sealed partial class DockWindow
     {
         var menu = NewMenu();
         var settings = _app.DockSettings;
-        foreach (var placement in DockWidgets.Placements(widget.Kind))
-        {
-            string name = placement switch
-            {
-                DockWidgetPlacement.Date => Loc.T("替换日期", "Replace date"),
-                DockWidgetPlacement.Clock => Loc.T("替换时钟", "Replace clock"),
-                DockWidgetPlacement.DateAndClock => Loc.T("替换日期和时钟", "Replace date and clock"),
-                DockWidgetPlacement.NextToClock => Loc.T("放在时钟旁边", "Next to clock"),
-                DockWidgetPlacement.NextToDesktop => Loc.T("放在显示桌面旁边", "Next to Show desktop"),
-                _ => widget.Kind == DockWidgetKind.Tray ? Loc.T("默认位置", "Automatic placement") : Loc.T("放在小组件栏", "Place among widgets")
-            };
-            var item = new MenuItem { Header = name, IsCheckable = true, IsChecked = widget.Placement == placement, IsEnabled = !settings.Locked };
-            item.Click += (_, _) =>
-            {
-                var current = _app.DockSettings;
-                if (!current.Locked) _app.UpdateDockSettings(current.WithWidgets(DockWidgets.Place(current.Widgets, widget.Id, placement)));
-            };
-            menu.Items.Add(item);
-        }
-        if (widget.Kind is not (DockWidgetKind.WorldTime or DockWidgetKind.WorldClocks)) return menu;
-        menu.Items.Add(new Separator());
         var cities = TimeCities(widget);
         for (int i = 0; i < cities.Length; i++)
         {
@@ -145,17 +124,17 @@ internal sealed partial class DockWindow
 
     private (FrameworkElement, Action) TodayTile(double tile)
     {
-        var weekday = Label("", tile * 0.16, bold: true);
+        var weekday = Label("", tile * 0.21, bold: true);
         weekday.Foreground = UI.Brush(_look.Text == "#FF1D1D1F" ? "#B42318" : DockLook.Weekday);
-        var date = Label("", tile * 0.29, bold: true);
-        var clock = Label("", tile * 0.29, bold: true);
+        var date = Label("", tile * 0.30, bold: true);
+        var clock = Label("", tile * 0.30, bold: true);
         clock.TextAlignment = TextAlignment.Right;
         var time = new Run();
         var period = new Run { FontSize = tile * 0.17 };
         clock.Inlines.Add(time);
         clock.Inlines.Add(period);
-        var icon = new Border { Width = tile * 0.28, Height = tile * 0.28, Margin = new Thickness(0, 0, 3, 0) };
-        var temperature = Label("", tile * 0.17, bold: true, dim: true);
+        var icon = new Border { Width = tile * 0.37, Height = tile * 0.37, Margin = new Thickness(0, 0, tile * 0.06, 0) };
+        var temperature = Label("", tile * 0.23, bold: true, dim: true);
         temperature.VerticalAlignment = VerticalAlignment.Center;
         var weather = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
         weather.Children.Add(icon);
@@ -164,7 +143,7 @@ internal sealed partial class DockWindow
         left.HorizontalAlignment = HorizontalAlignment.Left;
         var right = TimeStack(clock, weather);
         right.HorizontalAlignment = HorizontalAlignment.Right;
-        var row = new Grid { Margin = new Thickness(tile * 0.22, 0, tile * 0.22, 0) };
+        var row = new Grid { Margin = new Thickness(tile * 0.25, 0, tile * 0.25, 0) };
         row.ColumnDefinitions.Add(new ColumnDefinition());
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1) });
         row.ColumnDefinitions.Add(new ColumnDefinition());

@@ -15,14 +15,13 @@ internal sealed partial class DockWindow
         HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top,
         Visibility = Visibility.Collapsed
     };
-    private Border? _desktopTile;
     private Dictionary<string, Point>? _dropOrigins;
 
     private readonly record struct WidgetDrop(DockWidgetPlacement Placement, string? BeforeApp, string? BeforeWidget, double X);
 
     private void MoveWidgetDrag(MouseEventArgs e)
     {
-        if (_press is not { Tile.Tag: DockWidget widget } press || _app.DockSettings.Locked) return;
+        if (_press is not { Tile.Tag: DockWidget } press || _app.DockSettings.Locked) return;
         if (e.LeftButton != MouseButtonState.Pressed) { EndWidgetDrag(press.Tile); return; }
         var at = e.GetPosition(this);
         if (!_dragging)
@@ -42,7 +41,7 @@ internal sealed partial class DockWindow
         var shift = TileShift(press.Tile);
         shift.X = at.X - press.Start.X;
         shift.Y = at.Y - press.Start.Y;
-        var target = DropAt(press.Tile, widget, at);
+        var target = DropAt(press.Tile, at);
         _dropMarker.Visibility = target is null ? Visibility.Collapsed : Visibility.Visible;
         if (target is { } drop)
         {
@@ -68,7 +67,7 @@ internal sealed partial class DockWindow
 
     private void ReleaseWidget(Border frame, DockWidget widget, Point at)
     {
-        var drop = DropAt(frame, widget, at);
+        var drop = DropAt(frame, at);
         var origins = TileOrigins();
         EndWidgetDrag(frame);
         if (drop is not { } target) { AnimateTilePositions(origins); return; }
@@ -79,40 +78,18 @@ internal sealed partial class DockWindow
         _app.UpdateDockSettings(settings.WithWidgets(moved));
     }
 
-    private WidgetDrop? DropAt(Border dragged, DockWidget widget, Point at)
+    private WidgetDrop? DropAt(Border dragged, Point at)
     {
         var bar = BoundsOf(_bar);
         bar.Inflate(_tileSize / 2, _tileSize / 2);
         if (!bar.Contains(at)) return null;
         var end = BoundsOf(_trailing);
-        if (end.Width > 0 && at.X >= end.Left - _tileSize / 3)
+        double rightStart = end.Width > 0 ? end.Left - _tileSize / 3
+            : _app.DockSettings.FullWidth ? bar.Right - _tileSize : BoundsOf(_apps).Right + _spacing / 2;
+        if (at.X >= rightStart)
         {
-            var clock = BoundsOf(_clockArea);
-            var options = DockWidgets.Placements(widget.Kind);
-            if (at.X >= clock.Left && at.X <= clock.Right)
-            {
-                double part = (at.X - clock.Left) / Math.Max(1, clock.Width);
-                var slot = part < 0.33 ? DockWidgetPlacement.Date : part > 0.67 ? DockWidgetPlacement.Clock : DockWidgetPlacement.DateAndClock;
-                if (options.Contains(slot)) return new(slot, null, null, at.X);
-                if (options.Contains(DockWidgetPlacement.Date) && !options.Contains(DockWidgetPlacement.Clock))
-                    return new(DockWidgetPlacement.Date, null, null, clock.Left);
-                if (options.Contains(DockWidgetPlacement.Clock) && !options.Contains(DockWidgetPlacement.Date))
-                    return new(DockWidgetPlacement.Clock, null, null, clock.Right);
-            }
-            var placement = at.X >= clock.Left
-                ? DockWidgetPlacement.NextToClock
-                : _desktopTile is { } desktop && at.X < Midpoint(BoundsOf(desktop))
-                    ? DockWidgetPlacement.NextToDesktop : DockWidgetPlacement.BeforeClock;
-            var candidates = _trailing.Children.OfType<Border>().Where(tile => tile != dragged && tile.Tag is DockWidget item
-                && DockWidgets.EffectivePlacement(item, _app.DockSettings.FullWidth) == placement);
-            var next = candidates.FirstOrDefault(tile => at.X < Midpoint(BoundsOf(tile)));
-            double boundary = next is not null ? BoundsOf(next).Left : placement switch
-            {
-                DockWidgetPlacement.NextToDesktop => _desktopTile is { } desktopButton ? BoundsOf(desktopButton).Left : clock.Left,
-                DockWidgetPlacement.BeforeClock => clock.Left,
-                _ => end.Right
-            };
-            return new(placement, null, (next?.Tag as DockWidget)?.Id, boundary);
+            var next = _trailing.Children.OfType<Border>().FirstOrDefault(tile => tile != dragged && at.X < Midpoint(BoundsOf(tile)));
+            return new(DockWidgetPlacement.Right, null, (next?.Tag as DockWidget)?.Id, next is null ? end.Right : BoundsOf(next).Left);
         }
 
         var following = _apps.Children.OfType<Border>().FirstOrDefault(tile => tile != dragged && (tile.Tag is DockWidget or DockApp)
@@ -126,7 +103,7 @@ internal sealed partial class DockWindow
     private static double Midpoint(Rect bounds) => bounds.Left + bounds.Width / 2;
 
     private IEnumerable<Border> PositionedTiles() => _apps.Children.OfType<Border>().Concat(_trailing.Children.OfType<Border>())
-        .Concat(_clockArea.Children.OfType<Border>()).Where(tile => tile.Tag is DockWidget or DockApp);
+        .Where(tile => tile.Tag is DockWidget or DockApp);
 
     private static string TileKey(Border tile) => tile.Tag is DockWidget widget ? "widget:" + widget.Id : "app:" + ((DockApp)tile.Tag).Key;
 
