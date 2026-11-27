@@ -102,7 +102,7 @@ internal sealed partial class DockWindow
             if (next == shown) return;
             shown = next;
             total.Text = next;
-            spark.Child = HourSpark(ScreenHours(today, pinned), tile * 1.05, tile * 0.42);
+            spark.Child = HourSpark(pinned is null ? ScreenHours(today, null) : AppHoursEstimate(today, pinned), tile * 1.05, tile * 0.42);
         });
     }
 
@@ -113,6 +113,8 @@ internal sealed partial class DockWindow
         public bool Week;
         public int Back;
         public bool Sites;
+        // Redraws the chart with an app's share lit (the app under the pointer in Most used), or the pinned app's (null).
+        public Action<string?>? Highlight;
     }
 
     private FrameworkElement Segmented(string[] names, Func<int> selected, Action<int> choose, double fontSize = 14)
@@ -199,7 +201,7 @@ internal sealed partial class DockWindow
             {
                 var days = Enumerable.Range(0, 7).Select(i => today.AddDays(-state.Back * 7 - 6 + i)).ToList();
                 nothing = days.All(day => ScreenTime.Total(ScreenApps(day)) == 0);
-                left.Content = WeekColumn(days, state, render);
+                left.Content = WeekColumn(days, state, render, pinned);
                 right.Content = MostUsed(days, state, render, widget, pinned, p => pinned = p);
             }
             else
@@ -254,7 +256,8 @@ internal sealed partial class DockWindow
     private static string HourLabel(int seconds) => seconds >= 3600 ? $"{seconds / 3600}h" : $"{seconds / 60}m";
 
     // A bar chart with dashed guides: bars (optionally two-tone) over labels, guide values at the right.
-    private FrameworkElement BarChart(IReadOnlyList<(double Lit, double Others)> bars, double top, int[] guides, string[] labels, double? average, int highlight = -1)
+    // Tag: an Action taking new bars, which redraws in place (no new canvas, so no blank frame while it lays out).
+    private Canvas BarChart(IReadOnlyList<(double Lit, double Others)> bars, double top, int[] guides, string[] labels, double? average, int highlight = -1)
     {
         const double height = 230, labelHeight = 22;
         var canvas = new Canvas { Height = height + labelHeight, ClipToBounds = false };
@@ -306,7 +309,31 @@ internal sealed partial class DockWindow
             }
         }
         canvas.SizeChanged += (_, _) => Draw();
+        canvas.Tag = (Action<IReadOnlyList<(double Lit, double Others)>>)(next => { bars = next; Draw(); });
         return canvas;
+    }
+
+    private static void SetBars(Canvas chart, IReadOnlyList<(double Lit, double Others)> bars) =>
+        (chart.Tag as Action<IReadOnlyList<(double Lit, double Others)>>)?.Invoke(bars);
+
+    // An app's seconds in each hour of a day. Hours recorded before per-app hours were kept (or while they were not) hold time
+    // that is not split by app; the app's share of it is spread over those hours in proportion, so its bars match its total.
+    private IReadOnlyList<int> AppHoursEstimate(DateOnly day, string app)
+    {
+        var hours = ScreenHours(day, null);
+        var extra = ScreenExtra(day);
+        var mine = (ScreenHours(day, app)).ToArray();
+        int total = ScreenApps(day).FirstOrDefault(pair => string.Equals(pair.Key, app, StringComparison.OrdinalIgnoreCase)).Value;
+        int missing = total - mine.Sum();
+        if (missing <= 0) return mine;
+        var known = new int[24];
+        foreach (var counted in extra?.AppHours.Values ?? Enumerable.Empty<List<int>>())
+            for (int i = 0; i < 24 && i < counted.Count; i++) known[i] += counted[i];
+        var unsplit = Enumerable.Range(0, 24).Select(i => Math.Max(0, hours[i] - known[i])).ToArray();
+        double pool = unsplit.Sum();
+        if (pool <= 0) return mine;
+        for (int i = 0; i < 24; i++) mine[i] += (int)Math.Round(Math.Min(unsplit[i], missing * unsplit[i] / pool));
+        return mine;
     }
 
     private FrameworkElement Stat(string caption, string value, string note)
@@ -328,9 +355,14 @@ internal sealed partial class DockWindow
         var apps = ScreenApps(day);
         int total = ScreenTime.Total(apps);
         var hours = ScreenHours(day, null);
-        var mine = pinned is null ? null : ScreenHours(day, pinned);
-        var bars = Enumerable.Range(0, 24).Select(i => mine is null ? (hours[i] / 1.0, 0.0) : (mine[i] / 1.0, Math.Max(0, hours[i] - mine[i]) / 1.0)).ToList();
         string[] labels = Enumerable.Range(0, 24).Select(i => i % 6 == 0 ? i.ToString("00", CultureInfo.InvariantCulture) : "").ToArray();
+        List<(double, double)> Bars(string? app)
+        {
+            var mine = app is null ? null : AppHoursEstimate(day, app);
+            return Enumerable.Range(0, 24).Select(i => mine is null ? (hours[i] / 1.0, 0.0) : (Math.Min(mine[i], hours[i]) / 1.0, Math.Max(0, hours[i] - mine[i]) / 1.0)).ToList();
+        }
+        var chart = BarChart(Bars(pinned), 3600, [1800, 3600], labels, null);
+        state.Highlight = app => SetBars(chart, Bars(app ?? pinned));
         var extra = ScreenExtra(day);
         var today = DateOnly.FromDateTime(DateTime.Now);
         string first = extra is { FirstMinute: >= 0 } ? TimeText(day.ToDateTime(new TimeOnly(extra.FirstMinute / 60, extra.FirstMinute % 60))) : "–";
@@ -344,7 +376,7 @@ internal sealed partial class DockWindow
             Children =
             {
                 DayNavigation(day, state, render), big,
-                BarChart(bars, 3600, [1800, 3600], labels, null),
+                chart,
                 Stats(Stat(Loc.T("最长专注", "Longest focus"), extra is { LongestFocus: > 0 } ? ScreenTime.Duration(extra.LongestFocus) : "–", extra?.LongestApp ?? ""),
                     Stat(Loc.T("应用切换", "App switches"), (extra?.Switches ?? 0).ToString("N0", CultureInfo.CurrentCulture), ScreenTimeExtras.SwitchEvery(extra?.Switches ?? 0, total)),
                     Stat(Loc.T("首次使用", "First use"), first, firstNote))
@@ -352,7 +384,7 @@ internal sealed partial class DockWindow
         };
     }
 
-    private FrameworkElement WeekColumn(List<DateOnly> days, ScreenPanelState state, Action render)
+    private FrameworkElement WeekColumn(List<DateOnly> days, ScreenPanelState state, Action render, string? pinned)
     {
         var totals = days.Select(day => ScreenTime.Total(ScreenApps(day))).ToList();
         int sum = totals.Sum(), average = sum / 7, busiest = totals.IndexOf(totals.Max());
@@ -363,6 +395,15 @@ internal sealed partial class DockWindow
         int appsUsed = days.SelectMany(day => ScreenApps(day).Select(pair => pair.Key)).Distinct(StringComparer.OrdinalIgnoreCase).Count();
         string caption = state.Back == 0 ? Loc.T("每日平均 · 最近 7 天", "Daily average · Last 7 days")
             : Loc.T($"每日平均 · {days[0]:d MMM} – {days[^1]:d MMM}", $"Daily average · {days[0].ToString("d MMM", CultureInfo.CurrentCulture)} – {days[^1].ToString("d MMM", CultureInfo.CurrentCulture)}");
+        // The week's bars: one app's time each day lit and the rest grey, or the plain totals.
+        List<(double, double)> Bars(string? app) => days.Select((day, i) =>
+        {
+            if (app is null) return (totals[i] / 1.0, 0.0);
+            int mine = ScreenApps(day).FirstOrDefault(pair => string.Equals(pair.Key, app, StringComparison.OrdinalIgnoreCase)).Value;
+            return (mine / 1.0, Math.Max(0, totals[i] - mine) / 1.0);
+        }).ToList();
+        var chart = BarChart(Bars(pinned), top, [guide, guide * 2], labels, average, days.IndexOf(today));
+        state.Highlight = app => SetBars(chart, Bars(app ?? pinned));
         var big = Label(ScreenTime.Duration(average), 44, bold: true);
         big.Margin = new Thickness(0, 2, 0, 18);
         return new StackPanel
@@ -370,7 +411,7 @@ internal sealed partial class DockWindow
             Children =
             {
                 Navigation(caption, state.Back < 3, state.Back > 0, () => { state.Back++; render(); }, () => { state.Back--; render(); }), big,
-                BarChart(totals.Select(t => (t / 1.0, 0.0)).ToList(), top, [guide, guide * 2], labels, average, days.IndexOf(today)),
+                chart,
                 Stats(Stat(Loc.T("总计", "Total"), ScreenTime.Duration(sum), Loc.T("最近 7 天", "last 7 days")),
                     Stat(Loc.T("最忙的一天", "Busiest day"), ScreenTime.Duration(totals[busiest]), sum > 0 ? days[busiest].ToString("ddd", CultureInfo.CurrentCulture) : ""),
                     Stat(Loc.T("使用的应用", "Apps used"), appsUsed.ToString(CultureInfo.CurrentCulture), ""))
@@ -433,6 +474,7 @@ internal sealed partial class DockWindow
             var text = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Children = { nameLine, track } };
             var row = new DockPanel { Margin = new Thickness(0, 10, 0, 10) };
             row.Children.Add(icon);
+            Action hover = () => { }, unhover = () => { };
             if (!state.Sites)
             {
                 // Pin: the widget shows this app's time; pinned, a click puts the total back.
@@ -441,8 +483,8 @@ internal sealed partial class DockWindow
                     VerticalAlignment = VerticalAlignment.Center, Background = UI.Brush(isPinned ? _look.CardActive : "#00000000"),
                     Child = MonitorIcons.Icon("pin", 15, UI.Brush(isPinned ? Accent : _look.Dim)), Opacity = isPinned ? 1 : 0,
                     ToolTip = isPinned ? Loc.T($"{name} 显示在 Dock 上 - 点击显示总计", $"{name} is on the dock - click for the total") : Loc.T("在 Dock 上显示", "Show on the dock") };
-                row.MouseEnter += (_, _) => button.Opacity = 1;
-                row.MouseLeave += (_, _) => button.Opacity = isPinned ? 1 : 0;
+                hover = () => button.Opacity = 1;
+                unhover = () => button.Opacity = isPinned ? 1 : 0;
                 button.MouseLeftButtonUp += (_, e) =>
                 {
                     e.Handled = true;
@@ -450,14 +492,24 @@ internal sealed partial class DockWindow
                     pin(next);
                     var settings = _app.DockSettings;
                     _app.UpdateDockSettings(settings.WithWidgets(settings.Widgets.Select(w => w.Id == widget.Id ? w with { Option = next ?? "" } : w).ToList()), keepPanels: true);
+                    // Rebuild the bar now rather than at background priority, so the widget's icon, time and bars change at once.
+                    RefreshApps();
                     render();
                 };
                 DockPanel.SetDock(button, System.Windows.Controls.Dock.Right);
                 row.Children.Add(button);
             }
             row.Children.Add(text);
-            list.Children.Add(new Border { BorderBrush = UI.Brush(_look.Divider), BorderThickness = new Thickness(0, 0, 0, 1), Child = row, Background = Brushes.Transparent });
+            // The whole row, gaps included, is the hover area: the chart lights this app while the pointer is anywhere on it, and
+            // only goes back when the pointer leaves the list, so moving between rows does not flash the totals.
+            var cell = new Border { BorderBrush = UI.Brush(_look.Divider), BorderThickness = new Thickness(0, 0, 0, 1), Child = row, Background = Brushes.Transparent };
+            string app = name;
+            cell.MouseEnter += (_, _) => { hover(); if (!state.Sites) state.Highlight?.Invoke(app); };
+            cell.MouseLeave += (_, _) => unhover();
+            list.Children.Add(cell);
         }
+        list.Background = Brushes.Transparent;
+        list.MouseLeave += (_, _) => state.Highlight?.Invoke(null);
         return panel;
     }
 
