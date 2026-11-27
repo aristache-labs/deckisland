@@ -69,6 +69,29 @@ public static class ScreenTimeExtras
         return result;
     }
 
+    // The same, with the hours' time that per-app hours do not cover (kept before they were, or while they were not) spread over
+    // the kinds in proportion to what each kind's apps are missing from their day totals; so the stacks add up to the hours.
+    public static Dictionary<ScreenCategory, int[]> ByCategory(ScreenTimeExtra? day, IReadOnlyList<int> hours, IEnumerable<KeyValuePair<string, int>> apps)
+    {
+        var result = ByCategory(day);
+        var missing = Enum.GetValues<ScreenCategory>().ToDictionary(category => category, _ => 0.0);
+        foreach (var (app, total) in apps)
+        {
+            int recorded = day?.AppHours.TryGetValue(app, out var counted) == true ? counted.Sum() : 0;
+            missing[Category(app)] += Math.Max(0, total - recorded);
+        }
+        double pool = missing.Values.Sum();
+        if (pool <= 0) return result;
+        for (int hour = 0; hour < 24 && hour < hours.Count; hour++)
+        {
+            int unsplit = Math.Max(0, hours[hour] - result.Values.Sum(stack => stack[hour]));
+            if (unsplit == 0) continue;
+            foreach (var (category, share) in missing)
+                result[category][hour] += (int)Math.Round(unsplit * share / pool);
+        }
+        return result;
+    }
+
     private static readonly (ScreenCategory Category, string[] Names)[] Known =
     [
         (ScreenCategory.Browser, ["chrome", "msedge", "firefox", "brave", "opera", "vivaldi", "arc", "iexplore", "zen", "librewolf", "waterfox", "chromium", "thorium"]),

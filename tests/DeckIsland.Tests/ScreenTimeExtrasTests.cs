@@ -19,6 +19,10 @@ internal static class ScreenTimeExtrasTests
         check("Apps fall into the timeline's categories", stacks[ScreenCategory.Browser][9] == 5 && stacks[ScreenCategory.Code][9] == 10
             && ScreenTimeExtras.Category("Claude") == ScreenCategory.ChatMail && ScreenTimeExtras.Category("WINWORD") == ScreenCategory.Docs
             && ScreenTimeExtras.Category("Paint") == ScreenCategory.Other);
+        var hours = new int[24]; hours[8] = 1200; hours[9] = 20;
+        var estimated = ScreenTimeExtras.ByCategory(day, hours, [new("Chrome", 605), new("Code", 10), new("Outlook", 600)]);
+        check("Hours kept before per-app hours are split by what each kind is missing",
+            estimated[ScreenCategory.Browser][8] == 600 && estimated[ScreenCategory.ChatMail][8] == 600 && estimated[ScreenCategory.Code][9] == 10);
         check("A site comes from a browser title, never a private window or a bare page",
             ScreenTimeExtras.SiteFromTitle("Inbox (3) - Gmail - Google Chrome") == "Gmail"
             && ScreenTimeExtras.SiteFromTitle("New Tab - Google Chrome") is null

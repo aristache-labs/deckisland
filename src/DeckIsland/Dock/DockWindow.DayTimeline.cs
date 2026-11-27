@@ -21,6 +21,27 @@ internal sealed partial class DockWindow
 
     private enum DayMark { Reset, Sun }
 
+    private Dictionary<ScreenCategory, int[]> TimelineStacks(DateOnly day) =>
+        ScreenTimeExtras.ByCategory(ScreenExtra(day), ScreenHours(day, null), ScreenApps(day));
+
+    // A tip naming the hour under the pointer, its time and the kinds of app in it: "13 · 53m · Chat & mail, Other".
+    private void HourTips(Canvas canvas, Func<Dictionary<ScreenCategory, int[]>> stacks, Func<int> from)
+    {
+        canvas.Background = Brushes.Transparent;
+        var tip = new ToolTip();
+        canvas.ToolTip = tip;
+        canvas.MouseMove += (_, e) =>
+        {
+            int first = from(), count = 24 - first;
+            if (canvas.ActualWidth <= 0) return;
+            int hour = first + Math.Clamp((int)(e.GetPosition(canvas).X / canvas.ActualWidth * count), 0, count - 1);
+            var kinds = stacks();
+            int seconds = kinds.Values.Sum(stack => stack[hour]);
+            var names = StackOrder.Where(category => kinds[category][hour] > 0).Select(ScreenTimeExtras.Name);
+            tip.Content = seconds == 0 ? $"{hour} · {Loc.T("无", "nothing")}" : $"{hour} · {ScreenTime.Duration(seconds)} · {string.Join(", ", names)}";
+        };
+    }
+
     // Today's events: each AI limit resetting, sunrise and sunset where the weather's place is.
     private List<(DateTime At, string Text, DayMark Kind)> DayEvents()
     {
@@ -82,14 +103,14 @@ internal sealed partial class DockWindow
             }
         }
         double X(DateTime at) => (at.Hour + at.Minute / 60.0 - from) / count * width;
-        double mark = Math.Max(5, barTop * 0.42);
+        double mark = Math.Clamp(barTop * 0.3, 4, 8);
         foreach (var (at, _, kind) in events)
         {
             if (at.Hour < from) continue;
             var dot = kind == DayMark.Reset
                 ? new Ellipse { Width = mark, Height = mark, Fill = UI.Brush("#FF64D2FF") }
                 : new Ellipse { Width = mark, Height = mark, Stroke = UI.Brush("#FFFF9F0A"), StrokeThickness = 1.3 };
-            Canvas.SetLeft(dot, X(at) - mark / 2); Canvas.SetTop(dot, barTop * 0.2);
+            Canvas.SetLeft(dot, X(at) - mark / 2); Canvas.SetTop(dot, barTop - mark - 2);
             canvas.Children.Add(dot);
         }
         var now = DateTime.Now;
@@ -118,6 +139,7 @@ internal sealed partial class DockWindow
         List<(DateTime, string, DayMark)> events = [];
         void Draw() => DrawTimeline(canvas, stacks, events, canvas.ActualHeight * 0.3, FirstTimelineHour(stacks), null);
         canvas.SizeChanged += (_, _) => Draw();
+        HourTips(canvas, () => stacks, () => FirstTimelineHour(stacks));
         int minute = -1;
         return (body, () =>
         {
@@ -127,7 +149,7 @@ internal sealed partial class DockWindow
             var today = DateOnly.FromDateTime(now);
             date.Text = now.ToString("ddd d MMM", CultureInfo.CurrentCulture);
             total.Text = ScreenTime.Duration(ScreenTime.Total(ScreenApps(today)));
-            stacks = ScreenTimeExtras.ByCategory(ScreenExtra(today));
+            stacks = TimelineStacks(today);
             events = DayEvents();
             Draw();
         });
@@ -144,11 +166,12 @@ internal sealed partial class DockWindow
         close.HorizontalAlignment = HorizontalAlignment.Right; close.VerticalAlignment = VerticalAlignment.Top;
         var header = new Grid { Margin = new Thickness(0, 0, 0, 14), Children = { title, close } };
 
-        var stacks = ScreenTimeExtras.ByCategory(ScreenExtra(today));
+        var stacks = TimelineStacks(today);
         var events = DayEvents();
         var canvas = new Canvas { Height = 160, Margin = new Thickness(0, 0, 0, 14) };
         int from = FirstTimelineHour(stacks);
-        canvas.SizeChanged += (_, _) => DrawTimeline(canvas, stacks, events, 32, from, []);
+        canvas.SizeChanged += (_, _) => DrawTimeline(canvas, stacks, events, 22, from, []);
+        HourTips(canvas, () => stacks, () => from);
 
         int total = ScreenTime.Total(ScreenApps(today));
         var legend = new WrapPanel { Margin = new Thickness(0, 0, 0, 14) };
