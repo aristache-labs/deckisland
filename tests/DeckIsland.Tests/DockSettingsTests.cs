@@ -140,6 +140,28 @@ internal static class DockSettingsTests
             && DockSmart.Sum("2+") is null && DockSmart.Parse("chrome").Kind == DockCommandKind.None && DockSmart.Parse("  ").Kind == DockCommandKind.None);
         check("Dock finds jump list files by the AppUserModelID's CRC-64, as Windows names them",
             DockJumpList.FileId("Microsoft.Windows.Explorer") == "f01b4d95cf55d32a" && DockJumpList.FileId("microsoft.windows.explorer") == "f01b4d95cf55d32a");
+        foreach (int version in new[] { 1, 3, 4, 6 })
+        {
+            int entrySize = version == 1 ? 118 : 138;
+            using var list = new MemoryStream(new byte[32 + 3 * entrySize]);
+            using var writer = new BinaryWriter(list);
+            writer.Write(version);
+            writer.Write(3);
+            for (int i = 0; i < 3; i++)
+            {
+                long offset = 32 + i * entrySize;
+                list.Position = offset + 88;
+                writer.Write(i + 10);
+                list.Position = offset + 108;
+                writer.Write(i == 1 ? -1 : 2 - i);
+                list.Position = offset + (version == 1 ? 112 : 128);
+                writer.Write((ushort)2);
+            }
+            byte[] bytes = list.ToArray();
+            check($"Dock reads pinned DestList v{version} entries in pin order and skips truncated entries",
+                DockJumpList.PinnedEntries(bytes).SequenceEqual([12u, 10u])
+                && DockJumpList.PinnedEntries(bytes.AsSpan(0, bytes.Length - 1)).SequenceEqual([10u]));
+        }
         check("Dock writes an exe's implicit AppUserModelID with its known folder's id, the longest folder first",
             DockJumpList.ImplicitAppId(@"C:\Users\a\AppData\Local\Programs\x\x.exe", [(@"C:\Users\a\AppData\Local", "{L}"), (@"C:\Users\a\AppData\Local\Programs", "{P}")]) == @"{P}\x\x.exe"
             && DockJumpList.ImplicitAppId(@"D:\Tools\t.exe", [(@"C:\Windows", "{W}")]) == @"D:\Tools\t.exe");

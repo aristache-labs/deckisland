@@ -7,12 +7,12 @@ using DeckIsland.Core;
 
 namespace DeckIsland.Native;
 
-// An app's jump list as the taskbar shows it: its tasks and pinned or custom categories (the .customDestinations-ms file, a run of
-// persisted shortcuts), and its recent items (IApplicationDocumentLists). The app is known by its AppUserModelID: its window's own,
+// An app's jump list combines pinned destinations, custom categories and tasks, and recent items.
+// The app is known by its AppUserModelID: its window's own,
 // its pinned shortcut's, or the implicit one of its exe (DockJumpList).
-internal static class DockJumpLists
+internal static partial class DockJumpLists
 {
-    public sealed record Item(string Title, Action Open);
+    public sealed record Item(string Title, Action Open, string Target);
     public sealed record Section(string Title, IReadOnlyList<Item> Items);
 
     private const int MaxRecent = 10;
@@ -26,15 +26,21 @@ internal static class DockJumpLists
         var sections = new List<Section>();
         foreach (var appId in AppIds(app))
         {
-            try
-            {
-                sections.AddRange(Custom(appId));
-                if (Recent(appId, app) is { Items.Count: > 0 } recent) sections.Add(recent);
-            }
-            catch (Exception ex) when (ex is COMException or IOException or UnauthorizedAccessException or InvalidCastException or EndOfStreamException or ArgumentException) { }
+            var pinned = Read(() => Pinned(appId));
+            if (pinned is not null) sections.Add(pinned);
+            var custom = Read(() => Custom(appId));
+            if (custom is not null) sections.AddRange(custom);
+            var recent = Read(() => Recent(appId, app, pinned));
+            if (recent is { Items.Count: > 0 }) sections.Add(recent);
             if (sections.Count > 0) break;
         }
         return sections;
+    }
+
+    private static T? Read<T>(Func<T?> read) where T : class
+    {
+        try { return read(); }
+        catch (Exception ex) when (ex is COMException or IOException or UnauthorizedAccessException or InvalidCastException or ArgumentException) { return null; }
     }
 
     private static IEnumerable<string> AppIds(DockApp app)
@@ -85,9 +91,12 @@ internal static class DockJumpLists
                 if (clsid != ShellLinkClsid) return sections;
                 var stream = new ReadStream(reader.BaseStream);
                 var link = (IShellLinkW)new ShellLink();
-                ((IPersistStream)link).Load(stream);
-                if (LinkItem(link) is { } item) items.Add(item);
-                Marshal.ReleaseComObject(link);
+                try
+                {
+                    ((IPersistStream)link).Load(stream);
+                    if (LinkItem(link) is { } item) items.Add(item);
+                }
+                finally { Marshal.ReleaseComObject(link); }
             }
             reader.ReadUInt32();
             if (items.Count > 0) sections.Add(new Section(title, items));
@@ -95,7 +104,7 @@ internal static class DockJumpLists
         return sections;
     }
 
-    private static Item? LinkItem(IShellLinkW link)
+    private static Item? LinkItem(IShellLinkW link, bool destination = false)
     {
         var target = new StringBuilder(1024); link.GetPath(target, target.Capacity, 0, 0);
         var arguments = new StringBuilder(2048); link.GetArguments(arguments, arguments.Capacity);
@@ -104,12 +113,26 @@ internal static class DockJumpLists
         if (title.Length == 0) { var description = new StringBuilder(1024); link.GetDescription(description, description.Capacity); title = description.ToString(); }
         // Titles may name a string resource ("@file.dll,-123").
         if (title.StartsWith('@')) title = Indirect(title) ?? "";
-        if (title.Length == 0 || target.Length == 0) return null;
         string file = target.ToString(), args = arguments.ToString(), directory = folder.ToString();
-        return new Item(title, () => Start(file, args, directory));
+        if (destination)
+        {
+            link.GetIDList(out var id);
+            if (id != 0)
+            {
+                try
+                {
+                    if (title.Length == 0) title = NameFromId(id, 0) ?? "";
+                    if (file.Length == 0) file = NameFromId(id, unchecked((int)0x80028000)) ?? "";
+                }
+                finally { Marshal.FreeCoTaskMem(id); }
+            }
+            if (title.Length == 0) title = Path.GetFileName(Path.TrimEndingDirectorySeparator(file));
+        }
+        if (title.Length == 0 || file.Length == 0) return null;
+        return new Item(title, () => Start(file, args, directory), file);
     }
 
-    private static Section? Recent(string appId, DockApp app)
+    private static Section? Recent(string appId, DockApp app, Section? pinned)
     {
         var lists = (IApplicationDocumentLists)new ApplicationDocumentLists();
         try
@@ -125,10 +148,10 @@ internal static class DockJumpLists
                 array.GetAt(i, ref itemIid, out var shellItem);
                 if (shellItem is not IShellItem item) continue;
                 string? name = DisplayName(item, 0), path = DisplayName(item, unchecked((int)0x80058000));
-                if (name is null || path is null) continue;
+                if (name is null || path is null || pinned?.Items.Any(pin => string.Equals(pin.Target, path, StringComparison.OrdinalIgnoreCase)) == true) continue;
                 string exe = app.Windows.Count > 0 ? app.Windows[0].Exe : app.Key;
                 // Opened with the app, as the taskbar does; a folder goes to Explorer.
-                items.Add(new Item(name, () => { if (Directory.Exists(path) || !File.Exists(exe)) Start(path, "", ""); else Start(exe, Quote(path), ""); }));
+                items.Add(new Item(name, () => { if (Directory.Exists(path) || !File.Exists(exe)) Start(path, "", ""); else Start(exe, Quote(path), ""); }, path));
             }
             return new Section(Loc.T("最近", "Recent"), items);
         }

@@ -29,6 +29,7 @@
                       Stretch="Uniform" VerticalAlignment="Center" Margin="12,0,0,0" Visibility="Collapsed"/>
                 <Path x:Name="Arrow" DockPanel.Dock="Right" Data="M 0,0 L 4,4 L 0,8" Stroke="{DynamicResource DockMenuDim}" StrokeThickness="1.4" Width="5" Height="9"
                       Stretch="Uniform" VerticalAlignment="Center" Margin="12,0,0,0" Visibility="Collapsed"/>
+                <ContentPresenter ContentSource="Icon" DockPanel.Dock="Left" VerticalAlignment="Center"/>
                 <ContentPresenter ContentSource="Header" RecognizesAccessKey="True" VerticalAlignment="Center"/>
               </DockPanel>
             </Border>

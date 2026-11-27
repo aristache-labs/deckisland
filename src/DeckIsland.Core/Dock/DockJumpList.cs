@@ -1,3 +1,5 @@
+using System.Buffers.Binary;
+
 namespace DeckIsland.Core;
 
 // What a jump list is filed under. Windows keeps an app's jump list in %APPDATA%\Microsoft\Windows\Recent\*Destinations\<id>.*,
@@ -6,6 +8,28 @@ namespace DeckIsland.Core;
 // that folder's id.
 public static class DockJumpList
 {
+    public static uint[] PinnedEntries(ReadOnlySpan<byte> list)
+    {
+        if (list.Length < 32) return [];
+        int version = BinaryPrimitives.ReadInt32LittleEndian(list);
+        if (version is not (1 or 3 or 4 or 6)) return [];
+        int count = BinaryPrimitives.ReadInt32LittleEndian(list[4..]);
+        int lengthOffset = version == 1 ? 112 : 128;
+        int trailer = version == 1 ? 0 : 4;
+        var pinned = new List<(int Position, uint Id)>();
+        list = list[32..];
+        for (int i = 0; i < count && list.Length >= lengthOffset + 2; i++)
+        {
+            int size = lengthOffset + 2 + 2 * BinaryPrimitives.ReadUInt16LittleEndian(list[lengthOffset..]) + trailer;
+            if (size > list.Length) break;
+            int position = BinaryPrimitives.ReadInt32LittleEndian(list[108..]);
+            uint id = BinaryPrimitives.ReadUInt32LittleEndian(list[88..]);
+            if (position >= 0 && id != 0) pinned.Add((position, id));
+            list = list[size..];
+        }
+        return pinned.OrderBy(pin => pin.Position).Select(pin => pin.Id).Distinct().ToArray();
+    }
+
     private const ulong Polynomial = 0x92C64265D32139A4;
     private static readonly ulong[] Table = BuildTable();
 

@@ -28,18 +28,36 @@ internal static class ShellIcons
     public static byte[]? ForApp(string appUserModelId, int size)
     {
         if (appUserModelId.Length == 0) return null;
-        IntPtr handle = IntPtr.Zero;
+        var source = ForItem(@"shell:AppsFolder\" + appUserModelId, size, 0);
+        if (source is null) return null;
         try
         {
-            var factory = typeof(IShellItemImageFactory).GUID;
-            SHCreateItemFromParsingName(@"shell:AppsFolder\" + appUserModelId, IntPtr.Zero, ref factory, out var item);
-            if (item.GetImage(new Size { Width = size, Height = size }, 0, out handle) != 0 || handle == IntPtr.Zero) return null;
-            var source = Imaging.CreateBitmapSourceFromHBitmap(handle, IntPtr.Zero, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
             var encoder = new PngBitmapEncoder();
             encoder.Frames.Add(BitmapFrame.Create(source));
             using var stream = new MemoryStream();
             encoder.Save(stream);
             return stream.ToArray();
+        }
+        catch (Exception error) when (error is COMException or ArgumentException or IOException or InvalidOperationException or NotSupportedException) { return null; }
+    }
+
+    public static BitmapSource? ForItem(string path, int size) => ForItem(path, size, 4); // SIIGBF_ICONONLY
+
+    private static BitmapSource? ForItem(string path, int size, int flags)
+    {
+        IntPtr handle = IntPtr.Zero;
+        try
+        {
+            var factory = typeof(IShellItemImageFactory).GUID;
+            SHCreateItemFromParsingName(path, IntPtr.Zero, ref factory, out var item);
+            try
+            {
+                if (item.GetImage(new Size { Width = size, Height = size }, flags, out handle) != 0 || handle == IntPtr.Zero) return null;
+            }
+            finally { Marshal.ReleaseComObject(item); }
+            var source = Imaging.CreateBitmapSourceFromHBitmap(handle, IntPtr.Zero, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
+            source.Freeze();
+            return source;
         }
         catch (Exception error) when (error is COMException or ArgumentException or IOException or InvalidOperationException or NotSupportedException) { return null; }
         finally { if (handle != IntPtr.Zero) DeleteObject(handle); }

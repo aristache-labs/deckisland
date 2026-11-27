@@ -268,9 +268,10 @@ internal sealed partial class DockWindow
     private ContextMenu AppMenu(DockApp app)
     {
         var menu = NewMenu();
-        void Add(string header, Action action)
+        void Add(string header, Action action, ImageSource? icon = null)
         {
             var item = new MenuItem { Header = header };
+            if (icon is not null) item.Icon = new Image { Source = icon, Width = 16, Height = 16, Margin = new Thickness(0, 0, 8, 0) };
             item.Click += (_, _) => { action(); RefreshSoon(); };
             menu.Items.Add(item);
         }
@@ -278,7 +279,7 @@ internal sealed partial class DockWindow
         foreach (var section in DockJumpLists.For(app))
         {
             menu.Items.Add(new MenuItem { Header = section.Title, IsEnabled = false, FontSize = 11.5 });
-            foreach (var item in section.Items) Add(item.Title, item.Open);
+            foreach (var item in section.Items) Add(item.Title, item.Open, ShellIcons.ForItem(item.Target, 16));
             menu.Items.Add(new Separator());
         }
         menu.Items.Add(new MenuItem { Header = app.Name, IsEnabled = false, FontWeight = FontWeights.SemiBold });
