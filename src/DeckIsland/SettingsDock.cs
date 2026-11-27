@@ -30,6 +30,19 @@ public sealed partial class SettingsWindow
                 dock.Size, value => ChangeDock(d => d.Size = value)))),
                 Loc.T("Dock 栏的高度。", "The height of the bar.")));
 
+        SectionTitle(Loc.T("应用", "Apps"), description: Loc.T("Dock 上的按钮和应用的行为。拖动图标可重新排序，拖出 Dock 可取消固定，把文件拖到 Dock 上可固定。",
+            "The dock's buttons and how its apps behave. Drag an icon to reorder it, drag it off the dock to unpin it, drop a file on the dock to pin it."));
+        Group(
+            Describe(Toggle(Loc.T("开始按钮", "Start button"), dock.ShowStart, value => ChangeDock(d => d.ShowStart = value)), Loc.T("在最左侧打开开始菜单。", "Opens Start, at the left end.")),
+            Describe(Toggle(Loc.T("回收站", "Recycle Bin"), dock.ShowTrash, value => ChangeDock(d => d.ShowTrash = value)),
+                Loc.T("拖到上面的文件会移到回收站。", "Files dropped on it go to the Recycle Bin.")),
+            Describe(Toggle(Loc.T("显示桌面按钮", "Show desktop button"), dock.ShowDesktopButton, value => ChangeDock(d => d.ShowDesktopButton = value)),
+                Loc.T("最小化所有窗口，再点一次恢复。", "Minimizes every window; click again to bring them back.")),
+            Describe(Toggle(Loc.T("窗口预览", "Window previews"), dock.WindowPreviews, value => ChangeDock(d => d.WindowPreviews = value)),
+                Loc.T("鼠标停在应用上时显示其窗口的实时画面。", "Live pictures of an app's windows while the pointer rests on it.")),
+            Describe(Toggle(Loc.T("Win+1 到 Win+0", "Win+1 to Win+0"), dock.AppShortcuts, value => ChangeDock(d => d.AppShortcuts = value)),
+                Loc.T("打开 Dock 上的前十个应用，与任务栏相同。", "Open the dock's first ten apps, as on the taskbar.")));
+
         SectionTitle(Loc.T("Windows 任务栏", "Windows taskbar"), description: Loc.T("Dock 运行时如何处理 Windows 任务栏。", "What happens to the Windows taskbar while the dock runs."));
         var taskbar = Row(Loc.T("Dock 运行时", "While the dock runs"), SegmentBorder(DockChoices("DockTaskbar",
             [(Loc.T("自动隐藏", "Auto-hide"), DockTaskbarMode.AutoHide), (Loc.T("完全隐藏", "Hide"), DockTaskbarMode.Hide), (Loc.T("不隐藏", "Leave"), DockTaskbarMode.Leave)],

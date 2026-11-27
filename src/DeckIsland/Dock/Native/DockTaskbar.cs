@@ -68,8 +68,21 @@ internal static class DockTaskbar
         StartWatchdog();
         SetFlags(original | AbsAutoHide);
         if (!complete) return;
-        if (HideTaskbars()) { lock (Gate) _completeActive = true; HookShows(); }
-        else { ShowTaskbars(); CompleteFailed = true; }
+        // Explorer may show the taskbar again just after the auto-hide switch, so the hook keeps hiding it, and the result is
+        // judged a moment later rather than at once.
+        HideTaskbars();
+        lock (Gate) _completeActive = true;
+        HookShows();
+        var check = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
+        check.Tick += (_, _) =>
+        {
+            check.Stop();
+            bool active; lock (Gate) active = _completeActive;
+            if (!active || HideTaskbars()) return;
+            lock (Gate) _completeActive = false;
+            ShowTaskbars(); CompleteFailed = true;
+        };
+        check.Start();
     }
 
     // Puts the taskbar back as it was, if the dock changed it. Safe to call any number of times, from any thread.

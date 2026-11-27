@@ -8,9 +8,10 @@ internal static class DockShell
     public const string RecycleBin = "::{645FF040-5081-101B-9F08-00AA002F954E}";
     private const byte VkLeftWindows = 0x5B;
     private const uint KeyUp = 2, FoDelete = 3;
-    private const ushort FofAllowUndo = 0x40, FofNoConfirmation = 0x10, FofSilent = 0x4;
+    private const ushort FofAllowUndo = 0x40, FofNoConfirmation = 0x10, FofSilent = 0x4, FofWantNukeWarning = 0x4000;
 
-    [StructLayout(LayoutKind.Sequential)] private struct RecycleInfo { public int Size; public long Bytes, Items; }
+    // SHQUERYRBINFO is declared packed (pshpack1): cbSize, then the two 64-bit counts at offsets 4 and 12.
+    [StructLayout(LayoutKind.Sequential, Pack = 4)] private struct RecycleInfo { public int Size; public long Bytes, Items; }
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
     private struct FileOperation
     {
@@ -46,12 +47,13 @@ internal static class DockShell
 
     public static void OpenRecycleBin() => DockAppWindows.Launch("shell:RecycleBinFolder");
 
-    // Moves the files to the Recycle Bin, where they can be restored; nothing is deleted for good.
+    // Moves the files to the Recycle Bin, where they can be restored. A file the bin cannot take (too big, or on a drive without
+    // one) would be deleted for good, so Windows asks first (FOF_WANTNUKEWARNING).
     public static void Recycle(IEnumerable<string> paths)
     {
         var list = paths.Where(path => path.Length > 0).ToList();
         if (list.Count == 0) return;
-        var operation = new FileOperation { Function = FoDelete, From = string.Join('\0', list) + "\0\0", Flags = FofAllowUndo | FofNoConfirmation | FofSilent };
+        var operation = new FileOperation { Function = FoDelete, From = string.Join('\0', list) + "\0\0", Flags = FofAllowUndo | FofNoConfirmation | FofSilent | FofWantNukeWarning };
         SHFileOperation(ref operation);
     }
 }

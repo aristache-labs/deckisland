@@ -65,6 +65,6 @@ public partial class App
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { _recordCrash?.Invoke(ex); }
         if (_dock is null) return;
         if (taskbarChanged) DockTaskbar.Apply(settings.TaskbarMode);
-        _dock.Place();
+        _dock.Apply();
     }
 }

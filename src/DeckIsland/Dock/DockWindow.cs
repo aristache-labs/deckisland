@@ -46,10 +46,13 @@ internal sealed partial class DockWindow : Window
     private uint _callbackMessage, _taskbarCreated;
     private bool _registered, _fullscreen;
     private double _barWidth;
+    private readonly DockPreview _preview;
+    private DockKeys? _keys;
 
     public DockWindow(App app)
     {
         _app = app;
+        _preview = new DockPreview(() => _app.DockSettings.Edge);
         WindowStyle = WindowStyle.None; AllowsTransparency = true; Background = Brushes.Transparent; ShowInTaskbar = false;
         Topmost = true; ShowActivated = false; ResizeMode = ResizeMode.NoResize; Focusable = false;
         Title = "DeckIsland Dock"; FontFamily = UI.PanelFont; Foreground = UI.Brush("#F2F2F4");
@@ -61,6 +64,8 @@ internal sealed partial class DockWindow : Window
         _bar = new Border { CornerRadius = new CornerRadius(8), Background = UI.Brush("#EB16161A"), BorderBrush = UI.Brush("#22FFFFFF"),
             BorderThickness = new Thickness(1), MinWidth = DockGeometry.MinBarWidth, Child = row, HorizontalAlignment = HorizontalAlignment.Stretch };
         Content = _bar;
+        _bar.AllowDrop = true;
+        _bar.Drop += (_, e) => DropFiles(e);
         _clock.Tick += (_, _) => Tick();
         SourceInitialized += (_, _) => Start();
         // Closing, not Closed: the AppBar must be removed while its window still exists.
@@ -93,12 +98,15 @@ internal sealed partial class DockWindow : Window
         Register();
         RegisterHotKey(_handle, PanicHotkey, ModControl | ModAlt | ModShift | ModNoRepeat, VkQ);
         Place();
+        ApplyKeys();
         _clock.Start();
     }
 
     private void Stop()
     {
         _clock.Stop();
+        _keys?.Dispose(); _keys = null;
+        _preview.Close();
         if (_handle == IntPtr.Zero) return;
         UnregisterHotKey(_handle, PanicHotkey);
         if (_registered) { var data = Data(); SHAppBarMessage(AbmRemove, ref data); _registered = false; }
@@ -107,6 +115,20 @@ internal sealed partial class DockWindow : Window
     private AppBarData Data() => new() { Size = Marshal.SizeOf<AppBarData>(), Window = _handle, CallbackMessage = _callbackMessage };
 
     private void Register() { var data = Data(); _registered = SHAppBarMessage(AbmNew, ref data) != UIntPtr.Zero; }
+
+    // After the dock's settings change: its place, its tiles and its keys follow.
+    public void Apply()
+    {
+        Place();
+        ApplyKeys();
+        RefreshSoon();
+    }
+
+    private void ApplyKeys()
+    {
+        if (_app.DockSettings.AppShortcuts) _keys ??= new DockKeys(ActivateApp);
+        else { _keys?.Dispose(); _keys = null; }
+    }
 
     // Asks the shell for the strip on the chosen edge of the main screen, then puts the bar in the middle of it.
     public void Place()

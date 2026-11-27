@@ -1,3 +1,4 @@
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -8,19 +9,25 @@ using DeckIsland.Native;
 
 namespace DeckIsland;
 
-// The dock's app tiles: pinned apps, then running apps; a dot under each open app, a wider one under the app in front.
-// Left click starts, brings forward, cycles or minimizes (DockApps.Click); middle click opens another window; right click opens
-// the app's menu.
+// The dock's tiles: the Start button, pinned apps, running apps, then Trash and Show desktop. A dot sits under each open app, a
+// wider one under the app in front. Left click starts, brings forward, cycles or minimizes (DockApps.Click); middle click opens
+// another window; right click opens the app's menu; dragging reorders, dragging off the bar unpins, and files dropped on the bar
+// are pinned (on Trash, recycled).
 // shortcut: the windows are read once a second rather than from window events; upgrade to a WinEvent hook when the delay shows.
 internal sealed partial class DockWindow
 {
+    private const double DragThreshold = 6;
     private readonly StackPanel _apps = new() { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(4, 0, 0, 0) };
     private List<DockApp> _shown = [];
     private List<string> _order = [];
     private string _signature = "";
+    private (Border Tile, Point Start)? _press;
+    private bool _dragging;
 
     private void RefreshApps()
     {
+        // Not while a tile is held: rebuilding would take its mouse capture away.
+        if (_dragging || _press is not null) return;
         var settings = _app.DockSettings;
         if (settings.Pins is null)
         {
@@ -28,58 +35,199 @@ internal sealed partial class DockWindow
             _app.UpdateDockSettings(seeded);
             settings = _app.DockSettings;
         }
-        var pins = settings.Pins!.Select(pin => (pin, DockAppWindows.PinKey(pin))).ToList();
+        var pins = PinKeys(settings);
         (var apps, _order) = DockApps.Build(pins, DockAppWindows.Collect(), _order, DockAppWindows.Foreground, DockAppWindows.AppName);
-        var signature = settings.Size + "|" + string.Join(";", apps.Select(a => $"{a.Key},{a.Pinned},{a.Windows.Count},{a.Active}"));
+        bool trashFull = settings.ShowTrash && DockShell.RecycleBinHasItems();
+        var signature = $"{settings.Size}|{settings.ShowStart}{settings.ShowTrash}{settings.ShowDesktopButton}{trashFull}|"
+            + string.Join(";", apps.Select(a => $"{a.Key},{a.Pinned},{a.Windows.Count},{a.Active}"));
         _shown = apps;
         if (signature == _signature) return;
         _signature = signature;
         _apps.Children.Clear();
-        foreach (var app in apps) _apps.Children.Add(Tile(app, settings.Size));
+        double tile = settings.Size - 10;
+        if (settings.ShowStart) _apps.Children.Add(Button(StartGlyph(tile), Loc.T("开始", "Start"), tile, DockShell.OpenStart));
+        foreach (var app in apps) _apps.Children.Add(Tile(app, tile));
+        if (settings.ShowTrash || settings.ShowDesktopButton)
+            _apps.Children.Add(new Rectangle { Width = 1, Height = tile * 0.6, Fill = UI.Brush("#33FFFFFF"), Margin = new Thickness(5, 0, 5, 0) });
+        if (settings.ShowTrash) _apps.Children.Add(Trash(tile));
+        if (settings.ShowDesktopButton) _apps.Children.Add(Button(DesktopGlyph(tile), Loc.T("显示桌面", "Show desktop"), tile, DockShell.ToggleDesktop));
         if (_handle != IntPtr.Zero && Math.Abs(NaturalWidth() - _barWidth) >= 1) Place();
     }
+
+    private static List<(DockPin Pin, string Key)> PinKeys(DockSettings settings) => (settings.Pins ?? []).Select(pin => (pin, DockAppWindows.PinKey(pin))).ToList();
 
     // Read again soon after an action, so the dot follows without waiting for the next second.
     private void RefreshSoon() => Dispatcher.BeginInvoke(() => { _signature = ""; RefreshApps(); }, System.Windows.Threading.DispatcherPriority.Background);
 
-    private FrameworkElement Tile(DockApp app, int barHeight)
+    private static Border Frame(UIElement content, double tile, string name) => new()
     {
-        double tile = barHeight - 10, iconSize = Math.Round(tile * 0.7);
+        Width = tile, Height = tile, CornerRadius = new CornerRadius(7), Margin = new Thickness(2, 0, 2, 0), Child = content,
+        Background = UI.Brush("#00FFFFFF"), ToolTip = name, Cursor = Cursors.Hand
+    };
+
+    private static void Hover(Border frame, string rest)
+    {
+        frame.MouseEnter += (_, _) => frame.Background = UI.Brush("#14FFFFFF");
+        frame.MouseLeave += (_, _) => frame.Background = UI.Brush(rest);
+    }
+
+    private Border Button(UIElement glyph, string name, double tile, Action action)
+    {
+        var frame = Frame(glyph, tile, name);
+        Hover(frame, "#00FFFFFF");
+        frame.MouseLeftButtonUp += (_, e) => { action(); e.Handled = true; RefreshSoon(); };
+        return frame;
+    }
+
+    private Border Trash(double tile)
+    {
+        var icon = new Image { Width = Math.Round(tile * 0.7), Height = Math.Round(tile * 0.7), Source = DockAppWindows.Icon(DockShell.RecycleBin, 64, cache: false) };
+        var frame = Button(icon, Loc.T("回收站", "Recycle Bin"), tile, DockShell.OpenRecycleBin);
+        frame.AllowDrop = true;
+        frame.DragOver += (_, e) => { e.Effects = e.Data.GetDataPresent(DataFormats.FileDrop) ? DragDropEffects.Move : DragDropEffects.None; e.Handled = true; };
+        frame.Drop += (_, e) =>
+        {
+            if (e.Data.GetData(DataFormats.FileDrop) is string[] files) DockShell.Recycle(files);
+            e.Handled = true; RefreshSoon();
+        };
+        return frame;
+    }
+
+    private static System.Windows.Shapes.Path StartGlyph(double tile)
+    {
+        double s = Math.Round(tile * 0.42);
+        return new System.Windows.Shapes.Path { Data = Geometry.Parse("M 0,0 H 7 V 7 H 0 Z M 9,0 H 16 V 7 H 9 Z M 0,9 H 7 V 16 H 0 Z M 9,9 H 16 V 16 H 9 Z"),
+            Fill = UI.Brush("#4CC2FF"), Width = s, Height = s, Stretch = Stretch.Uniform };
+    }
+
+    private static System.Windows.Shapes.Path DesktopGlyph(double tile)
+    {
+        double s = Math.Round(tile * 0.42);
+        return new System.Windows.Shapes.Path { Data = Geometry.Parse("M 1,2 H 15 V 12 H 1 Z M 5,15 H 11 M 8,12 V 15"), Stroke = UI.Brush("#D9F2F2F4"),
+            StrokeThickness = 1.4, Width = s, Height = s, Stretch = Stretch.Uniform };
+    }
+
+    private Border Tile(DockApp app, double tile)
+    {
+        double iconSize = Math.Round(tile * 0.7);
         var icon = new Image { Width = iconSize, Height = iconSize, Source = DockAppWindows.Icon(app.Pinned ? app.Launch : app.Windows[0].Exe, 64) };
         RenderOptions.SetBitmapScalingMode(icon, BitmapScalingMode.HighQuality);
         var dot = new Rectangle { Height = 3, Width = app.Active ? 12 : 4, RadiusX = 1.5, RadiusY = 1.5, Fill = UI.Brush(app.Active ? "#F2F2F4" : "#99F2F2F4"),
             VerticalAlignment = VerticalAlignment.Bottom, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 0, 0, 2),
             Visibility = app.Open ? Visibility.Visible : Visibility.Hidden };
         var grid = new Grid(); grid.Children.Add(icon); grid.Children.Add(dot);
-        var frame = new Border { Width = tile, Height = tile, CornerRadius = new CornerRadius(7), Margin = new Thickness(2, 0, 2, 0), Child = grid,
-            Background = UI.Brush(app.Active ? "#1FFFFFFF" : "#00FFFFFF"), ToolTip = app.Name, Cursor = Cursors.Hand };
-        frame.MouseEnter += (_, _) => { if (!app.Active) frame.Background = UI.Brush("#14FFFFFF"); };
-        frame.MouseLeave += (_, _) => frame.Background = UI.Brush(app.Active ? "#1FFFFFFF" : "#00FFFFFF");
+        string rest = app.Active ? "#1FFFFFFF" : "#00FFFFFF";
+        var frame = Frame(grid, tile, app.Name);
+        frame.Tag = app; frame.Background = UI.Brush(rest);
+        // The preview shows the window titles, so the tooltip would only repeat them.
+        if (app.Open && _app.DockSettings.WindowPreviews) frame.ToolTip = null;
+        Hover(frame, rest);
+        frame.MouseEnter += (_, _) => { if (!_dragging && _app.DockSettings.WindowPreviews) _preview.Show(Current(app), frame); };
+        frame.MouseLeave += (_, _) => _preview.HideSoon();
+        frame.MouseLeftButtonDown += (_, e) => { _press = (frame, e.GetPosition(this)); frame.CaptureMouse(); e.Handled = true; };
+        frame.MouseMove += (_, e) => Drag(frame, e.GetPosition(this));
+        // A menu, Alt+Tab or a secure prompt can take the mouse mid-drag; the drag is then abandoned, never left half done.
+        frame.LostMouseCapture += (_, _) =>
+        {
+            if (_press?.Tile != frame) return;
+            _press = null; _dragging = false; frame.Opacity = 1; RefreshSoon();
+        };
+        frame.MouseLeftButtonUp += (_, e) => { Release(frame, Current(app), e.GetPosition(this)); e.Handled = true; };
         frame.MouseUp += (_, e) =>
         {
-            var current = _shown.FirstOrDefault(a => a.Key == app.Key) ?? app;
-            if (e.ChangedButton == MouseButton.Left) DockAppWindows.Act(current, DockApps.Click(current, DockAppWindows.Foreground));
-            else if (e.ChangedButton == MouseButton.Middle) DockAppWindows.Launch(current.Launch);
-            else return;
-            e.Handled = true; RefreshSoon();
+            if (e.ChangedButton != MouseButton.Middle) return;
+            DockAppWindows.Launch(Current(app).Launch); e.Handled = true; RefreshSoon();
         };
         frame.ContextMenu = AppMenu(app);
         frame.ContextMenuOpening += (_, _) =>
         {
+            _preview.HideNow();
             // The dock never takes focus, so its menu could not see a click elsewhere and would stay open; the dock takes the
             // foreground while its menu opens, as the taskbar does, and the menu closes when the click goes elsewhere.
             DockAppWindows.Focus(_handle);
-            frame.ContextMenu = AppMenu(_shown.FirstOrDefault(a => a.Key == app.Key) ?? app);
+            frame.ContextMenu = AppMenu(Current(app));
         };
         return frame;
+    }
+
+    private DockApp Current(DockApp app) => _shown.FirstOrDefault(a => a.Key == app.Key) ?? app;
+
+    // While the button is held, a move past the threshold starts a drag: the tile follows the pointer along the apps.
+    private void Drag(Border frame, Point at)
+    {
+        if (_press is not { } press || press.Tile != frame) return;
+        if (!_dragging)
+        {
+            if (Math.Abs(at.X - press.Start.X) < DragThreshold && Math.Abs(at.Y - press.Start.Y) < DragThreshold) return;
+            _dragging = true; _preview.HideNow(); frame.Opacity = 0.6;
+        }
+        int index = _apps.Children.IndexOf(frame);
+        foreach (var other in _apps.Children.OfType<Border>().Where(child => child.Tag is DockApp && child != frame).ToList())
+        {
+            double centre = other.TranslatePoint(new Point(other.ActualWidth / 2, 0), this).X;
+            int otherIndex = _apps.Children.IndexOf(other);
+            if ((otherIndex > index && at.X > centre) || (otherIndex < index && at.X < centre))
+            {
+                _apps.Children.Remove(frame); _apps.Children.Insert(otherIndex, frame);
+                // Laid out now, so the next move compares against where the tiles are.
+                _apps.UpdateLayout();
+                return;
+            }
+        }
+    }
+
+    private void Release(Border frame, DockApp app, Point at)
+    {
+        // Only the release of a press that began on this tile counts (a menu may have taken the press).
+        if (_press?.Tile != frame) return;
+        bool dragged = _dragging;
+        _press = null; _dragging = false; frame.Opacity = 1;
+        frame.ReleaseMouseCapture();
+        if (!dragged)
+        {
+            DockAppWindows.Act(app, DockApps.Click(app, DockAppWindows.Foreground));
+            RefreshSoon();
+            return;
+        }
+        // Dropped well away from the bar: a pin is removed, as dragging an icon off the dock does.
+        bool off = at.Y < -ActualHeight || at.Y > ActualHeight * 2;
+        var pins = PinKeys(_app.DockSettings);
+        var copy = _app.DockSettings.Copy();
+        if (off) { if (app.Pinned) copy.Pins = DockApps.Unpin(pins, app.Key); }
+        else copy.Pins = DockApps.Arrange(pins, _apps.Children.OfType<Border>().Select(child => child.Tag).OfType<DockApp>().ToList());
+        _app.UpdateDockSettings(copy);
+        RefreshSoon();
+    }
+
+    // Files, folders and shortcuts dropped on the bar are pinned at the end.
+    private void DropFiles(DragEventArgs e)
+    {
+        if (e.Data.GetData(DataFormats.FileDrop) is not string[] files) return;
+        var copy = _app.DockSettings.Copy();
+        foreach (var path in files)
+        {
+            string name = Directory.Exists(path) ? new DirectoryInfo(path).Name : System.IO.Path.GetFileNameWithoutExtension(path);
+            copy.Pins = DockApps.Pin(copy.Pins ?? [], new DockPin(path, name));
+        }
+        _app.UpdateDockSettings(copy);
+        RefreshSoon();
+    }
+
+    // Win+1 to Win+0: the n-th app, as a click on it would.
+    private void ActivateApp(int index)
+    {
+        if (index >= _shown.Count) return;
+        var app = _shown[index];
+        DockAppWindows.Act(app, DockApps.Click(app, DockAppWindows.Foreground));
+        RefreshSoon();
     }
 
     private ContextMenu AppMenu(DockApp app)
     {
         var menu = new ContextMenu();
-        void Add(string header, Action action, bool enabled = true)
+        void Add(string header, Action action)
         {
-            var item = new MenuItem { Header = header, IsEnabled = enabled };
+            var item = new MenuItem { Header = header };
             item.Click += (_, _) => { action(); RefreshSoon(); };
             menu.Items.Add(item);
         }
@@ -102,7 +250,7 @@ internal sealed partial class DockWindow
     private void ChangePins(Func<List<(DockPin Pin, string Key)>, List<DockPin>> edit)
     {
         var copy = _app.DockSettings.Copy();
-        copy.Pins = edit((copy.Pins ?? []).Select(pin => (pin, DockAppWindows.PinKey(pin))).ToList());
+        copy.Pins = edit(PinKeys(copy));
         _app.UpdateDockSettings(copy);
     }
 }

@@ -66,5 +66,13 @@ internal static class DockSettingsTests
         var copy = new DockSettings { Pins = [new DockPin("x.exe", "")] }.Copy();
         copy.Normalize();
         check("Dock pins get a name and are copied deeply", copy.Pins![0].Name == "x");
+
+        var tiles = new List<DockApp> { apps[1], apps[3], apps[0], apps[2] };
+        var arranged = DockApps.Arrange(pins, tiles);
+        check("Dock drag keeps pins in their new order and pins a running app dropped among them",
+            arranged.Select(p => p.Path).SequenceEqual(["b.lnk", "c.exe", "a.lnk"]) && arranged[1].Name == "C.EXE");
+        check("Dock drag leaves running apps after the last pin unpinned", DockApps.Arrange(pins, [apps[0], apps[1], apps[2], apps[3]]).Count == 2);
+        check("Dock shows its buttons, previews and shortcuts by default",
+            new DockSettings() is { ShowStart: true, ShowTrash: true, ShowDesktopButton: true, WindowPreviews: true, AppShortcuts: true });
     }
 }
