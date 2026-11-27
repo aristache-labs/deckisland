@@ -82,20 +82,30 @@ internal sealed partial class DockWindow
         icon.Margin = new Thickness(0, 0, tile * 0.10, 0);
         var degree = Label("", tile * 0.44, bold: true);
         var subtitle = Label("", tile * 0.22, dim: true);
+        degree.HorizontalAlignment = subtitle.HorizontalAlignment = HorizontalAlignment.Center;
         var current = WeatherRow();
         current.Children.Add(icon);
         current.Children.Add(TimeStack(degree, subtitle));
-        var row = WeatherRow(tile * 0.16);
-        row.HorizontalAlignment = HorizontalAlignment.Left;
+        // Current conditions, a divider, then the extra part stretched over the rest of the card.
+        var row = new Grid { Margin = new Thickness(tile * 0.16, 0, tile * 0.12, 0), VerticalAlignment = VerticalAlignment.Center };
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         row.Children.Add(current);
+        void AddColumn(UIElement child, int column) { Grid.SetColumn(child, column); row.Children.Add(child); }
         Action<WeatherReading?> extra = _ => { };
+        if (kind is not (DockWidgetKind.WeatherDetails or DockWidgetKind.TodayForecast))
+        {
+            Grid.SetColumnSpan(current, 3);
+            current.HorizontalAlignment = HorizontalAlignment.Center;
+        }
         if (kind is DockWidgetKind.WeatherDetails or DockWidgetKind.TodayForecast)
         {
-            row.Children.Add(new Rectangle { Width = 1, Height = tile * 0.58, Fill = UI.Brush(_look.Divider), Margin = new Thickness(tile * 0.16, 0, tile * 0.12, 0) });
+            AddColumn(new Rectangle { Width = 1, Height = tile * 0.58, Fill = UI.Brush(_look.Divider), Margin = new Thickness(tile * 0.16, 0, tile * 0.06, 0) }, 1);
             if (kind == DockWidgetKind.TodayForecast)
             {
-                var (forecast, update) = ForecastCells(tile, hourly: false);
-                row.Children.Add(forecast);
+                var (forecast, update) = ForecastCells(tile, hourly: false, fill: true);
+                AddColumn(forecast, 2);
                 extra = update;
             }
             else
@@ -108,8 +118,8 @@ internal sealed partial class DockWindow
                 var details = TimeStack(WeatherDetail(MonitorIcons.Icon("wind", tile * 0.26, UI.Brush("#FF64B5FF")), wind, tile),
                     WeatherDetail(MonitorIcons.Icon("droplet", tile * 0.26, UI.Brush("#FF64B5FF")), rain, tile),
                     WeatherDetail(rangeMark, range, tile));
-                details.HorizontalAlignment = HorizontalAlignment.Left;
-                row.Children.Add(details);
+                details.HorizontalAlignment = HorizontalAlignment.Center;
+                AddColumn(details, 2);
                 extra = reading =>
                 {
                     var day = reading?.Days.FirstOrDefault();
@@ -119,7 +129,7 @@ internal sealed partial class DockWindow
                 };
             }
         }
-        return (WeatherFit(row), reading =>
+        return (row, reading =>
         {
             degree.Text = WeatherDegrees(reading?.Temperature);
             setIcon(reading?.Code, reading?.Daylight ?? true);
@@ -150,7 +160,8 @@ internal sealed partial class DockWindow
         new() { Child = child, StretchDirection = StretchDirection.DownOnly, Stretch = Stretch.Uniform, VerticalAlignment = VerticalAlignment.Center,
             HorizontalAlignment = HorizontalAlignment.Left };
 
-    private (FrameworkElement, Action<WeatherReading?>) ForecastCells(double tile, bool hourly)
+    // Fill: the cells share the width they are given instead of a fixed width each, scaled down only by the caller's layout.
+    private (FrameworkElement, Action<WeatherReading?>) ForecastCells(double tile, bool hourly, bool fill = false)
     {
         var row = new UniformGrid { Rows = 1, VerticalAlignment = VerticalAlignment.Center };
         var cells = Enumerable.Range(0, hourly ? 6 : 3).Select(_ =>
@@ -160,11 +171,11 @@ internal sealed partial class DockWindow
             title.TextAlignment = degree.TextAlignment = TextAlignment.Center;
             var (icon, set) = StaticWeatherPicture(tile * 0.34);
             var cell = TimeStack(title, icon, degree);
-            cell.Width = tile * (hourly ? 0.80 : 0.98);
+            if (!fill) cell.Width = tile * (hourly ? 0.80 : 0.98);
             row.Children.Add(cell);
             return (title, degree, set);
         }).ToArray();
-        return (WeatherFit(row), reading =>
+        return (fill ? row : WeatherFit(row), reading =>
         {
             var hours = hourly ? (reading?.Hours ?? []).Where(hour => hour.Time > WeatherLocalTime(reading)).Take(5).ToArray() : [];
             var days = hourly ? [] : (reading?.Days ?? []).Skip(1).Take(3).ToArray();
