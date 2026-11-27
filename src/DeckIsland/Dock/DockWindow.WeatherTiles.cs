@@ -102,13 +102,19 @@ internal sealed partial class DockWindow
                 var wind = Label("", tile * 0.19, bold: true);
                 var rain = Label("", tile * 0.19, bold: true);
                 var range = Label("", tile * 0.19, bold: true);
-                row.Children.Add(TimeStack(wind, rain, range));
+                var rangeMark = Label("H/L", tile * 0.15, bold: true);
+                rangeMark.Foreground = UI.Brush("#FFFF9F0A");
+                var details = TimeStack(WeatherDetail(MonitorIcons.Icon("wind", tile * 0.2, UI.Brush("#FF64B5FF")), wind, tile),
+                    WeatherDetail(MonitorIcons.Icon("droplet", tile * 0.2, UI.Brush("#FF64B5FF")), rain, tile),
+                    WeatherDetail(rangeMark, range, tile));
+                details.HorizontalAlignment = HorizontalAlignment.Left;
+                row.Children.Add(details);
                 extra = reading =>
                 {
                     var day = reading?.Days.FirstOrDefault();
-                    wind.Text = reading?.WindSpeed is { } speed ? $"↝  {speed:0} km/h" : "↝  –";
-                    rain.Text = day?.PrecipitationMillimetres is { } amount ? $"↓  {amount:0.#} mm" : "↓  –";
-                    range.Text = HighLow(day);
+                    wind.Text = reading?.WindSpeed is { } speed ? $"{speed:0} km/h" : "–";
+                    rain.Text = day?.PrecipitationMillimetres is { } amount ? $"{amount:0.#} mm" : "–";
+                    range.Text = $"{WeatherDegrees(day?.High)} / {WeatherDegrees(day?.Low)}";
                 };
             }
         }
@@ -127,6 +133,15 @@ internal sealed partial class DockWindow
         });
     }
 
+    // A detail line: a small mark in a fixed column, then its value.
+    private static StackPanel WeatherDetail(FrameworkElement mark, TextBlock value, double tile)
+    {
+        var column = new Border { Width = tile * 0.36, Child = mark, VerticalAlignment = VerticalAlignment.Center };
+        mark.HorizontalAlignment = HorizontalAlignment.Left;
+        value.VerticalAlignment = VerticalAlignment.Center;
+        return new StackPanel { Orientation = Orientation.Horizontal, Children = { column, value } };
+    }
+
     private string HighLow(WeatherDay? day) =>
         Loc.T($"高 {WeatherDegrees(day?.High)} 低 {WeatherDegrees(day?.Low)}", $"H {WeatherDegrees(day?.High)} L {WeatherDegrees(day?.Low)}");
 
@@ -138,12 +153,12 @@ internal sealed partial class DockWindow
         var row = new UniformGrid { Rows = 1, VerticalAlignment = VerticalAlignment.Center };
         var cells = Enumerable.Range(0, hourly ? 6 : 3).Select(_ =>
         {
-            var title = Label("", tile * 0.18, bold: true, dim: true);
-            var degree = Label("", tile * 0.19, bold: true);
+            var title = Label("", tile * 0.20, bold: true, dim: true);
+            var degree = Label("", tile * 0.20, bold: true);
             title.TextAlignment = degree.TextAlignment = TextAlignment.Center;
-            var (icon, set) = StaticWeatherPicture(tile * 0.31);
+            var (icon, set) = StaticWeatherPicture(tile * 0.30);
             var cell = TimeStack(title, icon, degree);
-            cell.Width = tile * (hourly ? 0.76 : 0.84);
+            cell.Width = tile * (hourly ? 0.78 : 0.90);
             row.Children.Add(cell);
             return (title, degree, set);
         }).ToArray();
@@ -171,7 +186,10 @@ internal sealed partial class DockWindow
                 {
                     var day = days[i];
                     title.Text = day.Date.ToString("ddd", CultureInfo.CurrentCulture);
-                    degree.Text = $"{WeatherDegrees(day.High)} {WeatherDegrees(day.Low)}";
+                    // The high in full, the low dimmed, as on the forecast cards elsewhere.
+                    degree.Inlines.Clear();
+                    degree.Inlines.Add(new System.Windows.Documents.Run(WeatherDegrees(day.High) + " "));
+                    degree.Inlines.Add(new System.Windows.Documents.Run(WeatherDegrees(day.Low)) { Foreground = UI.Brush(_look.Dim), FontWeight = FontWeights.Normal });
                     set(day.Code, true);
                 }
                 else { title.Text = degree.Text = "–"; set(null, true); }

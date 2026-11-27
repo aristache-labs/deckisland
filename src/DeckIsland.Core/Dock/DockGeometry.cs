@@ -45,7 +45,7 @@ public static class DockGeometry
     public static double CornerRadius(int percent, double barHeight) => Math.Clamp(percent, 0, 100) / 100.0 * barHeight / 2;
 
     // The share of a tile its icon fills.
-    public static double IconShare(DockIconSize size) => size switch { DockIconSize.Small => 0.54, DockIconSize.Large => 0.78, _ => 0.65 };
+    public static double IconShare(DockIconSize size) => size switch { DockIconSize.Small => 0.62, DockIconSize.Large => 0.86, _ => 0.74 };
 
     // A tile's scale under magnification: 1 + size at the pointer, falling off smoothly to 1 at reach from the tile's centre.
     public static double Magnify(double distance, double reach, int sizePercent)
