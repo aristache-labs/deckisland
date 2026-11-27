@@ -75,6 +75,7 @@ internal sealed partial class DockWindow
             _startTile.BorderThickness = new Thickness(light ? 0 : 1);
             _startTile.MouseEnter += (_, _) => _startTile.Background = UI.Brush(hover);
             _startTile.MouseLeave += (_, _) => _startTile.Background = UI.Brush(card);
+            ShrinkCard(_startTile, tile);
             _apps.Children.Add(_startTile);
         }
         foreach (var app in apps) _apps.Children.Add(Tile(app, tile));
@@ -82,12 +83,35 @@ internal sealed partial class DockWindow
         if (settings.ShowTrash)
             _apps.Children.Add(new Rectangle { Width = 1, Height = tile * 0.6, Fill = UI.Brush(_look.Divider), Margin = new Thickness(5, 0, 5, 0) });
         if (settings.ShowTrash) _apps.Children.Add(Trash(tile));
+        FitEnds(settings);
         if (_handle != IntPtr.Zero && Math.Abs(NaturalWidth() - _barWidth) >= 1) Place();
         if (_dropOrigins is { } origins)
         {
             _dropOrigins = null;
             AnimateTilePositions(origins);
         }
+    }
+
+    // A card a little smaller than its tile, its content unchanged; the margin keeps the spacing between tiles.
+    private void ShrinkCard(Border frame, double tile)
+    {
+        double inset = Math.Round(tile * 0.08);
+        frame.Width -= 2 * inset;
+        frame.Height -= 2 * inset;
+        var margin = frame.Margin;
+        frame.Margin = new Thickness(margin.Left + inset, margin.Top + inset, margin.Right + inset, margin.Bottom + inset);
+    }
+
+    // The cards at the bar's two ends follow the bar's own curve, so with little padding no card corner pokes past the bar's.
+    private void FitEnds(DockSettings settings)
+    {
+        if (settings.FullWidth) return;
+        double inner = DockGeometry.CornerRadius(settings.Corner, OuterBarHeight) - settings.Padding - _bar.BorderThickness.Left;
+        if (inner <= TileRadius()) return;
+        var first = _apps.Children.OfType<Border>().FirstOrDefault();
+        var last = (_trailing.Children.Count > 0 ? _trailing.Children : _apps.Children).OfType<Border>().LastOrDefault();
+        if (first is not null) first.CornerRadius = new CornerRadius(inner, first.CornerRadius.TopRight, first.CornerRadius.BottomRight, inner);
+        if (last is not null) last.CornerRadius = new CornerRadius(last.CornerRadius.TopLeft, inner, inner, last.CornerRadius.BottomLeft);
     }
 
     private static List<(DockPin Pin, string Key)> PinKeys(DockSettings settings) => (settings.Pins ?? []).Select(pin => (pin, DockAppWindows.PinKey(pin))).ToList();

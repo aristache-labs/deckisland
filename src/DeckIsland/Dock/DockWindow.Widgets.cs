@@ -111,6 +111,7 @@ internal sealed partial class DockWindow
             BorderThickness = new Thickness(_app.DockSettings.CleanWidgets ? 0 : 1), Child = grid, Tag = widget,
             ToolTip = _app.DockSettings.NamesOnHover ? DockWidgets.Info(widget.Kind).Name : null
         };
+        if (widget.Kind == DockWidgetKind.Tray) ShrinkCard(frame, tile);
         if (widget.Kind is DockWidgetKind.WorldTime or DockWidgetKind.WorldClocks)
         {
             frame.ContextMenu = new ContextMenu();

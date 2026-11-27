@@ -40,6 +40,11 @@ internal sealed partial class DockWindow
             _bar.BorderThickness = new Thickness(2);
         }
         _bar.Background = Brushes.Transparent;
+        _bar.Height = OuterBarHeight;
+        // The tint sits inside the rim, so its corners are the bar's less the rim's width.
+        double radius = settings.FullWidth ? 0 : DockGeometry.CornerRadius(settings.Corner, OuterBarHeight);
+        _bar.CornerRadius = new CornerRadius(radius);
+        _tint.CornerRadius = new CornerRadius(Math.Max(0, radius - _bar.BorderThickness.Left));
         _lastGlass = null;
         Foreground = UI.Brush(_look.Text);
         // The tiles were drawn in the previous style's colours.

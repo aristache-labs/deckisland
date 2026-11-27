@@ -219,13 +219,16 @@ internal sealed partial class DockWindow : Window
         RefreshSoon();
     }
 
+    // The bar's height with its rim: the rim is drawn inside the bar, so it is added on top of the padded row instead of eating into it.
+    private double OuterBarHeight => _app.DockSettings.BarHeight + 2 * _bar.BorderThickness.Top;
+
     // The bar's shape from the settings: corners, the space inside its ends, and which side of the window it sits on.
     private void ApplyStyle()
     {
         var settings = _app.DockSettings;
         _dockRow.FullWidth = settings.FullWidth;
         _dockRow.InvalidateArrange();
-        _bar.Height = settings.BarHeight;
+        _bar.Height = OuterBarHeight;
         _bar.CornerRadius = _tint.CornerRadius = new CornerRadius(settings.FullWidth ? 0 : DockGeometry.CornerRadius(settings.Corner, settings.BarHeight));
         _tint.Padding = new Thickness(settings.Padding);
         // Each tile carries half the spacing on both sides; pulled back here so the spacing falls only between tiles, never at the ends.
@@ -241,7 +244,7 @@ internal sealed partial class DockWindow : Window
         var (bounds, _, scale) = WindowsHost.MonitorScreen(Monitor) ?? WindowsHost.PrimaryScreen();
         _screen = new PixelRect((int)bounds.Left, (int)bounds.Top, (int)bounds.Right, (int)bounds.Bottom);
         int distance = settings.FullWidth ? 0 : settings.Distance;
-        int stripHeight = (int)Math.Round((settings.FullWidth ? settings.BarHeight : DockGeometry.StripHeight(settings.BarHeight) + distance) * scale);
+        int stripHeight = (int)Math.Round((settings.FullWidth ? OuterBarHeight : DockGeometry.StripHeight((int)Math.Ceiling(OuterBarHeight)) + distance) * scale);
         var strip = DockGeometry.Strip(_screen, settings.Edge, stripHeight);
         if (settings.AutoHide) Unregister();
         else
@@ -262,7 +265,7 @@ internal sealed partial class DockWindow : Window
         _barWidth = NaturalWidth();
         // The width is laid out at the window's own DPI, which may still be another monitor's until WM_DPICHANGED.
         var bar = DockGeometry.Bar(strip, settings.Edge, (int)Math.Ceiling(_barWidth * VisualTreeHelper.GetDpi(this).DpiScaleX),
-            (int)Math.Round(settings.BarHeight * scale), (int)Math.Round(distance * scale), settings.FullWidth);
+            (int)Math.Round(OuterBarHeight * scale), (int)Math.Round(distance * scale), settings.FullWidth);
         int extra = settings.Magnification ? (int)Math.Ceiling(settings.Size * settings.MagnificationSize / 100.0 * scale) + 4 : 0;
         _window = DockGeometry.Window(bar, settings.Edge, extra);
         Move();
