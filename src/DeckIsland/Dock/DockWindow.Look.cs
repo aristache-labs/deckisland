@@ -28,7 +28,8 @@ internal sealed partial class DockWindow
         _look = DockLook.For(DockSmart.Effective(settings.Style, settings.SunsetDarkMode, _app.DockDaylight), settings.ClearCards);
         _tint.Background = UI.Brush(_look.Bar);
         _bar.BorderBrush = UI.Brush(_look.Rim);
-        _bar.BorderThickness = new Thickness(settings.Style == DockStyle.Clear ? 0 : 1);
+        // A transparent rim would leave a 1px gap around the tint that shows the screen behind; no rim, no border.
+        _bar.BorderThickness = new Thickness(settings.Style == DockStyle.Clear || _look.Rim.StartsWith("#00", StringComparison.Ordinal) ? 0 : 1);
         if (!_look.Glass) _bar.Background = Brushes.Transparent;
         Foreground = UI.Brush(_look.Text);
         // The tiles were drawn in the previous style's colours.
