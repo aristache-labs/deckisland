@@ -20,7 +20,7 @@ internal sealed partial class DockWindow
     private bool _glassOn, _readGlass;
     private byte[]? _lastGlass;
     // Liquid's blur: the screen behind read at 1/LiquidShrink of its size and stretched back; the larger, the softer.
-    private const double LiquidShrink = 2;
+    private const double LiquidShrink = 4;
     private DockLook _look = DockLook.For(DockStyle.Black, DockClearCards.Black);
 
     // The style's colours on the bar, the clock and (through RefreshSoon) the tiles; glass started or stopped to match.
