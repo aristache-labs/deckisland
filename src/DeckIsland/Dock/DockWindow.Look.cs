@@ -14,10 +14,9 @@ namespace DeckIsland;
 // left out of screen captures, or it would read itself.
 internal sealed partial class DockWindow
 {
-    private const double GlassShrink = 7;
     private readonly Border _tint = new();
     private readonly DispatcherTimer _glass = new(DispatcherPriority.Render) { Interval = TimeSpan.FromMilliseconds(120) };
-    private byte[]? _lastGlass;
+    private DockBackdrop? _backdrop;
     private bool _glassOn;
     private DockLook _look = DockLook.For(DockStyle.Black, DockClearCards.Black);
 
@@ -30,7 +29,7 @@ internal sealed partial class DockWindow
         _bar.BorderBrush = UI.Brush(_look.Rim);
         // A transparent rim would leave a 1px gap around the tint that shows the screen behind; no rim, no border.
         _bar.BorderThickness = new Thickness(settings.Style == DockStyle.Clear || _look.Rim.StartsWith("#00", StringComparison.Ordinal) ? 0 : 1);
-        if (!_look.Glass) _bar.Background = Brushes.Transparent;
+        _bar.Background = Brushes.Transparent;
         Foreground = UI.Brush(_look.Text);
         // The tiles were drawn in the previous style's colours.
         _signature = "";
@@ -38,11 +37,10 @@ internal sealed partial class DockWindow
         if (_look.Glass != _glassOn)
         {
             _glassOn = _look.Glass;
-            _lastGlass = null;
             if (_glassOn) _glass.Start(); else _glass.Stop();
         }
-        // Left out of captures while it reads the screen behind it; otherwise as the island's setting says.
-        ScreenShots.Exclude(this, _glassOn || _app.Settings.HideFromCapture);
+        // Glass comes from the backdrop window now, so the dock shows in captures unless the island's setting hides it.
+        ScreenShots.Exclude(this, _app.Settings.HideFromCapture);
         if (_glassOn) GlassTick();
     }
 
@@ -68,22 +66,19 @@ internal sealed partial class DockWindow
     // The tiles' cards follow the bar's corners, a little tighter.
     private double TileRadius() => Math.Clamp(DockGeometry.CornerRadius(_app.DockSettings.Corner, _app.DockSettings.Size) - 4, 3, 12);
 
+    // Keeps the acrylic backdrop on the bar's rectangle (it follows slides, resizes and moves); hidden when there is no glass.
     private void GlassTick()
     {
-        if (!_glassOn || _dragging || _reveal <= 0 || _bar.ActualWidth < 4 || PresentationSource.FromVisual(_bar) is null) return;
+        if (!_glassOn || _reveal <= 0 || _handle == IntPtr.Zero || _bar.ActualWidth < 4 || PresentationSource.FromVisual(_bar) is null)
+        {
+            _backdrop?.Hide();
+            return;
+        }
         var from = _bar.PointToScreen(new Point(0, 0));
         var to = _bar.PointToScreen(new Point(_bar.ActualWidth, _bar.ActualHeight));
-        int x = (int)Math.Floor(from.X), y = (int)Math.Floor(from.Y), width = (int)Math.Ceiling(to.X - from.X), height = (int)Math.Ceiling(to.Y - from.Y);
-        if (GlassCapture.Grab(x, y, width, height, GlassShrink) is not { } picture) return;
-        int stride = picture.PixelWidth * ((picture.Format.BitsPerPixel + 7) / 8);
-        var pixels = new byte[stride * picture.PixelHeight];
-        picture.CopyPixels(pixels, stride, 0);
-        if (_lastGlass is not null && pixels.AsSpan().SequenceEqual(_lastGlass)) return;
-        _lastGlass = pixels;
-        var brush = new ImageBrush(picture) { Stretch = Stretch.Fill };
-        RenderOptions.SetBitmapScalingMode(brush, BitmapScalingMode.HighQuality);
-        brush.Freeze();
-        _bar.Background = brush;
+        double scale = (to.X - from.X) / _bar.ActualWidth;
+        (_backdrop ??= new DockBackdrop()).Show(_handle, (int)Math.Round(from.X), (int)Math.Round(from.Y),
+            (int)Math.Round(to.X - from.X), (int)Math.Round(to.Y - from.Y), (int)Math.Round(_bar.CornerRadius.TopLeft * scale));
     }
 
     // The bar's own menu, on its empty parts.

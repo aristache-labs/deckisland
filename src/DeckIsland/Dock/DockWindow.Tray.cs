@@ -1,3 +1,4 @@
+using System.Windows.Media.Imaging;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows;
@@ -21,18 +22,6 @@ internal sealed partial class DockWindow
 
     [DllImport("user32.dll")] private static extern uint GetDoubleClickTime();
 
-    // Apps draw their tray icons for the Windows taskbar's theme, not the dock's: white icons for a dark taskbar. The grid follows
-    // that theme so every icon stays visible, whatever the dock's style.
-    private static bool TrayLight()
-    {
-        try
-        {
-            using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize");
-            return key?.GetValue("SystemUsesLightTheme") is int value && value != 0;
-        }
-        catch (Exception ex) when (ex is System.Security.SecurityException or UnauthorizedAccessException or IOException) { return false; }
-    }
-
     private (FrameworkElement, Action) TrayArrow(double tile)
     {
         bool top = _app.DockSettings.Edge == DockEdge.Top;
@@ -55,9 +44,9 @@ internal sealed partial class DockWindow
             return;
         }
         bool top = _app.DockSettings.Edge == DockEdge.Top;
-        bool light = TrayLight();
+        bool light = _look.Text == "#FF1D1D1F";
         var grid = new UniformGrid { Columns = TrayColumns };
-        foreach (var icon in VisibleTrayIcons(tray.AllIcons.OfType<NotifyIcon>())) grid.Children.Add(TrayIcon(icon));
+        foreach (var icon in VisibleTrayIcons(tray.AllIcons.OfType<NotifyIcon>())) grid.Children.Add(TrayIcon(icon, light));
         if (grid.Children.Count == 0)
             grid.Children.Add(new TextBlock { Text = Loc.T("没有托盘图标", "No tray icons"), Foreground = UI.Brush(light ? "#FF6E6E73" : "#A6F5F5F7"), Margin = new Thickness(8) });
         _trayPopup = new Popup
@@ -100,12 +89,12 @@ internal sealed partial class DockWindow
         return visible;
     }
 
-    private FrameworkElement TrayIcon(NotifyIcon icon)
+    private FrameworkElement TrayIcon(NotifyIcon icon, bool light)
     {
-        var image = new Image { Source = icon.Icon, Width = 20, Height = 20, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+        var image = new Image { Source = light ? Darkened(icon.Icon) : icon.Icon, Width = 20, Height = 20, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
         RenderOptions.SetBitmapScalingMode(image, BitmapScalingMode.HighQuality);
         var cell = new Border { Width = 36, Height = 36, CornerRadius = new CornerRadius(8), Background = UI.Brush("#00000000"), Child = image, ToolTip = icon.Title };
-        cell.MouseEnter += (_, _) => { cell.Background = UI.Brush(TrayLight() ? "#17000000" : "#24FFFFFF"); Place(icon, cell); icon.IconMouseEnter(CursorParam()); };
+        cell.MouseEnter += (_, _) => { cell.Background = UI.Brush(light ? "#17000000" : "#24FFFFFF"); Place(icon, cell); icon.IconMouseEnter(CursorParam()); };
         cell.MouseLeave += (_, _) => { cell.Background = UI.Brush("#00000000"); icon.IconMouseLeave(CursorParam()); };
         cell.MouseMove += (_, _) => icon.IconMouseMove(CursorParam());
         cell.MouseDown += (_, e) => { e.Handled = true; Place(icon, cell); icon.IconMouseDown(e.ChangedButton, CursorParam(), (int)GetDoubleClickTime()); };
@@ -117,6 +106,25 @@ internal sealed partial class DockWindow
             if (e.ChangedButton == MouseButton.Left && _trayPopup is not null) _trayPopup.IsOpen = false;
         };
         return cell;
+    }
+
+    // On the light grid a white, colourless glyph (drawn for a dark taskbar) is redrawn in dark grey; anything else is left as is.
+    private static ImageSource? Darkened(ImageSource? source)
+    {
+        if (source is not BitmapSource bitmap) return source;
+        try
+        {
+            var bgra = bitmap.Format == PixelFormats.Pbgra32 ? bitmap : new FormatConvertedBitmap(bitmap, PixelFormats.Pbgra32, null, 0);
+            int stride = bgra.PixelWidth * 4;
+            var pixels = new byte[stride * bgra.PixelHeight];
+            bgra.CopyPixels(pixels, stride, 0);
+            if (!TrayIconTint.IsLightGlyph(pixels)) return source;
+            var dark = BitmapSource.Create(bgra.PixelWidth, bgra.PixelHeight, bgra.DpiX, bgra.DpiY, PixelFormats.Pbgra32, null,
+                TrayIconTint.Recolor(pixels, 0x3A, 0x3A, 0x3C), stride);
+            dark.Freeze();
+            return dark;
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or ArgumentException or NotSupportedException) { return source; }
     }
 
     [DllImport("user32.dll")] private static extern short GetAsyncKeyState(int key);

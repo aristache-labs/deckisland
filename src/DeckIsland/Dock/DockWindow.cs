@@ -188,6 +188,7 @@ internal sealed partial class DockWindow : Window
         _tick.Stop(); _edgeWatch.Stop(); _glass.Stop();
         _volume?.Dispose(); _volume = null;
         _preview.Close();
+        _backdrop?.Dispose(); _backdrop = null;
         if (_handle == IntPtr.Zero) return;
         UnregisterHotKey(_handle, PanicHotkey);
         Unregister();
@@ -270,10 +271,11 @@ internal sealed partial class DockWindow : Window
     // Puts the window where it is, or part of the way out of the screen while it slides away; hidden once all the way out.
     private void Move()
     {
-        if (_reveal <= 0) { SetWindowPos(_handle, HwndTopmost, 0, 0, 0, 0, SwpNoMove | SwpNoSize | SwpNoActivate | SwpHideWindow); return; }
+        if (_reveal <= 0) { SetWindowPos(_handle, HwndTopmost, 0, 0, 0, 0, SwpNoMove | SwpNoSize | SwpNoActivate | SwpHideWindow); GlassTick(); return; }
         bool top = _app.DockSettings.Edge == DockEdge.Top;
         int away = (int)Math.Round((1 - _reveal) * (top ? _window.Bottom - _screen.Top : _screen.Bottom - _window.Top));
         SetWindowPos(_handle, _fullscreen ? HwndBottom : HwndTopmost, _window.Left, _window.Top + (top ? -away : away), _window.Width, _window.Height, SwpNoActivate | SwpShowWindow);
+        GlassTick();
     }
 
     // Auto-hide: shown while the pointer is on it or at the screen edge, while a menu, preview or drag is in use, and (Show on

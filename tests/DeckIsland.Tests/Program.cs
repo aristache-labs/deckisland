@@ -44,6 +44,7 @@ try
     AntigravityUsageTests.Run(root, Check);
     WorldClocksTests.Run(Check);
     DockSettingsTests.Run(root, Check);
+    TrayIconTintTests.Run(Check);
     DockSettingsTests.Geometry(Check);
     DockSettingsTests.Apps(root, Check);
     DockSettingsTests.Smart(Check);
