@@ -8,7 +8,8 @@ public sealed record DockPin(string Path, string Name);
 public sealed record DockWindowInfo(long Handle, string Key, string Exe, string Title, bool Minimized, int Z);
 
 // One tile on the dock: a pinned app, with or without windows, or a running app that is not pinned.
-public sealed record DockApp(string Key, string Name, bool Pinned, string Launch, IReadOnlyList<DockWindowInfo> Windows, bool Active)
+// WindowTile marks a window's own tile (Ungroup), which is never pinned.
+public sealed record DockApp(string Key, string Name, bool Pinned, string Launch, IReadOnlyList<DockWindowInfo> Windows, bool Active, bool WindowTile = false)
 {
     public bool Open => Windows.Count > 0;
 }
@@ -58,13 +59,22 @@ public static class DockApps
         return new DockClick(DockClickKind.Focus, app.Windows.MinBy(w => w.Z)!.Handle);
     }
 
+    // Group windows off: an app's second and later windows get tiles of their own, after it, keyed by app and window.
+    public static List<DockApp> Ungroup(IReadOnlyList<DockApp> apps, long foreground) => apps.SelectMany(app => app.Windows.Count < 2 ? [app]
+        : app.Windows.Select((window, i) => i == 0
+            ? app with { Windows = [window], Active = window.Handle == foreground }
+            : new DockApp(app.Key + WindowKeySeparator + window.Handle, app.Name, false, app.Launch, [window], window.Handle == foreground, WindowTile: true))).ToList();
+
+    public const char WindowKeySeparator = '#';
+
     // The pins after the tiles were dragged into this order: every tile up to the last pinned one is pinned, in the new order,
     // so a running app dropped among the pins is pinned there and a pin dropped past running apps takes them with it.
     public static List<DockPin> Arrange(IReadOnlyList<(DockPin Pin, string Key)> pins, IReadOnlyList<DockApp> tiles)
     {
         int last = -1;
         for (int i = 0; i < tiles.Count; i++) if (tiles[i].Pinned) last = i;
-        return tiles.Take(last + 1).Select(tile => pins.Where(p => p.Key == tile.Key).Select(p => p.Pin).FirstOrDefault() ?? new DockPin(tile.Launch, tile.Name)).ToList();
+        // A window's own tile (Ungroup) is not an app to pin.
+        return tiles.Take(last + 1).Where(tile => !tile.WindowTile).Select(tile => pins.Where(p => p.Key == tile.Key).Select(p => p.Pin).FirstOrDefault() ?? new DockPin(tile.Launch, tile.Name)).ToList();
     }
 
     // The pins with the one for this key removed, or with this app added at the end.

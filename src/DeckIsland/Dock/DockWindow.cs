@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
@@ -9,9 +10,10 @@ using DeckIsland.Native;
 
 namespace DeckIsland;
 
-// DeckIsland Dock's bar: a borderless window on the top or bottom edge of the main screen, registered with the shell as an AppBar
-// so maximized windows stop at its strip (after lumabar's dock.rs). It never takes focus and stays out of Alt+Tab.
-// Ctrl+Alt+Shift+Q switches the dock off from anywhere, which gives the taskbar back.
+// DeckIsland Dock's bar on one screen: a borderless window on the top or bottom edge, registered with the shell as an AppBar so
+// maximized windows stop at its strip (after lumabar's dock.rs), unless it hides itself. It never takes focus and stays out of
+// Alt+Tab. Dragging the bar by an empty spot into the other half of the screen moves it to that edge. Ctrl+Alt+Shift+Q switches
+// the dock off from anywhere, which gives the taskbar back.
 internal sealed partial class DockWindow : Window
 {
     private const int GwlExStyle = -20, ExNoActivate = 0x08000000, ExToolWindow = 0x80;
@@ -20,8 +22,10 @@ internal sealed partial class DockWindow : Window
     private const int WmEndSession = 0x16, WmDisplayChange = 0x7E, WmDpiChanged = 0x2E0, WmHotkey = 0x312;
     private const int PanicHotkey = 0x4442;
     private const uint ModAlt = 1, ModControl = 2, ModShift = 4, ModNoRepeat = 0x4000, VkQ = 0x51;
-    private const uint SwpNoMove = 0x2, SwpNoSize = 0x1, SwpNoActivate = 0x10, SwpShowWindow = 0x40;
+    private const uint SwpNoMove = 0x2, SwpNoSize = 0x1, SwpNoActivate = 0x10, SwpShowWindow = 0x40, SwpHideWindow = 0x80;
+    private const double SnapDistance = 30;
     private static readonly IntPtr HwndTopmost = new(-1), HwndBottom = new(1);
+    private static readonly TimeSpan HideDelay = TimeSpan.FromMilliseconds(700), Slide = TimeSpan.FromMilliseconds(160);
 
     [StructLayout(LayoutKind.Sequential)]
     private struct AppBarData
@@ -29,6 +33,7 @@ internal sealed partial class DockWindow : Window
         public int Size; public IntPtr Window; public uint CallbackMessage; public uint Edge;
         public int Left, Top, Right, Bottom; public IntPtr Param;
     }
+    [StructLayout(LayoutKind.Sequential)] private struct Point32 { public int X, Y; }
     [DllImport("shell32.dll")] private static extern UIntPtr SHAppBarMessage(uint message, ref AppBarData data);
     [DllImport("user32.dll", CharSet = CharSet.Unicode)] private static extern uint RegisterWindowMessage(string name);
     [DllImport("user32.dll")] private static extern int GetWindowLong(IntPtr window, int index);
@@ -36,50 +41,78 @@ internal sealed partial class DockWindow : Window
     [DllImport("user32.dll")] private static extern bool SetWindowPos(IntPtr window, IntPtr after, int x, int y, int width, int height, uint flags);
     [DllImport("user32.dll")] private static extern bool RegisterHotKey(IntPtr window, int id, uint modifiers, uint key);
     [DllImport("user32.dll")] private static extern bool UnregisterHotKey(IntPtr window, int id);
+    [DllImport("user32.dll")] private static extern bool GetCursorPos(out Point32 point);
+    [DllImport("user32.dll")] private static extern IntPtr GetForegroundWindow();
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)] private static extern int GetClassName(IntPtr window, System.Text.StringBuilder name, int capacity);
 
     private readonly App _app;
+    private readonly Grid _root = new();
     private readonly Border _bar;
+    private readonly StackPanel _clock = new() { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(10, 0, 8, 0) };
     private readonly TextBlock _time = new() { FontSize = 13, FontWeight = FontWeights.SemiBold, HorizontalAlignment = HorizontalAlignment.Right };
     private readonly TextBlock _date = new() { FontSize = 11, Opacity = 0.7, HorizontalAlignment = HorizontalAlignment.Right };
-    private readonly DispatcherTimer _clock = new() { Interval = TimeSpan.FromSeconds(1) };
+    private readonly DispatcherTimer _tick = new() { Interval = TimeSpan.FromSeconds(1) };
+    private readonly DispatcherTimer _edgeWatch = new() { Interval = TimeSpan.FromMilliseconds(16) };
+    private readonly DockPreview _preview;
     private IntPtr _handle;
     private uint _callbackMessage, _taskbarCreated;
     private bool _registered, _fullscreen;
     private double _barWidth;
-    private readonly DockPreview _preview;
-    private DockKeys? _keys;
+    private PixelRect _window, _screen;
+    // Auto-hide: how far the bar is shown (1 in place, 0 away), where it is sliding to, and since when nothing has kept it up.
+    private double _reveal = 1, _target = 1, _slideStart;
+    private DateTime _unneededSince = DateTime.MaxValue, _slideFrom;
+    private Point? _snapPress;
 
-    public DockWindow(App app)
+    // The screen this dock is on (an HMONITOR), and its GDI name, by which App.SyncDocks knows it.
+    public IntPtr Monitor { get; }
+    public string Device { get; }
+
+    public DockWindow(App app, IntPtr monitor, string device)
     {
-        _app = app;
+        _app = app; Monitor = monitor; Device = device;
         _preview = new DockPreview(() => _app.DockSettings.Edge);
         WindowStyle = WindowStyle.None; AllowsTransparency = true; Background = Brushes.Transparent; ShowInTaskbar = false;
         Topmost = true; ShowActivated = false; ResizeMode = ResizeMode.NoResize; Focusable = false;
         Title = "DeckIsland Dock"; FontFamily = UI.PanelFont; Foreground = UI.Brush("#F2F2F4");
-        var clock = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(12, 0, 14, 0) };
-        clock.Children.Add(_time); clock.Children.Add(_date);
-        var row = new StackPanel { Orientation = Orientation.Horizontal };
-        row.Children.Add(_apps); row.Children.Add(clock);
-        // The bar's look until the styles of phase F4: lumabar's solid dark surface (rgba 22, 22, 26, 0.92), 8 px corners.
-        _bar = new Border { CornerRadius = new CornerRadius(8), Background = UI.Brush("#EB16161A"), BorderBrush = UI.Brush("#22FFFFFF"),
-            BorderThickness = new Thickness(1), MinWidth = DockGeometry.MinBarWidth, Child = row, HorizontalAlignment = HorizontalAlignment.Stretch };
-        Content = _bar;
+        _clock.Children.Add(_time); _clock.Children.Add(_date);
+        var row = new DockPanel { LastChildFill = false };
+        DockPanel.SetDock(_clock, System.Windows.Controls.Dock.Right); row.Children.Add(_clock); row.Children.Add(_apps);
+        // The bar's look until the styles of phase F4: lumabar's solid dark surface (rgba 22, 22, 26, 0.92).
+        _bar = new Border { Background = UI.Brush("#EB16161A"), BorderBrush = UI.Brush("#22FFFFFF"), BorderThickness = new Thickness(1),
+            MinWidth = DockGeometry.MinBarWidth, Child = row };
+        _root.Children.Add(_bar);
+        Content = _root;
         _bar.AllowDrop = true;
-        _bar.Drop += (_, e) => DropFiles(e);
-        _clock.Tick += (_, _) => Tick();
+        _bar.Drop += (_, e) => { if (!_app.DockSettings.Locked) DropFiles(e); };
+        _bar.MouseLeftButtonDown += (_, e) => { if (!_app.DockSettings.Locked) { _snapPress = e.GetPosition(this); _bar.CaptureMouse(); } };
+        _bar.MouseLeftButtonUp += (_, _) => Snap();
+        _bar.LostMouseCapture += (_, _) => _snapPress = null;
+        _apps.MouseMove += (_, e) => Magnify(e.GetPosition(this));
+        _apps.MouseLeave += (_, _) => Magnify(null);
+        _tick.Tick += (_, _) => Tick();
+        _edgeWatch.Tick += (_, _) => WatchEdge();
         SourceInitialized += (_, _) => Start();
         // Closing, not Closed: the AppBar must be removed while its window still exists.
         Closing += (_, _) => Stop();
+        ApplyStyle();
         Tick();
     }
 
     private void Tick()
     {
+        var settings = _app.DockSettings;
         var now = DateTime.Now;
-        _time.Text = now.ToString("t"); _date.Text = now.ToString("d");
+        _time.Text = DockGeometry.Clock(now, settings.Clock24Hour, settings.ClockSeconds, CultureInfo.CurrentCulture); _date.Text = now.ToString("d");
+        // Windows' energy saver: the dock reads its windows less often, unless the clock shows seconds.
+        _tick.Interval = TimeSpan.FromSeconds(!settings.ClockSeconds && EnergySaverOn() ? 3 : 1);
         RefreshApps();
-        // The clock's width changes with its text; the bar follows.
-        if (_handle != IntPtr.Zero && Math.Abs(NaturalWidth() - _barWidth) >= 1) Place();
+    }
+
+    private static bool EnergySaverOn()
+    {
+        try { return Windows.System.Power.PowerManager.EnergySaverStatus == Windows.System.Power.EnergySaverStatus.On; }
+        catch (Exception ex) when (ex is COMException or InvalidCastException) { return false; }
     }
 
     private double NaturalWidth()
@@ -95,65 +128,146 @@ internal sealed partial class DockWindow : Window
         HwndSource.FromHwnd(_handle)?.AddHook(Hook);
         _callbackMessage = RegisterWindowMessage("DeckIsland.Dock.AppBarCallback");
         _taskbarCreated = RegisterWindowMessage("TaskbarCreated");
-        Register();
-        RegisterHotKey(_handle, PanicHotkey, ModControl | ModAlt | ModShift | ModNoRepeat, VkQ);
+        ClaimPanicKey();
         Place();
-        ApplyKeys();
-        _clock.Start();
+        _tick.Start(); _edgeWatch.Start();
+    }
+
+    // One dock holds the key; on the others the registration fails and is not needed. App.SyncDocks asks every dock again after
+    // closing one, so the key is never left without a holder.
+    public void ClaimPanicKey()
+    {
+        if (_handle != IntPtr.Zero) RegisterHotKey(_handle, PanicHotkey, ModControl | ModAlt | ModShift | ModNoRepeat, VkQ);
     }
 
     private void Stop()
     {
-        _clock.Stop();
-        _keys?.Dispose(); _keys = null;
+        _tick.Stop(); _edgeWatch.Stop();
         _preview.Close();
         if (_handle == IntPtr.Zero) return;
         UnregisterHotKey(_handle, PanicHotkey);
-        if (_registered) { var data = Data(); SHAppBarMessage(AbmRemove, ref data); _registered = false; }
+        Unregister();
     }
 
     private AppBarData Data() => new() { Size = Marshal.SizeOf<AppBarData>(), Window = _handle, CallbackMessage = _callbackMessage };
 
-    private void Register() { var data = Data(); _registered = SHAppBarMessage(AbmNew, ref data) != UIntPtr.Zero; }
+    private void Register()
+    {
+        if (_registered) return;
+        var data = Data(); _registered = SHAppBarMessage(AbmNew, ref data) != UIntPtr.Zero;
+    }
 
-    // After the dock's settings change: its place, its tiles and its keys follow.
+    private void Unregister()
+    {
+        if (!_registered) return;
+        var data = Data(); SHAppBarMessage(AbmRemove, ref data); _registered = false;
+    }
+
+    // After the dock's settings change: its look, its place and its tiles follow.
     public void Apply()
     {
+        ApplyStyle();
+        if (!_app.DockSettings.AutoHide) _target = _reveal = 1;
         Place();
-        ApplyKeys();
         RefreshSoon();
     }
 
-    private void ApplyKeys()
+    // The bar's shape from the settings: corners, the space inside its ends, and which side of the window it sits on.
+    private void ApplyStyle()
     {
-        if (_app.DockSettings.AppShortcuts) _keys ??= new DockKeys(ActivateApp);
-        else { _keys?.Dispose(); _keys = null; }
+        var settings = _app.DockSettings;
+        _bar.Height = settings.Size;
+        _bar.CornerRadius = new CornerRadius(DockGeometry.CornerRadius(settings.Corner, settings.Size));
+        _bar.Padding = new Thickness(settings.Padding, 0, settings.Padding, 0);
+        _bar.VerticalAlignment = settings.Edge == DockEdge.Top ? VerticalAlignment.Top : VerticalAlignment.Bottom;
     }
 
-    // Asks the shell for the strip on the chosen edge of the main screen, then puts the bar in the middle of it.
+    // Asks the shell for the strip on the chosen edge of this screen (none while the dock hides itself), then puts the bar in it.
     public void Place()
     {
         if (_handle == IntPtr.Zero) return;
         var settings = _app.DockSettings;
-        var (bounds, _, scale) = WindowsHost.PrimaryScreen();
-        var screen = new PixelRect((int)bounds.Left, (int)bounds.Top, (int)bounds.Right, (int)bounds.Bottom);
-        int stripHeight = (int)Math.Round(DockGeometry.StripHeight(settings.Size) * scale);
-        var strip = DockGeometry.Strip(screen, settings.Edge, stripHeight);
-        if (_registered)
+        var (bounds, _, scale) = WindowsHost.MonitorScreen(Monitor) ?? WindowsHost.PrimaryScreen();
+        _screen = new PixelRect((int)bounds.Left, (int)bounds.Top, (int)bounds.Right, (int)bounds.Bottom);
+        int stripHeight = (int)Math.Round((DockGeometry.StripHeight(settings.Size) + settings.Distance) * scale);
+        var strip = DockGeometry.Strip(_screen, settings.Edge, stripHeight);
+        if (settings.AutoHide) Unregister();
+        else
         {
-            var data = Data();
-            data.Edge = settings.Edge == DockEdge.Top ? AbeTop : AbeBottom;
-            (data.Left, data.Top, data.Right, data.Bottom) = (strip.Left, strip.Top, strip.Right, strip.Bottom);
-            SHAppBarMessage(AbmQueryPos, ref data);
-            strip = DockGeometry.KeepHeight(new PixelRect(data.Left, data.Top, data.Right, data.Bottom), settings.Edge, stripHeight);
-            (data.Left, data.Top, data.Right, data.Bottom) = (strip.Left, strip.Top, strip.Right, strip.Bottom);
-            SHAppBarMessage(AbmSetPos, ref data);
-            strip = new PixelRect(data.Left, data.Top, data.Right, data.Bottom);
+            Register();
+            if (_registered)
+            {
+                var data = Data();
+                data.Edge = settings.Edge == DockEdge.Top ? AbeTop : AbeBottom;
+                (data.Left, data.Top, data.Right, data.Bottom) = (strip.Left, strip.Top, strip.Right, strip.Bottom);
+                SHAppBarMessage(AbmQueryPos, ref data);
+                strip = DockGeometry.KeepHeight(new PixelRect(data.Left, data.Top, data.Right, data.Bottom), settings.Edge, stripHeight);
+                (data.Left, data.Top, data.Right, data.Bottom) = (strip.Left, strip.Top, strip.Right, strip.Bottom);
+                SHAppBarMessage(AbmSetPos, ref data);
+                strip = new PixelRect(data.Left, data.Top, data.Right, data.Bottom);
+            }
         }
         _barWidth = NaturalWidth();
         // The width is laid out at the window's own DPI, which may still be another monitor's until WM_DPICHANGED.
-        var bar = DockGeometry.Bar(strip, (int)Math.Ceiling(_barWidth * VisualTreeHelper.GetDpi(this).DpiScaleX), (int)Math.Round(settings.Size * scale));
-        SetWindowPos(_handle, _fullscreen ? HwndBottom : HwndTopmost, bar.Left, bar.Top, bar.Width, bar.Height, SwpNoActivate | SwpShowWindow);
+        var bar = DockGeometry.Bar(strip, settings.Edge, (int)Math.Ceiling(_barWidth * VisualTreeHelper.GetDpi(this).DpiScaleX),
+            (int)Math.Round(settings.Size * scale), (int)Math.Round(settings.Distance * scale), settings.FullWidth);
+        int extra = settings.Magnification ? (int)Math.Ceiling(settings.Size * settings.MagnificationSize / 100.0 * scale) + 4 : 0;
+        _window = DockGeometry.Window(bar, settings.Edge, extra);
+        Move();
+    }
+
+    // Puts the window where it is, or part of the way out of the screen while it slides away; hidden once all the way out.
+    private void Move()
+    {
+        if (_reveal <= 0) { SetWindowPos(_handle, HwndTopmost, 0, 0, 0, 0, SwpNoMove | SwpNoSize | SwpNoActivate | SwpHideWindow); return; }
+        bool top = _app.DockSettings.Edge == DockEdge.Top;
+        int away = (int)Math.Round((1 - _reveal) * (top ? _window.Bottom - _screen.Top : _screen.Bottom - _window.Top));
+        SetWindowPos(_handle, _fullscreen ? HwndBottom : HwndTopmost, _window.Left, _window.Top + (top ? -away : away), _window.Width, _window.Height, SwpNoActivate | SwpShowWindow);
+    }
+
+    // Auto-hide: shown while the pointer is on it or at the screen edge, while a menu, preview or drag is in use, and (Show on
+    // desktop) while nothing but the desktop is in front; slides away once none of these has held for a moment.
+    private void WatchEdge()
+    {
+        var settings = _app.DockSettings;
+        if (!settings.AutoHide || _handle == IntPtr.Zero) return;
+        GetCursorPos(out var cursor);
+        bool inScreen = cursor.X >= _screen.Left && cursor.X < _screen.Right;
+        bool atEdge = inScreen && (settings.Edge == DockEdge.Top ? cursor.Y <= _screen.Top + 1 : cursor.Y >= _screen.Bottom - 2);
+        bool over = _reveal > 0 && cursor.X >= _window.Left && cursor.X < _window.Right && cursor.Y >= _window.Top - 6 && cursor.Y < _window.Bottom + 6;
+        bool busy = _dragging || _press is not null || _snapPress is not null || _preview.IsVisible || _menuOpen;
+        bool needed = !_fullscreen && (atEdge || over || busy || (settings.ShowOnDesktop && DesktopInFront()));
+        var now = DateTime.Now;
+        if (needed) _unneededSince = DateTime.MaxValue;
+        else if (_unneededSince == DateTime.MaxValue) _unneededSince = now;
+        double target = needed || now - _unneededSince < HideDelay ? 1 : 0;
+        if (target != _target) { _target = target; _slideFrom = now; _slideStart = _reveal; }
+        if (_reveal == _target) return;
+        double progress = Math.Clamp((now - _slideFrom) / Slide, 0, 1);
+        _reveal = progress >= 1 ? _target : _slideStart + (_target - _slideStart) * (1 - Math.Pow(1 - progress, 3));
+        Move();
+    }
+
+    private static bool DesktopInFront()
+    {
+        var foreground = GetForegroundWindow();
+        if (foreground == IntPtr.Zero) return true;
+        var name = new System.Text.StringBuilder(32); GetClassName(foreground, name, name.Capacity);
+        return name.ToString() is "Progman" or "WorkerW";
+    }
+
+    // The bar dragged by an empty spot and let go in the other half of the screen moves to that edge.
+    private void Snap()
+    {
+        if (_snapPress is not { } press) return;
+        _snapPress = null;
+        _bar.ReleaseMouseCapture();
+        GetCursorPos(out var cursor);
+        var at = PointFromScreen(new Point(cursor.X, cursor.Y));
+        if (Math.Abs(at.Y - press.Y) < SnapDistance) return;
+        var edge = cursor.Y < (_screen.Top + _screen.Bottom) / 2 ? DockEdge.Top : DockEdge.Bottom;
+        if (edge == _app.DockSettings.Edge) return;
+        var copy = _app.DockSettings.Copy(); copy.Edge = edge; _app.UpdateDockSettings(copy);
     }
 
     private IntPtr Hook(IntPtr window, int message, IntPtr wParam, IntPtr lParam, ref bool handled)
@@ -175,11 +289,12 @@ internal sealed partial class DockWindow : Window
         {
             // Explorer restarted and forgot every AppBar.
             DockTaskbar.TaskbarRecreated();
-            Register(); Place();
+            _registered = false; Place();
         }
         else if (message == WmEndSession && wParam != IntPtr.Zero) DockTaskbar.Restore();
         else if (message == WmHotkey && (int)wParam == PanicHotkey) { _app.TurnOffDock(); handled = true; }
-        else if (message is WmDisplayChange or WmDpiChanged) Dispatcher.BeginInvoke(Place, DispatcherPriority.Background);
+        else if (message == WmDisplayChange) Dispatcher.BeginInvoke(_app.SyncDocks, DispatcherPriority.Background);
+        else if (message == WmDpiChanged) Dispatcher.BeginInvoke(Place, DispatcherPriority.Background);
         return IntPtr.Zero;
     }
 }

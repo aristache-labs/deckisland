@@ -8,12 +8,18 @@ namespace DeckIsland.Core;
 public enum DockEdge { Bottom, Top }
 // What the dock does to the Windows taskbar while it runs: auto-hide it, hide it completely, or leave it alone.
 public enum DockTaskbarMode { AutoHide, Hide, Leave }
+// The screens the dock is on: the main one, or each its own.
+public enum DockDisplays { Main, All }
+public enum DockSpeed { Slow, Normal, Fast }
+public enum DockIconSize { Small, Medium, Large }
+// What marks an open app: a dot, a larger dot, or a line under it.
+public enum DockIndicator { Dot, LargeDot, Line }
 
 // DeckIsland Dock's own settings, kept apart from DeckSettings in dock.json. DeckSettings.DockEnabled is the only switch the
 // island's settings hold for it.
 public sealed class DockSettings
 {
-    public const int MinSize = 36, MaxSize = 96;
+    public const int MinSize = 36, MaxSize = 96, MaxDistance = 40, MaxSpacing = 24, MaxPadding = 16, MaxCorner = 100, MinMagnification = 10, MaxMagnification = 100;
     // The bar heights of the Small, Medium and Large presets; Size moves freely between MinSize and MaxSize.
     public static readonly int[] SizePresets = [46, 52, 62];
 
@@ -31,6 +37,34 @@ public sealed class DockSettings
     public bool WindowPreviews { get; set; } = true;
     // Win+1 to Win+0 open the dock's first ten apps, as on the taskbar.
     public bool AppShortcuts { get; set; } = true;
+    [JsonConverter(typeof(JsonStringEnumConverter))] public DockDisplays Displays { get; set; } = DockDisplays.Main;
+    // How far the bar sits from the screen edge, the space between tiles and inside the bar's ends, in DIPs; the corners' roundness
+    // in percent of half the bar's height (0 square, 100 a pill).
+    public int Distance { get; set; }
+    public int Spacing { get; set; } = 4;
+    public int Padding { get; set; } = 4;
+    public int Corner { get; set; } = 30;
+    // Across the whole screen edge, like the taskbar, rather than a bar sized to its tiles.
+    public bool FullWidth { get; set; }
+    // Slides away until the pointer touches the screen edge; Show on desktop keeps it up while nothing but the desktop is in front.
+    public bool AutoHide { get; set; }
+    public bool ShowOnDesktop { get; set; } = true;
+    // Locked, icons are not dragged, dropped or dragged off.
+    public bool Locked { get; set; }
+    // Off, every window has its own tile.
+    public bool GroupWindows { get; set; } = true;
+    // Icons grow under the pointer by MagnificationSize percent.
+    public bool Magnification { get; set; }
+    public int MagnificationSize { get; set; } = 50;
+    [JsonConverter(typeof(JsonStringEnumConverter))] public DockSpeed MagnificationSpeed { get; set; } = DockSpeed.Normal;
+    [JsonConverter(typeof(JsonStringEnumConverter))] public DockIconSize IconSize { get; set; } = DockIconSize.Medium;
+    // Each app on a card the dock's shade, rather than its bare icon.
+    public bool AppCards { get; set; }
+    public bool NamesOnHover { get; set; } = true;
+    [JsonConverter(typeof(JsonStringEnumConverter))] public DockIndicator Indicator { get; set; } = DockIndicator.Dot;
+    // Null follows Windows' time format.
+    public bool? Clock24Hour { get; set; }
+    public bool ClockSeconds { get; set; }
 
     public DockSettings Copy()
     {
@@ -44,6 +78,15 @@ public sealed class DockSettings
         if (!Enum.IsDefined(Edge)) Edge = DockEdge.Bottom;
         if (!Enum.IsDefined(TaskbarMode)) TaskbarMode = DockTaskbarMode.AutoHide;
         Size = Math.Clamp(Size, MinSize, MaxSize);
+        if (!Enum.IsDefined(Displays)) Displays = DockDisplays.Main;
+        if (!Enum.IsDefined(MagnificationSpeed)) MagnificationSpeed = DockSpeed.Normal;
+        if (!Enum.IsDefined(IconSize)) IconSize = DockIconSize.Medium;
+        if (!Enum.IsDefined(Indicator)) Indicator = DockIndicator.Dot;
+        Distance = Math.Clamp(Distance, 0, MaxDistance);
+        Spacing = Math.Clamp(Spacing, 0, MaxSpacing);
+        Padding = Math.Clamp(Padding, 0, MaxPadding);
+        Corner = Math.Clamp(Corner, 0, MaxCorner);
+        MagnificationSize = Math.Clamp(MagnificationSize, MinMagnification, MaxMagnification);
         Pins = Pins?.Where(pin => pin is not null && !string.IsNullOrWhiteSpace(pin.Path))
             .Select(pin => pin with { Name = string.IsNullOrWhiteSpace(pin.Name) ? Path.GetFileNameWithoutExtension(pin.Path) : pin.Name }).ToList();
     }

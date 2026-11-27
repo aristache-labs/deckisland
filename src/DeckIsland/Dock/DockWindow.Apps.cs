@@ -17,12 +17,13 @@ namespace DeckIsland;
 internal sealed partial class DockWindow
 {
     private const double DragThreshold = 6;
-    private readonly StackPanel _apps = new() { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(4, 0, 0, 0) };
+    private readonly StackPanel _apps = new() { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
     private List<DockApp> _shown = [];
     private List<string> _order = [];
     private string _signature = "";
     private (Border Tile, Point Start)? _press;
-    private bool _dragging;
+    private bool _dragging, _menuOpen;
+    private double _tileSize, _spacing;
 
     private void RefreshApps()
     {
@@ -36,15 +37,19 @@ internal sealed partial class DockWindow
             settings = _app.DockSettings;
         }
         var pins = PinKeys(settings);
-        (var apps, _order) = DockApps.Build(pins, DockAppWindows.Collect(), _order, DockAppWindows.Foreground, DockAppWindows.AppName);
+        long foreground = DockAppWindows.Foreground;
+        (var apps, _order) = DockApps.Build(pins, DockAppWindows.Collect(), _order, foreground, DockAppWindows.AppName);
+        if (!settings.GroupWindows) apps = DockApps.Ungroup(apps, foreground);
         bool trashFull = settings.ShowTrash && DockShell.RecycleBinHasItems();
-        var signature = $"{settings.Size}|{settings.ShowStart}{settings.ShowTrash}{settings.ShowDesktopButton}{trashFull}|"
+        var signature = $"{settings.Size}|{settings.Spacing}|{settings.IconSize}|{settings.AppCards}{settings.NamesOnHover}{settings.Indicator}{settings.WindowPreviews}|"
+            + $"{settings.ShowStart}{settings.ShowTrash}{settings.ShowDesktopButton}{trashFull}|"
             + string.Join(";", apps.Select(a => $"{a.Key},{a.Pinned},{a.Windows.Count},{a.Active}"));
         _shown = apps;
         if (signature == _signature) return;
         _signature = signature;
         _apps.Children.Clear();
-        double tile = settings.Size - 10;
+        double tile = _tileSize = settings.Size - 10;
+        _spacing = settings.Spacing;
         if (settings.ShowStart) _apps.Children.Add(Button(StartGlyph(tile), Loc.T("开始", "Start"), tile, DockShell.OpenStart));
         foreach (var app in apps) _apps.Children.Add(Tile(app, tile));
         if (settings.ShowTrash || settings.ShowDesktopButton)
@@ -59,10 +64,12 @@ internal sealed partial class DockWindow
     // Read again soon after an action, so the dot follows without waiting for the next second.
     private void RefreshSoon() => Dispatcher.BeginInvoke(() => { _signature = ""; RefreshApps(); }, System.Windows.Threading.DispatcherPriority.Background);
 
-    private static Border Frame(UIElement content, double tile, string name) => new()
+    private Border Frame(UIElement content, double tile, string name) => new()
     {
-        Width = tile, Height = tile, CornerRadius = new CornerRadius(7), Margin = new Thickness(2, 0, 2, 0), Child = content,
-        Background = UI.Brush("#00FFFFFF"), ToolTip = name, Cursor = Cursors.Hand
+        Width = tile, Height = tile, CornerRadius = new CornerRadius(Math.Min(7, DockGeometry.CornerRadius(_app.DockSettings.Corner, tile) + 2)),
+        Margin = new Thickness(_spacing / 2, 0, _spacing / 2, 0), Child = content,
+        Background = UI.Brush("#00FFFFFF"), ToolTip = _app.DockSettings.NamesOnHover ? name : null, Cursor = Cursors.Hand,
+        RenderTransformOrigin = new Point(0.5, _app.DockSettings.Edge == DockEdge.Top ? 0 : 1), RenderTransform = new ScaleTransform(1, 1)
     };
 
     private static void Hover(Border frame, string rest)
@@ -75,13 +82,16 @@ internal sealed partial class DockWindow
     {
         var frame = Frame(glyph, tile, name);
         Hover(frame, "#00FFFFFF");
+        // Taken here, so the bar does not start a drag to the other edge and catch the release.
+        frame.MouseLeftButtonDown += (_, e) => e.Handled = true;
         frame.MouseLeftButtonUp += (_, e) => { action(); e.Handled = true; RefreshSoon(); };
         return frame;
     }
 
     private Border Trash(double tile)
     {
-        var icon = new Image { Width = Math.Round(tile * 0.7), Height = Math.Round(tile * 0.7), Source = DockAppWindows.Icon(DockShell.RecycleBin, 64, cache: false) };
+        double size = Math.Round(tile * DockGeometry.IconShare(_app.DockSettings.IconSize));
+        var icon = new Image { Width = size, Height = size, Source = DockAppWindows.Icon(DockShell.RecycleBin, 64, cache: false) };
         var frame = Button(icon, Loc.T("回收站", "Recycle Bin"), tile, DockShell.OpenRecycleBin);
         frame.AllowDrop = true;
         frame.DragOver += (_, e) => { e.Effects = e.Data.GetDataPresent(DataFormats.FileDrop) ? DragDropEffects.Move : DragDropEffects.None; e.Handled = true; };
@@ -109,14 +119,23 @@ internal sealed partial class DockWindow
 
     private Border Tile(DockApp app, double tile)
     {
-        double iconSize = Math.Round(tile * 0.7);
+        var settings = _app.DockSettings;
+        double iconSize = Math.Round(tile * DockGeometry.IconShare(settings.IconSize));
         var icon = new Image { Width = iconSize, Height = iconSize, Source = DockAppWindows.Icon(app.Pinned ? app.Launch : app.Windows[0].Exe, 64) };
         RenderOptions.SetBitmapScalingMode(icon, BitmapScalingMode.HighQuality);
-        var dot = new Rectangle { Height = 3, Width = app.Active ? 12 : 4, RadiusX = 1.5, RadiusY = 1.5, Fill = UI.Brush(app.Active ? "#F2F2F4" : "#99F2F2F4"),
+        // The open marker (DockIndicator): a dot, a larger dot, or a line; wider under the app in front.
+        var (dotWidth, dotHeight) = settings.Indicator switch
+        {
+            DockIndicator.LargeDot => (app.Active ? 14.0 : 6.0, 6.0),
+            DockIndicator.Line => (app.Active ? tile * 0.6 : tile * 0.35, 2.5),
+            _ => (app.Active ? 12.0 : 4.0, 3.0)
+        };
+        var dot = new Rectangle { Height = dotHeight, Width = dotWidth, RadiusX = dotHeight / 2, RadiusY = dotHeight / 2, Fill = UI.Brush(app.Active ? "#F2F2F4" : "#99F2F2F4"),
             VerticalAlignment = VerticalAlignment.Bottom, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 0, 0, 2),
             Visibility = app.Open ? Visibility.Visible : Visibility.Hidden };
         var grid = new Grid(); grid.Children.Add(icon); grid.Children.Add(dot);
-        string rest = app.Active ? "#1FFFFFFF" : "#00FFFFFF";
+        // App cards: every app on a card in the dock's shade; otherwise only the app in front is shaded.
+        string rest = app.Active ? "#26FFFFFF" : settings.AppCards ? "#14FFFFFF" : "#00FFFFFF";
         var frame = Frame(grid, tile, app.Name);
         frame.Tag = app; frame.Background = UI.Brush(rest);
         // The preview shows the window titles, so the tooltip would only repeat them.
@@ -124,7 +143,11 @@ internal sealed partial class DockWindow
         Hover(frame, rest);
         frame.MouseEnter += (_, _) => { if (!_dragging && _app.DockSettings.WindowPreviews) _preview.Show(Current(app), frame); };
         frame.MouseLeave += (_, _) => _preview.HideSoon();
-        frame.MouseLeftButtonDown += (_, e) => { _press = (frame, e.GetPosition(this)); frame.CaptureMouse(); e.Handled = true; };
+        frame.MouseLeftButtonDown += (_, e) =>
+        {
+            e.Handled = true;
+            _press = (frame, e.GetPosition(this)); frame.CaptureMouse();
+        };
         frame.MouseMove += (_, e) => Drag(frame, e.GetPosition(this));
         // A menu, Alt+Tab or a secure prompt can take the mouse mid-drag; the drag is then abandoned, never left half done.
         frame.LostMouseCapture += (_, _) =>
@@ -139,9 +162,10 @@ internal sealed partial class DockWindow
             DockAppWindows.Launch(Current(app).Launch); e.Handled = true; RefreshSoon();
         };
         frame.ContextMenu = AppMenu(app);
+        frame.ContextMenuClosing += (_, _) => _menuOpen = false;
         frame.ContextMenuOpening += (_, _) =>
         {
-            _preview.HideNow();
+            _preview.HideNow(); _menuOpen = true;
             // The dock never takes focus, so its menu could not see a click elsewhere and would stay open; the dock takes the
             // foreground while its menu opens, as the taskbar does, and the menu closes when the click goes elsewhere.
             DockAppWindows.Focus(_handle);
@@ -155,7 +179,7 @@ internal sealed partial class DockWindow
     // While the button is held, a move past the threshold starts a drag: the tile follows the pointer along the apps.
     private void Drag(Border frame, Point at)
     {
-        if (_press is not { } press || press.Tile != frame) return;
+        if (_press is not { } press || press.Tile != frame || _app.DockSettings.Locked) return;
         if (!_dragging)
         {
             if (Math.Abs(at.X - press.Start.X) < DragThreshold && Math.Abs(at.Y - press.Start.Y) < DragThreshold) return;
@@ -214,7 +238,7 @@ internal sealed partial class DockWindow
     }
 
     // Win+1 to Win+0: the n-th app, as a click on it would.
-    private void ActivateApp(int index)
+    public void ActivateApp(int index)
     {
         if (index >= _shown.Count) return;
         var app = _shown[index];
@@ -233,7 +257,8 @@ internal sealed partial class DockWindow
         }
         menu.Items.Add(new MenuItem { Header = app.Name, IsEnabled = false, FontWeight = FontWeights.SemiBold });
         Add(app.Open ? Loc.T("新窗口", "New window") : Loc.T("打开", "Open"), () => DockAppWindows.Launch(app.Launch));
-        if (app.Pinned) Add(Loc.T("从 Dock 取消固定", "Unpin from dock"), () => ChangePins(pins => DockApps.Unpin(pins, app.Key)));
+        if (_app.DockSettings.Locked) { }
+        else if (app.Pinned) Add(Loc.T("从 Dock 取消固定", "Unpin from dock"), () => ChangePins(pins => DockApps.Unpin(pins, app.Key)));
         else Add(Loc.T("固定到 Dock", "Pin to dock"), () => ChangePins(pins => DockApps.Pin(pins.Select(p => p.Pin).ToList(), new DockPin(app.Launch, app.Name))));
         var file = app.Open ? app.Windows[0].Exe : app.Launch;
         Add(Loc.T("打开文件位置", "Open file location"), () => DockAppWindows.OpenFileLocation(file));
@@ -252,5 +277,27 @@ internal sealed partial class DockWindow
         var copy = _app.DockSettings.Copy();
         copy.Pins = edit(PinKeys(copy));
         _app.UpdateDockSettings(copy);
+    }
+
+    // Magnification: tiles near the pointer grow towards the screen's middle, the nearest by MagnificationSize percent, easing at
+    // the chosen speed. They grow over the bar rather than pushing it wider, so the bar keeps still.
+    private void Magnify(Point? at)
+    {
+        var settings = _app.DockSettings;
+        if (!settings.Magnification && at is not null) return;
+        var duration = DockGeometry.Duration(settings.MagnificationSpeed);
+        foreach (var tile in _apps.Children.OfType<Border>())
+        {
+            double scale = 1;
+            if (at is { } point && settings.Magnification && !_dragging)
+            {
+                double centre = tile.TranslatePoint(new Point(tile.ActualWidth / 2, 0), this).X;
+                scale = DockGeometry.Magnify(point.X - centre, (_tileSize + _spacing) * 2.5, settings.MagnificationSize);
+            }
+            if (tile.RenderTransform is not ScaleTransform transform) continue;
+            var animation = new System.Windows.Media.Animation.DoubleAnimation(scale, duration) { EasingFunction = new System.Windows.Media.Animation.QuadraticEase() };
+            transform.BeginAnimation(ScaleTransform.ScaleXProperty, animation);
+            transform.BeginAnimation(ScaleTransform.ScaleYProperty, animation);
+        }
     }
 }

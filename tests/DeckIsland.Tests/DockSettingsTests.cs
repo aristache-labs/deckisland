@@ -34,12 +34,28 @@ internal static class DockSettingsTests
         var screen = new PixelRect(0, 0, 1920, 1080);
         check("Dock strip sits on the chosen edge",
             DockGeometry.Strip(screen, DockEdge.Bottom, 60) == new PixelRect(0, 1020, 1920, 1080) && DockGeometry.Strip(screen, DockEdge.Top, 60) == new PixelRect(0, 0, 1920, 60));
-        var bar = DockGeometry.Bar(new PixelRect(0, 1020, 1920, 1080), 400, 52);
+        var bar = DockGeometry.Bar(new PixelRect(0, 1020, 1920, 1080), DockEdge.Bottom, 400, 52);
         check("Dock bar is centred in its strip", bar == new PixelRect(760, 1024, 1160, 1076));
         check("Dock bar keeps its minimum and side margins",
-            DockGeometry.Bar(new PixelRect(0, 0, 1920, 60), 10, 52).Width == DockGeometry.MinBarWidth && DockGeometry.Bar(new PixelRect(0, 0, 1920, 60), 5000, 52).Width == 1920 - 2 * DockGeometry.SideMargin);
+            DockGeometry.Bar(new PixelRect(0, 0, 1920, 60), DockEdge.Top, 10, 52).Width == DockGeometry.MinBarWidth && DockGeometry.Bar(new PixelRect(0, 0, 1920, 60), DockEdge.Top, 5000, 52).Width == 1920 - 2 * DockGeometry.SideMargin);
         check("Dock keeps its height on a strip the shell moved",
             DockGeometry.KeepHeight(new PixelRect(0, 900, 1920, 1040), DockEdge.Bottom, 60) == new PixelRect(0, 980, 1920, 1040));
+        check("Dock bar keeps its distance from the edge on either edge",
+            DockGeometry.Bar(new PixelRect(0, 1000, 1920, 1080), DockEdge.Bottom, 400, 52, 20) is { Bottom: 1056, Height: 52 }
+            && DockGeometry.Bar(new PixelRect(0, 0, 1920, 80), DockEdge.Top, 400, 52, 20) is { Top: 24, Height: 52 });
+        check("Dock full width keeps the same gap at its ends",
+            DockGeometry.Bar(new PixelRect(0, 1020, 1920, 1080), DockEdge.Bottom, 400, 52, 0, true) is { Left: 8, Right: 1912 });
+        check("Dock window grows towards the screen's middle for magnification",
+            DockGeometry.Window(new PixelRect(10, 1000, 410, 1052), DockEdge.Bottom, 30) == new PixelRect(10, 970, 410, 1052)
+            && DockGeometry.Window(new PixelRect(10, 4, 410, 56), DockEdge.Top, 30) == new PixelRect(10, 4, 410, 86));
+        check("Dock corners go from square to a pill", DockGeometry.CornerRadius(0, 52) == 0 && DockGeometry.CornerRadius(100, 52) == 26 && DockGeometry.CornerRadius(50, 52) == 13);
+        check("Dock magnification peaks at the pointer and fades to nothing at its reach",
+            DockGeometry.Magnify(0, 100, 50) == 1.5 && DockGeometry.Magnify(100, 100, 50) == 1 && DockGeometry.Magnify(50, 100, 50) is > 1.2 and < 1.3);
+        var noon = new DateTime(2026, 11, 27, 13, 5, 9);
+        var culture = System.Globalization.CultureInfo.GetCultureInfo("en-GB");
+        check("Dock clock follows 12 or 24 hours and seconds",
+            DockGeometry.Clock(noon, true, false, culture) == "13:05" && DockGeometry.Clock(noon, true, true, culture) == "13:05:09"
+            && DockGeometry.Clock(noon, false, false, culture) == "1:05 PM" && DockGeometry.Clock(noon, null, false, culture) == "13:05");
         var state = new DockTaskbarState(2, true, 42);
         check("Dock taskbar state round-trips and rejects damage", DockTaskbarState.Parse(state.ToJson()) == state && DockTaskbarState.Parse("{ nope") is null);
     }
@@ -72,6 +88,13 @@ internal static class DockSettingsTests
         check("Dock drag keeps pins in their new order and pins a running app dropped among them",
             arranged.Select(p => p.Path).SequenceEqual(["b.lnk", "c.exe", "a.lnk"]) && arranged[1].Name == "C.EXE");
         check("Dock drag leaves running apps after the last pin unpinned", DockApps.Arrange(pins, [apps[0], apps[1], apps[2], apps[3]]).Count == 2);
+        var ungrouped = DockApps.Ungroup(apps, 13);
+        check("Dock gives each window its own tile with grouping off, and never pins one",
+            ungrouped.Count == 5 && ungrouped[0].Windows.Count == 1 && ungrouped[1].Key == "a.exe#13" && ungrouped[1].Active && !ungrouped[0].Active
+            && DockApps.Arrange(pins, ungrouped).All(p => !p.Path.Contains('#')));
+        var odd = new DockSettings { Spacing = 99, Corner = -5, MagnificationSize = 1, Distance = 400, Padding = 30 };
+        odd.Normalize();
+        check("Dock layout settings are kept in range", odd is { Spacing: 24, Corner: 0, MagnificationSize: 10, Distance: 40, Padding: 16 });
         check("Dock shows its buttons, previews and shortcuts by default",
             new DockSettings() is { ShowStart: true, ShowTrash: true, ShowDesktopButton: true, WindowPreviews: true, AppShortcuts: true });
     }
