@@ -41,7 +41,7 @@ internal sealed partial class DockWindow
         (var apps, _order) = DockApps.Build(pins, DockAppWindows.Collect(), _order, foreground, DockAppWindows.AppName);
         if (!settings.GroupWindows) apps = DockApps.Ungroup(apps, foreground);
         bool trashFull = settings.ShowTrash && DockShell.RecycleBinHasItems();
-        var signature = $"{settings.Size}|{settings.Spacing}|{settings.IconSize}|{settings.AppCards}{settings.NamesOnHover}{settings.Indicator}{settings.WindowPreviews}|"
+        var signature = $"{settings.Style}{settings.ClearCards}{settings.Accent}{settings.Corner}|{settings.Size}|{settings.Spacing}|{settings.IconSize}|{settings.AppCards}{settings.NamesOnHover}{settings.Indicator}{settings.WindowPreviews}|"
             + $"{settings.ShowStart}{settings.ShowTrash}{settings.ShowDesktopButton}{trashFull}|"
             + string.Join(";", apps.Select(a => $"{a.Key},{a.Pinned},{a.Windows.Count},{a.Active}"));
         _shown = apps;
@@ -53,7 +53,7 @@ internal sealed partial class DockWindow
         if (settings.ShowStart) _apps.Children.Add(Button(StartGlyph(tile), Loc.T("开始", "Start"), tile, DockShell.OpenStart));
         foreach (var app in apps) _apps.Children.Add(Tile(app, tile));
         if (settings.ShowTrash || settings.ShowDesktopButton)
-            _apps.Children.Add(new Rectangle { Width = 1, Height = tile * 0.6, Fill = UI.Brush("#33FFFFFF"), Margin = new Thickness(5, 0, 5, 0) });
+            _apps.Children.Add(new Rectangle { Width = 1, Height = tile * 0.6, Fill = UI.Brush(_look.Divider), Margin = new Thickness(5, 0, 5, 0) });
         if (settings.ShowTrash) _apps.Children.Add(Trash(tile));
         if (settings.ShowDesktopButton) _apps.Children.Add(Button(DesktopGlyph(tile), Loc.T("显示桌面", "Show desktop"), tile, DockShell.ToggleDesktop));
         if (_handle != IntPtr.Zero && Math.Abs(NaturalWidth() - _barWidth) >= 1) Place();
@@ -66,22 +66,27 @@ internal sealed partial class DockWindow
 
     private Border Frame(UIElement content, double tile, string name) => new()
     {
-        Width = tile, Height = tile, CornerRadius = new CornerRadius(Math.Min(7, DockGeometry.CornerRadius(_app.DockSettings.Corner, tile) + 2)),
+        Width = tile, Height = tile, CornerRadius = new CornerRadius(TileRadius()),
+        BorderBrush = UI.Brush(Cards ? _look.CardRim : "#00000000"), BorderThickness = new Thickness(Cards ? 1 : 0),
         Margin = new Thickness(_spacing / 2, 0, _spacing / 2, 0), Child = content,
-        Background = UI.Brush("#00FFFFFF"), ToolTip = _app.DockSettings.NamesOnHover ? name : null, Cursor = Cursors.Hand,
+        Background = UI.Brush(Rest(false)), ToolTip = _app.DockSettings.NamesOnHover ? name : null, Cursor = Cursors.Hand,
         RenderTransformOrigin = new Point(0.5, _app.DockSettings.Edge == DockEdge.Top ? 0 : 1), RenderTransform = new ScaleTransform(1, 1)
     };
 
-    private static void Hover(Border frame, string rest)
+    // Clear always puts the tiles on cards; the other styles when App cards is on.
+    private bool Cards => _app.DockSettings.AppCards || _app.DockSettings.Style == DockStyle.Clear;
+    private string Rest(bool active) => active ? _look.CardActive : Cards ? _look.Card : "#00000000";
+
+    private void Hover(Border frame, string rest)
     {
-        frame.MouseEnter += (_, _) => frame.Background = UI.Brush("#14FFFFFF");
+        frame.MouseEnter += (_, _) => frame.Background = UI.Brush(_look.CardHover);
         frame.MouseLeave += (_, _) => frame.Background = UI.Brush(rest);
     }
 
     private Border Button(UIElement glyph, string name, double tile, Action action)
     {
         var frame = Frame(glyph, tile, name);
-        Hover(frame, "#00FFFFFF");
+        Hover(frame, Rest(false));
         // Taken here, so the bar does not start a drag to the other edge and catch the release.
         frame.MouseLeftButtonDown += (_, e) => e.Handled = true;
         frame.MouseLeftButtonUp += (_, e) => { action(); e.Handled = true; RefreshSoon(); };
@@ -103,17 +108,17 @@ internal sealed partial class DockWindow
         return frame;
     }
 
-    private static System.Windows.Shapes.Path StartGlyph(double tile)
+    private System.Windows.Shapes.Path StartGlyph(double tile)
     {
         double s = Math.Round(tile * 0.42);
         return new System.Windows.Shapes.Path { Data = Geometry.Parse("M 0,0 H 7 V 7 H 0 Z M 9,0 H 16 V 7 H 9 Z M 0,9 H 7 V 16 H 0 Z M 9,9 H 16 V 16 H 9 Z"),
-            Fill = UI.Brush("#4CC2FF"), Width = s, Height = s, Stretch = Stretch.Uniform };
+            Fill = UI.Brush(_look.Text), Opacity = 0.85, Width = s, Height = s, Stretch = Stretch.Uniform };
     }
 
-    private static System.Windows.Shapes.Path DesktopGlyph(double tile)
+    private System.Windows.Shapes.Path DesktopGlyph(double tile)
     {
         double s = Math.Round(tile * 0.42);
-        return new System.Windows.Shapes.Path { Data = Geometry.Parse("M 1,2 H 15 V 12 H 1 Z M 5,15 H 11 M 8,12 V 15"), Stroke = UI.Brush("#D9F2F2F4"),
+        return new System.Windows.Shapes.Path { Data = Geometry.Parse("M 1,2 H 15 V 12 H 1 Z M 5,15 H 11 M 8,12 V 15"), Stroke = UI.Brush(_look.Dim),
             StrokeThickness = 1.4, Width = s, Height = s, Stretch = Stretch.Uniform };
     }
 
@@ -130,12 +135,12 @@ internal sealed partial class DockWindow
             DockIndicator.Line => (app.Active ? tile * 0.6 : tile * 0.35, 2.5),
             _ => (app.Active ? 12.0 : 4.0, 3.0)
         };
-        var dot = new Rectangle { Height = dotHeight, Width = dotWidth, RadiusX = dotHeight / 2, RadiusY = dotHeight / 2, Fill = UI.Brush(app.Active ? "#F2F2F4" : "#99F2F2F4"),
+        var dot = new Rectangle { Height = dotHeight, Width = dotWidth, RadiusX = dotHeight / 2, RadiusY = dotHeight / 2, Fill = UI.Brush(settings.Accent), Opacity = app.Active ? 1 : 0.8,
             VerticalAlignment = VerticalAlignment.Bottom, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 0, 0, 2),
             Visibility = app.Open ? Visibility.Visible : Visibility.Hidden };
         var grid = new Grid(); grid.Children.Add(icon); grid.Children.Add(dot);
         // App cards: every app on a card in the dock's shade; otherwise only the app in front is shaded.
-        string rest = app.Active ? "#26FFFFFF" : settings.AppCards ? "#14FFFFFF" : "#00FFFFFF";
+        string rest = Rest(app.Active);
         var frame = Frame(grid, tile, app.Name);
         frame.Tag = app; frame.Background = UI.Brush(rest);
         // The preview shows the window titles, so the tooltip would only repeat them.

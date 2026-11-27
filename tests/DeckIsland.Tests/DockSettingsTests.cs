@@ -95,6 +95,15 @@ internal static class DockSettingsTests
         var odd = new DockSettings { Spacing = 99, Corner = -5, MagnificationSize = 1, Distance = 400, Padding = 30 };
         odd.Normalize();
         check("Dock layout settings are kept in range", odd is { Spacing: 24, Corner: 0, MagnificationSize: 10, Distance: 40, Padding: 16 });
+        var looks = Enum.GetValues<DockStyle>().SelectMany(style => Enum.GetValues<DockClearCards>().Select(cards => DockLook.For(style, cards))).ToList();
+        check("Dock looks are valid colours, glass only on the glass styles",
+            looks.All(l => new[] { l.Bar, l.Rim, l.Card, l.CardHover, l.CardActive, l.CardRim, l.Text, l.Dim, l.Divider }.All(c => ThemeColor.TryParse(c, out _)))
+            && DockLook.For(DockStyle.Liquid, 0).Glass && DockLook.For(DockStyle.IOS, 0).Glass && DockLook.For(DockStyle.Midnight, 0).Glass
+            && !DockLook.For(DockStyle.Black, 0).Glass && !DockLook.For(DockStyle.Clear, 0).Glass);
+        check("Dock Clear has no bar, and white cards get dark text",
+            DockLook.For(DockStyle.Clear, DockClearCards.White) is { Bar: "#00000000", Text: "#FF1D1D1F" } && DockLook.For(DockStyle.White, 0).Text == "#FF1D1D1F");
+        check("Dock accent keeps a colour and falls back to blue",
+            DockLook.Accents.Length == 9 && DockLook.NormalizeAccent("#ff7a1a") == "#FF7A1A" && DockLook.NormalizeAccent("nope") == DockLook.DefaultAccent && DockLook.NormalizeAccent("#80FF0000") == DockLook.DefaultAccent);
         check("Dock shows its buttons, previews and shortcuts by default",
             new DockSettings() is { ShowStart: true, ShowTrash: true, ShowDesktopButton: true, WindowPreviews: true, AppShortcuts: true });
     }

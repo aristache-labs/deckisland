@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Media;
 using DeckIsland.Core;
 
 namespace DeckIsland;
@@ -19,6 +20,21 @@ public sealed partial class SettingsWindow
         Group(Describe(Toggle(Loc.T("启用 Dock", "Turn on the dock"), S.DockEnabled, value => Change(s => s.DockEnabled = value),
                 help: Loc.T("随时按 Ctrl+Alt+Shift+Q 关闭 Dock 并恢复任务栏。", "Press Ctrl+Alt+Shift+Q at any time to turn the dock off and get the taskbar back.")),
             Loc.T("关闭后 Windows 任务栏恢复原样。", "Off, the Windows taskbar is back as it was.")));
+
+        SectionTitle(Loc.T("外观", "Appearance"), description: Loc.T("Dock 的样式和强调色。玻璃样式会透出 Dock 后面的内容。", "The dock's style and accent colour. The glass styles show what is behind the dock."));
+        var appearance = new List<FrameworkElement>
+        {
+            Describe(Row(Loc.T("Dock 样式", "Dock style"), StyleTiles(dock),
+                help: () => Loc.T("黑色、白色：不透明。Liquid、iOS、Midnight：透出后面内容的玻璃，Midnight 色调最深。透明：只留下小组件。\n玻璃样式开启时，Dock 不会出现在截图和录屏中。",
+                    "Black and White are solid. Liquid, iOS and Midnight are glass that shows what is behind, Midnight under the deepest tint. Clear leaves only the widgets.\nWhile a glass style is on, the dock is left out of screenshots and recordings.")),
+                Loc.T("六种样式。", "Six styles."))
+        };
+        if (dock.Style == DockStyle.Clear)
+            appearance.Add(Describe(Row(Loc.T("透明样式的小组件", "Widgets on Clear"), ClearTiles(dock),
+                help: () => Loc.T("透明样式下小组件所在的卡片。", "The cards the widgets sit on in the Clear style.")), Loc.T("黑色、磨砂或白色卡片。", "Black, frosted or white cards.")));
+        appearance.Add(Describe(Row(Loc.T("强调色", "Accent"), AccentDots(dock),
+            help: () => Loc.T("已打开应用的标记和高亮使用它。", "The open marker and highlights wear it.")), Loc.T("Dock 的强调色。", "The dock's accent colour.")));
+        Group([.. appearance]);
 
         SectionTitle(Loc.T("布局", "Layout"), description: Loc.T("Dock 在屏幕上的位置、大小和形状。也可以按住 Dock 的空白处拖到屏幕另一半。",
             "Where the dock sits, how big it is and its shape. You can also drag the dock by an empty spot to the other half of the screen."));
@@ -140,5 +156,70 @@ public sealed partial class SettingsWindow
             grid.Children.Add(choice);
         }
         return grid;
+    }
+
+    // A small picture of each style, as lumabar shows them: the bar in the style's colours with three cards on it; the chosen one
+    // ringed in the accent.
+    private FrameworkElement StyleTiles(DockSettings dock)
+    {
+        (string Name, DockStyle Style)[] styles = [(Loc.T("黑色", "Black"), DockStyle.Black), (Loc.T("白色", "White"), DockStyle.White), ("Liquid", DockStyle.Liquid),
+            ("iOS", DockStyle.IOS), ("Midnight", DockStyle.Midnight), (Loc.T("透明", "Clear"), DockStyle.Clear)];
+        var panel = new StackPanel { Orientation = Orientation.Horizontal };
+        foreach (var (name, style) in styles)
+        {
+            var look = DockLook.For(style, dock.ClearCards);
+            panel.Children.Add(PreviewTile(name, look, style switch
+            {
+                DockStyle.Liquid => "#FF3A4258", DockStyle.IOS => "#FF3D5684", DockStyle.Midnight => "#FF1C2029", DockStyle.Clear => "#FF8E8E93", _ => null
+            }, dock.Style == style, dock.Accent, () => { ChangeDock(d => d.Style = style); ShowPage(DockSettingsPage); }));
+        }
+        return panel;
+    }
+
+    private FrameworkElement ClearTiles(DockSettings dock)
+    {
+        (string Name, DockClearCards Cards)[] cards = [(Loc.T("黑色", "Black"), DockClearCards.Black), (Loc.T("磨砂", "Glass"), DockClearCards.Glass), (Loc.T("白色", "White"), DockClearCards.White)];
+        var panel = new StackPanel { Orientation = Orientation.Horizontal };
+        foreach (var (name, kind) in cards)
+            panel.Children.Add(PreviewTile(name, DockLook.For(DockStyle.Clear, kind), "#FF8A6FD6", dock.ClearCards == kind, dock.Accent,
+                () => { ChangeDock(d => d.ClearCards = kind); ShowPage(DockSettingsPage); }));
+        return panel;
+    }
+
+    // backdrop stands for what shows behind glass or Clear; null for the solid styles.
+    private FrameworkElement PreviewTile(string name, DockLook look, string? backdrop, bool chosen, string accent, Action choose)
+    {
+        var cards = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+        for (int i = 0; i < 3; i++) cards.Children.Add(new Border { Width = 11, Height = 11, CornerRadius = new CornerRadius(3), Margin = new Thickness(1.5, 0, 1.5, 0), Background = UI.Brush(look.Card) });
+        var bar = new Border { CornerRadius = new CornerRadius(8), Background = UI.Brush(look.Bar), BorderBrush = UI.Brush(look.Rim), BorderThickness = new Thickness(1), Child = cards };
+        var face = new Border { Width = 58, Height = 40, CornerRadius = new CornerRadius(9), Child = bar, ClipToBounds = true,
+            Background = backdrop is null ? Brushes.Transparent : new LinearGradientBrush((Color)ColorConverter.ConvertFromString(backdrop), (Color)ColorConverter.ConvertFromString("#FF14161C"), 90) };
+        var ring = new Border { CornerRadius = new CornerRadius(11), Padding = new Thickness(2), BorderThickness = new Thickness(2),
+            BorderBrush = UI.Brush(chosen ? accent : "#00000000"), Child = face, Cursor = System.Windows.Input.Cursors.Hand };
+        var label = TextLine(name, 11, chosen ? TextPrimary : TextSecondary, chosen ? FontWeights.SemiBold : FontWeights.Normal);
+        label.HorizontalAlignment = HorizontalAlignment.Center; label.Margin = new Thickness(0, 4, 0, 0);
+        var tile = new StackPanel { Margin = new Thickness(3, 6, 3, 6) };
+        tile.Children.Add(ring); tile.Children.Add(label);
+        var button = new Button { Content = tile, Style = (Style)FindResource("SettingsGlyphButton"), Padding = new Thickness(0) };
+        AutomationProperties.SetName(button, name);
+        button.Click += (_, _) => choose();
+        return button;
+    }
+
+    private FrameworkElement AccentDots(DockSettings dock)
+    {
+        var panel = new StackPanel { Orientation = Orientation.Horizontal };
+        foreach (var colour in DockLook.Accents)
+        {
+            bool chosen = string.Equals(colour, dock.Accent, StringComparison.OrdinalIgnoreCase);
+            var dot = new Border { Width = 20, Height = 20, CornerRadius = new CornerRadius(10), Background = UI.Brush(colour), Margin = new Thickness(3, 0, 3, 0),
+                Child = chosen ? new Border { Width = 7, Height = 7, CornerRadius = new CornerRadius(3.5), Background = Brushes.White } : null, Cursor = System.Windows.Input.Cursors.Hand };
+            var button = new Button { Content = dot, Style = (Style)FindResource("SettingsGlyphButton"), Padding = new Thickness(0) };
+            AutomationProperties.SetName(button, colour);
+            string chosenColour = colour;
+            button.Click += (_, _) => { ChangeDock(d => d.Accent = chosenColour); ShowPage(DockSettingsPage); };
+            panel.Children.Add(button);
+        }
+        return panel;
     }
 }

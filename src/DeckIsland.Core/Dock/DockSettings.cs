@@ -59,12 +59,17 @@ public sealed class DockSettings
     [JsonConverter(typeof(JsonStringEnumConverter))] public DockSpeed MagnificationSpeed { get; set; } = DockSpeed.Normal;
     [JsonConverter(typeof(JsonStringEnumConverter))] public DockIconSize IconSize { get; set; } = DockIconSize.Medium;
     // Each app on a card the dock's shade, rather than its bare icon.
-    public bool AppCards { get; set; }
+    public bool AppCards { get; set; } = true;
     public bool NamesOnHover { get; set; } = true;
     [JsonConverter(typeof(JsonStringEnumConverter))] public DockIndicator Indicator { get; set; } = DockIndicator.Dot;
     // Null follows Windows' time format.
     public bool? Clock24Hour { get; set; }
     public bool ClockSeconds { get; set; }
+    [JsonConverter(typeof(JsonStringEnumConverter))] public DockStyle Style { get; set; } = DockStyle.Black;
+    // What Clear puts the tiles on.
+    [JsonConverter(typeof(JsonStringEnumConverter))] public DockClearCards ClearCards { get; set; } = DockClearCards.Black;
+    // The dock's accent (#RRGGBB): the open marker and highlights wear it.
+    public string Accent { get; set; } = DockLook.DefaultAccent;
 
     public DockSettings Copy()
     {
@@ -82,6 +87,9 @@ public sealed class DockSettings
         if (!Enum.IsDefined(MagnificationSpeed)) MagnificationSpeed = DockSpeed.Normal;
         if (!Enum.IsDefined(IconSize)) IconSize = DockIconSize.Medium;
         if (!Enum.IsDefined(Indicator)) Indicator = DockIndicator.Dot;
+        if (!Enum.IsDefined(Style)) Style = DockStyle.Black;
+        if (!Enum.IsDefined(ClearCards)) ClearCards = DockClearCards.Black;
+        Accent = DockLook.NormalizeAccent(Accent);
         Distance = Math.Clamp(Distance, 0, MaxDistance);
         Spacing = Math.Clamp(Spacing, 0, MaxSpacing);
         Padding = Math.Clamp(Padding, 0, MaxPadding);

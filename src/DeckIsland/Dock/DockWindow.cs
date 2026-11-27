@@ -48,9 +48,6 @@ internal sealed partial class DockWindow : Window
     private readonly App _app;
     private readonly Grid _root = new();
     private readonly Border _bar;
-    private readonly StackPanel _clock = new() { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(10, 0, 8, 0) };
-    private readonly TextBlock _time = new() { FontSize = 13, FontWeight = FontWeights.SemiBold, HorizontalAlignment = HorizontalAlignment.Right };
-    private readonly TextBlock _date = new() { FontSize = 11, Opacity = 0.7, HorizontalAlignment = HorizontalAlignment.Right };
     private readonly DispatcherTimer _tick = new() { Interval = TimeSpan.FromSeconds(1) };
     private readonly DispatcherTimer _edgeWatch = new() { Interval = TimeSpan.FromMilliseconds(16) };
     private readonly DockPreview _preview;
@@ -75,12 +72,20 @@ internal sealed partial class DockWindow : Window
         WindowStyle = WindowStyle.None; AllowsTransparency = true; Background = Brushes.Transparent; ShowInTaskbar = false;
         Topmost = true; ShowActivated = false; ResizeMode = ResizeMode.NoResize; Focusable = false;
         Title = "DeckIsland Dock"; FontFamily = UI.PanelFont; Foreground = UI.Brush("#F2F2F4");
-        _clock.Children.Add(_time); _clock.Children.Add(_date);
         var row = new DockPanel { LastChildFill = false };
-        DockPanel.SetDock(_clock, System.Windows.Controls.Dock.Right); row.Children.Add(_clock); row.Children.Add(_apps);
-        // The bar's look until the styles of phase F4: lumabar's solid dark surface (rgba 22, 22, 26, 0.92).
-        _bar = new Border { Background = UI.Brush("#EB16161A"), BorderBrush = UI.Brush("#22FFFFFF"), BorderThickness = new Thickness(1),
-            MinWidth = DockGeometry.MinBarWidth, Child = row };
+        var clock = ClockCard();
+        DockPanel.SetDock(clock, System.Windows.Controls.Dock.Right); row.Children.Add(clock); row.Children.Add(_apps);
+        // The bar shows the screen behind it (glass styles) or its solid colour; the tint over it carries the style's colour.
+        _tint.Child = row;
+        _bar = new Border { BorderThickness = new Thickness(1), MinWidth = DockGeometry.MinBarWidth, Child = _tint };
+        _bar.ContextMenu = BarMenu();
+        _bar.ContextMenuOpening += (_, e) =>
+        {
+            // A tile's own menu opens over a tile (WPF opens the nearest menu); the bar's only needs focus on its empty parts.
+            if (e.OriginalSource is DependencyObject source && FindTile(source)) return;
+            _preview.HideNow(); _menuOpen = true; DockAppWindows.Focus(_handle);
+        };
+        _bar.ContextMenuClosing += (_, _) => _menuOpen = false;
         _root.Children.Add(_bar);
         Content = _root;
         _bar.AllowDrop = true;
@@ -96,6 +101,7 @@ internal sealed partial class DockWindow : Window
         // Closing, not Closed: the AppBar must be removed while its window still exists.
         Closing += (_, _) => Stop();
         ApplyStyle();
+        ApplyLook();
         Tick();
     }
 
@@ -103,7 +109,7 @@ internal sealed partial class DockWindow : Window
     {
         var settings = _app.DockSettings;
         var now = DateTime.Now;
-        _time.Text = DockGeometry.Clock(now, settings.Clock24Hour, settings.ClockSeconds, CultureInfo.CurrentCulture); _date.Text = now.ToString("d");
+        UpdateClock(now, settings);
         // Windows' energy saver: the dock reads its windows less often, unless the clock shows seconds.
         _tick.Interval = TimeSpan.FromSeconds(!settings.ClockSeconds && EnergySaverOn() ? 3 : 1);
         RefreshApps();
@@ -130,6 +136,7 @@ internal sealed partial class DockWindow : Window
         _taskbarCreated = RegisterWindowMessage("TaskbarCreated");
         ClaimPanicKey();
         Place();
+        ApplyLook();
         _tick.Start(); _edgeWatch.Start();
     }
 
@@ -142,7 +149,7 @@ internal sealed partial class DockWindow : Window
 
     private void Stop()
     {
-        _tick.Stop(); _edgeWatch.Stop();
+        _tick.Stop(); _edgeWatch.Stop(); _glass.Stop();
         _preview.Close();
         if (_handle == IntPtr.Zero) return;
         UnregisterHotKey(_handle, PanicHotkey);
@@ -167,6 +174,7 @@ internal sealed partial class DockWindow : Window
     public void Apply()
     {
         ApplyStyle();
+        ApplyLook();
         if (!_app.DockSettings.AutoHide) _target = _reveal = 1;
         Place();
         RefreshSoon();
@@ -177,8 +185,8 @@ internal sealed partial class DockWindow : Window
     {
         var settings = _app.DockSettings;
         _bar.Height = settings.Size;
-        _bar.CornerRadius = new CornerRadius(DockGeometry.CornerRadius(settings.Corner, settings.Size));
-        _bar.Padding = new Thickness(settings.Padding, 0, settings.Padding, 0);
+        _bar.CornerRadius = _tint.CornerRadius = new CornerRadius(DockGeometry.CornerRadius(settings.Corner, settings.Size));
+        _tint.Padding = new Thickness(settings.Padding, 0, settings.Padding, 0);
         _bar.VerticalAlignment = settings.Edge == DockEdge.Top ? VerticalAlignment.Top : VerticalAlignment.Bottom;
     }
 
