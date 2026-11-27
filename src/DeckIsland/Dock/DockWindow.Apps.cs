@@ -65,7 +65,15 @@ internal sealed partial class DockWindow
         double tile = _tileSize = Math.Min(settings.Size - (settings.FullWidth ? 10 : 6), settings.Size - 2 * settings.Padding);
         _spacing = settings.Spacing;
         _startTile = settings.ShowStart ? Button(StartGlyph(tile), Loc.T("开始", "Start"), tile, DockShell.OpenStart) : null;
-        if (_startTile is not null) _apps.Children.Add(_startTile);
+        if (_startTile is not null)
+        {
+            // Start always sits on a card, app cards or not.
+            _startTile.Background = UI.Brush(_look.Card);
+            _startTile.BorderBrush = UI.Brush(_look.CardRim);
+            _startTile.BorderThickness = new Thickness(1);
+            _startTile.MouseLeave += (_, _) => _startTile.Background = UI.Brush(_look.Card);
+            _apps.Children.Add(_startTile);
+        }
         foreach (var app in apps) _apps.Children.Add(Tile(app, tile));
         AddWidgets(settings, tile);
         if (settings.ShowTrash)
