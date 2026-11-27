@@ -39,10 +39,12 @@ internal sealed partial class DockWindow
         // The tiles were drawn in the previous style's colours.
         _signature = "";
         if (_handle == IntPtr.Zero) return;
-        if (_look.Glass != _glassOn)
+        // Liquid is clear glass: the screen shows through its light tint unblurred, so it needs no backdrop.
+        bool blur = _look.Glass && DockSmart.Effective(settings.Style, settings.SunsetDarkMode, _app.DockDaylight) != DockStyle.Liquid;
+        if (blur != _glassOn)
         {
-            _glassOn = _look.Glass;
-            if (_glassOn) _glass.Start(); else _glass.Stop();
+            _glassOn = blur;
+            if (_glassOn) _glass.Start(); else { _glass.Stop(); _backdrop?.Hide(); }
         }
         // Glass comes from the backdrop window now, so the dock shows in captures unless the island's setting hides it.
         ScreenShots.Exclude(this, _app.Settings.HideFromCapture);
