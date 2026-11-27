@@ -100,8 +100,8 @@ public sealed partial class SettingsWindow
                 help: Loc.T("从比 Windows 任务栏更小，到适合 1440p 屏幕。小、中、大分别约为 46、52 和 62。", "From smaller than the Windows taskbar up to big enough for a 1440p screen. Small, medium and large are about 46, 52 and 62.")),
                 Loc.T("Dock 栏的高度。", "The height of the bar.")),
             Describe(InlineSlider(Loc.T("离边缘距离", "Distance from edge"), dock.Distance, 0, Core.DockSettings.MaxDistance, 1, "px", value => ChangeDock(d => d.Distance = (int)value),
-                help: Loc.T("把 Dock 从屏幕边缘抬起；窗口最大化时停在它上方。", "Raises the dock off the screen edge; maximized windows still stop above it.")),
-                Loc.T("Dock 与屏幕边缘之间的空隙。", "The gap between the dock and the screen edge.")),
+                help: Loc.T("控制浮动 Dock 与屏幕边缘的距离。", "Controls the floating dock's distance from the screen edge.")),
+                Loc.T("浮动 Dock 与屏幕边缘之间的空隙。", "The gap between the floating dock and the screen edge.")),
             Describe(InlineSlider(Loc.T("间距", "Spacing"), dock.Spacing, 0, Core.DockSettings.MaxSpacing, 1, "px", value => ChangeDock(d => d.Spacing = (int)value),
                 help: Loc.T("图标之间的空隙。", "The space between icons.")), Loc.T("图标之间的距离。", "How far apart the icons are.")),
             Describe(InlineSlider(Loc.T("内边距", "Padding"), dock.Padding, 0, Core.DockSettings.MaxPadding, 1, "px", value => ChangeDock(d => d.Padding = (int)value),
@@ -109,8 +109,8 @@ public sealed partial class SettingsWindow
             Describe(InlineSlider(Loc.T("圆角", "Corner radius"), dock.Corner, 0, Core.DockSettings.MaxCorner, 5, "%", value => ChangeDock(d => d.Corner = (int)value),
                 help: Loc.T("0% 为方角，100% 为胶囊形。图标的卡片跟随它。", "0% is square, 100% a pill. The icons' cards follow it.")), Loc.T("方角或圆角。", "Square or round.")),
             Describe(Toggle(Loc.T("全宽", "Full width"), dock.FullWidth, value => ChangeDock(d => d.FullWidth = value),
-                help: Loc.T("像 Windows 任务栏一样横跨整个屏幕边缘，两端留出相同的空隙。", "Spans the whole screen edge like the Windows taskbar, with the same gap at both ends.")),
-                Loc.T("横跨整个屏幕边缘，而不是按图标的宽度。", "Across the whole screen edge rather than as wide as its icons.")));
+                help: Loc.T("Dock 贴紧屏幕边缘，两端没有空隙。", "Fits flush against the screen edge and reaches both ends.")),
+                Loc.T("贴紧整条屏幕边缘。", "Fills the entire screen edge.")));
 
         SectionTitle(Loc.T("行为", "Behavior"), description: Loc.T("Dock 何时显示，以及它的图标如何响应。", "When the dock shows and how its icons respond."));
         var behavior = new List<FrameworkElement>

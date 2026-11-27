@@ -27,15 +27,14 @@ public static class DockGeometry
     // The strip the shell grants may differ from the one asked for; the dock keeps its own height on the granted edge.
     public static PixelRect KeepHeight(PixelRect granted, DockEdge edge, int stripHeight) => Strip(granted, edge, stripHeight);
 
-    // The bar in its strip: distance away from the screen edge, the rest of the strip shared evenly above and below it; centred and
-    // sized to its tiles, or across the strip with the same gap at its ends.
+    // A full-width bar fills the edge; a floating bar keeps its side margins and the requested distance.
     public static PixelRect Bar(PixelRect strip, DockEdge edge, int barWidth, int barHeight, int distance = 0, bool fullWidth = false)
     {
+        if (fullWidth) return Strip(strip, edge, Math.Min(barHeight, strip.Height));
         int height = Math.Min(barHeight, Math.Max(1, strip.Height - distance));
         int gap = Math.Max(0, (strip.Height - distance - height) / 2);
         int top = edge == DockEdge.Top ? strip.Top + distance + gap : strip.Bottom - distance - gap - height;
-        int width = fullWidth ? Math.Max(MinBarWidth, strip.Width - 2 * Math.Max(gap, SideMargin))
-            : Math.Clamp(barWidth, MinBarWidth, Math.Max(MinBarWidth, strip.Width - 2 * SideMargin));
+        int width = Math.Clamp(barWidth, MinBarWidth, Math.Max(MinBarWidth, strip.Width - 2 * SideMargin));
         int left = strip.Left + (strip.Width - width) / 2;
         return new PixelRect(left, top, left + width, top + height);
     }

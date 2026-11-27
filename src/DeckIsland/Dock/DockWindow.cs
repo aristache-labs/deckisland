@@ -220,7 +220,7 @@ internal sealed partial class DockWindow : Window
         _dockRow.FullWidth = settings.FullWidth;
         _dockRow.InvalidateArrange();
         _bar.Height = settings.Size;
-        _bar.CornerRadius = _tint.CornerRadius = new CornerRadius(DockGeometry.CornerRadius(settings.Corner, settings.Size));
+        _bar.CornerRadius = _tint.CornerRadius = new CornerRadius(settings.FullWidth ? 0 : DockGeometry.CornerRadius(settings.Corner, settings.Size));
         _tint.Padding = new Thickness(settings.Padding, 0, settings.Padding, 0);
         _bar.VerticalAlignment = settings.Edge == DockEdge.Top ? VerticalAlignment.Top : VerticalAlignment.Bottom;
     }
@@ -232,7 +232,8 @@ internal sealed partial class DockWindow : Window
         var settings = _app.DockSettings;
         var (bounds, _, scale) = WindowsHost.MonitorScreen(Monitor) ?? WindowsHost.PrimaryScreen();
         _screen = new PixelRect((int)bounds.Left, (int)bounds.Top, (int)bounds.Right, (int)bounds.Bottom);
-        int stripHeight = (int)Math.Round((DockGeometry.StripHeight(settings.Size) + settings.Distance) * scale);
+        int distance = settings.FullWidth ? 0 : settings.Distance;
+        int stripHeight = (int)Math.Round((settings.FullWidth ? settings.Size : DockGeometry.StripHeight(settings.Size) + distance) * scale);
         var strip = DockGeometry.Strip(_screen, settings.Edge, stripHeight);
         if (settings.AutoHide) Unregister();
         else
@@ -253,7 +254,7 @@ internal sealed partial class DockWindow : Window
         _barWidth = NaturalWidth();
         // The width is laid out at the window's own DPI, which may still be another monitor's until WM_DPICHANGED.
         var bar = DockGeometry.Bar(strip, settings.Edge, (int)Math.Ceiling(_barWidth * VisualTreeHelper.GetDpi(this).DpiScaleX),
-            (int)Math.Round(settings.Size * scale), (int)Math.Round(settings.Distance * scale), settings.FullWidth);
+            (int)Math.Round(settings.Size * scale), (int)Math.Round(distance * scale), settings.FullWidth);
         int extra = settings.Magnification ? (int)Math.Ceiling(settings.Size * settings.MagnificationSize / 100.0 * scale) + 4 : 0;
         _window = DockGeometry.Window(bar, settings.Edge, extra);
         Move();

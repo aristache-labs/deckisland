@@ -43,8 +43,9 @@ internal static class DockSettingsTests
         check("Dock bar keeps its distance from the edge on either edge",
             DockGeometry.Bar(new PixelRect(0, 1000, 1920, 1080), DockEdge.Bottom, 400, 52, 20) is { Bottom: 1056, Height: 52 }
             && DockGeometry.Bar(new PixelRect(0, 0, 1920, 80), DockEdge.Top, 400, 52, 20) is { Top: 24, Height: 52 });
-        check("Dock full width keeps the same gap at its ends",
-            DockGeometry.Bar(new PixelRect(0, 1020, 1920, 1080), DockEdge.Bottom, 400, 52, 0, true) is { Left: 8, Right: 1912 });
+        check("Dock full width fills both ends and touches the chosen edge regardless of floating distance",
+            DockGeometry.Bar(new PixelRect(0, 1020, 1920, 1080), DockEdge.Bottom, 400, 52, 20, true) == new PixelRect(0, 1028, 1920, 1080)
+            && DockGeometry.Bar(new PixelRect(-1920, -180, 0, -100), DockEdge.Top, 400, 52, 20, true) == new PixelRect(-1920, -180, 0, -128));
         check("Dock window grows towards the screen's middle for magnification",
             DockGeometry.Window(new PixelRect(10, 1000, 410, 1052), DockEdge.Bottom, 30) == new PixelRect(10, 970, 410, 1052)
             && DockGeometry.Window(new PixelRect(10, 4, 410, 56), DockEdge.Top, 30) == new PixelRect(10, 4, 410, 86));
