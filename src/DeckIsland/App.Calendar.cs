@@ -107,6 +107,17 @@ public partial class App
         return true;
     }
 
+    // Only events added from the dock can be removed; subscribed calendars are read only.
+    internal void RemoveLocalCalendarEvent(Guid id)
+    {
+        if (!Settings.LocalCalendarEvents.Any(item => item.Id == id)) return;
+        Settings.LocalCalendarEvents = [.. Settings.LocalCalendarEvents.Where(item => item.Id != id)];
+        SetCalendarEvents(CalendarEvents.Where(item => item.Source != Guid.Empty));
+        QueueSave();
+        _calendarNextShown = null;
+        CalendarChanged();
+    }
+
     // A source removed: its link leaves the secret store, and its events the list.
     internal void ForgetCalendar(Guid id)
     {

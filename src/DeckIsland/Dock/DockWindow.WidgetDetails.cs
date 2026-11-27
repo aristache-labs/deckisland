@@ -36,8 +36,9 @@ internal sealed partial class DockWindow
 
         bool weather = kind == DockWidgetKind.ClockWeather || DockWidgets.IsWeather(kind);
         var (content, update) = weather ? WeatherPopupContent() : CalendarDetails();
-        var close = DetailButton("×", Loc.T("关闭", "Close"), CloseWidgetDetails);
-        close.Width = 30;
+        var close = DetailButton("×", Loc.T("关闭", "Close"), CloseWidgetDetails, radius: weather ? 5 : CalendarRadius(17, 17));
+        close.Width = weather ? 30 : 34;
+        if (!weather) { close.Height = 34; close.FontSize = 20; close.Background = UI.Brush(CalendarTile); }
         close.HorizontalAlignment = HorizontalAlignment.Right;
         close.VerticalAlignment = VerticalAlignment.Top;
         var body = new Grid { Children = { content, close } };
@@ -46,7 +47,7 @@ internal sealed partial class DockWindow
         var card = new Border
         {
             Width = Math.Min(weather ? 390 : 760, Math.Max(300, workWidth - 24)),
-            Padding = new Thickness(weather ? 14 : 18), CornerRadius = new CornerRadius(14),
+            Padding = new Thickness(weather ? 14 : 18), CornerRadius = new CornerRadius(weather ? 14 : CalendarRadius(14, 30)),
             Background = UI.Brush(_look.Text == "#FF1D1D1F" ? "#FFF8F8FA" : "#FF202024"),
             BorderBrush = UI.Brush(_look.CardRim), BorderThickness = new Thickness(1), Child = body
         };
@@ -83,7 +84,7 @@ internal sealed partial class DockWindow
         popup.IsOpen = true;
     }
 
-    private Button DetailButton(string text, string label, Action click, double radius = 5)
+    private Button DetailButton(string text, string label, Action click, double radius = 5, string? hover = null)
     {
         var button = new Button
         {
@@ -100,11 +101,11 @@ internal sealed partial class DockWindow
         presenter.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
         border.AppendChild(presenter);
         var template = new ControlTemplate(typeof(Button)) { VisualTree = border };
-        var hover = new Trigger { Property = UIElement.IsMouseOverProperty, Value = true };
-        hover.Setters.Add(new Setter(Control.BackgroundProperty, UI.Brush(_look.CardHover)));
+        var hovered = new Trigger { Property = UIElement.IsMouseOverProperty, Value = true };
+        hovered.Setters.Add(new Setter(Control.BackgroundProperty, UI.Brush(hover ?? _look.CardHover)));
         var focus = new Trigger { Property = UIElement.IsKeyboardFocusedProperty, Value = true };
         focus.Setters.Add(new Setter(Control.BorderBrushProperty, UI.Brush(Accent)));
-        template.Triggers.Add(hover);
+        template.Triggers.Add(hovered);
         template.Triggers.Add(focus);
         button.Template = template;
         AutomationProperties.SetName(button, label);
