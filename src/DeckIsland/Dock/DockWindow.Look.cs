@@ -19,8 +19,8 @@ internal sealed partial class DockWindow
     private DockBackdrop? _backdrop;
     private bool _glassOn, _readGlass;
     private byte[]? _lastGlass;
-    // Liquid's soft blur: the screen behind read at a sixth of its size and stretched back, a light frost.
-    private const double LiquidShrink = 6;
+    // Liquid's blur: the screen behind read at 1/LiquidShrink of its size and stretched back; the larger, the softer.
+    private const double LiquidShrink = 26;
     private DockLook _look = DockLook.For(DockStyle.Black, DockClearCards.Black);
 
     // The style's colours on the bar, the clock and (through RefreshSoon) the tiles; glass started or stopped to match.
@@ -32,10 +32,14 @@ internal sealed partial class DockWindow
         _bar.BorderBrush = UI.Brush(_look.Rim);
         // A transparent rim would leave a 1px gap around the tint that shows the screen behind; no rim, no border.
         _bar.BorderThickness = new Thickness(settings.Style == DockStyle.Clear || _look.Rim.StartsWith("#00", StringComparison.Ordinal) ? 0 : 1);
+        _tint.BorderThickness = new Thickness(0);
         if (DockSmart.Effective(settings.Style, settings.SunsetDarkMode, _app.DockDaylight) == DockStyle.Liquid)
         {
             _bar.BorderBrush = LiquidRim(settings.FullWidth, settings.Edge == DockEdge.Top);
-            _bar.BorderThickness = new Thickness(1.5);
+            _bar.BorderThickness = new Thickness(1);
+            // A second, inner rim: light along the top edge fading out by the middle, as thick glass catches light on its inside.
+            _tint.BorderBrush = LiquidInnerRim(settings.Edge == DockEdge.Top && settings.FullWidth);
+            _tint.BorderThickness = new Thickness(1);
         }
         _bar.Background = Brushes.Transparent;
         _lastGlass = null;
@@ -52,6 +56,9 @@ internal sealed partial class DockWindow
             _readGlass = read;
             _lastGlass = null;
             _backdrop?.Hide();
+            // Liquid reads the screen every frame so a window sliding behind moves smoothly through the glass; the backdrop window
+            // only needs to follow the bar.
+            _glass.Interval = TimeSpan.FromMilliseconds(_readGlass ? 16 : 120);
             if (_glassOn) _glass.Start(); else _glass.Stop();
         }
         // Reading the screen would read the dock too, so while it does the dock is left out of captures; otherwise as the island's
@@ -91,10 +98,21 @@ internal sealed partial class DockWindow
                 { new GradientStop(Color.FromArgb(0x80, 255, 255, 255), 0), new GradientStop(Color.FromArgb(0x33, 255, 255, 255), 1) } }
             : new LinearGradientBrush { StartPoint = new Point(0, 0), EndPoint = new Point(1, 1), GradientStops =
                 {
-                    new GradientStop(Color.FromArgb(0xB3, 255, 255, 255), 0), new GradientStop(Color.FromArgb(0x26, 255, 255, 255), 0.22),
-                    new GradientStop(Color.FromArgb(0x1A, 255, 255, 255), 0.5), new GradientStop(Color.FromArgb(0x26, 255, 255, 255), 0.78),
-                    new GradientStop(Color.FromArgb(0x99, 255, 255, 255), 1)
+                    new GradientStop(Color.FromArgb(0xE6, 255, 255, 255), 0), new GradientStop(Color.FromArgb(0x40, 255, 255, 255), 0.12),
+                    new GradientStop(Color.FromArgb(0x14, 255, 255, 255), 0.5), new GradientStop(Color.FromArgb(0x40, 255, 255, 255), 0.88),
+                    new GradientStop(Color.FromArgb(0xCC, 255, 255, 255), 1)
                 } };
+        brush.Freeze();
+        return brush;
+    }
+
+    private static Brush LiquidInnerRim(bool flipped)
+    {
+        var brush = new LinearGradientBrush { StartPoint = new Point(0, flipped ? 1 : 0), EndPoint = new Point(0, flipped ? 0 : 1), GradientStops =
+            {
+                new GradientStop(Color.FromArgb(0x59, 255, 255, 255), 0), new GradientStop(Color.FromArgb(0x0D, 255, 255, 255), 0.45),
+                new GradientStop(Color.FromArgb(0x00, 255, 255, 255), 0.6), new GradientStop(Color.FromArgb(0x14, 255, 255, 255), 1)
+            } };
         brush.Freeze();
         return brush;
     }
@@ -123,7 +141,10 @@ internal sealed partial class DockWindow
     private void ReadGlass(Point from, Point to)
     {
         int x = (int)Math.Floor(from.X), y = (int)Math.Floor(from.Y), width = (int)Math.Ceiling(to.X - from.X), height = (int)Math.Ceiling(to.Y - from.Y);
-        if (GlassCapture.Grab(x, y, width, height, LiquidShrink) is not { } picture) return;
+        if (GlassCapture.Grab(x, y, width, height, LiquidShrink) is not { } grabbed) return;
+        // A screen bitmap comes back as Bgra32 with every alpha 0, so drawn as is it would be invisible; read as Bgr32 it is opaque.
+        var picture = new FormatConvertedBitmap(grabbed, PixelFormats.Bgr32, null, 0);
+        picture.Freeze();
         int stride = picture.PixelWidth * ((picture.Format.BitsPerPixel + 7) / 8);
         var pixels = new byte[stride * picture.PixelHeight];
         picture.CopyPixels(pixels, stride, 0);
