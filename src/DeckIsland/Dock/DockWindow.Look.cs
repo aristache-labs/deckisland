@@ -35,11 +35,7 @@ internal sealed partial class DockWindow
         // Measured from lumabar: the glass styles' rims are an even 2px of cool, see-through white all the way round.
         switch (DockSmart.Effective(settings.Style, settings.SunsetDarkMode, _app.DockDaylight))
         {
-            case DockStyle.Liquid or DockStyle.IOS:
-                _bar.BorderBrush = UI.Brush("#4DC8D7EB");
-                _bar.BorderThickness = new Thickness(2);
-                break;
-            case DockStyle.Midnight:
+            case DockStyle.Liquid or DockStyle.IOS or DockStyle.Midnight:
                 _bar.BorderThickness = new Thickness(2);
                 break;
         }
