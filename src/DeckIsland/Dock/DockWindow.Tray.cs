@@ -1,3 +1,4 @@
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
@@ -19,6 +20,18 @@ internal sealed partial class DockWindow
     private Popup? _trayPopup;
 
     [DllImport("user32.dll")] private static extern uint GetDoubleClickTime();
+
+    // Apps draw their tray icons for the Windows taskbar's theme, not the dock's: white icons for a dark taskbar. The grid follows
+    // that theme so every icon stays visible, whatever the dock's style.
+    private static bool TrayLight()
+    {
+        try
+        {
+            using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize");
+            return key?.GetValue("SystemUsesLightTheme") is int value && value != 0;
+        }
+        catch (Exception ex) when (ex is System.Security.SecurityException or UnauthorizedAccessException or IOException) { return false; }
+    }
 
     private (FrameworkElement, Action) TrayArrow(double tile)
     {
@@ -42,11 +55,11 @@ internal sealed partial class DockWindow
             return;
         }
         bool top = _app.DockSettings.Edge == DockEdge.Top;
-        bool light = _look.Text == "#FF1D1D1F";
+        bool light = TrayLight();
         var grid = new UniformGrid { Columns = TrayColumns };
         foreach (var icon in VisibleTrayIcons(tray.AllIcons.OfType<NotifyIcon>())) grid.Children.Add(TrayIcon(icon));
         if (grid.Children.Count == 0)
-            grid.Children.Add(new TextBlock { Text = Loc.T("没有托盘图标", "No tray icons"), Foreground = UI.Brush(_look.Dim), Margin = new Thickness(8) });
+            grid.Children.Add(new TextBlock { Text = Loc.T("没有托盘图标", "No tray icons"), Foreground = UI.Brush(light ? "#FF6E6E73" : "#A6F5F5F7"), Margin = new Thickness(8) });
         _trayPopup = new Popup
         {
             PlacementTarget = anchor, Placement = top ? PlacementMode.Bottom : PlacementMode.Top, StaysOpen = true, AllowsTransparency = true,
@@ -92,7 +105,7 @@ internal sealed partial class DockWindow
         var image = new Image { Source = icon.Icon, Width = 20, Height = 20, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
         RenderOptions.SetBitmapScalingMode(image, BitmapScalingMode.HighQuality);
         var cell = new Border { Width = 36, Height = 36, CornerRadius = new CornerRadius(8), Background = UI.Brush("#00000000"), Child = image, ToolTip = icon.Title };
-        cell.MouseEnter += (_, _) => { cell.Background = UI.Brush(_look.Text == "#FF1D1D1F" ? "#17000000" : "#24FFFFFF"); Place(icon, cell); icon.IconMouseEnter(CursorParam()); };
+        cell.MouseEnter += (_, _) => { cell.Background = UI.Brush(TrayLight() ? "#17000000" : "#24FFFFFF"); Place(icon, cell); icon.IconMouseEnter(CursorParam()); };
         cell.MouseLeave += (_, _) => { cell.Background = UI.Brush("#00000000"); icon.IconMouseLeave(CursorParam()); };
         cell.MouseMove += (_, _) => icon.IconMouseMove(CursorParam());
         cell.MouseDown += (_, e) => { e.Handled = true; Place(icon, cell); icon.IconMouseDown(e.ChangedButton, CursorParam(), (int)GetDoubleClickTime()); };
