@@ -26,4 +26,21 @@ internal static class DockSettingsTests
         check("Dock falls back to defaults and keeps an unreadable file aside",
             broken.Load().Edge == DockEdge.Bottom && broken.KeptUnreadable is { } kept && File.Exists(Path.Combine(folder, kept)));
     }
+
+    internal static void Geometry(Action<string, bool> check)
+    {
+        check("Dock strip heights match the S/M/L presets",
+            DockGeometry.StripHeight(46) == 52 && DockGeometry.StripHeight(52) == 60 && DockGeometry.StripHeight(62) == 72);
+        var screen = new PixelRect(0, 0, 1920, 1080);
+        check("Dock strip sits on the chosen edge",
+            DockGeometry.Strip(screen, DockEdge.Bottom, 60) == new PixelRect(0, 1020, 1920, 1080) && DockGeometry.Strip(screen, DockEdge.Top, 60) == new PixelRect(0, 0, 1920, 60));
+        var bar = DockGeometry.Bar(new PixelRect(0, 1020, 1920, 1080), 400, 52);
+        check("Dock bar is centred in its strip", bar == new PixelRect(760, 1024, 1160, 1076));
+        check("Dock bar keeps its minimum and side margins",
+            DockGeometry.Bar(new PixelRect(0, 0, 1920, 60), 10, 52).Width == DockGeometry.MinBarWidth && DockGeometry.Bar(new PixelRect(0, 0, 1920, 60), 5000, 52).Width == 1920 - 2 * DockGeometry.SideMargin);
+        check("Dock keeps its height on a strip the shell moved",
+            DockGeometry.KeepHeight(new PixelRect(0, 900, 1920, 1040), DockEdge.Bottom, 60) == new PixelRect(0, 980, 1920, 1040));
+        var state = new DockTaskbarState(2, true, 42);
+        check("Dock taskbar state round-trips and rejects damage", DockTaskbarState.Parse(state.ToJson()) == state && DockTaskbarState.Parse("{ nope") is null);
+    }
 }

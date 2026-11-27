@@ -30,11 +30,11 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
     private ScrollViewer _scroll = null!;
     private static string[] _pages => [Loc.T("常规", "General"), Loc.T("收起外观", "Collapsed view"), Loc.T("展开外观", "Expanded view"),
         Loc.T("配额与统计", "Quotas and usage"), Loc.T("模型价格", "Model prices"), Loc.T("样式", "Style"), Loc.T("播放器", "Players"), Loc.T("关于 DeckIsland", "About DeckIsland"), Loc.T("面板主题", "Panel theme"), Loc.T("显示与读数", "Display and readings"), Loc.T("增强传感器", "Enhanced sensors"), Loc.T("快捷键", "Shortcuts"), Loc.T("显示与设备", "Display and devices"),
-        Loc.T("剪贴板", "Clipboard"), Loc.T("文件中转", "File transfer"), Loc.T("快捷操作", "Quick actions"), Loc.T("显示器与配置", "Displays and profiles"), Loc.T("页面布局", "Page layout"), Loc.T("剪贴板同步", "Clipboard sync"), Loc.T("天气", "Weather"), Loc.T("专注计时器", "Focus timer"), Loc.T("提醒", "Reminders"), Loc.T("小组件与标签页", "Widgets & Tabs"), Loc.T("通知与状态提示", "Notifications and HUDs"), Loc.T("通话", "Calls"), Loc.T("代码草稿", "Scratchpad"), Loc.T("换算", "Converter"), Loc.T("终端", "Terminal"), Loc.T("连接", "Connections")];
+        Loc.T("剪贴板", "Clipboard"), Loc.T("文件中转", "File transfer"), Loc.T("快捷操作", "Quick actions"), Loc.T("显示器与配置", "Displays and profiles"), Loc.T("页面布局", "Page layout"), Loc.T("剪贴板同步", "Clipboard sync"), Loc.T("天气", "Weather"), Loc.T("专注计时器", "Focus timer"), Loc.T("提醒", "Reminders"), Loc.T("小组件与标签页", "Widgets & Tabs"), Loc.T("通知与状态提示", "Notifications and HUDs"), Loc.T("通话", "Calls"), Loc.T("代码草稿", "Scratchpad"), Loc.T("换算", "Converter"), Loc.T("终端", "Terminal"), Loc.T("连接", "Connections"), "DeckIsland Dock"];
     // The order of the pages in the navigation; the theme page (ThemePage) and the shortcuts (HotkeysPage) are listed with the
     // basic pages, and the system monitor's page (MonitorSettingsPage) has its own group after music, then the clipboard's
     // pages (the layout first), before About. The profiles page (ProfilesPage) closes the basic pages.
-    private static readonly int[] PageOrder = [0, 1, 2, WidgetsSettingsPage, NotificationsSettingsPage, CallsSettingsPage, ConnectionsSettingsPage, ThemePage, HotkeysPage, ProfilesPage, 3, 4, 5, 6, MusicGesturesPage, MonitorSettingsPage, SensorsPage, ShelfLayoutSettingsPage, ClipboardSettingsPage, TransferSettingsPage, ClipboardSyncSettingsPage, DevicesSettingsPage, 7];
+    private static readonly int[] PageOrder = [0, 1, 2, WidgetsSettingsPage, NotificationsSettingsPage, CallsSettingsPage, ConnectionsSettingsPage, ThemePage, HotkeysPage, ProfilesPage, 3, 4, 5, 6, MusicGesturesPage, MonitorSettingsPage, SensorsPage, ShelfLayoutSettingsPage, ClipboardSettingsPage, TransferSettingsPage, ClipboardSyncSettingsPage, DevicesSettingsPage, DockSettingsPage, 7];
     private int _page;
     private bool _preview;
     private StackPanel? _appRows;
@@ -337,9 +337,9 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
         _page = page; _cardTitle = null; _cardBody = null; _navigation.Children.Clear(); _content.Children.Clear(); _optionCards.Clear(); _aboutUpdateView = null; _scroll.ScrollToTop();
         foreach (int i in PageOrder)
         {
-            if (i is 0 or 3 or 5 or 7 or MonitorSettingsPage or ShelfLayoutSettingsPage or DevicesSettingsPage)
+            if (i is 0 or 3 or 5 or 7 or MonitorSettingsPage or ShelfLayoutSettingsPage or DevicesSettingsPage or DockSettingsPage)
             {
-                var group = TextLine(i switch { 0 => Loc.T("基础设置", "Basics"), 3 => Loc.T("AI 用量", "AI usage"), MonitorSettingsPage => Loc.T("系统监控", "System monitor"), ShelfLayoutSettingsPage => Loc.T("中转站", "Shelf"), DevicesSettingsPage => Loc.T("设备电量", "Device batteries"), WeatherSettingsPage => Loc.T("天气", "Weather"), RemindersSettingsPage => Loc.T("效率工具", "Productivity"), 5 => Loc.T("音乐", "Music"), _ => Loc.T("关于", "About") },10.5,TextTertiary);
+                var group = TextLine(i switch { 0 => Loc.T("基础设置", "Basics"), 3 => Loc.T("AI 用量", "AI usage"), MonitorSettingsPage => Loc.T("系统监控", "System monitor"), ShelfLayoutSettingsPage => Loc.T("中转站", "Shelf"), DevicesSettingsPage => Loc.T("设备电量", "Device batteries"), DockSettingsPage => "Dock", WeatherSettingsPage => Loc.T("天气", "Weather"), RemindersSettingsPage => Loc.T("效率工具", "Productivity"), 5 => Loc.T("音乐", "Music"), _ => Loc.T("关于", "About") },10.5,TextTertiary);
                 group.Margin = new Thickness(12, i == 0 ? 0 : 24, 0, 8); _navigation.Children.Add(group);
             }
             int target=i; bool selected=page==i;
@@ -377,6 +377,7 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
         if (page == ScratchpadSettingsPage) PageHeader(head, Loc.T("带语法着色、按语言分别保存的代码草稿。", "A code pad that keeps a draft per language."));
         if (page == ConverterSettingsPage) PageHeader(head, Loc.T("单位换算，以及按央行参考汇率的货币换算。", "Unit conversion, and currencies at the central banks' reference rates."));
         if (page == TerminalSettingsPage) PageHeader(head, Loc.T("在灵动岛里运行的命令行及其外观。", "The shell that runs inside the notch, and how it looks."));
+        if (page == DockSettingsPage) PageHeader(head, Loc.T("Dock 的开关、布局和任务栏。它的设置单独保存。", "The dock's switch, layout and taskbar. Its settings are kept apart from the island's."));
         if (page == ConnectionsSettingsPage) PageHeader(head, Loc.T("DeckIsland 读取的外部服务。", "Outside services DeckIsland reads."));
         if (page == CallsSettingsPage) PageHeader(head, Loc.T("通话时灵动岛显示的计时、静音和设备检查。", "The timer, mute and device check the island offers during calls."));
         if (page == ThemePage) PageHeader(head, Loc.T("刘海、胶囊和展开面板的配色与外观。", "The colors and look of the notch, capsule and open panel."));
@@ -385,7 +386,7 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
         if (page == NotificationsSettingsPage) PageHeader(head, Loc.T("灵动岛显示的通知、状态提示和实时活动。", "What the island tells you: notifications, readouts and things in progress."));
         if (page == WidgetsSettingsPage) PageHeader(head, Loc.T("选择小组件页显示哪些小组件并逐一设置，以及代码草稿、换算和终端标签页。", "Choose what the widget page shows, set each widget up, and the Scratchpad, Converter and Terminal tabs."));
         if (page == 2) PageHeader(head, Loc.T("展开面板显示哪些页面、它们的尺寸以及如何响应。", "Which pages the open island shows, how big they are and how it responds."));
-        switch(page) { case WidgetsSettingsPage: WidgetsSettings(); break; case NotificationsSettingsPage: NotificationsSettings(); break; case CallsSettingsPage: CallsSettings(); break; case ConnectionsSettingsPage: ConnectionsSettings(); break; case ConverterSettingsPage: ConverterSettings(); break; case TerminalSettingsPage: TerminalSettings(); break; case 0: General(); break; case 1: Compact(); break; case 2: Expanded(); break; case 3: Pages(); break; case 4: ModelPrices(); break; case 5: MusicStyle(); break; case 6: Players(); break; case 7: About(); break; case ThemePage: ThemesPage(); break; case MonitorSettingsPage: MonitorSettings(); break; case SensorsPage: SensorsSettings(); break; case HotkeysPage: HotkeysSettings(); break; case DevicesSettingsPage: DevicesSettings(); break; case ClipboardSettingsPage: ClipboardSettings(); break; case TransferSettingsPage: TransferSettings(); break; case ClipboardSyncSettingsPage: ClipboardSyncSettings(); break; case ShelfLayoutSettingsPage: ShelfLayoutSettings(); break; case MusicGesturesPage: MusicGesturesSettings(); break; case ProfilesPage: ProfilesSettings(); break; }
+        switch(page) { case WidgetsSettingsPage: WidgetsSettings(); break; case NotificationsSettingsPage: NotificationsSettings(); break; case CallsSettingsPage: CallsSettings(); break; case ConnectionsSettingsPage: ConnectionsSettings(); break; case ConverterSettingsPage: ConverterSettings(); break; case TerminalSettingsPage: TerminalSettings(); break; case 0: General(); break; case 1: Compact(); break; case 2: Expanded(); break; case 3: Pages(); break; case 4: ModelPrices(); break; case 5: MusicStyle(); break; case 6: Players(); break; case 7: About(); break; case ThemePage: ThemesPage(); break; case MonitorSettingsPage: MonitorSettings(); break; case SensorsPage: SensorsSettings(); break; case HotkeysPage: HotkeysSettings(); break; case DevicesSettingsPage: DevicesSettings(); break; case ClipboardSettingsPage: ClipboardSettings(); break; case TransferSettingsPage: TransferSettings(); break; case ClipboardSyncSettingsPage: ClipboardSyncSettings(); break; case ShelfLayoutSettingsPage: ShelfLayoutSettings(); break; case MusicGesturesPage: MusicGesturesSettings(); break; case ProfilesPage: ProfilesSettings(); break; case DockSettingsPage: DockSettings(); break; }
         if (_content.Children[^1] is Border lastGroup) lastGroup.Margin = new Thickness(lastGroup.Margin.Left, lastGroup.Margin.Top, lastGroup.Margin.Right, 0);
         // Apply the offset before the frame is drawn, so the rebuilt page never shows its top for a frame.
         if (keep > 0) { _scroll.UpdateLayout(); _scroll.ScrollToVerticalOffset(keep); _scroll.UpdateLayout(); }
@@ -404,7 +405,7 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
         ProfilesPage => "#FB923C", WeatherSettingsPage => DeckPages.IconColor(DeckPage.Weather), FocusSettingsPage => "#F97316", RemindersSettingsPage => DeckPages.IconColor(DeckPage.Reminders),
         WidgetsSettingsPage => DeckPages.IconColor(DeckPage.Widgets), NotificationsSettingsPage => DeckPages.IconColor(DeckPage.Notifications), CallsSettingsPage => DeckPages.IconColor(DeckPage.Calls),
         ScratchpadSettingsPage => DeckPages.IconColor(DeckPage.Scratchpad), ConverterSettingsPage => DeckPages.IconColor(DeckPage.Converter), TerminalSettingsPage => DeckPages.IconColor(DeckPage.Terminal),
-        ConnectionsSettingsPage => "#2DD4BF", _ => "#94A3B8"
+        ConnectionsSettingsPage => "#2DD4BF", DockSettingsPage => "#38BDF8", _ => "#94A3B8"
     };
 
     private static Path NavigationIcon(int page, string color) => Stroke(page switch
@@ -420,6 +421,8 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
         ScratchpadSettingsPage => "M 5,4 L 1,8 L 5,12 M 11,4 L 15,8 L 11,12 M 9.5,2 L 6.5,14",
         ConverterSettingsPage => "M 2,5 H 13 M 10,2 L 13,5 L 10,8 M 14,11 H 3 M 6,8 L 3,11 L 6,14",
         TerminalSettingsPage => "M 2,2.5 H 14 A 1,1 0 0 1 15,3.5 V 12.5 A 1,1 0 0 1 14,13.5 H 2 A 1,1 0 0 1 1,12.5 V 3.5 A 1,1 0 0 1 2,2.5 Z M 4,6 L 6,8 L 4,10 M 8,10 H 11",
+        // A dock bar with three apps.
+        DockSettingsPage => "M 1,11 H 15 V 15 H 1 Z M 3.5,7 H 6 V 9.5 H 3.5 Z M 6.75,7 H 9.25 V 9.5 H 6.75 Z M 10,7 H 12.5 V 9.5 H 10 Z",
         ConnectionsSettingsPage => "M 6,10 L 10,6 M 4.5,7.5 L 3,9 A 2.8,2.8 0 0 0 7,13 L 8.5,11.5 M 7.5,4.5 L 9,3 A 2.8,2.8 0 0 1 13,7 L 11.5,8.5",
         CallsSettingsPage => "M 8,2 A2,2 0 0 1 10,4 V8 A2,2 0 0 1 6,8 V4 A2,2 0 0 1 8,2 Z M3.5,7.5 A4.5,4.5 0 0 0 12.5,7.5 M8,12 V14.5",
         NotificationsSettingsPage => "M 3,3 H13 A1,1 0 0 1 14,4 V10 A1,1 0 0 1 13,11 H7 L4,14 V11 H3 A1,1 0 0 1 2,10 V4 A1,1 0 0 1 3,3 Z",
@@ -457,13 +460,6 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
             Loc.T("在内存占用和流畅之间取舍。", "Trade memory for smoothness."));
         GeneralCard(Loc.T("启动与资源占用", "Startup and resources"), Loc.T("DeckIsland 如何启动，以及保留多少内存。", "How DeckIsland starts and how much memory it keeps."), startup, tray, memory);
 
-        // DeckIsland Dock keeps everything but this switch in its own window (App.OpenDockSettings).
-        var dockSettings = ActionButton(Loc.T("Dock 设置…", "Dock settings…"), _app.OpenDockSettings);
-        dockSettings.IsEnabled = S.DockEnabled;
-        GeneralCard("DeckIsland Dock", Loc.T("代替 Windows 任务栏的程序坞，带应用和小组件。", "A dock with apps and widgets that replaces the Windows taskbar."),
-            Describe(Toggle(Loc.T("启用 Dock", "Turn on the dock"), S.DockEnabled, value => { Change(s => s.DockEnabled = value); dockSettings.IsEnabled = value; }),
-                Loc.T("它的设置、小组件和外观都在单独的窗口中。", "Its settings, widgets and look are in a window of their own.")),
-            Describe(Row(Loc.T("Dock 设置", "Dock settings"), dockSettings), Loc.T("位置、大小、任务栏、小组件和样式。", "Position, size, taskbar, widgets and style.")));
 
         // Each language is named in itself. Choosing one rebuilds the window in it, as a theme change does.
         (string Value, string Name)[] languages = [(Loc.Chinese, "简体中文"), (Loc.English, "English")];
@@ -1371,7 +1367,7 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
     // The Collapsed view page is laid out in General's cards (Card): there a section title heads the card its next group
     // opens, and a group with no title of its own joins the card above it.
     private bool CardPage => _page is 1 or 2 or 3 or 5 or 6 or 7 or MusicGesturesPage or MonitorSettingsPage or SensorsPage or ShelfLayoutSettingsPage or ClipboardSettingsPage
-        or TransferSettingsPage or ClipboardSyncSettingsPage or DevicesSettingsPage or WidgetsSettingsPage or NotificationsSettingsPage or CallsSettingsPage or ConnectionsSettingsPage or ScratchpadSettingsPage or ConverterSettingsPage or TerminalSettingsPage or ThemePage or HotkeysPage or ProfilesPage;
+        or TransferSettingsPage or ClipboardSyncSettingsPage or DevicesSettingsPage or WidgetsSettingsPage or NotificationsSettingsPage or CallsSettingsPage or ConnectionsSettingsPage or ScratchpadSettingsPage or ConverterSettingsPage or TerminalSettingsPage or ThemePage or HotkeysPage or ProfilesPage or DockSettingsPage;
     private (string Title, string Description, FrameworkElement? Action, Func<string>? Help)? _cardTitle;
     private StackPanel? _cardBody;
 

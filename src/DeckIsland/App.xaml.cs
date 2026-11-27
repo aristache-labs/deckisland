@@ -652,6 +652,7 @@ public partial class App : Application
     }
     protected override void OnExit(ExitEventArgs e)
     {
+        StopDock();
         EndVaultSession();
         _reminderTimer.Stop();
         StopHud();

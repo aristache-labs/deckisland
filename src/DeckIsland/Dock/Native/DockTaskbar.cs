@@ -58,7 +58,10 @@ internal static class DockTaskbar
         try
         {
             Directory.CreateDirectory(Path.GetDirectoryName(StatePath)!);
-            File.WriteAllText(StatePath, new DockTaskbarState(original, complete, Environment.ProcessId).ToJson());
+            // Written whole and moved into place, so a watchdog never reads half a file.
+            var temporary = StatePath + ".tmp";
+            File.WriteAllText(temporary, new DockTaskbarState(original, complete, Environment.ProcessId).ToJson());
+            File.Move(temporary, StatePath, true);
         }
         // Never change the taskbar without a way back.
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return; }
@@ -79,7 +82,8 @@ internal static class DockTaskbar
         try { text = File.ReadAllText(StatePath); }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return; }
         var saved = DockTaskbarState.Parse(text);
-        if (onlyFor is { } pid && saved is not null && saved.Pid != pid) return;
+        // A watchdog acts only on its own process's change; anything else is left to that run, or to the next start.
+        if (onlyFor is { } pid && saved?.Pid != pid) return;
         if (saved is null || saved.Complete) ShowTaskbars();
         if (saved is not null) SetFlags(saved.Original);
         try { File.Delete(StatePath); } catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
