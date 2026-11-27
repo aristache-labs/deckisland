@@ -177,6 +177,20 @@ public partial class App
         });
     }
 
+    // Today's AI limit resets, passed and coming, for the dock's Day Timeline: each app's name and the local time.
+    internal IReadOnlyList<(DateTime At, string Name)> TodayQuotaResets()
+    {
+        var today = DateTime.Today;
+        var snapshots = Deck?.Snapshots ?? [];
+        var names = snapshots.ToDictionary(snapshot => snapshot.Id.ToString(), snapshot => snapshot.Name);
+        var passed = _quotaResets.Select(pair => (At: pair.Value.Reset.LocalDateTime, Name: names.GetValueOrDefault(pair.Key.Split(':')[0]) ?? ""));
+        var coming = snapshots.SelectMany(snapshot => snapshot.Metrics.Where(metric => metric.ResetAt is not null)
+            .Select(metric => (At: metric.ResetAt!.Value.LocalDateTime, Name: snapshot.Name)));
+        return passed.Concat(coming).Where(reset => reset.Name.Length > 0 && reset.At.Date == today)
+            .Select(reset => (new DateTime(reset.At.Year, reset.At.Month, reset.At.Day, reset.At.Hour, reset.At.Minute, 0), reset.Name))
+            .Distinct().OrderBy(reset => reset.Item1).ToList();
+    }
+
     private static bool DoNotDisturbOn()
     {
         try { return Registry.GetValue(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Notifications\Settings", "NOC_GLOBAL_SETTING_TOASTS_ENABLED", 1) is int enabled && enabled == 0; }

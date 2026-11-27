@@ -545,6 +545,13 @@ public sealed class DeckSettings
     public List<int> ScreenTimeHours { get; set; } = [];
     public Dictionary<string, ScreenTimeDay> ScreenTimeHistory { get; set; } = [];
     public Dictionary<string, string> ScreenTimePaths { get; set; } = [];
+    // Each day's extras (ScreenTimeExtras): per-app hours, switches, first use, longest stretch and, with ScreenTimeSites, sites.
+    public Dictionary<string, ScreenTimeExtra> ScreenTimeDetails { get; set; } = [];
+    public bool ScreenTimeSites { get; set; }
+    // The daily summary: today's screen time as an alert at ScreenTimeSummaryMinute, and the week's on Mondays.
+    public bool ScreenTimeSummary { get; set; } = true;
+    public int ScreenTimeSummaryMinute { get; set; } = 21 * 60;
+    public string ScreenTimeSummaryShown { get; set; } = "";
     public bool ScreenTimePage { get; set; } = true;
     public double ScreenTimeWidth { get; set; } = 700;
     public double ScreenTimeHeight { get; set; } = 340;
@@ -1115,6 +1122,7 @@ public sealed class DeckSettings
         copy.ScreenTimeHistory = (ScreenTimeHistory ?? []).ToDictionary(pair => pair.Key,
             pair => new ScreenTimeDay { Apps = new Dictionary<string, int>(pair.Value?.Apps ?? [], StringComparer.OrdinalIgnoreCase), Hours = [.. pair.Value?.Hours ?? []] });
         copy.ScreenTimePaths = new Dictionary<string, string>(ScreenTimePaths ?? [], StringComparer.OrdinalIgnoreCase);
+        copy.ScreenTimeDetails = new Dictionary<string, ScreenTimeExtra>(ScreenTimeDetails ?? []);
         copy.CalendarSources = CalendarFeed.Normalize(CalendarSources);
         copy.LocalCalendarEvents = [.. LocalCalendarEvents ?? []];
         copy.ScratchpadDrafts = new Dictionary<string, string>(ScratchpadDrafts ?? []);
@@ -1297,6 +1305,9 @@ public sealed class DeckSettings
         var named = ScreenTimeApps.Keys.Concat(ScreenTimeHistory.Values.SelectMany(day => day.Apps.Keys)).ToHashSet(StringComparer.OrdinalIgnoreCase);
         ScreenTimePaths = (ScreenTimePaths ?? []).Where(pair => named.Contains(pair.Key) && !string.IsNullOrWhiteSpace(pair.Value) && pair.Value.Length <= 400)
             .ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.OrdinalIgnoreCase);
+        ScreenTimeDetails ??= [];
+        ScreenTimeSummaryMinute = Math.Clamp(ScreenTimeSummaryMinute, 0, 24 * 60 - 1);
+        ScreenTimeSummaryShown ??= "";
         if (ExpandedUnderList is { } under && (!Enum.IsDefined(under) || under == ExpandedItem.Processes)) ExpandedUnderList = ExpandedItem.Storage;
         if (ExpandedUnderList is { } block) ExpandedUnderList = ExpandedMonitor.BlockOf(block)[0];
         if (!Enum.IsDefined(GamingMode)) GamingMode = GamingMode.Off;

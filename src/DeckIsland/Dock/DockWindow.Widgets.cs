@@ -67,7 +67,8 @@ internal sealed partial class DockWindow
         DockWidgetKind.Tray => TrayArrow(tile),
         DockWidgetKind.QuickToggles => QuickTogglesTile(tile),
         DockWidgetKind.ShowDesktop => (DesktopGlyph(tile), () => { }),
-        DockWidgetKind.ScreenTime => ScreenTimeTile(tile),
+        DockWidgetKind.ScreenTime => ScreenTimeTile(widget, tile),
+        DockWidgetKind.DayTimeline => DayTimelineTile(tile),
         DockWidgetKind.TopCpu => TopProcessTile(tile, memory: false),
         DockWidgetKind.TopRam => TopProcessTile(tile, memory: true),
         DockWidgetKind.Temperature => TemperatureTile(tile),
@@ -113,6 +114,8 @@ internal sealed partial class DockWindow
                 // The time, its seconds and the date under them, no wider.
                 DockWidgetKind.Clock => Math.Round(tile * 2.05),
                 DockWidgetKind.SegmentClock => Math.Round(tile * 2.95),
+                // The watch, the time and the hour bars.
+                DockWidgetKind.ScreenTime => Math.Round(tile * 3.6),
                 // World time: the city and its offset beside the time, the offset wrapping to a second line as on lumabar.
                 DockWidgetKind.WorldTime => Math.Round(tile * 2.6),
                 _ => tile * width + _spacing * (width - 1)
@@ -161,6 +164,8 @@ internal sealed partial class DockWindow
         Action? click = widget.Kind == DockWidgetKind.ShowDesktop ? DockShell.ToggleDesktop
             : widget.Kind == DockWidgetKind.WorldTime && !_app.DockSettings.Locked ? () => OpenCityPicker(widget, frame)
             : widget.Kind == DockWidgetKind.WorldClocks && !_app.DockSettings.Locked ? () => OpenWorldClocksEditor(widget, frame)
+            : widget.Kind == DockWidgetKind.ScreenTime ? () => OpenScreenTimePanel(widget, frame)
+            : widget.Kind == DockWidgetKind.DayTimeline ? () => OpenDayTimelinePanel(frame)
             : HasWidgetDetails(widget.Kind) ? () => ToggleWidgetDetails(frame, widget.Kind) : null;
         if (click is not null)
         {

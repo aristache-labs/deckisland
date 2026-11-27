@@ -9,21 +9,6 @@ namespace DeckIsland;
 
 internal sealed partial class DockWindow
 {
-    private (FrameworkElement, Action) ScreenTimeTile(double tile)
-    {
-        var total = Label("", tile * 0.29, bold: true);
-        var app = Label("", tile * 0.17, dim: true);
-        var stack = TimeStack(total, app);
-        stack.Margin = new Thickness(tile * 0.12, 0, tile * 0.12, 0);
-        return (stack, () =>
-        {
-            var settings = _app.Settings;
-            var today = ScreenTime.Today(settings.ScreenTimeDate, settings.ScreenTimeApps, DateTime.Now);
-            total.Text = ScreenTime.Duration(ScreenTime.Total(today));
-            app.Text = today.Count == 0 ? Loc.T("今天的屏幕时间", "Screen time today") : today[0].Key;
-        });
-    }
-
     private (FrameworkElement, Action) TopProcessTile(double tile, bool memory)
     {
         var name = Label("", tile * 0.22, bold: true);

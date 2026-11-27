@@ -5,7 +5,7 @@ namespace DeckIsland.Core;
 public enum DockWidgetKind { Cpu, Memory, Battery, AiUsage, NextEvent, Network, Storage, Volume, Weather, AnalogClock, NowPlaying, Calendar, AiRing, Search, Tray,
     Clock, FlipClock, WorldClocks, SevenDays, WorldTime, Today, Date, DayNumber, SegmentClock, ClockWeather,
     ScreenTime, TopCpu, TopRam, Temperature, DayProgress, MonthProgress, YearProgress, SunriseSunset, ShowDesktop,
-    WeatherDetails, TodayForecast, WeatherStatus, HourlyWeather, QuickToggles }
+    WeatherDetails, TodayForecast, WeatherStatus, HourlyWeather, QuickToggles, DayTimeline }
 public enum DockWidgetCategory { Clocks, Productivity, System, Apps, MediaTime, Ai, Weather }
 [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<DockWidgetPlacement>))]
 // The old clock and desktop slots are read so existing profiles can be migrated to the right-side widget group.
@@ -35,6 +35,7 @@ public static class DockWidgets
         new(DockWidgetKind.Search, DockWidgetCategory.Apps, Loc.T("智能搜索", "Smart Search"), Loc.T("应用、计算和命令，例如“volume 30”或“dock to the top”。", "Apps, sums and commands such as “volume 30” or “dock to the top”."), 3),
         new(DockWidgetKind.Calendar, DockWidgetCategory.Productivity, Loc.T("日历", "Calendar"), Loc.T("今天的日期和今天的日程数。", "Today's date and how many events today holds."), 1),
         new(DockWidgetKind.NextEvent, DockWidgetCategory.Productivity, Loc.T("下一个日程", "Next event"), Loc.T("日历中的下一个日程，以及还有多久。", "The next event on your calendar and how soon it starts."), 4),
+        new(DockWidgetKind.DayTimeline, DockWidgetCategory.Productivity, Loc.T("今日时间线", "Day Timeline"), Loc.T("今天每小时用在哪类应用上，以及当天的事件。", "Today's hours by kind of app, with the day's events."), 5),
         new(DockWidgetKind.ScreenTime, DockWidgetCategory.Productivity, Loc.T("屏幕使用时间", "Screen Time"), Loc.T("今天的使用时间和最常用的应用。", "Today's active time and most-used app."), 2),
         new(DockWidgetKind.Cpu, DockWidgetCategory.System, "CPU", Loc.T("处理器的使用率。", "How busy the processor is."), 1),
         new(DockWidgetKind.Memory, DockWidgetCategory.System, "RAM", Loc.T("正在使用的内存。", "How much memory is in use."), 1),
