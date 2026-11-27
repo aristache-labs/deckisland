@@ -1,0 +1,70 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <!-- The dock's menus, after lumabar's: a rounded card in the dock's style, rows that light up under the pointer, a hairline
+       between groups. The brushes are set on each menu from the dock's look (DockWindow.StyleMenu). -->
+  <Style x:Key="DockMenu" TargetType="ContextMenu">
+    <Setter Property="OverridesDefaultStyle" Value="True"/>
+    <Setter Property="HasDropShadow" Value="False"/>
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="ContextMenu">
+          <Border Background="{DynamicResource DockMenuBack}" BorderBrush="{DynamicResource DockMenuRim}" BorderThickness="1" CornerRadius="12" Padding="6" Margin="0,0,0,4">
+            <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Cycle"/>
+          </Border>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+  <Style x:Key="DockMenuItem" TargetType="MenuItem">
+    <Setter Property="OverridesDefaultStyle" Value="True"/>
+    <Setter Property="Foreground" Value="{DynamicResource DockMenuText}"/>
+    <Setter Property="FontSize" Value="13"/>
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="MenuItem">
+          <Grid>
+            <Border x:Name="Row" CornerRadius="7" Padding="12,6,14,6" MinWidth="168" Background="Transparent">
+              <DockPanel>
+                <Path x:Name="Tick" DockPanel.Dock="Right" Data="M 0,4 L 3,7 L 9,0" Stroke="{DynamicResource DockMenuAccent}" StrokeThickness="1.6" Width="10" Height="8"
+                      Stretch="Uniform" VerticalAlignment="Center" Margin="12,0,0,0" Visibility="Collapsed"/>
+                <Path x:Name="Arrow" DockPanel.Dock="Right" Data="M 0,0 L 4,4 L 0,8" Stroke="{DynamicResource DockMenuDim}" StrokeThickness="1.4" Width="5" Height="9"
+                      Stretch="Uniform" VerticalAlignment="Center" Margin="12,0,0,0" Visibility="Collapsed"/>
+                <ContentPresenter ContentSource="Header" RecognizesAccessKey="True" VerticalAlignment="Center"/>
+              </DockPanel>
+            </Border>
+            <Popup x:Name="PART_Popup" IsOpen="{Binding IsSubmenuOpen, RelativeSource={RelativeSource TemplatedParent}}" Placement="Right" AllowsTransparency="True"
+                   Focusable="False" PopupAnimation="Fade" HorizontalOffset="4">
+              <Border Background="{DynamicResource DockMenuBack}" BorderBrush="{DynamicResource DockMenuRim}" BorderThickness="1" CornerRadius="12" Padding="6">
+                <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Cycle"/>
+              </Border>
+            </Popup>
+          </Grid>
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsHighlighted" Value="True">
+              <Setter TargetName="Row" Property="Background" Value="{DynamicResource DockMenuHover}"/>
+            </Trigger>
+            <Trigger Property="IsChecked" Value="True">
+              <Setter TargetName="Tick" Property="Visibility" Value="Visible"/>
+            </Trigger>
+            <Trigger Property="HasItems" Value="True">
+              <Setter TargetName="Arrow" Property="Visibility" Value="Visible"/>
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+              <Setter Property="Foreground" Value="{DynamicResource DockMenuDim}"/>
+            </Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+  <Style x:Key="DockMenuSeparator" TargetType="Separator">
+    <Setter Property="OverridesDefaultStyle" Value="True"/>
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="Separator">
+          <Border Height="1" Margin="8,5,8,5" Background="{DynamicResource DockMenuRim}"/>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+</ResourceDictionary>

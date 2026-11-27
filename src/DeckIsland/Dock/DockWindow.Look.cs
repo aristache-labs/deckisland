@@ -50,7 +50,7 @@ internal sealed partial class DockWindow
     private void ApplyLook()
     {
         var settings = _app.DockSettings;
-        _look = DockLook.For(settings.Style, settings.ClearCards);
+        _look = DockLook.For(DockSmart.Effective(settings.Style, settings.SunsetDarkMode, _app.DockDaylight), settings.ClearCards);
         _tint.Background = UI.Brush(_look.Bar);
         _bar.BorderBrush = UI.Brush(_look.Rim);
         _bar.BorderThickness = new Thickness(settings.Style == DockStyle.Clear ? 0 : 1);
@@ -99,7 +99,7 @@ internal sealed partial class DockWindow
     // The bar's own menu, on its empty parts.
     private ContextMenu BarMenu()
     {
-        var menu = new ContextMenu();
+        var menu = NewMenu();
         void Add(string header, Action action, string? colour = null)
         {
             var item = new MenuItem { Header = header };
@@ -127,6 +127,32 @@ internal sealed partial class DockWindow
         Add(Loc.T("任务管理器", "Task Manager"), () => DockAppWindows.Launch("taskmgr.exe"));
         menu.Items.Add(new Separator());
         Add(Loc.T("关闭 Dock", "Close dock"), _app.TurnOffDock, "#FF453A");
+        return menu;
+    }
+
+    private static ResourceDictionary? _menuStyles;
+    private static ResourceDictionary MenuStyles => _menuStyles ??= new ResourceDictionary { Source = new Uri("/DeckIsland;component/Dock/DockMenu.xaml", UriKind.Relative) };
+
+    // A menu drawn as lumabar's (DockMenu.xaml), in the dock's colours as they are when it opens.
+    private ContextMenu NewMenu()
+    {
+        // Rows and separators take their looks by type (an item container style would also reach the separators, which it cannot style).
+        var menu = new ContextMenu { Style = (Style)MenuStyles["DockMenu"] };
+        menu.Resources[typeof(MenuItem)] = MenuStyles["DockMenuItem"];
+        menu.Resources[MenuItem.SeparatorStyleKey] = MenuStyles["DockMenuSeparator"];
+        void Colour()
+        {
+            // Over the screen rather than the bar, so glass and Clear styles get a solid card.
+            bool light = _look.Text == "#FF1D1D1F";
+            menu.Resources["DockMenuBack"] = UI.Brush(light ? "#FAF8F8FA" : "#F51E1E21");
+            menu.Resources["DockMenuRim"] = UI.Brush(light ? "#1A000000" : "#1FFFFFFF");
+            menu.Resources["DockMenuHover"] = UI.Brush(light ? "#14000000" : "#1AFFFFFF");
+            menu.Resources["DockMenuText"] = UI.Brush(_look.Text);
+            menu.Resources["DockMenuDim"] = UI.Brush(_look.Dim);
+            menu.Resources["DockMenuAccent"] = UI.Brush(_app.DockSettings.Accent);
+        }
+        Colour();
+        menu.Opened += (_, _) => Colour();
         return menu;
     }
 

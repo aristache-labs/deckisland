@@ -73,6 +73,17 @@ public sealed class DockSettings
     // The widget sets and the one in use (DockWidgets).
     public List<DockProfile> Profiles { get; set; } = [DockWidgets.DefaultProfile()];
     public string CurrentProfile { get; set; } = "main";
+    // Automations, after lumabar's: each a switch. Meeting mode warns before a calendar event and pauses music; AI alerts warn as a
+    // limit runs out; Health alerts warn of a hot processor or a full system drive; Sunset dark mode makes the dock light by day.
+    public bool MeetingMode { get; set; } = true;
+    public bool AiAlerts { get; set; } = true;
+    public bool HealthAlerts { get; set; } = true;
+    public bool SunsetDarkMode { get; set; }
+    // Quiet hours silence every alert between two minutes of the day; Alert sound plays a tone with each alert.
+    public bool QuietHours { get; set; }
+    public int QuietFrom { get; set; } = 22 * 60;
+    public int QuietTo { get; set; } = 7 * 60;
+    public bool AlertSound { get; set; } = true;
 
     // The widgets of the profile in use.
     [JsonIgnore] public IReadOnlyList<DockWidget> Widgets => Profiles.FirstOrDefault(p => p.Id == CurrentProfile)?.Widgets ?? [];
@@ -106,6 +117,8 @@ public sealed class DockSettings
         if (!Enum.IsDefined(ClearCards)) ClearCards = DockClearCards.Black;
         Accent = DockLook.NormalizeAccent(Accent);
         (Profiles, CurrentProfile) = DockWidgets.Normalize(Profiles, CurrentProfile);
+        QuietFrom = Math.Clamp(QuietFrom, 0, 24 * 60 - 1);
+        QuietTo = Math.Clamp(QuietTo, 0, 24 * 60 - 1);
         Distance = Math.Clamp(Distance, 0, MaxDistance);
         Spacing = Math.Clamp(Spacing, 0, MaxSpacing);
         Padding = Math.Clamp(Padding, 0, MaxPadding);

@@ -126,4 +126,29 @@ internal static class DockSettingsTests
         check("Dock shows its buttons, previews and shortcuts by default",
             new DockSettings() is { ShowStart: true, ShowTrash: true, ShowDesktopButton: true, WindowPreviews: true, AppShortcuts: true });
     }
+
+    internal static void Smart(Action<string, bool> check)
+    {
+        check("Dock search reads the volume and the dock's edge, size, style, auto-hide and lock",
+            DockSmart.Parse("volume 30") is { Kind: DockCommandKind.Volume, Number: 30 } && DockSmart.Parse("Volum 150") is { Kind: DockCommandKind.Volume, Number: 100 }
+            && DockSmart.Parse("dock to the top") is { Kind: DockCommandKind.Edge, Edge: DockEdge.Top } && DockSmart.Parse("muta bara jos") is { Kind: DockCommandKind.Edge, Edge: DockEdge.Bottom }
+            && DockSmart.Parse("make the dock bigger").Kind == DockCommandKind.Bigger && DockSmart.Parse("dock mai mic").Kind == DockCommandKind.Smaller
+            && DockSmart.Parse("style midnight") is { Kind: DockCommandKind.Style, Style: DockStyle.Midnight } && DockSmart.Parse("auto-hide off") is { Kind: DockCommandKind.AutoHide, On: false }
+            && DockSmart.Parse("unlock dock") is { Kind: DockCommandKind.Lock, On: false } && DockSmart.Parse("lock the dock") is { Kind: DockCommandKind.Lock, On: true });
+        check("Dock search works out sums and leaves other text alone",
+            DockSmart.Parse("2 + 3 * (4 - 1)") is { Kind: DockCommandKind.Answer, Text: "11" } && DockSmart.Sum("1/0") is null && DockSmart.Sum("12") is null
+            && DockSmart.Sum("2+") is null && DockSmart.Parse("chrome").Kind == DockCommandKind.None && DockSmart.Parse("  ").Kind == DockCommandKind.None);
+        check("Dock quiet hours run across midnight",
+            DockSmart.Quiet(new DateTime(2026, 1, 1, 23, 0, 0), 22 * 60, 7 * 60) && DockSmart.Quiet(new DateTime(2026, 1, 1, 6, 59, 0), 22 * 60, 7 * 60)
+            && !DockSmart.Quiet(new DateTime(2026, 1, 1, 12, 0, 0), 22 * 60, 7 * 60) && DockSmart.Quiet(new DateTime(2026, 1, 1, 13, 0, 0), 12 * 60, 14 * 60) && !DockSmart.Quiet(DateTime.Now, 60, 60));
+        var now = new DateTime(2026, 1, 1, 10, 0, 0);
+        CalendarEvent Event(string id, int minutes, bool allDay = false) => new(id, Guid.Empty, id, now.AddMinutes(minutes), now.AddMinutes(minutes + 30), allDay, "", null);
+        var events = new[] { Event("later", 30), Event("allday", 2, true), Event("soon", 4), Event("past", -10) };
+        check("Dock meeting mode picks the next timed event within five minutes, once",
+            DockSmart.DueMeeting(events, now, TimeSpan.FromMinutes(5), new HashSet<string>())?.Id == "soon"
+            && DockSmart.DueMeeting(events, now, TimeSpan.FromMinutes(5), new HashSet<string> { "soon" }) is null);
+        check("Dock sunset dark mode is light by day and the chosen style by night",
+            DockSmart.Effective(DockStyle.Midnight, true, true) == DockStyle.White && DockSmart.Effective(DockStyle.Midnight, true, false) == DockStyle.Midnight
+            && DockSmart.Effective(DockStyle.White, true, false) == DockStyle.Black && DockSmart.Effective(DockStyle.Liquid, false, true) == DockStyle.Liquid && DockSmart.Effective(DockStyle.IOS, true, null) == DockStyle.IOS);
+    }
 }

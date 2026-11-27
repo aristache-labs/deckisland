@@ -2,7 +2,7 @@ namespace DeckIsland.Core;
 
 // The dock's widgets, after lumabar's: live tiles that sit on the bar beside the apps, chosen in the widget picker by category.
 // The catalog grows with each wave of widgets; a kind this build does not know is dropped from the settings when they are read.
-public enum DockWidgetKind { Cpu, Memory, Battery, AiUsage, NextEvent, Network, Storage, Volume, Weather, AnalogClock, NowPlaying, Calendar, AiRing }
+public enum DockWidgetKind { Cpu, Memory, Battery, AiUsage, NextEvent, Network, Storage, Volume, Weather, AnalogClock, NowPlaying, Calendar, AiRing, Search }
 public enum DockWidgetCategory { Ai, Productivity, System, MediaTime }
 
 // Width is in tiles: 1 a square tile, more a wide card.
@@ -25,6 +25,7 @@ public static class DockWidgets
     public static IReadOnlyList<DockWidgetInfo> Catalog => [
         new(DockWidgetKind.AiUsage, DockWidgetCategory.Ai, Loc.T("AI 用量", "AI Limits"), Loc.T("一个 AI 工具的会话和每周限额。", "An AI tool's session and weekly limits."), 4),
         new(DockWidgetKind.AiRing, DockWidgetCategory.Ai, Loc.T("AI 圆环", "AI Ring"), Loc.T("一个 AI 工具的限额，以圆环显示。", "One AI tool's limit as a ring."), 1),
+        new(DockWidgetKind.Search, DockWidgetCategory.Productivity, Loc.T("智能搜索", "Smart Search"), Loc.T("应用、计算和命令，例如“volume 30”或“dock to the top”。", "Apps, sums and commands such as “volume 30” or “dock to the top”."), 3),
         new(DockWidgetKind.Calendar, DockWidgetCategory.Productivity, Loc.T("日历", "Calendar"), Loc.T("今天的日期和今天的日程数。", "Today's date and how many events today holds."), 1),
         new(DockWidgetKind.NextEvent, DockWidgetCategory.Productivity, Loc.T("下一个日程", "Next event"), Loc.T("日历中的下一个日程，以及还有多久。", "The next event on your calendar and how soon it starts."), 4),
         new(DockWidgetKind.Cpu, DockWidgetCategory.System, "CPU", Loc.T("处理器的使用率。", "How busy the processor is."), 1),

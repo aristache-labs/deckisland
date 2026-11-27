@@ -255,7 +255,7 @@ internal sealed partial class DockWindow
 
     private ContextMenu AppMenu(DockApp app)
     {
-        var menu = new ContextMenu();
+        var menu = NewMenu();
         void Add(string header, Action action)
         {
             var item = new MenuItem { Header = header };

@@ -221,4 +221,24 @@ internal sealed partial class DockWindow
             setRing(quota is null ? null : quota.UsedPercent / 100, quota is null ? "–" : $"{Math.Round(quota.UsedPercent)}");
         });
     }
+
+    // The Search widget: a search field look-alike that opens Smart Search (DockSearch) over the dock.
+    private (FrameworkElement, Action) SearchField(double tile)
+    {
+        var glass = new Path { Data = Geometry.Parse("M 6,0 A 6,6 0 1 1 5.99,0 M 10.5,10.5 L 15,15"), Stroke = UI.Brush(_look.Dim), StrokeThickness = 1.6,
+            Width = tile * 0.26, Height = tile * 0.26, Stretch = Stretch.Uniform, Margin = new Thickness(tile * 0.24, 0, tile * 0.16, 0), VerticalAlignment = VerticalAlignment.Center };
+        var hint = Label(Loc.T("搜索", "Search"), tile * 0.2, dim: true); hint.VerticalAlignment = VerticalAlignment.Center;
+        var row = new StackPanel { Orientation = Orientation.Horizontal, Background = Brushes.Transparent, Cursor = Cursors.IBeam };
+        row.Children.Add(glass); row.Children.Add(hint);
+        row.MouseLeftButtonDown += (_, e) => e.Handled = true;
+        row.MouseLeftButtonUp += (_, e) =>
+        {
+            e.Handled = true;
+            bool top = _app.DockSettings.Edge == DockEdge.Top;
+            var anchor = _bar.PointToScreen(new Point(_bar.ActualWidth / 2, top ? _bar.ActualHeight : 0));
+            double scale = VisualTreeHelper.GetDpi(this).DpiScaleX;
+            new DockSearch(_app, _look, new Point(anchor.X / scale, anchor.Y / scale), !top).Show();
+        };
+        return (row, () => { });
+    }
 }

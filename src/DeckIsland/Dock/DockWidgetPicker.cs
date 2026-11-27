@@ -45,7 +45,21 @@ internal sealed class DockWidgetPicker : Window
         DockPanel.SetDock(_search, System.Windows.Controls.Dock.Top); main.Children.Add(_search); main.Children.Add(scroll);
         var root = new DockPanel();
         DockPanel.SetDock(sidebar, System.Windows.Controls.Dock.Left); root.Children.Add(sidebar); root.Children.Add(main);
-        Content = root;
+        // The window draws its own title bar (SettingsChrome), so it carries its own close button; the search box takes clicks
+        // even inside the title bar's band.
+        var close = new Button { Style = (Style)FindResource("SettingsCloseButton"), Width = 42, Height = 32, Padding = new Thickness(0), Margin = new Thickness(0, 4, 4, 0),
+            HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Top, ToolTip = Loc.T("关闭", "Close"),
+            Content = new System.Windows.Shapes.Path { Data = Geometry.Parse("M 1,1 L 11,11 M 11,1 L 1,11"), Width = 12, Height = 12, StrokeThickness = 1.2,
+                Stroke = UI.Brush(_palette.Secondary) } };
+        AutomationProperties.SetName(close, Loc.T("关闭小组件", "Close widgets"));
+        close.Click += (_, _) => Close();
+        System.Windows.Shell.WindowChrome.SetIsHitTestVisibleInChrome(close, true);
+        System.Windows.Shell.WindowChrome.SetIsHitTestVisibleInChrome(_search, true);
+        _search.Margin = new Thickness(16, 16, 56, 8);
+        var frame = new Grid();
+        frame.Children.Add(root); frame.Children.Add(close);
+        Content = frame;
+        KeyDown += (_, e) => { if (e.Key == Key.Escape) Close(); };
         Loaded += (_, _) => _search.Focus();
         Refresh();
     }

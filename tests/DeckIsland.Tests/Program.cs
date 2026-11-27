@@ -46,6 +46,7 @@ try
     DockSettingsTests.Run(root, Check);
     DockSettingsTests.Geometry(Check);
     DockSettingsTests.Apps(root, Check);
+    DockSettingsTests.Smart(Check);
     await ToolTabsTests.Run(root, Check);
     CountdownTests.Run(Check);
     TodosTests.Run(Check);

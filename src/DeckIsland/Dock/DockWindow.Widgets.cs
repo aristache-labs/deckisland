@@ -45,6 +45,7 @@ internal sealed partial class DockWindow
         DockWidgetKind.NowPlaying => NowPlaying(tile),
         DockWidgetKind.Calendar => Calendar(tile),
         DockWidgetKind.AiRing => AiRing(tile, widget.Option),
+        DockWidgetKind.Search => SearchField(tile),
         _ => NextEvent(tile)
     };
 

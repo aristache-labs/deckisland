@@ -59,7 +59,8 @@ public partial class App
     // The system monitor is read while a dock shows a CPU or RAM widget (App.ApplyMonitorDemand).
     // Media sessions are kept while a dock shows Now Playing (App.StartMedia); weather is read while it shows Weather.
     internal bool DockWantsMedia => _docks.Count > 0 && DockSettings.Widgets.Any(w => w.Kind == DockWidgetKind.NowPlaying);
-    private bool DockWantsWeather => _docks.Count > 0 && DockSettings.Widgets.Any(w => w.Kind == DockWidgetKind.Weather);
+    // Sunset dark mode needs the weather's place for the sun's times.
+    private bool DockWantsWeather => _docks.Count > 0 && (DockSettings.SunsetDarkMode || DockSettings.Widgets.Any(w => w.Kind == DockWidgetKind.Weather));
     private static readonly object DockWeatherViewer = new();
 
     // The readings the dock's widgets need, started or let go to match them.
@@ -69,6 +70,7 @@ public partial class App
         ApplyMonitorDemand(false);
         StartMedia();
         PresentWeather(DockWeatherViewer, DockWantsWeather);
+        ApplyAutomations();
     }
 
     internal bool DockWantsMonitor => _docks.Count > 0 && DockSettings.Widgets.Any(w => w.Kind is DockWidgetKind.Cpu or DockWidgetKind.Memory or DockWidgetKind.Network);

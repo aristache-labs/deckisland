@@ -164,6 +164,36 @@ public sealed partial class SettingsWindow
             Describe(Toggle(Loc.T("Win+1 到 Win+0", "Win+1 to Win+0"), dock.AppShortcuts, value => ChangeDock(d => d.AppShortcuts = value),
                 help: Loc.T("打开 Dock 上的前十个应用，与任务栏相同。", "Open the dock's first ten apps, as on the taskbar.")), Loc.T("用键盘打开应用。", "Open apps from the keyboard.")));
 
+        SectionTitle(Loc.T("自动化", "Automations"), description: Loc.T("每项都是一个开关。提醒显示在灵动岛的状态提示中。", "Each is a single switch. Alerts show in the island's readout."));
+        var automations = new List<FrameworkElement>
+        {
+            Describe(Toggle(Loc.T("会议模式", "Meeting mode"), dock.MeetingMode, value => ChangeDock(d => d.MeetingMode = value),
+                help: Loc.T("日程开始前 5 分钟提醒，并暂停正在播放的音乐。", "Five minutes before a calendar event, an alert, and the music playing is paused.")),
+                Loc.T("会议前 5 分钟，音乐暂停。", "At 5 min before a meeting, music pauses.")),
+            Describe(Toggle(Loc.T("AI 限额提醒", "AI fallback"), dock.AiAlerts, value => ChangeDock(d => d.AiAlerts = value),
+                help: Loc.T("AI 工具的限额用到 90% 时提醒，每个限额在重置前只提醒一次。", "An alert when an AI tool's limit is 90% used, once per limit until it resets.")),
+                Loc.T("限额快用完时提醒。", "When a limit runs low.")),
+            Describe(Toggle(Loc.T("健康提醒", "Health alerts"), dock.HealthAlerts, value => ChangeDock(d => d.HealthAlerts = value),
+                help: Loc.T("处理器超过 90 °C 或系统盘剩余不到 5% 时提醒。温度需要系统监控正在读取。", "An alert when the processor passes 90 °C or the system drive has under 5% free. The temperature needs the system monitor to be reading.")),
+                Loc.T("CPU 超过 90 °C，磁盘快满。", "CPU past 90 °C, disk filling up.")),
+            Describe(Toggle(Loc.T("日落深色模式", "Sunset dark mode"), dock.SunsetDarkMode, value => ChangeDock(d => d.SunsetDarkMode = value),
+                help: Loc.T("日出到日落之间 Dock 使用白色样式，之后使用所选样式。需要灵动岛的天气知道你的位置。", "Between sunrise and sunset the dock is White, after sunset the style you chose. It needs the island's weather to know your place.")),
+                Loc.T("日落时深色，日出时浅色。", "Dark at sunset, light at sunrise.")),
+            Describe(Toggle(Loc.T("提醒声音", "Alert sound"), dock.AlertSound, value => ChangeDock(d => d.AlertSound = value),
+                help: Loc.T("每次提醒时播放提示音。", "Plays a tone with each alert.")), Loc.T("提醒时播放声音。", "A tone with alerts.")),
+            Describe(Toggle(Loc.T("安静时段", "Quiet hours"), dock.QuietHours, value => { ChangeDock(d => d.QuietHours = value); ShowPage(DockSettingsPage); },
+                help: Loc.T("在设定的时段内不显示任何提醒。", "No alerts at all between the times set.")), Loc.T("夜间静音所有提醒。", "Silences every alert at night."))
+        };
+        if (dock.QuietHours)
+        {
+            var times = new StackPanel { Orientation = Orientation.Horizontal };
+            times.Children.Add(QuietTime(dock.QuietFrom, minutes => ChangeDock(d => d.QuietFrom = minutes), Loc.T("开始", "From")));
+            times.Children.Add(new TextBlock { Text = "–", Margin = new Thickness(8, 0, 8, 0), VerticalAlignment = VerticalAlignment.Center, Foreground = UI.Brush(TextSecondary) });
+            times.Children.Add(QuietTime(dock.QuietTo, minutes => ChangeDock(d => d.QuietTo = minutes), Loc.T("结束", "To")));
+            automations.Add(Describe(Row(Loc.T("时段", "Hours"), times), Loc.T("跨过午夜也可以。", "May run past midnight.")));
+        }
+        Group([.. automations]);
+
         SectionTitle(Loc.T("时钟", "Clock"), description: Loc.T("Dock 右端的时钟。", "The clock at the dock's right end."));
         Group(
             Describe(Row(Loc.T("时间格式", "Time format"), SegmentBorder(DockChoices("DockClock",
@@ -265,6 +295,38 @@ public sealed partial class SettingsWindow
             button.Click += (_, _) => { ChangeDock(d => d.Accent = chosenColour); ShowPage(DockSettingsPage); };
             panel.Children.Add(button);
         }
+        // Any colour: a ring showing the custom accent (or a rainbow while none is chosen) opens the colour picker.
+        bool custom = !DockLook.Accents.Contains(dock.Accent, StringComparer.OrdinalIgnoreCase);
+        var swatch = new Border { Width = 20, Height = 20, CornerRadius = new CornerRadius(10), Margin = new Thickness(3, 0, 3, 0), Cursor = System.Windows.Input.Cursors.Hand,
+            Background = custom ? UI.Brush(dock.Accent) : new LinearGradientBrush(new GradientStopCollection([new GradientStop(Colors.Red, 0), new GradientStop(Colors.Yellow, 0.33),
+                new GradientStop(Colors.Lime, 0.5), new GradientStop(Colors.Cyan, 0.66), new GradientStop(Colors.Magenta, 1)]), 45),
+            Child = custom ? new Border { Width = 7, Height = 7, CornerRadius = new CornerRadius(3.5), Background = Brushes.White } : null };
+        var pick = new Button { Content = swatch, Style = (Style)FindResource("SettingsGlyphButton"), Padding = new Thickness(0), ToolTip = Loc.T("自定义颜色", "Custom colour") };
+        AutomationProperties.SetName(pick, Loc.T("自定义颜色", "Custom colour"));
+        var popup = new System.Windows.Controls.Primitives.Popup { PlacementTarget = pick, Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom, StaysOpen = false,
+            AllowsTransparency = true, VerticalOffset = 4 };
+        PopupMotion.Attach(popup);
+        pick.Click += (_, _) =>
+        {
+            popup.Child = ColorPicker(dock.Accent, !custom, value =>
+            {
+                popup.IsOpen = false;
+                PopupMotion.AfterClose(() => { ChangeDock(d => d.Accent = value.Length > 0 ? value : DockLook.DefaultAccent); ShowPage(DockSettingsPage); });
+            });
+            popup.IsOpen = true;
+        };
+        panel.Children.Add(pick);
         return panel;
+    }
+
+    // A time of day in half hours, for quiet hours.
+    private ComboBox QuietTime(int minutes, Action<int> chosen, string name)
+    {
+        var choices = Enumerable.Range(0, 48).Select(i => i * 30).ToList();
+        var combo = new ComboBox { Width = 96, Style = (Style)FindResource("SettingsCombo"), ItemsSource = choices.Select(m => $"{m / 60:00}:{m % 60:00}").ToList(),
+            SelectedIndex = Math.Max(0, choices.IndexOf(minutes / 30 * 30)) };
+        AutomationProperties.SetName(combo, name); PopupMotion.Attach(combo);
+        combo.SelectionChanged += (_, _) => { if (combo.SelectedIndex >= 0) chosen(choices[combo.SelectedIndex]); };
+        return combo;
     }
 }
