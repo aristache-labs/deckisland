@@ -139,7 +139,8 @@ internal sealed partial class DockWindow
 
     private System.Windows.Shapes.Path StartGlyph(double tile)
     {
-        double s = Math.Round(tile * 0.42);
+        // Follows the icon size setting, a little under an app icon since the four squares fill their box.
+        double s = Math.Round(tile * DockGeometry.IconShare(_app.DockSettings.IconSize) * 0.85);
         return new System.Windows.Shapes.Path { Data = Geometry.Parse("M 0,0 H 7 V 7 H 0 Z M 9,0 H 16 V 7 H 9 Z M 0,9 H 7 V 16 H 0 Z M 9,9 H 16 V 16 H 9 Z"),
             Fill = UI.Brush(_look.Text), Opacity = 0.85, Width = s, Height = s, Stretch = Stretch.Uniform };
     }

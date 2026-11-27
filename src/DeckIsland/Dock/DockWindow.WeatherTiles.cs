@@ -80,8 +80,8 @@ internal sealed partial class DockWindow
     {
         var (icon, setIcon) = StaticWeatherPicture(tile * 0.56);
         icon.Margin = new Thickness(0, 0, tile * 0.10, 0);
-        var degree = Label("", tile * 0.33, bold: true);
-        var subtitle = Label("", tile * 0.16, dim: true);
+        var degree = Label("", tile * 0.38, bold: true);
+        var subtitle = Label("", tile * 0.19, dim: true);
         var current = WeatherRow();
         current.Children.Add(icon);
         current.Children.Add(TimeStack(degree, subtitle));
@@ -99,9 +99,9 @@ internal sealed partial class DockWindow
             }
             else
             {
-                var wind = Label("", tile * 0.17, bold: true);
-                var rain = Label("", tile * 0.17, bold: true);
-                var range = Label("", tile * 0.17, bold: true);
+                var wind = Label("", tile * 0.19, bold: true);
+                var rain = Label("", tile * 0.19, bold: true);
+                var range = Label("", tile * 0.19, bold: true);
                 row.Children.Add(TimeStack(wind, rain, range));
                 extra = reading =>
                 {
@@ -138,12 +138,12 @@ internal sealed partial class DockWindow
         var row = new UniformGrid { Rows = 1, VerticalAlignment = VerticalAlignment.Center };
         var cells = Enumerable.Range(0, hourly ? 6 : 3).Select(_ =>
         {
-            var title = Label("", tile * 0.15, bold: true, dim: true);
-            var degree = Label("", tile * 0.17, bold: true);
+            var title = Label("", tile * 0.18, bold: true, dim: true);
+            var degree = Label("", tile * 0.19, bold: true);
             title.TextAlignment = degree.TextAlignment = TextAlignment.Center;
             var (icon, set) = StaticWeatherPicture(tile * 0.31);
             var cell = TimeStack(title, icon, degree);
-            cell.Width = tile * (hourly ? 0.72 : 0.86);
+            cell.Width = tile * (hourly ? 0.76 : 0.84);
             row.Children.Add(cell);
             return (title, degree, set);
         }).ToArray();
