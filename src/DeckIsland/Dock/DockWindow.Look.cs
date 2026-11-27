@@ -32,20 +32,21 @@ internal sealed partial class DockWindow
         // A transparent rim would leave a 1px gap around the tint that shows the screen behind; no rim, no border.
         _bar.BorderThickness = new Thickness(settings.Style == DockStyle.Clear || _look.Rim.StartsWith("#00", StringComparison.Ordinal) ? 0 : 1);
         _tint.BorderThickness = new Thickness(0);
-        // Liquid and iOS: a 2px glossy rim (UpdateGlassRim), drawn as two 1px lines so the inner one can be fainter; iOS's is a cool
-        // white and brighter, Liquid's a neutral grey.
+        // Liquid, iOS and Midnight: a 2px glossy rim (UpdateGlassRim), drawn as two 1px lines so the inner one can be fainter; iOS's
+        // is a cool white and brighter, Liquid's a neutral grey, Midnight's faint.
         _glossStrength = 0;
         switch (DockSmart.Effective(settings.Style, settings.SunsetDarkMode, _app.DockDaylight))
         {
-            case DockStyle.Liquid or DockStyle.IOS:
-                bool ios = DockSmart.Effective(settings.Style, settings.SunsetDarkMode, _app.DockDaylight) == DockStyle.IOS;
-                _glossStrength = ios ? 1 : 0.75;
-                _glossTint = ios ? Color.FromRgb(0xD7, 0xE1, 0xF5) : Color.FromRgb(0xC8, 0xCC, 0xD2);
+            case DockStyle.Liquid or DockStyle.IOS or DockStyle.Midnight:
+                var style = DockSmart.Effective(settings.Style, settings.SunsetDarkMode, _app.DockDaylight);
+                // Midnight's rim follows the same pattern, barely there under its deep tint.
+                _glossStrength = style switch { DockStyle.IOS => 1, DockStyle.Liquid => 0.75, _ => 0.14 };
+                _glossTint = style switch
+                {
+                    DockStyle.IOS => Color.FromRgb(0xD7, 0xE1, 0xF5), DockStyle.Liquid => Color.FromRgb(0xC8, 0xCC, 0xD2), _ => Color.FromRgb(0xC8, 0xCD, 0xE1)
+                };
                 _bar.BorderThickness = new Thickness(1);
                 _tint.BorderThickness = new Thickness(1);
-                break;
-            case DockStyle.Midnight:
-                _bar.BorderThickness = new Thickness(2);
                 break;
         }
         _bar.Background = Brushes.Transparent;

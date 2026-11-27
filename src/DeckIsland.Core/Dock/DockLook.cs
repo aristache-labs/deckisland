@@ -26,7 +26,7 @@ public sealed record DockLook(string Bar, string Rim, string Card, string CardHo
         // iOS: almost clear blurred glass with a faint blue cast; cards barely there; a cool rim a little brighter than Liquid's.
         DockStyle.IOS => new("#59191E2D", "#38C8D7F0", "#14000000", "#17FFFFFF", "#21FFFFFF", "#1CFFFFFF", "#FFF5F5F7", "#BFF5F5F7", "#2EFFFFFF", true),
         // Midnight: glass under a deep dark tint, cards a touch lighter than the bar, a faint rim.
-        DockStyle.Midnight => new("#8C08080C", "#1AC8D7F0", "#08FFFFFF", "#14FFFFFF", "#1FFFFFFF", "#0DFFFFFF", "#FFF5F5F7", "#A6F5F5F7", "#1FFFFFFF", true),
+        DockStyle.Midnight => new("#D40A0A0F", "#1AC8D7F0", "#0AFFFFFF", "#17FFFFFF", "#21FFFFFF", "#17FFFFFF", "#FFF5F5F7", "#A6F5F5F7", "#1FFFFFFF", true),
         DockStyle.Clear => clear switch
         {
             DockClearCards.White => new("#00000000", "#00000000", "#FFF5F5F7", "#FFEBEBEE", "#FFE0E0E4", "#0F000000", "#FF1D1D1F", "#FF6E6E73", "#1F000000", false),
