@@ -20,7 +20,7 @@ internal sealed partial class DockWindow
     private bool _glassOn, _readGlass;
     private byte[]? _lastGlass;
     // Liquid's blur: the screen behind read at 1/LiquidShrink of its size and stretched back; the larger, the softer.
-    private const double LiquidShrink = 26;
+    private const double LiquidShrink = 2;
     private DockLook _look = DockLook.For(DockStyle.Black, DockClearCards.Black);
 
     // The style's colours on the bar, the clock and (through RefreshSoon) the tiles; glass started or stopped to match.
@@ -35,11 +35,9 @@ internal sealed partial class DockWindow
         _tint.BorderThickness = new Thickness(0);
         if (DockSmart.Effective(settings.Style, settings.SunsetDarkMode, _app.DockDaylight) == DockStyle.Liquid)
         {
-            _bar.BorderBrush = LiquidRim(settings.FullWidth, settings.Edge == DockEdge.Top);
-            _bar.BorderThickness = new Thickness(1);
-            // A second, inner rim: light along the top edge fading out by the middle, as thick glass catches light on its inside.
-            _tint.BorderBrush = LiquidInnerRim(settings.Edge == DockEdge.Top && settings.FullWidth);
-            _tint.BorderThickness = new Thickness(1);
+            // Measured from lumabar: an even 2px rim of cool, see-through white all the way round, no highlight spots.
+            _bar.BorderBrush = UI.Brush("#4DC8D7EB");
+            _bar.BorderThickness = new Thickness(2);
         }
         _bar.Background = Brushes.Transparent;
         _lastGlass = null;
@@ -88,34 +86,6 @@ internal sealed partial class DockWindow
 
     // The tiles' cards follow the bar's corners, a little tighter.
     private double TileRadius() => Math.Clamp(DockGeometry.CornerRadius(_app.DockSettings.Corner, _app.DockSettings.Size) - 4, 3, 12);
-
-    // Liquid's rim catches light like the edge of glass: bright at the top-left and bottom-right corners, faint along the sides.
-    // A full-width bar shows only its inner edge, lit evenly along its length.
-    private static Brush LiquidRim(bool fullWidth, bool top)
-    {
-        var brush = fullWidth
-            ? new LinearGradientBrush { StartPoint = new Point(0, top ? 1 : 0), EndPoint = new Point(0, top ? 0 : 1), GradientStops =
-                { new GradientStop(Color.FromArgb(0x80, 255, 255, 255), 0), new GradientStop(Color.FromArgb(0x33, 255, 255, 255), 1) } }
-            : new LinearGradientBrush { StartPoint = new Point(0, 0), EndPoint = new Point(1, 1), GradientStops =
-                {
-                    new GradientStop(Color.FromArgb(0xE6, 255, 255, 255), 0), new GradientStop(Color.FromArgb(0x40, 255, 255, 255), 0.12),
-                    new GradientStop(Color.FromArgb(0x14, 255, 255, 255), 0.5), new GradientStop(Color.FromArgb(0x40, 255, 255, 255), 0.88),
-                    new GradientStop(Color.FromArgb(0xCC, 255, 255, 255), 1)
-                } };
-        brush.Freeze();
-        return brush;
-    }
-
-    private static Brush LiquidInnerRim(bool flipped)
-    {
-        var brush = new LinearGradientBrush { StartPoint = new Point(0, flipped ? 1 : 0), EndPoint = new Point(0, flipped ? 0 : 1), GradientStops =
-            {
-                new GradientStop(Color.FromArgb(0x59, 255, 255, 255), 0), new GradientStop(Color.FromArgb(0x0D, 255, 255, 255), 0.45),
-                new GradientStop(Color.FromArgb(0x00, 255, 255, 255), 0.6), new GradientStop(Color.FromArgb(0x14, 255, 255, 255), 1)
-            } };
-        brush.Freeze();
-        return brush;
-    }
 
     // Glass under the bar: Liquid's soft blur read from the screen, or the backdrop window kept on the bar's rectangle (it follows
     // slides, resizes and moves); the backdrop hidden when there is no glass.
