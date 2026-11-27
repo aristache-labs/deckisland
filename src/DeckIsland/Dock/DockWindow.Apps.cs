@@ -172,6 +172,10 @@ internal sealed partial class DockWindow
         // App cards: every app on a card in the dock's shade; otherwise only the app in front is shaded.
         string rest = Rest(app.Active);
         var frame = Frame(grid, tile, app.Name);
+        // The shade for the app in front hugs the icon: the frame shrinks by an inset, its margin keeps the spacing between apps.
+        double inset = Math.Round(Math.Clamp((tile - iconSize) / 2 - tile * 0.05, 0, tile * 0.07));
+        frame.Width = frame.Height = tile - 2 * inset;
+        frame.Margin = new Thickness(_spacing / 2 + inset, inset, _spacing / 2 + inset, inset);
         frame.Tag = app; frame.Background = UI.Brush(rest);
         // The preview shows the window titles, so the tooltip would only repeat them.
         if (app.Open && _app.DockSettings.WindowPreviews) frame.ToolTip = null;

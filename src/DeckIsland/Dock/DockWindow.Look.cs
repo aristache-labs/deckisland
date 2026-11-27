@@ -27,7 +27,7 @@ internal sealed partial class DockWindow
         var settings = _app.DockSettings;
         _look = DockLook.For(DockSmart.Effective(settings.Style, settings.SunsetDarkMode, _app.DockDaylight), settings.ClearCards);
         _tint.Background = UI.Brush(_look.Bar);
-        _bar.BorderBrush = UI.Brush(!settings.FullWidth && settings.Style == DockStyle.Black ? "#24FFFFFF" : _look.Rim);
+        _bar.BorderBrush = UI.Brush(_look.Rim);
         _bar.BorderThickness = new Thickness(settings.Style == DockStyle.Clear ? 0 : 1);
         if (!_look.Glass) _bar.Background = Brushes.Transparent;
         Foreground = UI.Brush(_look.Text);
