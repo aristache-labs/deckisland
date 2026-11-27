@@ -67,7 +67,7 @@ internal sealed partial class DockWindow : Window
     public IntPtr Monitor { get; }
     public string Device { get; }
 
-    public DockWindow(App app, IntPtr monitor, string device)
+    public DockWindow(App app, IntPtr monitor, string device, bool previewOnly = false)
     {
         _app = app; Monitor = monitor; Device = device;
         _preview = new DockPreview(() => _app.DockSettings.Edge);
@@ -111,7 +111,7 @@ internal sealed partial class DockWindow : Window
         Closing += (_, _) => Stop();
         ApplyStyle();
         ApplyLook();
-        Tick();
+        if (!previewOnly) Tick();
     }
 
     private void Tick()

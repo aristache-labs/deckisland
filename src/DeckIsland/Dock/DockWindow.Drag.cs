@@ -83,6 +83,17 @@ internal sealed partial class DockWindow
         var bar = BoundsOf(_bar);
         bar.Inflate(_tileSize / 2, _tileSize / 2);
         if (!bar.Contains(at)) return null;
+        var leading = _apps.Children.OfType<Border>().TakeWhile(IsBeforeStart).ToList();
+        var start = _startTile is { } startTile ? BoundsOf(startTile)
+            : leading.Count > 0 ? BoundsOf(leading[^1]) : BoundsOf(_apps);
+        double startBoundary = _startTile is not null ? Midpoint(start)
+            : leading.Count > 0 ? start.Right : start.Left;
+        if (at.X <= startBoundary)
+        {
+            var next = leading.FirstOrDefault(tile => tile != dragged && at.X < Midpoint(BoundsOf(tile)));
+            return new(DockWidgetPlacement.BeforeStart, null, (next?.Tag as DockWidget)?.Id,
+                next is not null ? BoundsOf(next).Left : _startTile is not null ? start.Left : startBoundary);
+        }
         var end = BoundsOf(_trailing);
         double rightStart = end.Width > 0 ? end.Left - _tileSize / 3
             : _app.DockSettings.FullWidth ? bar.Right - _tileSize : BoundsOf(_apps).Right + _spacing / 2;
@@ -92,12 +103,14 @@ internal sealed partial class DockWindow
             return new(DockWidgetPlacement.Right, null, (next?.Tag as DockWidget)?.Id, next is null ? end.Right : BoundsOf(next).Left);
         }
 
-        var following = _apps.Children.OfType<Border>().FirstOrDefault(tile => tile != dragged && (tile.Tag is DockWidget or DockApp)
+        var following = _apps.Children.OfType<Border>().FirstOrDefault(tile => tile != dragged && !IsBeforeStart(tile) && (tile.Tag is DockWidget or DockApp)
             && at.X < Midpoint(BoundsOf(tile)));
         var nextWidget = following?.Tag as DockWidget;
         string? app = following?.Tag is DockApp nextApp ? nextApp.Key : nextWidget?.BeforeApp;
         return new(DockWidgetPlacement.MainBar, app, nextWidget?.Id, following is null ? BoundsOf(_apps).Right : BoundsOf(following).Left);
     }
+
+    private static bool IsBeforeStart(Border tile) => tile.Tag is DockWidget { Placement: DockWidgetPlacement.BeforeStart };
 
     private Rect BoundsOf(FrameworkElement element) => new(element.TranslatePoint(new Point(), this), element.RenderSize);
     private static double Midpoint(Rect bounds) => bounds.Left + bounds.Width / 2;

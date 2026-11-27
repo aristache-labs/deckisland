@@ -31,6 +31,7 @@ public sealed record WeatherReading(WeatherPoint Place, double Temperature, int?
     public double? WindSpeed { get; init; }
     public double? WindDirection { get; init; }
     public double? Humidity { get; init; }
+    public TimeSpan? UtcOffset { get; init; }
 }
 public sealed record WeatherUpdate(WeatherReading? Reading, bool Stale)
 {
@@ -134,7 +135,9 @@ public static class Weather
             FeelsLike = Number(Field(current, "apparent_temperature")),
             WindSpeed = Number(Field(current, "wind_speed_10m")),
             WindDirection = Number(Field(current, "wind_direction_10m")),
-            Humidity = Number(Field(current, "relative_humidity_2m"))
+            Humidity = Number(Field(current, "relative_humidity_2m")),
+            UtcOffset = Code(Field(response, "utc_offset_seconds")) is >= -50400 and <= 50400 and var offset
+                ? TimeSpan.FromSeconds(offset) : null
         };
     }
 

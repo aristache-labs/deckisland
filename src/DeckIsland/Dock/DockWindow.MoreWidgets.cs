@@ -95,28 +95,6 @@ internal sealed partial class DockWindow
         return (stack, (share, text) => { figure.Text = text; arc.Data = RingArc(size, 3, share ?? 0); });
     }
 
-    // The conditions' sign, the temperature, the conditions and the place, as the island's weather has them.
-    private (FrameworkElement, Action) Weather(double tile)
-    {
-        var icon = Label("–", tile * 0.42); icon.VerticalAlignment = VerticalAlignment.Center; icon.Margin = new Thickness(tile * 0.18, 0, tile * 0.12, 0);
-        var temperature = Label("–", tile * 0.26, bold: true);
-        var condition = Label("", tile * 0.15, dim: true);
-        var text = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
-        text.Children.Add(temperature); text.Children.Add(condition);
-        var row = new StackPanel { Orientation = Orientation.Horizontal };
-        row.Children.Add(icon); row.Children.Add(text);
-        return (row, () =>
-        {
-            if (!_app.Settings.WeatherEnabled) { icon.Text = "☁"; temperature.Text = "–"; condition.Text = Loc.T("在设置中开启天气", "Turn on weather"); return; }
-            if (_app.CurrentWeather is not { } reading) { icon.Text = "…"; temperature.Text = "–"; condition.Text = Loc.T("读取中", "Reading…"); return; }
-            var (sign, words) = MainWindow.WeatherCondition(reading.Code, reading.Daylight);
-            bool fahrenheit = _app.Settings.WeatherFahrenheit;
-            icon.Text = sign;
-            temperature.Text = $"{(int)Math.Round(fahrenheit ? reading.Temperature * 1.8 + 32 : reading.Temperature, MidpointRounding.AwayFromZero)}°";
-            condition.Text = words;
-        });
-    }
-
     // A minimal clock face: hour and minute hands, a second hand in the accent.
     private (FrameworkElement, Action) AnalogClock(double tile, Func<DateTime>? time = null)
     {

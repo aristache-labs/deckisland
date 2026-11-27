@@ -47,14 +47,6 @@ internal sealed partial class DockWindow
         return (Format(monitor?.Cpu.OrDefault?.Temperature), Format(monitor?.Gpu.OrDefault?.Temperature));
     });
 
-    private (FrameworkElement, Action) SunTimesTile(double tile) => ReadingPair(tile,
-        Loc.T("日出", "Sunrise"), Loc.T("日落", "Sunset"), () =>
-        {
-            var day = _app.Settings.WeatherEnabled ? _app.CurrentWeather?.Days.FirstOrDefault() : null;
-            string Format(DateTime? time) => time is { } value && day?.Sunrise != day?.Sunset ? TimeText(value) : "–";
-            return (Format(day?.Sunrise), Format(day?.Sunset));
-        });
-
     private (FrameworkElement, Action) ReadingPair(double tile, string first, string second, Func<(string, string)> values)
     {
         var left = Label("", tile * 0.22, bold: true);

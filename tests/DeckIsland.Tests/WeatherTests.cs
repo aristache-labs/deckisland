@@ -23,7 +23,7 @@ internal static class WeatherTests
 
         WeatherPoint place = new("Tokyo", 35.68, 139.69);
         using var forecast = JsonDocument.Parse("""
-            {"timezone":"Asia/Tokyo","current":{"time":"2026-11-21T01:15","temperature_2m":13,"is_day":0,"weather_code":0,
+            {"timezone":"Asia/Tokyo","utc_offset_seconds":32400,"current":{"time":"2026-11-21T01:15","temperature_2m":13,"is_day":0,"weather_code":0,
              "apparent_temperature":11,"wind_speed_10m":18,"wind_direction_10m":270,"relative_humidity_2m":82},
              "hourly":{"time":["2026-11-21T00:00","2026-11-21T01:00","2026-11-21T02:00","2026-11-21T03:00","2026-11-21T04:00","2026-11-21T05:00","2026-11-21T06:00","2026-11-21T07:00","2026-11-21T08:00","2026-11-21T09:00"],
                "temperature_2m":[10,12,9],"weather_code":[0,3,61],"is_day":[0,0,0],"precipitation_probability":[0,0,35]},
@@ -38,6 +38,7 @@ internal static class WeatherTests
             reading.Hours[1] is { Code: 61, Temperature: 9, Chance: 35 } && reading.Hours[2].Temperature is null);
         check("Weather reads current metrics and local daylight times",
             reading is { FeelsLike: 11, WindSpeed: 18, WindDirection: 270, Humidity: 82 } &&
+            reading.UtcOffset == TimeSpan.FromHours(9) &&
             reading.Days[0].Sunrise == new DateTime(2026, 11, 21, 6, 17, 0) &&
             reading.Days[0].Sunset == new DateTime(2026, 11, 21, 16, 31, 0));
         check("Weather keeps daily precipitation amounts, chance, zero and missing values distinct",

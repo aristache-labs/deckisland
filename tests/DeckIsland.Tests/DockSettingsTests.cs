@@ -121,9 +121,13 @@ internal static class DockSettingsTests
             widgets.Select(w => w.Id).Distinct().Count() == 3 && DockWidgets.Move(widgets, widgets[2].Id, 0)[0].Kind == DockWidgetKind.Battery
             && DockWidgets.Remove(widgets, widgets[1].Id).Select(w => w.Kind).SequenceEqual([DockWidgetKind.Cpu, DockWidgetKind.Battery]));
         check("Dock widget search finds by name or description within a category",
-            DockWidgets.Find(DockWidgetCategory.System, "").Count == 13 && DockWidgets.Catalog.Select(i => i.Kind).Distinct().Count() == Enum.GetValues<DockWidgetKind>().Length
+            DockWidgets.Find(DockWidgetCategory.System, "").Count == 10 && DockWidgets.Catalog.Select(i => i.Kind).Distinct().Count() == Enum.GetValues<DockWidgetKind>().Length
             && DockWidgets.Find(null, "ram").Select(i => i.Kind).ToHashSet().SetEquals([DockWidgetKind.Memory, DockWidgetKind.TopRam])
             && DockWidgets.Find(DockWidgetCategory.Ai, "ram").Count == 0);
+        check("Dock groups all six weather cards in their own category",
+            DockWidgets.Find(DockWidgetCategory.Weather, "").Count == 6
+            && DockWidgets.Find(DockWidgetCategory.Weather, "").All(w => DockWidgets.IsWeather(w.Kind))
+            && DockWidgets.Find(DockWidgetCategory.Clocks, "").Any(w => w.Kind == DockWidgetKind.ClockWeather));
         var (profiles, currentProfile) = DockWidgets.Normalize([new DockProfile("a", " ", [new DockWidget("x", (DockWidgetKind)99), new DockWidget("y", DockWidgetKind.Cpu), new DockWidget("y", DockWidgetKind.Memory)]),
             new DockProfile("a", "dup", [])], "gone");
         check("Dock profiles drop unknown and repeated widgets and repeated profiles, and keep a current one",
@@ -165,6 +169,12 @@ internal static class DockSettingsTests
             mainDrop[0] is { Kind: DockWidgetKind.ShowDesktop, Placement: DockWidgetPlacement.MainBar, BeforeApp: "explorer.exe" }
             && normalizedDrops[0].Widgets.SequenceEqual(anotherRightDrop)
             && anotherRightDrop.Select(w => (w.Id, w.Placement)).SequenceEqual([(desktop.Id, DockWidgetPlacement.Right), (cpuTile.Id, DockWidgetPlacement.Right)]));
+        var firstOnLeft = DockWidgets.Drop([desktop, cpuTile], desktop.Id, DockWidgetPlacement.BeforeStart, null, null);
+        var leftOrder = DockWidgets.Drop(firstOnLeft, cpuTile.Id, DockWidgetPlacement.BeforeStart, null, desktop.Id);
+        widgetStore.Save(new DockSettings().WithWidgets(leftOrder));
+        check("Dock remembers widget order to the left of Start",
+            widgetStore.Load().Widgets.SequenceEqual(leftOrder)
+            && leftOrder.Select(w => (w.Id, w.Placement)).SequenceEqual([(cpuTile.Id, DockWidgetPlacement.BeforeStart), (desktop.Id, DockWidgetPlacement.BeforeStart)]));
         check("Dock shows its buttons, previews and shortcuts by default",
             new DockSettings() is { ShowStart: true, ShowTrash: true, WindowPreviews: true, AppShortcuts: true });
     }

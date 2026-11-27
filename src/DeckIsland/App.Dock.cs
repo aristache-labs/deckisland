@@ -26,6 +26,8 @@ public partial class App
 
     private bool DockShows(DockWidgetKind kind) => _docks.Count > 0 && DockSettings.Widgets.Any(w => w.Kind == kind);
     private bool DockWantsProcesses => DockShows(DockWidgetKind.TopCpu) || DockShows(DockWidgetKind.TopRam);
+    private bool DockWantsCalendar => _docks.Count > 0 && DockSettings.Widgets.Any(w =>
+        w.Kind is DockWidgetKind.Calendar or DockWidgetKind.Date or DockWidgetKind.Today or DockWidgetKind.NextEvent);
 
     // Read from dock.json the first time the dock or its settings need them.
     internal DockSettings DockSettings
@@ -46,7 +48,7 @@ public partial class App
     private void ApplyDock()
     {
         if (!Settings.DockEnabled) { StopDock(); return; }
-        if (_docks.Count > 0) return;
+        if (_docks.Count > 0) { PresentWeather(DockWeatherViewer, DockWantsWeather); return; }
         if (!_dockCrashGuard)
         {
             _dockCrashGuard = true;
@@ -64,7 +66,7 @@ public partial class App
     internal bool DockWantsMedia => _docks.Count > 0 && DockSettings.Widgets.Any(w => w.Kind == DockWidgetKind.NowPlaying);
     // Sunset dark mode needs the weather's place for the sun's times.
     private bool DockWantsWeather => _docks.Count > 0 && (DockSettings.SunsetDarkMode || DockSettings.Widgets.Any(w =>
-        w.Kind is DockWidgetKind.Weather or DockWidgetKind.Today or DockWidgetKind.ClockWeather or DockWidgetKind.SevenDays or DockWidgetKind.SunriseSunset));
+        DockWidgets.IsWeather(w.Kind) || w.Kind is DockWidgetKind.Today or DockWidgetKind.ClockWeather or DockWidgetKind.SevenDays));
     private static readonly object DockWeatherViewer = new();
 
     // The readings the dock's widgets need, started or let go to match them.
@@ -74,6 +76,7 @@ public partial class App
         ApplyMonitorDemand(false);
         StartMedia();
         PresentWeather(DockWeatherViewer, DockWantsWeather);
+        if (DockWantsCalendar) RefreshCalendarIfOld(TimeSpan.FromMinutes(12));
         ApplyAutomations();
         ApplyDockTray();
     }

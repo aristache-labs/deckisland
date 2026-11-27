@@ -28,6 +28,9 @@ internal sealed partial class DockWindow
             return WidgetFrame(widget, content, tile);
         }
         var placement = (DockWidget widget) => DockWidgets.EffectivePlacement(widget, settings.FullWidth);
+        int startIndex = 0;
+        foreach (var widget in settings.Widgets.Where(w => placement(w) == DockWidgetPlacement.BeforeStart))
+            _apps.Children.Insert(startIndex++, Build(widget));
         var appTiles = _apps.Children.OfType<Border>().Where(frame => frame.Tag is DockApp)
             .ToDictionary(frame => ((DockApp)frame.Tag).Key);
         foreach (var widget in settings.Widgets.Where(w => placement(w) == DockWidgetPlacement.Bar))
@@ -46,7 +49,7 @@ internal sealed partial class DockWindow
     private void UpdateWidgets() { foreach (var update in _widgetUpdates) update(); }
 
     // Preview: the picker's sample tile, which takes no clicks.
-    internal (FrameworkElement Content, Action Update) WidgetContent(DockWidget widget, double tile) => widget.Kind switch
+    internal (FrameworkElement Content, Action Update) WidgetContent(DockWidget widget, double tile, bool preview = false) => widget.Kind switch
     {
         DockWidgetKind.Cpu => Meter(tile, "CPU", () => _app.DockMonitor?.Cpu.OrDefault is { } cpu ? cpu.Usage : null),
         DockWidgetKind.Memory => Meter(tile, "RAM", () => _app.DockMonitor?.Memory.OrDefault is { } memory ? memory.UsedFraction : null),
@@ -55,7 +58,7 @@ internal sealed partial class DockWindow
         DockWidgetKind.Network => Network(tile),
         DockWidgetKind.Storage => Storage(tile),
         DockWidgetKind.Volume => Volume(tile),
-        DockWidgetKind.Weather => Weather(tile),
+        var kind when DockWidgets.IsWeather(kind) => WeatherTile(kind, tile, preview),
         DockWidgetKind.AnalogClock => AnalogClock(tile),
         DockWidgetKind.NowPlaying => NowPlaying(tile),
         DockWidgetKind.Calendar => Calendar(tile),
@@ -67,7 +70,6 @@ internal sealed partial class DockWindow
         DockWidgetKind.TopCpu => TopProcessTile(tile, memory: false),
         DockWidgetKind.TopRam => TopProcessTile(tile, memory: true),
         DockWidgetKind.Temperature => TemperatureTile(tile),
-        DockWidgetKind.SunriseSunset => SunTimesTile(tile),
         DockWidgetKind.DayProgress or DockWidgetKind.MonthProgress or DockWidgetKind.YearProgress => ProgressTile(widget.Kind, tile),
         DockWidgetKind.Clock or DockWidgetKind.FlipClock or DockWidgetKind.WorldClocks or DockWidgetKind.SevenDays
             or DockWidgetKind.WorldTime or DockWidgetKind.Today or DockWidgetKind.Date or DockWidgetKind.DayNumber

@@ -36,8 +36,8 @@ public partial class App
         if (CalendarWanted) _ = RefreshCalendar();
     }
 
-    private bool CalendarWanted => Settings.CalendarSources.Count > 0 && ShownSettings.Any(settings => settings.CalendarPage
-        || settings.ShowsNextEvent(CompactStyle.Notch) || settings.ShowsNextEvent(CompactStyle.Capsule) || settings.WidgetSlots.Contains(WidgetKind.Today));
+    private bool CalendarWanted => Settings.CalendarSources.Count > 0 && (DockWantsCalendar || ShownSettings.Any(settings => settings.CalendarPage
+        || settings.ShowsNextEvent(CompactStyle.Notch) || settings.ShowsNextEvent(CompactStyle.Capsule) || settings.WidgetSlots.Contains(WidgetKind.Today)));
 
     // Fetched when it is older than `older`, or always when null.
     internal void RefreshCalendarIfOld(TimeSpan older)

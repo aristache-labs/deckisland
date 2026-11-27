@@ -18,6 +18,7 @@ internal sealed partial class DockWindow
 {
     private const double DragThreshold = 6;
     private readonly StackPanel _apps = new() { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+    private Border? _startTile;
     private List<DockApp> _shown = [];
     private List<string> _order = [];
     private string _signature = "";
@@ -62,7 +63,8 @@ internal sealed partial class DockWindow
         _apps.Children.Clear();
         double tile = _tileSize = settings.Size - (settings.FullWidth ? 10 : 6);
         _spacing = settings.Spacing;
-        if (settings.ShowStart) _apps.Children.Add(Button(StartGlyph(tile), Loc.T("开始", "Start"), tile, DockShell.OpenStart));
+        _startTile = settings.ShowStart ? Button(StartGlyph(tile), Loc.T("开始", "Start"), tile, DockShell.OpenStart) : null;
+        if (_startTile is not null) _apps.Children.Add(_startTile);
         foreach (var app in apps) _apps.Children.Add(Tile(app, tile));
         AddWidgets(settings, tile);
         if (settings.ShowTrash)
