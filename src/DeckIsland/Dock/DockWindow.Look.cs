@@ -189,7 +189,8 @@ internal sealed partial class DockWindow
     }
 
     // The bar's own menu, on its empty parts.
-    private ContextMenu BarMenu()
+    // The bar's menu; a widget's own action (extraHeader) goes after Settings.
+    private ContextMenu BarMenu(string? extraHeader = null, Action? extraAction = null)
     {
         var menu = NewMenu();
         void Add(string header, Action action, string? colour = null)
@@ -216,6 +217,7 @@ internal sealed partial class DockWindow
             }
         };
         Add(Loc.T("Dock 设置", "Settings"), () => _app.OpenSettingsPage(SettingsWindow.DockSettingsPage));
+        if (extraHeader is not null && extraAction is not null) Add(extraHeader, extraAction);
         if (!_app.DockSettings.Locked) Add(Loc.T("导入任务栏固定应用", "Import taskbar pins"), ImportTaskbarPins);
         Add(Loc.T("任务管理器", "Task Manager"), () => DockAppWindows.Launch("taskmgr.exe"));
         menu.Items.Add(new Separator());

@@ -29,7 +29,7 @@ internal sealed partial class DockWindow
     private void ToggleWidgetDetails(FrameworkElement anchor, DockWidgetKind kind)
     {
         if (!BeginDockPanel(anchor)) return;
-        bool weather = kind == DockWidgetKind.ClockWeather || DockWidgets.IsWeather(kind);
+        bool weather = DockWidgets.IsWeather(kind);
         var (content, update) = weather ? WeatherPopupContent() : CalendarDetails();
         var close = DetailButton("×", Loc.T("关闭", "Close"), CloseWidgetDetails, radius: weather ? 5 : CalendarRadius(17, 17));
         close.Width = weather ? 30 : 34;

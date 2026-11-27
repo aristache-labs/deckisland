@@ -46,6 +46,7 @@ try
     DockSettingsTests.Run(root, Check);
     TrayIconTintTests.Run(Check);
     QuickTogglesTests.Run(Check);
+    WorldZonesTests.Run(Check);
     DockSettingsTests.Geometry(Check);
     DockSettingsTests.Apps(root, Check);
     DockSettingsTests.Smart(Check);

@@ -5,8 +5,8 @@ public static class WorldClocks
 {
     public const int Maximum = 3;
 
-    // Alphabetical, the way the pickers list them.
-    public static readonly IReadOnlyList<(string City, string Zone)> Cities = new (string City, string Zone)[]
+    // The hand-picked cities (capitals and big cities without a time zone name of their own) with their Windows zones.
+    private static readonly (string City, string Zone)[] Curated = new (string City, string Zone)[]
     {
         ("Abu Dhabi", "Arabian Standard Time"),
         ("Accra", "Greenwich Standard Time"),
@@ -145,7 +145,20 @@ public static class WorldClocks
         ("Yerevan", "Caucasus Standard Time"),
         ("Zagreb", "Central European Standard Time"),
         ("Zurich", "W. Europe Standard Time")
-    }.OrderBy(item => item.City, StringComparer.Create(System.Globalization.CultureInfo.InvariantCulture, ignoreCase: true)).ToArray();
+    };
+
+    // Alphabetical, the way the pickers list them: the curated cities, then every other place the IANA database names
+    // (WorldZones) that this machine can resolve, with its IANA zone.
+    public static readonly IReadOnlyList<(string City, string Zone)> Cities = Curated
+        .Concat(WorldZones.Ids.Select(id => (City: WorldZones.City(id), Zone: id)).Where(item => Resolves(item.Zone)))
+        .DistinctBy(item => item.City, StringComparer.OrdinalIgnoreCase)
+        .OrderBy(item => item.City, StringComparer.Create(System.Globalization.CultureInfo.InvariantCulture, ignoreCase: true)).ToArray();
+
+    private static bool Resolves(string zone)
+    {
+        try { TimeZoneInfo.FindSystemTimeZoneById(zone); return true; }
+        catch (Exception e) when (e is TimeZoneNotFoundException or InvalidTimeZoneException) { return false; }
+    }
 
     public static TimeZoneInfo? Zone(string city)
     {

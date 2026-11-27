@@ -105,8 +105,17 @@ internal sealed partial class DockWindow
         var frame = new Border
         {
             // Widget cards fill the row inside the bar's padding (apps keep the tile); the content stays sized to the tile.
-            Width = widget.Kind == DockWidgetKind.QuickToggles ? Math.Round(tile * QuickStripTiles(_app.DockSettings.ShownToggles))
-                : tile * width + _spacing * (width - 1), Height = _app.DockSettings.Size - 6, CornerRadius = new CornerRadius(TileRadius()), Margin = new Thickness(_spacing / 2, 0, _spacing / 2, 0),
+            Width = widget.Kind switch
+            {
+                DockWidgetKind.QuickToggles => Math.Round(tile * QuickStripTiles(_app.DockSettings.ShownToggles)),
+                // Four flip cards and their gaps, no wider.
+                DockWidgetKind.FlipClock => Math.Round(tile * 2.45),
+                // The time, its seconds and the date under them, no wider.
+                DockWidgetKind.Clock => Math.Round(tile * 2.05),
+                // World time: the city and its offset beside the time, the offset wrapping to a second line as on lumabar.
+                DockWidgetKind.WorldTime => Math.Round(tile * 2.6),
+                _ => tile * width + _spacing * (width - 1)
+            }, Height = _app.DockSettings.Size - 6, CornerRadius = new CornerRadius(TileRadius()), Margin = new Thickness(_spacing / 2, 0, _spacing / 2, 0),
             // Clean widget style: no card, the content straight on the bar.
             Background = UI.Brush(_app.DockSettings.CleanWidgets ? "#00000000" : darkToday ? "#FF18181A" : _look.Card),
             BorderBrush = UI.Brush(darkToday ? "#23FFFFFF" : _look.CardRim),
@@ -141,11 +150,14 @@ internal sealed partial class DockWindow
                 _preview.HideNow();
                 _menuOpen = true;
                 DockAppWindows.Focus(_handle);
-                frame.ContextMenu = TimeWidgetMenu(widget);
+                // World time: the bar's menu with Change city..., which opens the same picker as a click; World clocks keep their per-city menu.
+                frame.ContextMenu = widget.Kind == DockWidgetKind.WorldTime
+                    ? BarMenu(Loc.T("更改城市…", "Change city…"), () => OpenCityPicker(widget, frame)) : TimeWidgetMenu(widget);
             };
             frame.ContextMenuClosing += (_, _) => _menuOpen = false;
         }
         Action? click = widget.Kind == DockWidgetKind.ShowDesktop ? DockShell.ToggleDesktop
+            : widget.Kind == DockWidgetKind.WorldTime && !_app.DockSettings.Locked ? () => OpenCityPicker(widget, frame)
             : HasWidgetDetails(widget.Kind) ? () => ToggleWidgetDetails(frame, widget.Kind) : null;
         if (click is not null)
         {
