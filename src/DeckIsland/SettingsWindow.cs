@@ -457,6 +457,14 @@ public sealed partial class SettingsWindow : Window, IKeepsAppFonts
             Loc.T("在内存占用和流畅之间取舍。", "Trade memory for smoothness."));
         GeneralCard(Loc.T("启动与资源占用", "Startup and resources"), Loc.T("DeckIsland 如何启动，以及保留多少内存。", "How DeckIsland starts and how much memory it keeps."), startup, tray, memory);
 
+        // DeckIsland Dock keeps everything but this switch in its own window (App.OpenDockSettings).
+        var dockSettings = ActionButton(Loc.T("Dock 设置…", "Dock settings…"), _app.OpenDockSettings);
+        dockSettings.IsEnabled = S.DockEnabled;
+        GeneralCard("DeckIsland Dock", Loc.T("代替 Windows 任务栏的程序坞，带应用和小组件。", "A dock with apps and widgets that replaces the Windows taskbar."),
+            Describe(Toggle(Loc.T("启用 Dock", "Turn on the dock"), S.DockEnabled, value => { Change(s => s.DockEnabled = value); dockSettings.IsEnabled = value; }),
+                Loc.T("它的设置、小组件和外观都在单独的窗口中。", "Its settings, widgets and look are in a window of their own.")),
+            Describe(Row(Loc.T("Dock 设置", "Dock settings"), dockSettings), Loc.T("位置、大小、任务栏、小组件和样式。", "Position, size, taskbar, widgets and style.")));
+
         // Each language is named in itself. Choosing one rebuilds the window in it, as a theme change does.
         (string Value, string Name)[] languages = [(Loc.Chinese, "简体中文"), (Loc.English, "English")];
         var language = new ComboBox { Width=GeneralCombo,Style=(Style)FindResource("SettingsCombo"),ItemsSource=languages.Select(l=>l.Name).ToList(),

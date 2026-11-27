@@ -43,6 +43,7 @@ try
     ModelUsageTests.Run(Check);
     AntigravityUsageTests.Run(root, Check);
     WorldClocksTests.Run(Check);
+    DockSettingsTests.Run(root, Check);
     await ToolTabsTests.Run(root, Check);
     CountdownTests.Run(Check);
     TodosTests.Run(Check);

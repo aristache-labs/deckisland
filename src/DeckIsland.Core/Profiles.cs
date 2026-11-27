@@ -57,7 +57,7 @@ public static class Profiles
     // profile's unless it is listed here.
     public static readonly IReadOnlySet<string> GlobalKeys = new HashSet<string>(StringComparer.Ordinal)
     {
-        nameof(DeckSettings.AppVersion), nameof(DeckSettings.LaunchAtStartup), nameof(DeckSettings.ShowTrayIcon), nameof(DeckSettings.Theme),
+        nameof(DeckSettings.AppVersion), nameof(DeckSettings.LaunchAtStartup), nameof(DeckSettings.ShowTrayIcon), nameof(DeckSettings.DockEnabled), nameof(DeckSettings.Theme),
         nameof(DeckSettings.TimeFormat), nameof(DeckSettings.Clock24Hour), nameof(DeckSettings.ThemeChoices), nameof(DeckSettings.Language), nameof(DeckSettings.UiFont), nameof(DeckSettings.SettingsFollowsFont),
         nameof(DeckSettings.HideHotkey), nameof(DeckSettings.ExpandHotkey), nameof(DeckSettings.ResizeHotkey), nameof(DeckSettings.MoveHotkey),
         nameof(DeckSettings.ClickThroughHotkey), nameof(DeckSettings.SettingsHotkey), nameof(DeckSettings.Page1Hotkey), nameof(DeckSettings.Page2Hotkey),

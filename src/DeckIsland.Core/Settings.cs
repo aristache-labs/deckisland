@@ -358,6 +358,8 @@ public sealed class DeckSettings
     // Off, the notification area has no DeckIsland icon. Starting DeckIsland again then shows the panels and the settings
     // (App.ShowFromRelaunch), and the settings window has its own exit button.
     public bool ShowTrayIcon { get; set; } = true;
+    // DeckIsland Dock, the taskbar replacement (App.Dock). Its own settings live apart, in dock.json (DockSettingsStore).
+    public bool DockEnabled { get; set; }
     public SettingsTheme Theme { get; set; } = SettingsTheme.System;
     // The panel's color theme (see PanelThemes): "system", "dark", "light", a built-in theme or a theme file's id.
     // The dark default is the original look. An id whose file is missing is kept and shown as the dark theme meanwhile.

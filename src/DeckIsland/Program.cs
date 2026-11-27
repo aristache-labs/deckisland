@@ -32,6 +32,9 @@ internal static class Program
         if (args is [Native.FramePermission.ElevatedSwitch, var user]) { Environment.ExitCode = Native.FramePermission.RunElevated(user); return; }
         // The elevated instance the enhanced sensors page starts sets up or removes the sensor service and exits.
         if (args is [Native.SensorSetup.ElevatedSwitch, .. var sensors]) { Environment.ExitCode = Native.SensorSetup.RunElevated(sensors); return; }
+        // DeckIsland Dock's watchdog: restores the Windows taskbar once the DeckIsland that hid it ends (DockTaskbar).
+        if (args is [Native.DockTaskbar.WatchdogLaunchSwitch, var launchPid]) { Environment.ExitCode = Native.DockTaskbar.LaunchWatchdog(launchPid); return; }
+        if (args is [Native.DockTaskbar.WatchdogSwitch, var watchedPid]) { Environment.ExitCode = Native.DockTaskbar.RunWatchdog(watchedPid); return; }
         MigrateBrimDeckData();
         var app = new App();
         app.InitializeComponent();

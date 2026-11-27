@@ -158,6 +158,7 @@ public partial class App : Application
         Step(() => { DisplayPower.Install(Dispatcher); DisplayPower.Changed += UpdateDeviceDemand; });
         _save.Tick += (_, _) => FlushSettings();
         Step(ApplyTray);
+        Step(ApplyDock);
         Step(() =>
         {
             _settingsEvent = new EventWaitHandle(false, EventResetMode.AutoReset, eventName);
@@ -290,6 +291,7 @@ public partial class App : Application
         UseFont();
         ApplyHotkeys();
         ApplyTray();
+        ApplyDock();
         UpdateDeviceDemand();
         // Statuses and notes are worded when the data is read, so a new language reads the data again.
         bool languageChanged = Loc.Normalize(settings.Language) != Loc.Language;
