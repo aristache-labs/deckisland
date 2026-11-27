@@ -28,7 +28,8 @@ internal sealed partial class DockWindow
     private void RefreshApps()
     {
         // Not while a tile is held: rebuilding would take its mouse capture away.
-        if (_dragging || _press is not null) return;
+        // Nor while the tray grid is open: it hangs from its arrow, which a rebuild would take away.
+        if (_dragging || _press is not null || _trayPopup is { IsOpen: true }) return;
         var settings = _app.DockSettings;
         if (settings.Pins is null)
         {

@@ -59,7 +59,7 @@ internal sealed partial class DockWindow
         var watch = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(150) };
         var popup = _trayPopup;
         watch.Tick += (_, _) => { if (!TrayStillWanted(popup)) popup.IsOpen = false; };
-        popup.Opened += (_, _) => { _menuOpen = true; watch.Start(); };
+        popup.Opened += (_, _) => { _menuOpen = true; _trayAway = 0; watch.Start(); };
         popup.Closed += (_, _) => { _menuOpen = false; watch.Stop(); };
         DockAppWindows.Focus(_handle);
         popup.IsOpen = true;
@@ -90,12 +90,20 @@ internal sealed partial class DockWindow
     [DllImport("user32.dll")] private static extern uint GetWindowThreadProcessId(IntPtr window, out int process);
     [StructLayout(LayoutKind.Sequential)] private struct CursorPoint { public int X, Y; }
 
+    private int _trayAway;
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)] private static extern IntPtr FindWindow(string className, string? title);
+    [DllImport("user32.dll")] private static extern bool IsWindowVisible(IntPtr window);
+
     private bool TrayStillWanted(Popup popup)
     {
+        // An app opens its tray menu from a hidden window of its own, which takes the foreground; the menu itself (class #32768) is
+        // what shows. While any menu is up the grid stays.
+        if (IsWindowVisible(FindWindow("#32768", null))) { _trayAway = 0; return true; }
         var front = GetForegroundWindow();
         GetWindowThreadProcessId(front, out var owner);
-        bool menuInFront = ClassOf(front) == "#32768";
-        if (owner != Environment.ProcessId && !menuInFront && front != IntPtr.Zero) return false;
+        // Something else in front for a moment (the app's window opening its menu) is waited out.
+        if (owner != Environment.ProcessId && front != IntPtr.Zero) return ++_trayAway < 4;
+        _trayAway = 0;
         // A press (left or right button) outside the grid and outside any menu closes it.
         if ((GetAsyncKeyState(0x01) & 0x8000) == 0 && (GetAsyncKeyState(0x02) & 0x8000) == 0) return true;
         GetCursorPos(out var at);
