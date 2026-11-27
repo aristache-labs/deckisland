@@ -46,6 +46,7 @@ internal sealed partial class DockWindow
         DockWidgetKind.Calendar => Calendar(tile),
         DockWidgetKind.AiRing => AiRing(tile, widget.Option),
         DockWidgetKind.Search => SearchField(tile),
+        DockWidgetKind.Tray => TrayArrow(tile),
         _ => NextEvent(tile)
     };
 
@@ -74,7 +75,9 @@ internal sealed partial class DockWindow
         var frame = new Border
         {
             Width = tile * width + _spacing * (width - 1), Height = tile, CornerRadius = new CornerRadius(TileRadius()), Margin = new Thickness(_spacing / 2, 0, _spacing / 2, 0),
-            Background = UI.Brush(_look.Card), BorderBrush = UI.Brush(_look.CardRim), BorderThickness = new Thickness(1), Child = grid, Tag = widget,
+            // Clean widget style: no card, the content straight on the bar.
+            Background = UI.Brush(_app.DockSettings.CleanWidgets ? "#00000000" : _look.Card), BorderBrush = UI.Brush(_look.CardRim),
+            BorderThickness = new Thickness(_app.DockSettings.CleanWidgets ? 0 : 1), Child = grid, Tag = widget,
             ToolTip = _app.DockSettings.NamesOnHover ? DockWidgets.Info(widget.Kind).Name : null
         };
         frame.MouseLeftButtonDown += (_, e) => { e.Handled = true; _press = (frame, e.GetPosition(this)); frame.CaptureMouse(); };
@@ -112,7 +115,7 @@ internal sealed partial class DockWindow
     {
         double size = tile * 0.62;
         var track = new Ellipse { Width = size, Height = size, Stroke = UI.Brush(_look.Divider), StrokeThickness = 3 };
-        var arc = new Path { Width = size, Height = size, Stroke = UI.Brush(_app.DockSettings.Accent), StrokeThickness = 3, StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round };
+        var arc = new Path { Width = size, Height = size, Stroke = UI.Brush(Accent), StrokeThickness = 3, StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round };
         var figure = Label("–", tile * 0.2, bold: true); figure.HorizontalAlignment = HorizontalAlignment.Center; figure.VerticalAlignment = VerticalAlignment.Center;
         var ring = new Grid { Width = size, Height = size, Margin = new Thickness(0, tile * 0.06, 0, 0) };
         ring.Children.Add(track); ring.Children.Add(arc); ring.Children.Add(figure);

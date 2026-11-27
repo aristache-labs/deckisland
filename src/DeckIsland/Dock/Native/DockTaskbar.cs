@@ -30,7 +30,10 @@ internal static class DockTaskbar
     private delegate bool EnumWindowsProc(IntPtr window, IntPtr param);
     private delegate void WinEventProc(IntPtr hook, uint eventType, IntPtr window, int objectId, int childId, uint thread, uint time);
     [DllImport("shell32.dll")] private static extern UIntPtr SHAppBarMessage(uint message, ref AppBarData data);
-    [DllImport("user32.dll", CharSet = CharSet.Unicode)] private static extern IntPtr FindWindow(string className, string? title);
+    [DllImport("user32.dll")] private static extern uint GetWindowThreadProcessId(IntPtr window, out int process);
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)] private static extern uint RegisterWindowMessage(string name);
+    [DllImport("user32.dll")] private static extern bool PostMessage(IntPtr window, uint message, nint wParam, nint lParam);
+    private static readonly IntPtr HwndBroadcast = new(0xFFFF);
     [DllImport("user32.dll")] private static extern bool EnumWindows(EnumWindowsProc callback, IntPtr param);
     [DllImport("user32.dll", CharSet = CharSet.Unicode)] private static extern int GetClassName(IntPtr window, StringBuilder name, int capacity);
     [DllImport("user32.dll")] private static extern bool ShowWindow(IntPtr window, int command);
@@ -122,6 +125,9 @@ internal static class DockTaskbar
         try { using var process = Process.GetProcessById(id); process.WaitForExit(); }
         catch (ArgumentException) { }
         Restore(id);
+        // The dock's tray host (ManagedShell) took the icons apps added while it ran; told that the taskbar was made again, the apps
+        // add them to Explorer's tray once more. A normal exit does this itself; this covers DeckIsland being killed.
+        PostMessage(HwndBroadcast, RegisterWindowMessage("TaskbarCreated"), 0, 0);
         return 0;
     }
 
@@ -157,12 +163,22 @@ internal static class DockTaskbar
         _showHook = SetWinEventHook(EventObjectShow, EventObjectShow, IntPtr.Zero, _showCallback, 0, 0, WinEventOutOfContext);
     }
 
-    private static AppBarData Data() => new() { Size = Marshal.SizeOf<AppBarData>(), Window = FindWindow("Shell_TrayWnd", null) };
+    private static AppBarData Data() => new() { Size = Marshal.SizeOf<AppBarData>(), Window = Taskbars().FirstOrDefault(window => ClassIs(window, "Shell_TrayWnd")) };
+
+    private static bool ClassIs(IntPtr window, string name)
+    {
+        var text = new StringBuilder(64);
+        GetClassName(window, text, text.Capacity);
+        return text.ToString() == name;
+    }
     private static uint GetFlags() { var data = Data(); return (uint)SHAppBarMessage(AbmGetState, ref data); }
     private static void SetFlags(uint flags) { var data = Data(); data.Param = (IntPtr)flags; SHAppBarMessage(AbmSetState, ref data); }
 
+    // Explorer's taskbars only: the dock's tray host (ManagedShell) makes a Shell_TrayWnd of its own in this process.
     internal static bool IsTaskbar(IntPtr window)
     {
+        GetWindowThreadProcessId(window, out var owner);
+        if (owner == Environment.ProcessId) return false;
         var name = new StringBuilder(64);
         GetClassName(window, name, name.Capacity);
         return name.ToString() is "Shell_TrayWnd" or "Shell_SecondaryTrayWnd";

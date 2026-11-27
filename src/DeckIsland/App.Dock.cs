@@ -71,6 +71,7 @@ public partial class App
         StartMedia();
         PresentWeather(DockWeatherViewer, DockWantsWeather);
         ApplyAutomations();
+        ApplyDockTray();
     }
 
     internal bool DockWantsMonitor => _docks.Count > 0 && DockSettings.Widgets.Any(w => w.Kind is DockWidgetKind.Cpu or DockWidgetKind.Memory or DockWidgetKind.Network);
@@ -80,9 +81,11 @@ public partial class App
         _dockPicker?.Close();
         foreach (var dock in _docks.ToList()) dock.Close();
         _docks.Clear();
-        _dockKeys?.Dispose(); _dockKeys = null;
+        _dockKeys?.Dispose(); _dockKeys = null; _dockKeysFor = default;
         FlushDockSettings();
         DockTaskbar.Stop();
+        // The tray host gives the tray back to Explorer even while the app exits (ApplyDockData does nothing then).
+        ApplyDockTray();
         ApplyDockData();
     }
 
@@ -104,10 +107,16 @@ public partial class App
         foreach (var dock in _docks) { dock.Place(); dock.ClaimPanicKey(); }
     }
 
+    // The keyboard hook runs while Win+1..0 or Win+T is wanted, and is made again when that choice changes.
+    private (bool Apps, bool Switcher) _dockKeysFor;
     private void ApplyDockKeys()
     {
-        if (DockSettings.AppShortcuts) _dockKeys ??= new DockKeys(index => _docks.FirstOrDefault()?.ActivateApp(index));
-        else { _dockKeys?.Dispose(); _dockKeys = null; }
+        var wanted = (DockSettings.AppShortcuts, DockSettings.AppSwitcher);
+        if (_dockKeys is not null && wanted == _dockKeysFor) return;
+        _dockKeys?.Dispose(); _dockKeys = null; _dockKeysFor = wanted;
+        if (!wanted.AppShortcuts && !wanted.AppSwitcher) return;
+        _dockKeys = new DockKeys(wanted.AppShortcuts ? index => _docks.FirstOrDefault()?.ActivateApp(index) : null,
+            wanted.AppSwitcher ? () => _docks.FirstOrDefault()?.ShowSwitcher() : null);
     }
 
     // lumabar's widget picker, from the bar's menu or the settings page.

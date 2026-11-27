@@ -32,6 +32,10 @@ public sealed partial class SettingsWindow
         if (dock.Style == DockStyle.Clear)
             appearance.Add(Describe(Row(Loc.T("透明样式的小组件", "Widgets on Clear"), ClearTiles(dock),
                 help: () => Loc.T("透明样式下小组件所在的卡片。", "The cards the widgets sit on in the Clear style.")), Loc.T("黑色、磨砂或白色卡片。", "Black, frosted or white cards.")));
+        appearance.Add(Describe(Toggle(Loc.T("专辑封面强调色", "Album art accent"), dock.AlbumAccent, value => ChangeDock(d => d.AlbumAccent = value),
+            help: Loc.T("播放歌曲时，强调色取自封面的主色。", "While a song plays, the accent is taken from its cover's strongest colour.")), Loc.T("跟随正在播放的封面。", "Follows the cover playing.")));
+        appearance.Add(Describe(Toggle(Loc.T("简洁小组件样式", "Clean widget style"), dock.CleanWidgets, value => ChangeDock(d => d.CleanWidgets = value),
+            help: Loc.T("小组件不再放在卡片上，内容直接显示在 Dock 上。", "Widgets lose their cards; their content sits straight on the dock.")), Loc.T("没有卡片的小组件。", "Widgets without cards.")));
         appearance.Add(Describe(Row(Loc.T("强调色", "Accent"), AccentDots(dock),
             help: () => Loc.T("已打开应用的标记和高亮使用它。", "The open marker and highlights wear it.")), Loc.T("Dock 的强调色。", "The dock's accent colour.")));
         Group([.. appearance]);
@@ -161,6 +165,9 @@ public sealed partial class SettingsWindow
                 help: Loc.T("拖到上面的文件会移到回收站，可以恢复。", "Files dropped on it go to the Recycle Bin, where they can be restored.")), Loc.T("可以把文件拖到上面。", "Files can be dropped on it.")),
             Describe(Toggle(Loc.T("显示桌面按钮", "Show desktop button"), dock.ShowDesktopButton, value => ChangeDock(d => d.ShowDesktopButton = value),
                 help: Loc.T("最小化所有窗口，再点一次恢复。", "Minimizes every window; click again to bring them back.")), Loc.T("在最右侧。", "At the right end.")),
+            Describe(Toggle(Loc.T("Win+T 切换应用", "Win+T app switcher"), dock.AppSwitcher, value => ChangeDock(d => d.AppSwitcher = value),
+                help: Loc.T("像任务栏一样显示打开的应用：方向键在应用间移动，Tab 在窗口间移动，回车打开。", "Shows the open apps as the taskbar does: the arrow keys move between apps, Tab between an app's windows, Enter opens one.")),
+                Loc.T("用键盘切换应用。", "Switch apps from the keyboard.")),
             Describe(Toggle(Loc.T("Win+1 到 Win+0", "Win+1 to Win+0"), dock.AppShortcuts, value => ChangeDock(d => d.AppShortcuts = value),
                 help: Loc.T("打开 Dock 上的前十个应用，与任务栏相同。", "Open the dock's first ten apps, as on the taskbar.")), Loc.T("用键盘打开应用。", "Open apps from the keyboard.")));
 

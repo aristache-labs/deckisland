@@ -41,7 +41,7 @@ internal sealed partial class DockWindow
         (var apps, _order) = DockApps.Build(pins, DockAppWindows.Collect(), _order, foreground, DockAppWindows.AppName);
         if (!settings.GroupWindows) apps = DockApps.Ungroup(apps, foreground);
         bool trashFull = settings.ShowTrash && DockShell.RecycleBinHasItems();
-        var signature = $"{settings.Style}{settings.ClearCards}{settings.Accent}{settings.Corner}|{settings.Size}|{settings.Spacing}|{settings.IconSize}|{settings.AppCards}{settings.NamesOnHover}{settings.Indicator}{settings.WindowPreviews}|"
+        var signature = $"{settings.Style}{settings.ClearCards}{Accent}{settings.CleanWidgets}{settings.Corner}|{settings.Size}|{settings.Spacing}|{settings.IconSize}|{settings.AppCards}{settings.NamesOnHover}{settings.Indicator}{settings.WindowPreviews}|"
             + $"{settings.ShowStart}{settings.ShowTrash}{settings.ShowDesktopButton}{trashFull}|{_app.DockPickerOpen}|{string.Join(",", settings.Widgets.Select(w => w.Id + w.Option))}|"
             + string.Join(";", apps.Select(a => $"{a.Key},{a.Pinned},{a.Windows.Count},{a.Active}"));
         _shown = apps;
@@ -136,7 +136,7 @@ internal sealed partial class DockWindow
             DockIndicator.Line => (app.Active ? tile * 0.6 : tile * 0.35, 2.5),
             _ => (app.Active ? 12.0 : 4.0, 3.0)
         };
-        var dot = new Rectangle { Height = dotHeight, Width = dotWidth, RadiusX = dotHeight / 2, RadiusY = dotHeight / 2, Fill = UI.Brush(settings.Accent), Opacity = app.Active ? 1 : 0.8,
+        var dot = new Rectangle { Height = dotHeight, Width = dotWidth, RadiusX = dotHeight / 2, RadiusY = dotHeight / 2, Fill = UI.Brush(Accent), Opacity = app.Active ? 1 : 0.8,
             VerticalAlignment = VerticalAlignment.Bottom, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 0, 0, 2),
             Visibility = app.Open ? Visibility.Visible : Visibility.Hidden };
         var grid = new Grid(); grid.Children.Add(icon); grid.Children.Add(dot);
@@ -245,6 +245,17 @@ internal sealed partial class DockWindow
     }
 
     // Win+1 to Win+0: the n-th app, as a click on it would.
+    // Win+T: the open apps in the switcher.
+    // Win+T again while it is open (Windows still held) moves to the next app.
+    private DockSwitcher? _switcher;
+    public void ShowSwitcher()
+    {
+        if (_switcher is not null) { _switcher.Next(); return; }
+        _switcher = new DockSwitcher(_shown, _look, Accent);
+        _switcher.Closed += (_, _) => _switcher = null;
+        _switcher.Show();
+    }
+
     public void ActivateApp(int index)
     {
         if (index >= _shown.Count) return;

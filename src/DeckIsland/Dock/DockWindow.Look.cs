@@ -75,6 +75,25 @@ internal sealed partial class DockWindow
         if (_glassOn) GlassTick();
     }
 
+    private BitmapSource? _accentCover;
+    private string _coverAccent = DockLook.DefaultAccent;
+
+    // The accent the dock wears: the chosen one, or (Album accent) the strongest colour of the cover playing.
+    private string Accent
+    {
+        get
+        {
+            var settings = _app.DockSettings;
+            if (!settings.AlbumAccent || _app.Media?.Cover is not { } cover) return settings.Accent;
+            if (!ReferenceEquals(cover, _accentCover))
+            {
+                _accentCover = cover;
+                _coverAccent = MusicBackdrop.Palette(cover, 1) is [var colour] ? $"#{colour.R:X2}{colour.G:X2}{colour.B:X2}" : settings.Accent;
+            }
+            return _coverAccent;
+        }
+    }
+
     // The tiles' cards follow the bar's corners, a little tighter.
     private double TileRadius() => Math.Clamp(DockGeometry.CornerRadius(_app.DockSettings.Corner, _app.DockSettings.Size) - 4, 3, 12);
 
@@ -149,7 +168,7 @@ internal sealed partial class DockWindow
             menu.Resources["DockMenuHover"] = UI.Brush(light ? "#14000000" : "#1AFFFFFF");
             menu.Resources["DockMenuText"] = UI.Brush(_look.Text);
             menu.Resources["DockMenuDim"] = UI.Brush(_look.Dim);
-            menu.Resources["DockMenuAccent"] = UI.Brush(_app.DockSettings.Accent);
+            menu.Resources["DockMenuAccent"] = UI.Brush(Accent);
         }
         Colour();
         menu.Opened += (_, _) => Colour();

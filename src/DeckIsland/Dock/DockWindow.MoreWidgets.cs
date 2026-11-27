@@ -36,7 +36,7 @@ internal sealed partial class DockWindow
     private FrameworkElement Arrowed(string arrow, TextBlock value, double tile)
     {
         var row = new StackPanel { Orientation = Orientation.Horizontal };
-        var sign = Label(arrow, tile * 0.2, bold: true); sign.Foreground = UI.Brush(_app.DockSettings.Accent); sign.Margin = new Thickness(0, 0, 6, 0);
+        var sign = Label(arrow, tile * 0.2, bold: true); sign.Foreground = UI.Brush(Accent); sign.Margin = new Thickness(0, 0, 6, 0);
         row.Children.Add(sign); row.Children.Add(value);
         return row;
     }
@@ -85,7 +85,7 @@ internal sealed partial class DockWindow
     {
         double size = tile * 0.62;
         var track = new Ellipse { Width = size, Height = size, Stroke = UI.Brush(_look.Divider), StrokeThickness = 3 };
-        var arc = new Path { Width = size, Height = size, Stroke = UI.Brush(_app.DockSettings.Accent), StrokeThickness = 3, StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round };
+        var arc = new Path { Width = size, Height = size, Stroke = UI.Brush(Accent), StrokeThickness = 3, StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round };
         var figure = Label("–", tile * 0.17, bold: true); figure.HorizontalAlignment = HorizontalAlignment.Center; figure.VerticalAlignment = VerticalAlignment.Center;
         var ring = new Grid { Width = size, Height = size, Margin = new Thickness(0, tile * 0.06, 0, 0) };
         ring.Children.Add(track); ring.Children.Add(arc); ring.Children.Add(figure);
@@ -135,7 +135,7 @@ internal sealed partial class DockWindow
             face.Children.Add(hand);
             return hand;
         }
-        var hour = Hand(centre * 0.5, 2.2, _look.Text); var minute = Hand(centre * 0.75, 1.6, _look.Text); var second = Hand(centre * 0.8, 1, _app.DockSettings.Accent);
+        var hour = Hand(centre * 0.5, 2.2, _look.Text); var minute = Hand(centre * 0.75, 1.6, _look.Text); var second = Hand(centre * 0.8, 1, Accent);
         void Point(Line hand, double turns) { double length = (double)hand.Tag, angle = turns * 2 * Math.PI; hand.X2 = centre + Math.Sin(angle) * length; hand.Y2 = centre - Math.Cos(angle) * length; }
         return (face, () =>
         {
@@ -203,7 +203,7 @@ internal sealed partial class DockWindow
             int count = _app.CalendarEvents.Count(e => e.Start.Date <= now.Date && e.End.Date >= now.Date);
             if (dots.Children.Count == Math.Min(3, count)) return;
             dots.Children.Clear();
-            for (int i = 0; i < Math.Min(3, count); i++) dots.Children.Add(new Ellipse { Width = 4, Height = 4, Margin = new Thickness(1, 0, 1, 0), Fill = UI.Brush(_app.DockSettings.Accent) });
+            for (int i = 0; i < Math.Min(3, count); i++) dots.Children.Add(new Ellipse { Width = 4, Height = 4, Margin = new Thickness(1, 0, 1, 0), Fill = UI.Brush(Accent) });
         });
     }
 

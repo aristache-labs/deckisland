@@ -70,6 +70,12 @@ public sealed class DockSettings
     [JsonConverter(typeof(JsonStringEnumConverter))] public DockClearCards ClearCards { get; set; } = DockClearCards.Black;
     // The dock's accent (#RRGGBB): the open marker and highlights wear it.
     public string Accent { get; set; } = DockLook.DefaultAccent;
+    // The accent taken from the cover of the song playing, while one plays.
+    public bool AlbumAccent { get; set; }
+    // Widgets without their cards: their content sits straight on the bar.
+    public bool CleanWidgets { get; set; }
+    // Win+T opens the dock's app switcher, as the taskbar's.
+    public bool AppSwitcher { get; set; } = true;
     // The widget sets and the one in use (DockWidgets).
     public List<DockProfile> Profiles { get; set; } = [DockWidgets.DefaultProfile()];
     public string CurrentProfile { get; set; } = "main";

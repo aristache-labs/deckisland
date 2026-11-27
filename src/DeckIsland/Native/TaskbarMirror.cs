@@ -107,7 +107,9 @@ internal sealed class TaskbarMirror : IDisposable
             foreach (var name in (ReadOnlySpan<string>)["Shell_TrayWnd", "Shell_SecondaryTrayWnd"])
                 for (var bar = FindWindowEx(IntPtr.Zero, IntPtr.Zero, name, null); bar != IntPtr.Zero; bar = FindWindowEx(IntPtr.Zero, bar, name, null))
                 {
-                    if (!IsWindowVisible(bar) || !GetWindowRect(bar, out var r)) continue;
+                    // The dock's tray host (ManagedShell) makes a window of this class too; only Explorer's are taskbars.
+                    GetWindowThreadProcessId(bar, out var owner);
+                    if (owner == Environment.ProcessId || !IsWindowVisible(bar) || !GetWindowRect(bar, out var r)) continue;
                     var taskbar = ToRect(r);
                     if (!Overlaps(strip, taskbar) || !GetWindowBand(bar, out var band) || band == DesktopBand || band == 0) continue;
                     var part = Rect.Intersect(window, taskbar);
@@ -406,6 +408,7 @@ internal sealed class TaskbarMirror : IDisposable
     [DllImport("dwmapi")] private static extern int DwmRegisterThumbnail(IntPtr destination, IntPtr source, out IntPtr thumbnail);
     [DllImport("dwmapi")] private static extern int DwmUpdateThumbnailProperties(IntPtr thumbnail, ref DWM_THUMBNAIL_PROPERTIES properties);
     [DllImport("dwmapi")] private static extern int DwmUnregisterThumbnail(IntPtr thumbnail);
+    [DllImport("user32")] private static extern uint GetWindowThreadProcessId(IntPtr window, out int process);
     [DllImport("user32", CharSet = CharSet.Unicode, EntryPoint = "RegisterClassExW")] private static extern ushort RegisterClassEx(ref WNDCLASSEX type);
     [DllImport("user32", EntryPoint = "DefWindowProcW")] private static extern IntPtr DefWindowProc(IntPtr window, uint message, IntPtr wParam, IntPtr lParam);
     [DllImport("user32", EntryPoint = "LoadCursorW")] private static extern IntPtr LoadCursor(IntPtr instance, IntPtr name);

@@ -2,7 +2,7 @@ namespace DeckIsland.Core;
 
 // The dock's widgets, after lumabar's: live tiles that sit on the bar beside the apps, chosen in the widget picker by category.
 // The catalog grows with each wave of widgets; a kind this build does not know is dropped from the settings when they are read.
-public enum DockWidgetKind { Cpu, Memory, Battery, AiUsage, NextEvent, Network, Storage, Volume, Weather, AnalogClock, NowPlaying, Calendar, AiRing, Search }
+public enum DockWidgetKind { Cpu, Memory, Battery, AiUsage, NextEvent, Network, Storage, Volume, Weather, AnalogClock, NowPlaying, Calendar, AiRing, Search, Tray }
 public enum DockWidgetCategory { Ai, Productivity, System, MediaTime }
 
 // Width is in tiles: 1 a square tile, more a wide card.
@@ -31,6 +31,7 @@ public static class DockWidgets
         new(DockWidgetKind.Cpu, DockWidgetCategory.System, "CPU", Loc.T("处理器的使用率。", "How busy the processor is."), 1),
         new(DockWidgetKind.Memory, DockWidgetCategory.System, "RAM", Loc.T("正在使用的内存。", "How much memory is in use."), 1),
         new(DockWidgetKind.Battery, DockWidgetCategory.System, Loc.T("电池", "Battery"), Loc.T("电量，以及是否在充电。", "The charge, and whether it is charging."), 1),
+        new(DockWidgetKind.Tray, DockWidgetCategory.System, Loc.T("托盘", "Tray"), Loc.T("系统托盘的图标，点开箭头显示为网格。", "The system tray's icons, in a grid behind an arrow."), 1),
         new(DockWidgetKind.Network, DockWidgetCategory.System, Loc.T("网络", "Network"), Loc.T("下载和上传速度。", "Download and upload speed."), 2),
         new(DockWidgetKind.Storage, DockWidgetCategory.System, Loc.T("存储", "Storage"), Loc.T("系统盘的剩余空间。", "Free space on the system drive."), 1),
         new(DockWidgetKind.Volume, DockWidgetCategory.MediaTime, Loc.T("音频输出", "Audio Output"), Loc.T("音量；在上面滚动可调节。", "The volume; scroll on it to change it."), 1),
