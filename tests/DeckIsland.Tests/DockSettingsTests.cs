@@ -138,6 +138,11 @@ internal static class DockSettingsTests
         check("Dock search works out sums and leaves other text alone",
             DockSmart.Parse("2 + 3 * (4 - 1)") is { Kind: DockCommandKind.Answer, Text: "11" } && DockSmart.Sum("1/0") is null && DockSmart.Sum("12") is null
             && DockSmart.Sum("2+") is null && DockSmart.Parse("chrome").Kind == DockCommandKind.None && DockSmart.Parse("  ").Kind == DockCommandKind.None);
+        check("Dock finds jump list files by the AppUserModelID's CRC-64, as Windows names them",
+            DockJumpList.FileId("Microsoft.Windows.Explorer") == "f01b4d95cf55d32a" && DockJumpList.FileId("microsoft.windows.explorer") == "f01b4d95cf55d32a");
+        check("Dock writes an exe's implicit AppUserModelID with its known folder's id, the longest folder first",
+            DockJumpList.ImplicitAppId(@"C:\Users\a\AppData\Local\Programs\x\x.exe", [(@"C:\Users\a\AppData\Local", "{L}"), (@"C:\Users\a\AppData\Local\Programs", "{P}")]) == @"{P}\x\x.exe"
+            && DockJumpList.ImplicitAppId(@"D:\Tools\t.exe", [(@"C:\Windows", "{W}")]) == @"D:\Tools\t.exe");
         check("Dock quiet hours run across midnight",
             DockSmart.Quiet(new DateTime(2026, 1, 1, 23, 0, 0), 22 * 60, 7 * 60) && DockSmart.Quiet(new DateTime(2026, 1, 1, 6, 59, 0), 22 * 60, 7 * 60)
             && !DockSmart.Quiet(new DateTime(2026, 1, 1, 12, 0, 0), 22 * 60, 7 * 60) && DockSmart.Quiet(new DateTime(2026, 1, 1, 13, 0, 0), 12 * 60, 14 * 60) && !DockSmart.Quiet(DateTime.Now, 60, 60));

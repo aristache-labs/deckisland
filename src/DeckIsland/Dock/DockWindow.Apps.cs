@@ -274,6 +274,13 @@ internal sealed partial class DockWindow
             item.Click += (_, _) => { action(); RefreshSoon(); };
             menu.Items.Add(item);
         }
+        // The app's jump list first, its sections under their own headings, as on the taskbar.
+        foreach (var section in DockJumpLists.For(app))
+        {
+            menu.Items.Add(new MenuItem { Header = section.Title, IsEnabled = false, FontSize = 11.5 });
+            foreach (var item in section.Items) Add(item.Title, item.Open);
+            menu.Items.Add(new Separator());
+        }
         menu.Items.Add(new MenuItem { Header = app.Name, IsEnabled = false, FontWeight = FontWeights.SemiBold });
         Add(app.Open ? Loc.T("新窗口", "New window") : Loc.T("打开", "Open"), () => DockAppWindows.Launch(app.Launch));
         if (_app.DockSettings.Locked) { }
