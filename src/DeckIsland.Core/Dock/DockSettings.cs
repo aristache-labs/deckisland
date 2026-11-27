@@ -21,14 +21,31 @@ public sealed class DockSettings
     [JsonConverter(typeof(JsonStringEnumConverter))] public DockTaskbarMode TaskbarMode { get; set; } = DockTaskbarMode.AutoHide;
     // The bar's height in device-independent pixels.
     public int Size { get; set; } = 52;
+    // The pinned apps in their order; null until they are first taken from the Windows taskbar's pins.
+    public List<DockPin>? Pins { get; set; }
+    // The Start button at the left end, and the Trash and Show desktop buttons at the right.
+    public bool ShowStart { get; set; } = true;
+    public bool ShowTrash { get; set; } = true;
+    public bool ShowDesktopButton { get; set; } = true;
+    // Live pictures of an app's windows while the pointer rests on it.
+    public bool WindowPreviews { get; set; } = true;
+    // Win+1 to Win+0 open the dock's first ten apps, as on the taskbar.
+    public bool AppShortcuts { get; set; } = true;
 
-    public DockSettings Copy() => (DockSettings)MemberwiseClone();
+    public DockSettings Copy()
+    {
+        var copy = (DockSettings)MemberwiseClone();
+        copy.Pins = Pins is null ? null : [.. Pins];
+        return copy;
+    }
 
     public void Normalize()
     {
         if (!Enum.IsDefined(Edge)) Edge = DockEdge.Bottom;
         if (!Enum.IsDefined(TaskbarMode)) TaskbarMode = DockTaskbarMode.AutoHide;
         Size = Math.Clamp(Size, MinSize, MaxSize);
+        Pins = Pins?.Where(pin => pin is not null && !string.IsNullOrWhiteSpace(pin.Path))
+            .Select(pin => pin with { Name = string.IsNullOrWhiteSpace(pin.Name) ? Path.GetFileNameWithoutExtension(pin.Path) : pin.Name }).ToList();
     }
 }
 

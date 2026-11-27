@@ -12,7 +12,7 @@ namespace DeckIsland;
 // DeckIsland Dock's bar: a borderless window on the top or bottom edge of the main screen, registered with the shell as an AppBar
 // so maximized windows stop at its strip (after lumabar's dock.rs). It never takes focus and stays out of Alt+Tab.
 // Ctrl+Alt+Shift+Q switches the dock off from anywhere, which gives the taskbar back.
-internal sealed class DockWindow : Window
+internal sealed partial class DockWindow : Window
 {
     private const int GwlExStyle = -20, ExNoActivate = 0x08000000, ExToolWindow = 0x80;
     private const uint AbmNew = 0, AbmRemove = 1, AbmQueryPos = 2, AbmSetPos = 3, AbeTop = 1, AbeBottom = 3;
@@ -55,9 +55,11 @@ internal sealed class DockWindow : Window
         Title = "DeckIsland Dock"; FontFamily = UI.PanelFont; Foreground = UI.Brush("#F2F2F4");
         var clock = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(12, 0, 14, 0) };
         clock.Children.Add(_time); clock.Children.Add(_date);
+        var row = new StackPanel { Orientation = Orientation.Horizontal };
+        row.Children.Add(_apps); row.Children.Add(clock);
         // The bar's look until the styles of phase F4: lumabar's solid dark surface (rgba 22, 22, 26, 0.92), 8 px corners.
         _bar = new Border { CornerRadius = new CornerRadius(8), Background = UI.Brush("#EB16161A"), BorderBrush = UI.Brush("#22FFFFFF"),
-            BorderThickness = new Thickness(1), MinWidth = DockGeometry.MinBarWidth, Child = clock, HorizontalAlignment = HorizontalAlignment.Stretch };
+            BorderThickness = new Thickness(1), MinWidth = DockGeometry.MinBarWidth, Child = row, HorizontalAlignment = HorizontalAlignment.Stretch };
         Content = _bar;
         _clock.Tick += (_, _) => Tick();
         SourceInitialized += (_, _) => Start();
@@ -70,6 +72,7 @@ internal sealed class DockWindow : Window
     {
         var now = DateTime.Now;
         _time.Text = now.ToString("t"); _date.Text = now.ToString("d");
+        RefreshApps();
         // The clock's width changes with its text; the bar follows.
         if (_handle != IntPtr.Zero && Math.Abs(NaturalWidth() - _barWidth) >= 1) Place();
     }

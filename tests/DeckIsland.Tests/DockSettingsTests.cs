@@ -43,4 +43,28 @@ internal static class DockSettingsTests
         var state = new DockTaskbarState(2, true, 42);
         check("Dock taskbar state round-trips and rejects damage", DockTaskbarState.Parse(state.ToJson()) == state && DockTaskbarState.Parse("{ nope") is null);
     }
+
+    internal static void Apps(Action<string, bool> check)
+    {
+        DockWindowInfo Win(long handle, string key, int z, bool minimized = false) => new(handle, key, key, "t" + handle, minimized, z);
+        var pins = new List<(DockPin, string)> { (new DockPin("a.lnk", "A"), "a.exe"), (new DockPin("b.lnk", "B"), "b.exe"), (new DockPin("dup.lnk", "A again"), "a.exe") };
+        var windows = new List<DockWindowInfo> { Win(10, "c.exe", 0), Win(11, "a.exe", 1), Win(12, "d.exe", 2), Win(13, "a.exe", 3) };
+        var (apps, order) = DockApps.Build(pins, windows, ["d.exe"], 10, w => w.Key.ToUpperInvariant());
+        check("Dock lists pins first, once per app, then running apps keeping their order",
+            apps.Select(a => a.Key).SequenceEqual(["a.exe", "b.exe", "d.exe", "c.exe"]) && order.SequenceEqual(["d.exe", "c.exe"]));
+        check("Dock groups an app's windows and marks the app in front",
+            apps[0].Windows.Count == 2 && !apps[1].Open && apps[3].Active && apps[3].Name == "C.EXE" && apps[2].Launch == "d.exe");
+
+        check("Dock click starts an app without windows", DockApps.Click(apps[1], 10).Kind == DockClickKind.Launch);
+        check("Dock click brings the topmost window of an app behind", DockApps.Click(apps[0], 10) == new DockClick(DockClickKind.Focus, 11));
+        check("Dock click minimizes the only window in front", DockApps.Click(apps[3], 10) == new DockClick(DockClickKind.Minimize, 10));
+        check("Dock click cycles an app's windows", DockApps.Click(apps[0], 11) == new DockClick(DockClickKind.Focus, 13) && DockApps.Click(apps[0], 13) == new DockClick(DockClickKind.Focus, 11));
+
+        var unpinned = DockApps.Unpin(pins, "a.exe");
+        check("Dock unpins every pin of an app and pins once", unpinned.Count == 1 && unpinned[0].Name == "B"
+            && DockApps.Pin(unpinned, new DockPin("B.LNK", "B")).Count == 1 && DockApps.Pin(unpinned, new DockPin("c.exe", "C")).Count == 2);
+        var copy = new DockSettings { Pins = [new DockPin("x.exe", "")] }.Copy();
+        copy.Normalize();
+        check("Dock pins get a name and are copied deeply", copy.Pins![0].Name == "x");
+    }
 }
