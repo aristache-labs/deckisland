@@ -21,8 +21,8 @@ public sealed record DockLook(string Bar, string Rim, string Card, string CardHo
     {
         // White: a white bar, light grey cards with a hairline.
         DockStyle.White => new("#FAFFFFFF", "#12000000", "#FFF2F2F4", "#FFE6E6E9", "#FFE6E6E9", "#14000000", "#FF1D1D1F", "#FF6E6E73", "#1F000000", false),
-        // Liquid: near-black smoked glass (the acrylic under it already lightens) with a clear light rim; cards a faint frost with a hairline.
-        DockStyle.Liquid => new("#D90D0E11", "#4DFFFFFF", "#0FFFFFFF", "#1FFFFFFF", "#26FFFFFF", "#1AFFFFFF", "#FFF5F5F7", "#B3F5F5F7", "#26FFFFFF", true),
+        // Liquid: clear glass, the blurred screen behind under a light smoke; the rim (drawn by the dock) catches light; cards a faint frost.
+        DockStyle.Liquid => new("#660D0E11", "#4DFFFFFF", "#0FFFFFFF", "#1FFFFFFF", "#26FFFFFF", "#1AFFFFFF", "#FFF5F5F7", "#B3F5F5F7", "#26FFFFFF", true),
         DockStyle.IOS => new("#59505A6E", "#40FFFFFF", "#24FFFFFF", "#30FFFFFF", "#3DFFFFFF", "#1FFFFFFF", "#FFF5F5F7", "#BFF5F5F7", "#2EFFFFFF", true),
         DockStyle.Midnight => new("#E00F1013", "#17FFFFFF", "#14FFFFFF", "#1FFFFFFF", "#2BFFFFFF", "#0DFFFFFF", "#FFF5F5F7", "#A6F5F5F7", "#1FFFFFFF", true),
         DockStyle.Clear => clear switch

@@ -29,6 +29,11 @@ internal sealed partial class DockWindow
         _bar.BorderBrush = UI.Brush(_look.Rim);
         // A transparent rim would leave a 1px gap around the tint that shows the screen behind; no rim, no border.
         _bar.BorderThickness = new Thickness(settings.Style == DockStyle.Clear || _look.Rim.StartsWith("#00", StringComparison.Ordinal) ? 0 : 1);
+        if (DockSmart.Effective(settings.Style, settings.SunsetDarkMode, _app.DockDaylight) == DockStyle.Liquid)
+        {
+            _bar.BorderBrush = LiquidRim(settings.FullWidth, settings.Edge == DockEdge.Top);
+            _bar.BorderThickness = new Thickness(1.5);
+        }
         _bar.Background = Brushes.Transparent;
         Foreground = UI.Brush(_look.Text);
         // The tiles were drawn in the previous style's colours.
@@ -65,6 +70,23 @@ internal sealed partial class DockWindow
 
     // The tiles' cards follow the bar's corners, a little tighter.
     private double TileRadius() => Math.Clamp(DockGeometry.CornerRadius(_app.DockSettings.Corner, _app.DockSettings.Size) - 4, 3, 12);
+
+    // Liquid's rim catches light like the edge of glass: bright at the top-left and bottom-right corners, faint along the sides.
+    // A full-width bar shows only its inner edge, lit evenly along its length.
+    private static Brush LiquidRim(bool fullWidth, bool top)
+    {
+        var brush = fullWidth
+            ? new LinearGradientBrush { StartPoint = new Point(0, top ? 1 : 0), EndPoint = new Point(0, top ? 0 : 1), GradientStops =
+                { new GradientStop(Color.FromArgb(0x80, 255, 255, 255), 0), new GradientStop(Color.FromArgb(0x33, 255, 255, 255), 1) } }
+            : new LinearGradientBrush { StartPoint = new Point(0, 0), EndPoint = new Point(1, 1), GradientStops =
+                {
+                    new GradientStop(Color.FromArgb(0xB3, 255, 255, 255), 0), new GradientStop(Color.FromArgb(0x26, 255, 255, 255), 0.22),
+                    new GradientStop(Color.FromArgb(0x1A, 255, 255, 255), 0.5), new GradientStop(Color.FromArgb(0x26, 255, 255, 255), 0.78),
+                    new GradientStop(Color.FromArgb(0x99, 255, 255, 255), 1)
+                } };
+        brush.Freeze();
+        return brush;
+    }
 
     // Keeps the acrylic backdrop on the bar's rectangle (it follows slides, resizes and moves); hidden when there is no glass.
     private void GlassTick()

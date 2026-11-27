@@ -6,7 +6,7 @@ using System.Windows.Media;
 namespace DeckIsland;
 
 // The glass styles' backdrop: a window of its own, just under the dock and exactly the bar's shape, that Windows itself fills with
-// acrylic blur of whatever is behind. The dock no longer reads the screen for its glass, so it no longer has to hide from captures.
+// a blur of whatever is behind. The dock no longer reads the screen for its glass, so it no longer has to hide from captures.
 internal sealed class DockBackdrop : IDisposable
 {
     private readonly Window _window;
@@ -57,10 +57,10 @@ internal sealed class DockBackdrop : IDisposable
 
     public void Dispose() => _window.Close();
 
-    // Acrylic with an almost clear tint: the dock's own tint over it sets each style's colour.
+    // Blur with an almost clear tint: the dock's own tint over it sets each style's colour.
     private static void EnableAcrylic(nint handle)
     {
-        var accent = new AccentPolicy { AccentState = AccentAcrylic, GradientColor = 0x01000000 };
+        var accent = new AccentPolicy { AccentState = AccentBlur, GradientColor = 0x01000000 };
         int size = Marshal.SizeOf(accent);
         nint pointer = Marshal.AllocHGlobal(size);
         try
@@ -73,7 +73,8 @@ internal sealed class DockBackdrop : IDisposable
     }
 
     private const int GwlExStyle = -20, ExNoActivate = 0x08000000, ExToolWindow = 0x80, ExTransparent = 0x20;
-    private const int AccentAcrylic = 4, AccentPolicyAttribute = 19;
+    // Plain blur, not acrylic: acrylic adds its own grey luminosity and noise, which made the glass read as a solid grey bar.
+    private const int AccentBlur = 3, AccentPolicyAttribute = 19;
     private const uint SwpNoSize = 0x1, SwpNoMove = 0x2, SwpNoZOrder = 0x4, SwpNoActivate = 0x10, SwpShowWindow = 0x40, SwpHideWindow = 0x80;
 
     [StructLayout(LayoutKind.Sequential)]
