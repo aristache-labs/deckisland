@@ -217,8 +217,12 @@ internal static partial class DockAppWindows
     [DllImport("gdi32.dll")] private static extern bool DeleteObject(nint handle);
     private static readonly Dictionary<string, ImageSource?> Icons = new(StringComparer.OrdinalIgnoreCase);
 
-    public static ImageSource? Icon(DockApp app, int size) =>
-        Icon(app.Launch, size) ?? (app.Windows.FirstOrDefault() is { } window ? Icon(window.Exe, size) : null);
+    public static ImageSource? Icon(DockApp app, int size)
+    {
+        var window = app.Windows.FirstOrDefault();
+        return (window?.AppId is { } id ? Icon(AppsFolder + id, size) : null)
+            ?? Icon(app.Launch, size) ?? (window is null ? null : Icon(window.Exe, size));
+    }
 
     // The shell's picture for a shortcut, exe, folder or shell item at this pixel size, with its transparency; null when there is
     // none. Cached unless the picture changes (the Recycle Bin's).

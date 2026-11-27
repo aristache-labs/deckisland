@@ -44,7 +44,7 @@ internal sealed partial class DockWindow
         bool top = _app.DockSettings.Edge == DockEdge.Top;
         bool light = _look.Text == "#FF1D1D1F";
         var grid = new UniformGrid { Columns = TrayColumns };
-        foreach (var icon in tray.AllIcons.OfType<NotifyIcon>().Where(i => i.Icon is not null)) grid.Children.Add(TrayIcon(icon));
+        foreach (var icon in VisibleTrayIcons(tray.AllIcons.OfType<NotifyIcon>())) grid.Children.Add(TrayIcon(icon));
         if (grid.Children.Count == 0)
             grid.Children.Add(new TextBlock { Text = Loc.T("没有托盘图标", "No tray icons"), Foreground = UI.Brush(_look.Dim), Margin = new Thickness(8) });
         _trayPopup = new Popup
@@ -63,6 +63,28 @@ internal sealed partial class DockWindow
         popup.Closed += (_, _) => { _menuOpen = false; watch.Stop(); };
         DockAppWindows.Focus(_handle);
         popup.IsOpen = true;
+    }
+
+    private static IEnumerable<NotifyIcon> VisibleTrayIcons(IEnumerable<NotifyIcon> icons)
+    {
+        var callbacks = new HashSet<(nint Window, uint Id)>();
+        var guids = new HashSet<Guid>();
+        bool securityShown = false;
+        var visible = new List<NotifyIcon>();
+        // Explorer's imports can leave older registrations behind when the live tray host receives a replacement.
+        foreach (var icon in icons.Reverse())
+        {
+            if (icon.Icon is null || GetWindowThreadProcessId(icon.HWnd, out int pid) == 0) continue;
+            if (callbacks.Contains((icon.HWnd, icon.UID)) || (icon.GUID != Guid.Empty && guids.Contains(icon.GUID))) continue;
+            bool security = string.Equals(System.IO.Path.GetFileName(AppIdentity.ImagePath(pid)), "SecurityHealthSystray.exe", StringComparison.OrdinalIgnoreCase);
+            if (security && securityShown) continue;
+            securityShown |= security;
+            callbacks.Add((icon.HWnd, icon.UID));
+            if (icon.GUID != Guid.Empty) guids.Add(icon.GUID);
+            visible.Add(icon);
+        }
+        visible.Reverse();
+        return visible;
     }
 
     private FrameworkElement TrayIcon(NotifyIcon icon)

@@ -24,7 +24,12 @@ internal static partial class DockAppWindows
             if (pinned.Count == 0 && shortcuts.Count > 0)
                 pinned.AddRange(shortcuts.Select(pin => (pin, int.MaxValue)));
             pinned.AddRange(PackagedPins(favorites));
-            return pinned.OrderBy(entry => entry.Index).Select(entry => entry.Pin).ToList();
+            return pinned.OrderBy(entry => entry.Index).Select(entry =>
+            {
+                var pin = entry.Pin;
+                var original = shortcuts.LastOrDefault(candidate => PinKey(candidate) == PinKey(pin) && pin.Name.StartsWith(candidate.Name, StringComparison.OrdinalIgnoreCase));
+                return original is null ? pin : pin with { Name = original.Name };
+            }).ToList();
         }
         catch (Exception ex) when (ex is UnauthorizedAccessException or System.Security.SecurityException or IOException) { return shortcuts; }
     }

@@ -18,6 +18,7 @@ internal static partial class DockJumpLists
     private const int MaxRecent = 10;
     private static readonly Guid ShellLinkClsid = new("00021401-0000-0000-C000-000000000046");
     private static readonly PropertyKey AppUserModelId = new(new Guid("9F4C2855-9F79-4B39-A8D0-E1D42DE1D5F3"), 5);
+    private static readonly PropertyKey ActivationContext = new(new Guid("9F4C2855-9F79-4B39-A8D0-E1D42DE1D5F3"), 20);
     private static readonly PropertyKey Title = new(new Guid("F29F85E0-4FF9-1068-AB91-08002B27B3D9"), 2);
 
     // Every section the app's jump list holds; empty when it has none or it cannot be read.
@@ -128,10 +129,15 @@ internal static partial class DockJumpLists
         var target = new StringBuilder(1024); link.GetPath(target, target.Capacity, 0, 0);
         var arguments = new StringBuilder(2048); link.GetArguments(arguments, arguments.Capacity);
         var folder = new StringBuilder(1024); link.GetWorkingDirectory(folder, folder.Capacity);
-        string title = PropertyString((IPropertyStore)link, Title) ?? "";
+        var properties = (IPropertyStore)link;
+        string title = PropertyString(properties, Title) ?? "";
         if (title.Length == 0) { var description = new StringBuilder(1024); link.GetDescription(description, description.Capacity); title = description.ToString(); }
         // Titles may name a string resource ("@file.dll,-123").
         if (title.StartsWith('@')) title = Indirect(title) ?? "";
+        if (title.Length > 0 && PropertyString(properties, AppUserModelId) is { } appId && appId.Contains('!')
+            && PropertyString(properties, ActivationContext) is { Length: > 0 } activation)
+            return new Item(title, () => Activate(appId, activation), @"shell:AppsFolder\" + appId);
+
         string file = target.ToString(), args = arguments.ToString(), directory = folder.ToString();
         if (destination)
         {
@@ -179,6 +185,21 @@ internal static partial class DockJumpLists
 
     private static string Quote(string path) => "\"" + path + "\"";
 
+    private static void Activate(string appId, string arguments)
+    {
+        try
+        {
+            var manager = (IApplicationActivationManager)new ApplicationActivationManager();
+            try
+            {
+                CoAllowSetForegroundWindow(manager, 0);
+                manager.ActivateApplication(appId, arguments, 0, out _);
+            }
+            finally { Marshal.ReleaseComObject(manager); }
+        }
+        catch (COMException) { }
+    }
+
     private static void Start(string file, string arguments, string directory)
     {
         try { Process.Start(new ProcessStartInfo(file, arguments) { UseShellExecute = true, WorkingDirectory = Directory.Exists(directory) ? directory : "" })?.Dispose(); }
@@ -213,7 +234,16 @@ internal static partial class DockJumpLists
     {
         var copy = key;
         if (store.GetValue(ref copy, out var value) != 0) return null;
-        try { return value.Type == 31 && value.Pointer != 0 ? Marshal.PtrToStringUni(value.Pointer) : null; }
+        try
+        {
+            if (value.Pointer == 0) return null;
+            return value.Type switch
+            {
+                8 => Marshal.PtrToStringBSTR(value.Pointer),
+                31 => Marshal.PtrToStringUni(value.Pointer),
+                _ => null
+            };
+        }
         finally { PropVariantClear(ref value); }
     }
 
@@ -250,6 +280,14 @@ internal static partial class DockJumpLists
 
     [ComImport, Guid("00021401-0000-0000-C000-000000000046")] private class ShellLink;
     [ComImport, Guid("86bec222-30f2-47e0-9f25-60d11cd75c28")] private class ApplicationDocumentLists;
+    [ComImport, Guid("45BA127D-10A8-46EA-8AB7-56EA9078943C")] private class ApplicationActivationManager;
+
+    [ComImport, Guid("2E941141-7F97-4756-BA1D-9DECDE894A3D"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    private interface IApplicationActivationManager
+    {
+        void ActivateApplication([MarshalAs(UnmanagedType.LPWStr)] string appId,
+            [MarshalAs(UnmanagedType.LPWStr)] string arguments, int options, out uint processId);
+    }
 
     [ComImport, Guid("000214F9-0000-0000-C000-000000000046"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
     private interface IShellLinkW
@@ -312,5 +350,6 @@ internal static partial class DockJumpLists
 
     [DllImport("shell32.dll")] private static extern int SHGetPropertyStoreForWindow(nint window, ref Guid iid, [MarshalAs(UnmanagedType.Interface)] out object? store);
     [DllImport("ole32.dll")] private static extern int PropVariantClear(ref PropVariant value);
+    [DllImport("ole32.dll")] private static extern int CoAllowSetForegroundWindow([MarshalAs(UnmanagedType.IUnknown)] object manager, nint reserved);
     [DllImport("shlwapi.dll", CharSet = CharSet.Unicode)] private static extern int SHLoadIndirectString(string source, StringBuilder output, int capacity, nint reserved);
 }

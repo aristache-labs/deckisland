@@ -66,6 +66,16 @@ internal static class DockSettingsTests
         var pins = new List<(DockPin, string)> { (new DockPin("a.lnk", "A"), "a.exe"), (new DockPin("b.lnk", "B"), "b.exe"), (new DockPin("dup.lnk", "A again"), "a.exe") };
         var windows = new List<DockWindowInfo> { Win(10, "c.exe", 0), Win(11, "a.exe", 1), Win(12, "d.exe", 2), Win(13, "a.exe", 3) };
         var (apps, order) = DockApps.Build(pins, windows, ["d.exe"], 10, w => w.Key.ToUpperInvariant());
+        const string packagedId = "Example.Package_abc!App";
+        const string packagedLaunch = @"shell:AppsFolder\" + packagedId;
+        var packaged = Win(20, packagedLaunch.ToLowerInvariant(), 0) with { Exe = "example.exe", AppId = packagedId };
+        var (runningPackage, _) = DockApps.Build([], [packaged], [], 20, _ => "Example");
+        var (pinnedPackage, _) = DockApps.Build([(new DockPin(packagedLaunch, "Example"), packaged.Key)], [packaged], [], 20, _ => "Example");
+        var (legacyPackage, _) = DockApps.Build([(new DockPin(packaged.Exe, "Example"), packaged.Exe)], [packaged], [], 20, _ => "Example");
+        check("Dock launches packaged apps by their shell identity and groups matching taskbar pins",
+            runningPackage is [{ Launch: packagedLaunch, Open: true, Pinned: false }]
+            && pinnedPackage is [{ Launch: packagedLaunch, Open: true, Pinned: true }]
+            && legacyPackage is [{ Open: true, Pinned: true }]);
         check("Dock lists pins first, once per app, then running apps keeping their order",
             apps.Select(a => a.Key).SequenceEqual(["a.exe", "b.exe", "d.exe", "c.exe"]) && order.SequenceEqual(["d.exe", "c.exe"]));
         check("Dock groups an app's windows and marks the app in front",

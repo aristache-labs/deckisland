@@ -26,6 +26,9 @@ public static class DockApps
         IReadOnlyList<string> order, long foreground, Func<DockWindowInfo, string> name)
     {
         var groups = windows.GroupBy(w => w.Key).ToDictionary(g => g.Key, g => (IReadOnlyList<DockWindowInfo>)g.OrderBy(w => w.Handle).ToList());
+        var packagedExeKeys = windows.Where(w => w.AppId is not null).GroupBy(w => w.Exe, StringComparer.OrdinalIgnoreCase)
+            .Where(group => group.Select(w => w.Key).Distinct().Take(2).Count() == 1)
+            .ToDictionary(group => group.Key, group => group.First().Key, StringComparer.OrdinalIgnoreCase);
         IReadOnlyList<DockWindowInfo> Of(string key) => groups.TryGetValue(key, out var list) ? list : [];
         bool ActiveIn(IReadOnlyList<DockWindowInfo> list) => list.Any(w => w.Handle == foreground);
 
@@ -33,8 +36,10 @@ public static class DockApps
         var pinned = new HashSet<string>(StringComparer.Ordinal);
         foreach (var (pin, key) in pins)
         {
-            if (!pinned.Add(key)) continue;
-            var list = Of(key);
+            // Older dock pins stored the executable even when Windows identifies the app by package.
+            string groupKey = groups.ContainsKey(key) ? key : packagedExeKeys.GetValueOrDefault(key, key);
+            if (!pinned.Add(groupKey)) continue;
+            var list = Of(groupKey);
             apps.Add(new DockApp(key, pin.Name, true, pin.Path, list, ActiveIn(list)));
         }
         var kept = order.Where(key => groups.ContainsKey(key) && !pinned.Contains(key)).ToList();
