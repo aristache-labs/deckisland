@@ -80,17 +80,18 @@ internal sealed partial class DockWindow
     {
         var (icon, setIcon) = StaticWeatherPicture(tile * 0.56);
         icon.Margin = new Thickness(0, 0, tile * 0.10, 0);
-        var degree = Label("", tile * 0.38, bold: true);
-        var subtitle = Label("", tile * 0.19, dim: true);
+        var degree = Label("", tile * 0.44, bold: true);
+        var subtitle = Label("", tile * 0.22, dim: true);
         var current = WeatherRow();
         current.Children.Add(icon);
         current.Children.Add(TimeStack(degree, subtitle));
-        var row = WeatherRow(tile * 0.13);
+        var row = WeatherRow(tile * 0.16);
+        row.HorizontalAlignment = HorizontalAlignment.Left;
         row.Children.Add(current);
         Action<WeatherReading?> extra = _ => { };
         if (kind is DockWidgetKind.WeatherDetails or DockWidgetKind.TodayForecast)
         {
-            row.Children.Add(new Rectangle { Width = 1, Height = tile * 0.58, Fill = UI.Brush(_look.Divider), Margin = new Thickness(tile * 0.14, 0, tile * 0.14, 0) });
+            row.Children.Add(new Rectangle { Width = 1, Height = tile * 0.58, Fill = UI.Brush(_look.Divider), Margin = new Thickness(tile * 0.16, 0, tile * 0.12, 0) });
             if (kind == DockWidgetKind.TodayForecast)
             {
                 var (forecast, update) = ForecastCells(tile, hourly: false);
@@ -99,13 +100,13 @@ internal sealed partial class DockWindow
             }
             else
             {
-                var wind = Label("", tile * 0.19, bold: true);
-                var rain = Label("", tile * 0.19, bold: true);
-                var range = Label("", tile * 0.19, bold: true);
-                var rangeMark = Label("H/L", tile * 0.15, bold: true);
+                var wind = Label("", tile * 0.22, bold: true);
+                var rain = Label("", tile * 0.22, bold: true);
+                var range = Label("", tile * 0.22, bold: true);
+                var rangeMark = Label("H/L", tile * 0.17, bold: true);
                 rangeMark.Foreground = UI.Brush("#FFFF9F0A");
-                var details = TimeStack(WeatherDetail(MonitorIcons.Icon("wind", tile * 0.2, UI.Brush("#FF64B5FF")), wind, tile),
-                    WeatherDetail(MonitorIcons.Icon("droplet", tile * 0.2, UI.Brush("#FF64B5FF")), rain, tile),
+                var details = TimeStack(WeatherDetail(MonitorIcons.Icon("wind", tile * 0.26, UI.Brush("#FF64B5FF")), wind, tile),
+                    WeatherDetail(MonitorIcons.Icon("droplet", tile * 0.26, UI.Brush("#FF64B5FF")), rain, tile),
                     WeatherDetail(rangeMark, range, tile));
                 details.HorizontalAlignment = HorizontalAlignment.Left;
                 row.Children.Add(details);
@@ -136,7 +137,7 @@ internal sealed partial class DockWindow
     // A detail line: a small mark in a fixed column, then its value.
     private static StackPanel WeatherDetail(FrameworkElement mark, TextBlock value, double tile)
     {
-        var column = new Border { Width = tile * 0.36, Child = mark, VerticalAlignment = VerticalAlignment.Center };
+        var column = new Border { Width = tile * 0.40, Child = mark, VerticalAlignment = VerticalAlignment.Center };
         mark.HorizontalAlignment = HorizontalAlignment.Left;
         value.VerticalAlignment = VerticalAlignment.Center;
         return new StackPanel { Orientation = Orientation.Horizontal, Children = { column, value } };
@@ -146,19 +147,20 @@ internal sealed partial class DockWindow
         Loc.T($"高 {WeatherDegrees(day?.High)} 低 {WeatherDegrees(day?.Low)}", $"H {WeatherDegrees(day?.High)} L {WeatherDegrees(day?.Low)}");
 
     private static Viewbox WeatherFit(FrameworkElement child) =>
-        new() { Child = child, StretchDirection = StretchDirection.DownOnly, Stretch = Stretch.Uniform, VerticalAlignment = VerticalAlignment.Center };
+        new() { Child = child, StretchDirection = StretchDirection.DownOnly, Stretch = Stretch.Uniform, VerticalAlignment = VerticalAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Left };
 
     private (FrameworkElement, Action<WeatherReading?>) ForecastCells(double tile, bool hourly)
     {
         var row = new UniformGrid { Rows = 1, VerticalAlignment = VerticalAlignment.Center };
         var cells = Enumerable.Range(0, hourly ? 6 : 3).Select(_ =>
         {
-            var title = Label("", tile * 0.20, bold: true, dim: true);
-            var degree = Label("", tile * 0.20, bold: true);
+            var title = Label("", tile * 0.22, bold: true, dim: true);
+            var degree = Label("", tile * 0.23, bold: true);
             title.TextAlignment = degree.TextAlignment = TextAlignment.Center;
-            var (icon, set) = StaticWeatherPicture(tile * 0.30);
+            var (icon, set) = StaticWeatherPicture(tile * 0.34);
             var cell = TimeStack(title, icon, degree);
-            cell.Width = tile * (hourly ? 0.78 : 0.90);
+            cell.Width = tile * (hourly ? 0.80 : 0.98);
             row.Children.Add(cell);
             return (title, degree, set);
         }).ToArray();
