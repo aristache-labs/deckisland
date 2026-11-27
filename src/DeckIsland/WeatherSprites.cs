@@ -8,7 +8,7 @@ namespace DeckIsland;
 
 public partial class MainWindow
 {
-    private static FrameworkElement? ColourfulWeatherIcon(string icon, bool animate)
+    internal static FrameworkElement? ColourfulWeatherIcon(string icon, bool animate)
     {
         if (icon == RainIcon) return ColourfulRainIcon(48, animate);
         // Sprite sheets sampled from the supplied SVG animations, 72 px per frame and 12 frames per row.

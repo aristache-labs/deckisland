@@ -22,21 +22,22 @@ internal sealed partial class DockWindow
     private readonly TextBlock _date = new() { FontSize = 12.5, FontWeight = FontWeights.SemiBold };
     private readonly TextBlock _time = new() { FontSize = 14, FontWeight = FontWeights.Bold, HorizontalAlignment = HorizontalAlignment.Right };
     private readonly Border _clockCard = new() { CornerRadius = new CornerRadius(10), Padding = new Thickness(12, 0, 12, 0), Margin = new Thickness(4, 4, 0, 4) };
+    private readonly StackPanel _clockArea = new() { Orientation = Orientation.Horizontal };
+    private readonly StackPanel _clockDay = new() { VerticalAlignment = VerticalAlignment.Center };
     private readonly System.Windows.Shapes.Rectangle _clockDivider = new() { Width = 1, Margin = new Thickness(12, 9, 12, 9) };
     private byte[]? _lastGlass;
     private bool _glassOn;
     private DockLook _look = DockLook.For(DockStyle.Black, DockClearCards.Black);
 
-    private Border ClockCard()
+    private void ClockCard()
     {
         _glass.Tick += (_, _) => GlassTick();
-        var day = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
-        day.Children.Add(_weekday); day.Children.Add(_date);
+        _clockDay.Children.Add(_weekday); _clockDay.Children.Add(_date);
         var row = new StackPanel { Orientation = Orientation.Horizontal };
-        row.Children.Add(day); row.Children.Add(_clockDivider); row.Children.Add(_time);
+        row.Children.Add(_clockDay); row.Children.Add(_clockDivider); row.Children.Add(_time);
         _time.VerticalAlignment = VerticalAlignment.Center;
         _clockCard.Child = row;
-        return _clockCard;
+        _clockArea.Children.Add(_clockCard);
     }
 
     private void UpdateClock(DateTime now, DockSettings settings)
@@ -179,7 +180,7 @@ internal sealed partial class DockWindow
     private static bool FindTile(DependencyObject source)
     {
         for (var node = source; node is not null; node = VisualTreeHelper.GetParent(node))
-            if (node is Border { Tag: DockApp }) return true;
+            if (node is Border { Tag: DockApp } or Border { Tag: DockWidget, ContextMenu: not null }) return true;
         return false;
     }
 }

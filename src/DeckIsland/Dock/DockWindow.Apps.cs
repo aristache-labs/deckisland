@@ -29,7 +29,7 @@ internal sealed partial class DockWindow
     {
         // Not while a tile is held: rebuilding would take its mouse capture away.
         // Nor while the tray grid is open: it hangs from its arrow, which a rebuild would take away.
-        if (_dragging || _press is not null || _trayPopup is { IsOpen: true }) return;
+        if (_dragging || _press is not null || _menuOpen || _trayPopup is { IsOpen: true } || _widgetPopup is { IsOpen: true }) return;
         var settings = _app.DockSettings;
         if (!settings.ImportedTaskbarPins)
         {
@@ -42,7 +42,7 @@ internal sealed partial class DockWindow
         if (!settings.GroupWindows) apps = DockApps.Ungroup(apps, foreground);
         bool trashFull = settings.ShowTrash && DockShell.RecycleBinHasItems();
         var signature = $"{settings.Style}{settings.ClearCards}{Accent}{settings.CleanWidgets}{settings.Corner}|{settings.Size}|{settings.Spacing}|{settings.IconSize}|{settings.AppCards}{settings.NamesOnHover}{settings.Indicator}{settings.WindowPreviews}|"
-            + $"{settings.ShowStart}{settings.ShowTrash}{settings.ShowDesktopButton}{trashFull}|{_app.DockPickerOpen}|{string.Join(",", settings.Widgets.Select(w => w.Id + w.Option))}|"
+            + $"{settings.ShowStart}{settings.ShowTrash}{settings.ShowDesktopButton}{trashFull}|{_app.DockPickerOpen}|{string.Join(",", settings.Widgets.Select(w => $"{w.Id}:{w.Placement}:{w.Option}"))}|"
             + string.Join(";", apps.Select(a => $"{a.Key},{a.Pinned},{a.Windows.Count},{a.Active}"));
         _shown = apps;
         if (signature == _signature) return;
@@ -53,10 +53,9 @@ internal sealed partial class DockWindow
         if (settings.ShowStart) _apps.Children.Add(Button(StartGlyph(tile), Loc.T("开始", "Start"), tile, DockShell.OpenStart));
         foreach (var app in apps) _apps.Children.Add(Tile(app, tile));
         AddWidgets(settings, tile);
-        if (settings.ShowTrash || settings.ShowDesktopButton)
+        if (settings.ShowTrash || settings.ShowDesktopButton && !settings.FullWidth)
             _apps.Children.Add(new Rectangle { Width = 1, Height = tile * 0.6, Fill = UI.Brush(_look.Divider), Margin = new Thickness(5, 0, 5, 0) });
         if (settings.ShowTrash) _apps.Children.Add(Trash(tile));
-        if (settings.ShowDesktopButton) _apps.Children.Add(Button(DesktopGlyph(tile), Loc.T("显示桌面", "Show desktop"), tile, DockShell.ToggleDesktop));
         if (_handle != IntPtr.Zero && Math.Abs(NaturalWidth() - _barWidth) >= 1) Place();
     }
 

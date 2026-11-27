@@ -474,7 +474,7 @@ public partial class App : Application
         // A page that closed a moment ago is still read for, processes included, while its extras linger: opened again, it shows
         // the current list at once instead of "Reading processes…" until the first list comes.
         var pageDemand = PageDemand();
-        bool listing = (pageDemand & ExpandedDemand.Processes) != 0;
+        bool listing = (pageDemand & ExpandedDemand.Processes) != 0 || DockWantsProcesses;
         bool wanted = pageDemand != ExpandedDemand.None || _stripMonitor.Count > 0 || DockWantsMonitor;
         if (Exiting || Monitor is null && !wanted) return;
         // The sampler reads the choice of graphics adapter on its own thread, where each part is read whole.
@@ -567,8 +567,11 @@ public partial class App : Application
         bool Page(ExpandedDemand what) => page && (pageDemand & what) != 0;
         // The cpu, memory and network are read for what an open page shows and for a collapsed row; with a row, all as before.
         bool stripActive = _stripMonitor.Count > 0 || _heldStrip.Count > 0;
-        Monitor?.SetReads(stripActive || Page(ExpandedDemand.Cpu), stripActive || Page(ExpandedDemand.Memory), stripActive || Page(ExpandedDemand.Network));
-        Monitor?.SetExtras(Page(ExpandedDemand.Temperatures) || Heat(CompactMonitorItems.Cpu, held) || Heat(CompactMonitorItems.Gpu, held),
+        bool dockTemperatures = DockShows(DockWidgetKind.Temperature);
+        Monitor?.SetReads(stripActive || Page(ExpandedDemand.Cpu) || DockShows(DockWidgetKind.Cpu) || dockTemperatures,
+            stripActive || Page(ExpandedDemand.Memory) || DockShows(DockWidgetKind.Memory),
+            stripActive || Page(ExpandedDemand.Network) || DockShows(DockWidgetKind.Network));
+        Monitor?.SetExtras(Page(ExpandedDemand.Temperatures) || Heat(CompactMonitorItems.Cpu, held) || Heat(CompactMonitorItems.Gpu, held) || dockTemperatures,
             Page(ExpandedDemand.Storage) || stripDrives,
             Page(ExpandedDemand.Storage) && Page(ExpandedDemand.Temperatures) || Heat(CompactMonitorItems.Storage, shown),
             // The watts (the counters, NVIDIA's helper) only for a page that shows the power line or a row that chose the reading; the battery
@@ -578,7 +581,7 @@ public partial class App : Application
             // The frame rate for a row that shows it, or an open page with room for its line.
             (shown & CompactMonitorItems.Frames) != 0 || Page(ExpandedDemand.Frames) && (_presentingMonitor.Any(deck => deck.PageShowsFrames) || _pageExtras && _pageFrames),
             // The graphics adapters for the page and the row's GPU reading (the power asks for them itself).
-            Page(ExpandedDemand.Gpu) || (shown & CompactMonitorItems.Gpu) != 0);
+            Page(ExpandedDemand.Gpu) || (shown & CompactMonitorItems.Gpu) != 0 || dockTemperatures);
     }
     // The page reads the machine's power only where there may be something to read: not once the sampler knows there is neither a power
     // source nor a battery (a desktop with nothing), so such a page does not keep asking.

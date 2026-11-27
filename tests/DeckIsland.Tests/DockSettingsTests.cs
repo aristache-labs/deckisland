@@ -119,7 +119,9 @@ internal static class DockSettingsTests
             widgets.Select(w => w.Id).Distinct().Count() == 3 && DockWidgets.Move(widgets, widgets[2].Id, 0)[0].Kind == DockWidgetKind.Battery
             && DockWidgets.Remove(widgets, widgets[1].Id).Select(w => w.Kind).SequenceEqual([DockWidgetKind.Cpu, DockWidgetKind.Battery]));
         check("Dock widget search finds by name or description within a category",
-            DockWidgets.Find(DockWidgetCategory.System, "").Count == 6 && DockWidgets.Catalog.Select(i => i.Kind).Distinct().Count() == Enum.GetValues<DockWidgetKind>().Length && DockWidgets.Find(null, "ram").Single().Kind == DockWidgetKind.Memory && DockWidgets.Find(DockWidgetCategory.Ai, "ram").Count == 0);
+            DockWidgets.Find(DockWidgetCategory.System, "").Count == 12 && DockWidgets.Catalog.Select(i => i.Kind).Distinct().Count() == Enum.GetValues<DockWidgetKind>().Length
+            && DockWidgets.Find(null, "ram").Select(i => i.Kind).ToHashSet().SetEquals([DockWidgetKind.Memory, DockWidgetKind.TopRam])
+            && DockWidgets.Find(DockWidgetCategory.Ai, "ram").Count == 0);
         var (profiles, currentProfile) = DockWidgets.Normalize([new DockProfile("a", " ", [new DockWidget("x", (DockWidgetKind)99), new DockWidget("y", DockWidgetKind.Cpu), new DockWidget("y", DockWidgetKind.Memory)]),
             new DockProfile("a", "dup", [])], "gone");
         check("Dock profiles drop unknown and repeated widgets and repeated profiles, and keep a current one",
@@ -133,6 +135,30 @@ internal static class DockSettingsTests
         File.WriteAllText(widgetStore.FilePath, """{"Style":"White","Profiles":[{"Id":"p","Name":"P","Widgets":[{"Id":"w","Kind":"FutureThing"},{"Id":"c","Kind":"Cpu"}]}],"CurrentProfile":"p"}""");
         var tolerant = new DockSettingsStore(Path.Combine(root, "dock-widgets")).Load();
         check("Dock skips a widget it does not know instead of losing its settings", tolerant.Style == DockStyle.White && tolerant.Widgets.Single().Kind == DockWidgetKind.Cpu);
+        DockWidget[] timeWidgets = [new("date", DockWidgetKind.Date), new("flip", DockWidgetKind.FlipClock), new("today", DockWidgetKind.Today)];
+        var split = DockWidgets.Place(DockWidgets.Place(timeWidgets, "date", DockWidgetPlacement.Date), "flip", DockWidgetPlacement.Clock);
+        var combined = DockWidgets.Place(split, "today", DockWidgetPlacement.DateAndClock);
+        var restored = DockWidgets.Place(combined, "today", DockWidgetPlacement.Bar);
+        var (normalizedTime, _) = DockWidgets.Normalize([new DockProfile("work", "Work",
+            [.. split, new DockWidget("extra", DockWidgetKind.Clock, Placement: DockWidgetPlacement.DateAndClock)])], "work");
+        check("Dock date and clock slots work independently and a combined widget returns displaced widgets to the bar",
+            split.Select(w => w.Placement).SequenceEqual([DockWidgetPlacement.Date, DockWidgetPlacement.Clock, DockWidgetPlacement.Bar])
+            && combined.Select(w => w.Placement).SequenceEqual([DockWidgetPlacement.Bar, DockWidgetPlacement.Bar, DockWidgetPlacement.DateAndClock])
+            && restored.SequenceEqual(timeWidgets) && normalizedTime[0].Widgets[3].Placement == DockWidgetPlacement.Bar
+            && DockWidgets.Place(split, "date", DockWidgetPlacement.Clock).SequenceEqual(split));
+        string serializedClock = System.Text.Json.JsonSerializer.Serialize(combined[2]);
+        var tray = new DockWidget("tray", DockWidgetKind.Tray);
+        var trayAndClock = DockWidgets.Place([combined[2], tray], tray.Id, DockWidgetPlacement.NextToDesktop);
+        var (normalizedTray, _) = DockWidgets.Normalize([new DockProfile("tray", "Tray", trayAndClock)], "tray");
+        check("Dock tray follows the clock at full width and can sit by Show desktop without evicting date or clock",
+            DockWidgets.EffectivePlacement(tray, true) == DockWidgetPlacement.NextToClock
+            && DockWidgets.EffectivePlacement(tray, false) == DockWidgetPlacement.Bar
+            && normalizedTray[0].Widgets.SequenceEqual(trayAndClock)
+            && normalizedTray[0].Widgets[0].Placement == DockWidgetPlacement.DateAndClock
+            && normalizedTray[0].Widgets[1].Placement == DockWidgetPlacement.NextToDesktop);
+        check("Dock remembers a clock placement and reads old widgets as bar widgets",
+            System.Text.Json.JsonSerializer.Deserialize<DockWidget>(serializedClock) == combined[2]
+            && System.Text.Json.JsonSerializer.Deserialize<DockWidget>("""{"Id":"date","Kind":"Date"}""") == timeWidgets[0]);
         check("Dock shows its buttons, previews and shortcuts by default",
             new DockSettings() is { ShowStart: true, ShowTrash: true, ShowDesktopButton: true, WindowPreviews: true, AppShortcuts: true });
     }

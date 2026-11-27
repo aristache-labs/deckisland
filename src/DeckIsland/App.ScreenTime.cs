@@ -20,7 +20,7 @@ public partial class App
 
     // Nothing is watched unless a Screen time widget is on an island or the Screen Time page is shown: the app in front is only
     // asked for while one is.
-    private bool CountsScreenTime => ShownSettings.Any(settings => settings.WidgetSlots.Contains(WidgetKind.ScreenTime) || settings.ScreenTimePage
+    private bool CountsScreenTime => DockShows(DockWidgetKind.ScreenTime) || ShownSettings.Any(settings => settings.WidgetSlots.Contains(WidgetKind.ScreenTime) || settings.ScreenTimePage
         || settings.ShowsScreenTime(CompactStyle.Notch) || settings.ShowsScreenTime(CompactStyle.Capsule));
     // Today's total in whole minutes when the collapsed rows were last told: they are built again only when it changes.
     private int _screenTimeShownMinutes = -1;

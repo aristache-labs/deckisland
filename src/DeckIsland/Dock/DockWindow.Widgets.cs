@@ -6,6 +6,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using DeckIsland.Core;
+using DeckIsland.Native;
 
 namespace DeckIsland;
 
@@ -19,12 +20,39 @@ internal sealed partial class DockWindow
     private void AddWidgets(DockSettings settings, double tile)
     {
         _widgetUpdates.Clear();
-        foreach (var widget in settings.Widgets)
+        Border Build(DockWidget widget)
         {
             var (content, update) = WidgetContent(widget, tile);
-            _apps.Children.Add(WidgetFrame(widget, content, tile));
             _widgetUpdates.Add(update);
             update();
+            return WidgetFrame(widget, content, tile);
+        }
+        var placement = (DockWidget widget) => DockWidgets.EffectivePlacement(widget, settings.FullWidth);
+        foreach (var widget in settings.Widgets.Where(w => placement(w) == DockWidgetPlacement.Bar))
+            _apps.Children.Add(Build(widget));
+
+        _trailing.Children.Clear();
+        foreach (var tray in settings.Widgets.Where(w => placement(w) == DockWidgetPlacement.NextToDesktop))
+            _trailing.Children.Add(Build(tray));
+        if (settings.ShowDesktopButton)
+            _trailing.Children.Add(Button(DesktopGlyph(tile), Loc.T("显示桌面", "Show desktop"), tile, DockShell.ToggleDesktop));
+        _trailing.Children.Add(_clockArea);
+        foreach (var tray in settings.Widgets.Where(w => placement(w) == DockWidgetPlacement.NextToClock))
+            _trailing.Children.Add(Build(tray));
+
+        _clockArea.Children.Clear();
+        var both = settings.Widgets.FirstOrDefault(w => w.Placement == DockWidgetPlacement.DateAndClock);
+        var date = settings.Widgets.FirstOrDefault(w => w.Placement == DockWidgetPlacement.Date);
+        var clock = settings.Widgets.FirstOrDefault(w => w.Placement == DockWidgetPlacement.Clock);
+        _clockDay.Visibility = date is null ? Visibility.Visible : Visibility.Collapsed;
+        _time.Visibility = clock is null ? Visibility.Visible : Visibility.Collapsed;
+        _clockDivider.Visibility = date is null && clock is null ? Visibility.Visible : Visibility.Collapsed;
+        if (both is not null) _clockArea.Children.Add(Build(both));
+        else
+        {
+            if (date is not null) _clockArea.Children.Add(Build(date));
+            if (date is null || clock is null) _clockArea.Children.Add(_clockCard);
+            if (clock is not null) _clockArea.Children.Add(Build(clock));
         }
     }
 
@@ -47,6 +75,15 @@ internal sealed partial class DockWindow
         DockWidgetKind.AiRing => AiRing(tile, widget.Option),
         DockWidgetKind.Search => SearchField(tile),
         DockWidgetKind.Tray => TrayArrow(tile),
+        DockWidgetKind.ScreenTime => ScreenTimeTile(tile),
+        DockWidgetKind.TopCpu => TopProcessTile(tile, memory: false),
+        DockWidgetKind.TopRam => TopProcessTile(tile, memory: true),
+        DockWidgetKind.Temperature => TemperatureTile(tile),
+        DockWidgetKind.SunriseSunset => SunTimesTile(tile),
+        DockWidgetKind.DayProgress or DockWidgetKind.MonthProgress or DockWidgetKind.YearProgress => ProgressTile(widget.Kind, tile),
+        DockWidgetKind.Clock or DockWidgetKind.FlipClock or DockWidgetKind.WorldClocks or DockWidgetKind.SevenDays
+            or DockWidgetKind.WorldTime or DockWidgetKind.Today or DockWidgetKind.Date or DockWidgetKind.DayNumber
+            or DockWidgetKind.SegmentClock or DockWidgetKind.ClockWeather => TimeWidget(widget, tile),
         _ => NextEvent(tile)
     };
 
@@ -72,16 +109,45 @@ internal sealed partial class DockWindow
             badge.MouseLeftButtonUp += (_, e) => { _app.UpdateDockSettings(_app.DockSettings.WithWidgets(DockWidgets.Remove(_app.DockSettings.Widgets, widget.Id))); e.Handled = true; };
             grid.Children.Add(badge);
         }
+        bool darkToday = widget.Kind == DockWidgetKind.Today && _app.DockSettings.Style == DockStyle.Black;
         var frame = new Border
         {
             Width = tile * width + _spacing * (width - 1), Height = tile, CornerRadius = new CornerRadius(TileRadius()), Margin = new Thickness(_spacing / 2, 0, _spacing / 2, 0),
             // Clean widget style: no card, the content straight on the bar.
-            Background = UI.Brush(_app.DockSettings.CleanWidgets ? "#00000000" : _look.Card), BorderBrush = UI.Brush(_look.CardRim),
+            Background = UI.Brush(_app.DockSettings.CleanWidgets ? "#00000000" : darkToday ? "#FF18181A" : _look.Card),
+            BorderBrush = UI.Brush(darkToday ? "#23FFFFFF" : _look.CardRim),
             BorderThickness = new Thickness(_app.DockSettings.CleanWidgets ? 0 : 1), Child = grid, Tag = widget,
             ToolTip = _app.DockSettings.NamesOnHover ? DockWidgets.Info(widget.Kind).Name : null
         };
+        if (DockWidgets.Placements(widget.Kind).Count > 1)
+        {
+            frame.ContextMenu = new ContextMenu();
+            frame.ContextMenuOpening += (_, _) =>
+            {
+                _preview.HideNow();
+                _menuOpen = true;
+                DockAppWindows.Focus(_handle);
+                frame.ContextMenu = TimeWidgetMenu(widget);
+            };
+            frame.ContextMenuClosing += (_, _) => _menuOpen = false;
+        }
+        bool expandable = HasWidgetDetails(widget.Kind);
+        if (expandable)
+        {
+            frame.Cursor = Cursors.Hand;
+            frame.Focusable = true;
+            System.Windows.Automation.AutomationProperties.SetName(frame, DockWidgets.Info(widget.Kind).Name);
+            frame.KeyDown += (_, e) =>
+            {
+                if (e.Key is not (Key.Enter or Key.Space)) return;
+                ToggleWidgetDetails(frame, widget.Kind);
+                e.Handled = true;
+            };
+        }
+        bool onBar = DockWidgets.EffectivePlacement(widget, _app.DockSettings.FullWidth) == DockWidgetPlacement.Bar;
+        if (!onBar && !expandable) return frame;
         frame.MouseLeftButtonDown += (_, e) => { e.Handled = true; _press = (frame, e.GetPosition(this)); frame.CaptureMouse(); };
-        frame.MouseMove += (_, e) => Drag(frame, e.GetPosition(this));
+        if (onBar) frame.MouseMove += (_, e) => Drag(frame, e.GetPosition(this));
         frame.LostMouseCapture += (_, _) =>
         {
             if (_press?.Tile != frame) return;
@@ -91,16 +157,28 @@ internal sealed partial class DockWindow
         return frame;
     }
 
-    // A widget let go after a drag takes its new place among the widgets; a plain click does nothing yet.
     private void ReleaseWidget(Border frame, DockWidget widget)
     {
         if (_press?.Tile != frame) return;
         bool dragged = _dragging;
         _press = null; _dragging = false; frame.Opacity = 1;
         frame.ReleaseMouseCapture();
-        if (!dragged) return;
+        if (!dragged)
+        {
+            if (HasWidgetDetails(widget.Kind) && frame.IsMouseOver) ToggleWidgetDetails(frame, widget.Kind);
+            return;
+        }
         var order = _apps.Children.OfType<Border>().Select(child => child.Tag).OfType<DockWidget>().ToList();
-        _app.UpdateDockSettings(_app.DockSettings.WithWidgets(DockWidgets.Move(_app.DockSettings.Widgets, widget.Id, order.FindIndex(w => w.Id == widget.Id))));
+        var settings = _app.DockSettings;
+        var widgets = settings.Widgets;
+        bool OnBar(DockWidget widget) => DockWidgets.EffectivePlacement(widget, settings.FullWidth) == DockWidgetPlacement.Bar;
+        if (!order.Select(w => w.Id).ToHashSet().SetEquals(widgets.Where(OnBar).Select(w => w.Id)))
+        {
+            RefreshSoon();
+            return;
+        }
+        int barIndex = 0;
+        _app.UpdateDockSettings(settings.WithWidgets(widgets.Select(w => OnBar(w) ? order[barIndex++] : w).ToList()));
         RefreshSoon();
     }
 

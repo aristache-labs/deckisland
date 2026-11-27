@@ -60,6 +60,8 @@ internal sealed partial class DockWindow : Window
     private double _reveal = 1, _target = 1, _slideStart;
     private DateTime _unneededSince = DateTime.MaxValue, _slideFrom;
     private Point? _snapPress;
+    private readonly StackPanel _trailing = new() { Orientation = Orientation.Horizontal };
+    private readonly DockRow _dockRow = new();
 
     // The screen this dock is on (an HMONITOR), and its GDI name, by which App.SyncDocks knows it.
     public IntPtr Monitor { get; }
@@ -72,11 +74,11 @@ internal sealed partial class DockWindow : Window
         WindowStyle = WindowStyle.None; AllowsTransparency = true; Background = Brushes.Transparent; ShowInTaskbar = false;
         Topmost = true; ShowActivated = false; ResizeMode = ResizeMode.NoResize; Focusable = false;
         Title = "DeckIsland Dock"; FontFamily = UI.PanelFont; Foreground = UI.Brush("#F2F2F4");
-        var row = new DockPanel { LastChildFill = false };
-        var clock = ClockCard();
-        DockPanel.SetDock(clock, System.Windows.Controls.Dock.Right); row.Children.Add(clock); row.Children.Add(_apps);
+        ClockCard();
+        _dockRow.Children.Add(_apps);
+        _dockRow.Children.Add(_trailing);
         // The bar shows the screen behind it (glass styles) or its solid colour; the tint over it carries the style's colour.
-        _tint.Child = row;
+        _tint.Child = _dockRow;
         _bar = new Border { BorderThickness = new Thickness(1), MinWidth = DockGeometry.MinBarWidth, Child = _tint };
         _bar.ContextMenu = BarMenu();
         _bar.ContextMenuOpening += (_, e) =>
@@ -111,6 +113,7 @@ internal sealed partial class DockWindow : Window
         var now = DateTime.Now;
         UpdateClock(now, settings);
         UpdateWidgets();
+        _widgetPopupUpdate?.Invoke();
         // Windows' energy saver: the dock reads its windows less often, unless the clock shows seconds.
         _tick.Interval = TimeSpan.FromSeconds(!settings.ClockSeconds && EnergySaverOn() ? 3 : 1);
         RefreshApps();
@@ -126,6 +129,32 @@ internal sealed partial class DockWindow : Window
     {
         _bar.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
         return _bar.DesiredSize.Width;
+    }
+
+    private sealed class DockRow : Panel
+    {
+        public bool FullWidth { get; set; }
+
+        protected override Size MeasureOverride(Size available)
+        {
+            foreach (UIElement child in Children) child.Measure(new Size(double.PositiveInfinity, available.Height));
+            var main = Children[0].DesiredSize;
+            var end = Children[1].DesiredSize;
+            double width = main.Width + end.Width;
+            return new Size(FullWidth ? Math.Min(width, available.Width) : width, Math.Max(main.Height, end.Height));
+        }
+
+        protected override Size ArrangeOverride(Size bounds)
+        {
+            double main = Children[0].DesiredSize.Width;
+            double end = Children[1].DesiredSize.Width;
+            double endX = FullWidth ? Math.Max(0, bounds.Width - end) : main;
+            double available = Math.Min(main, endX);
+            double x = FullWidth ? Math.Clamp((bounds.Width - main) / 2, 0, endX - available) : 0;
+            Children[0].Arrange(new Rect(x, 0, available, bounds.Height));
+            Children[1].Arrange(new Rect(endX, 0, end, bounds.Height));
+            return bounds;
+        }
     }
 
     private void Start()
@@ -150,6 +179,7 @@ internal sealed partial class DockWindow : Window
 
     private void Stop()
     {
+        CloseWidgetDetails();
         _tick.Stop(); _edgeWatch.Stop(); _glass.Stop();
         _volume?.Dispose(); _volume = null;
         _preview.Close();
@@ -175,6 +205,7 @@ internal sealed partial class DockWindow : Window
     // After the dock's settings change: its look, its place and its tiles follow.
     public void Apply()
     {
+        CloseWidgetDetails();
         ApplyStyle();
         ApplyLook();
         if (!_app.DockSettings.AutoHide) _target = _reveal = 1;
@@ -186,6 +217,8 @@ internal sealed partial class DockWindow : Window
     private void ApplyStyle()
     {
         var settings = _app.DockSettings;
+        _dockRow.FullWidth = settings.FullWidth;
+        _dockRow.InvalidateArrange();
         _bar.Height = settings.Size;
         _bar.CornerRadius = _tint.CornerRadius = new CornerRadius(DockGeometry.CornerRadius(settings.Corner, settings.Size));
         _tint.Padding = new Thickness(settings.Padding, 0, settings.Padding, 0);
@@ -245,7 +278,7 @@ internal sealed partial class DockWindow : Window
         bool inScreen = cursor.X >= _screen.Left && cursor.X < _screen.Right;
         bool atEdge = inScreen && (settings.Edge == DockEdge.Top ? cursor.Y <= _screen.Top + 1 : cursor.Y >= _screen.Bottom - 2);
         bool over = _reveal > 0 && cursor.X >= _window.Left && cursor.X < _window.Right && cursor.Y >= _window.Top - 6 && cursor.Y < _window.Bottom + 6;
-        bool busy = _dragging || _press is not null || _snapPress is not null || _preview.IsVisible || _menuOpen;
+        bool busy = _dragging || _press is not null || _snapPress is not null || _preview.IsVisible || _menuOpen || _widgetPopup is { IsOpen: true };
         bool needed = !_fullscreen && (atEdge || over || busy || (settings.ShowOnDesktop && DesktopInFront()));
         var now = DateTime.Now;
         if (needed) _unneededSince = DateTime.MaxValue;

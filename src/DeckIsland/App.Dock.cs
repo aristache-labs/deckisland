@@ -24,6 +24,9 @@ public partial class App
     // While the widget picker is open the dock's widgets carry remove badges.
     internal bool DockPickerOpen => _dockPicker is not null;
 
+    private bool DockShows(DockWidgetKind kind) => _docks.Count > 0 && DockSettings.Widgets.Any(w => w.Kind == kind);
+    private bool DockWantsProcesses => DockShows(DockWidgetKind.TopCpu) || DockShows(DockWidgetKind.TopRam);
+
     // Read from dock.json the first time the dock or its settings need them.
     internal DockSettings DockSettings
     {
@@ -60,7 +63,8 @@ public partial class App
     // Media sessions are kept while a dock shows Now Playing (App.StartMedia); weather is read while it shows Weather.
     internal bool DockWantsMedia => _docks.Count > 0 && DockSettings.Widgets.Any(w => w.Kind == DockWidgetKind.NowPlaying);
     // Sunset dark mode needs the weather's place for the sun's times.
-    private bool DockWantsWeather => _docks.Count > 0 && (DockSettings.SunsetDarkMode || DockSettings.Widgets.Any(w => w.Kind == DockWidgetKind.Weather));
+    private bool DockWantsWeather => _docks.Count > 0 && (DockSettings.SunsetDarkMode || DockSettings.Widgets.Any(w =>
+        w.Kind is DockWidgetKind.Weather or DockWidgetKind.Today or DockWidgetKind.ClockWeather or DockWidgetKind.SevenDays or DockWidgetKind.SunriseSunset));
     private static readonly object DockWeatherViewer = new();
 
     // The readings the dock's widgets need, started or let go to match them.
@@ -74,7 +78,8 @@ public partial class App
         ApplyDockTray();
     }
 
-    internal bool DockWantsMonitor => _docks.Count > 0 && DockSettings.Widgets.Any(w => w.Kind is DockWidgetKind.Cpu or DockWidgetKind.Memory or DockWidgetKind.Network);
+    internal bool DockWantsMonitor => _docks.Count > 0 && DockSettings.Widgets.Any(w => w.Kind is DockWidgetKind.Cpu
+        or DockWidgetKind.Memory or DockWidgetKind.Network or DockWidgetKind.TopCpu or DockWidgetKind.TopRam or DockWidgetKind.Temperature);
 
     private void StopDock()
     {

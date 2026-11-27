@@ -118,7 +118,7 @@ internal sealed partial class DockWindow
     }
 
     // A minimal clock face: hour and minute hands, a second hand in the accent.
-    private (FrameworkElement, Action) AnalogClock(double tile)
+    private (FrameworkElement, Action) AnalogClock(double tile, Func<DateTime>? time = null)
     {
         double size = tile * 0.78, centre = size / 2;
         var face = new Canvas { Width = size, Height = size, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
@@ -139,7 +139,8 @@ internal sealed partial class DockWindow
         void Point(Line hand, double turns) { double length = (double)hand.Tag, angle = turns * 2 * Math.PI; hand.X2 = centre + Math.Sin(angle) * length; hand.Y2 = centre - Math.Cos(angle) * length; }
         return (face, () =>
         {
-            var now = DateTime.Now;
+            var now = time?.Invoke() ?? DateTime.Now;
+            second.Visibility = time is null && _app.DockSettings.ClockSeconds ? Visibility.Visible : Visibility.Collapsed;
             Point(hour, (now.Hour % 12 + now.Minute / 60.0) / 12); Point(minute, (now.Minute + now.Second / 60.0) / 60); Point(second, now.Second / 60.0);
         });
     }
