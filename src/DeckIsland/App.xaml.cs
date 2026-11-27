@@ -475,7 +475,7 @@ public partial class App : Application
         // the current list at once instead of "Reading processes…" until the first list comes.
         var pageDemand = PageDemand();
         bool listing = (pageDemand & ExpandedDemand.Processes) != 0;
-        bool wanted = pageDemand != ExpandedDemand.None || _stripMonitor.Count > 0;
+        bool wanted = pageDemand != ExpandedDemand.None || _stripMonitor.Count > 0 || DockWantsMonitor;
         if (Exiting || Monitor is null && !wanted) return;
         // The sampler reads the choice of graphics adapter on its own thread, where each part is read whole.
         Monitor ??= CreateMonitor();

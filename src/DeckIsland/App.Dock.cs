@@ -16,6 +16,13 @@ public partial class App
     private DockKeys? _dockKeys;
     private bool _dockCrashGuard;
     private System.Windows.Threading.DispatcherTimer? _dockSave;
+    private DockWidgetPicker? _dockPicker;
+    private bool _dockMonitorWatched;
+
+    // The last system monitor reading, for the dock's CPU and RAM widgets.
+    internal MonitorSnapshot? DockMonitor { get; private set; }
+    // While the widget picker is open the dock's widgets carry remove badges.
+    internal bool DockPickerOpen => _dockPicker is not null;
 
     // Read from dock.json the first time the dock or its settings need them.
     internal DockSettings DockSettings
@@ -42,18 +49,25 @@ public partial class App
             _dockCrashGuard = true;
             AppDomain.CurrentDomain.UnhandledException += (_, _) => DockTaskbar.Restore();
         }
+        if (!_dockMonitorWatched) { _dockMonitorWatched = true; MonitorUpdated += snapshot => DockMonitor = snapshot; }
         DockTaskbar.Apply(DockSettings.TaskbarMode);
         SyncDocks();
         ApplyDockKeys();
+        ApplyMonitorDemand(false);
     }
+
+    // The system monitor is read while a dock shows a CPU or RAM widget (App.ApplyMonitorDemand).
+    internal bool DockWantsMonitor => _docks.Count > 0 && DockSettings.Widgets.Any(w => w.Kind is DockWidgetKind.Cpu or DockWidgetKind.Memory);
 
     private void StopDock()
     {
+        _dockPicker?.Close();
         foreach (var dock in _docks.ToList()) dock.Close();
         _docks.Clear();
         _dockKeys?.Dispose(); _dockKeys = null;
         FlushDockSettings();
         DockTaskbar.Stop();
+        ApplyMonitorDemand(false);
     }
 
     // One dock per wanted screen: the main one, or every one; docks on screens no longer wanted or connected are closed.
@@ -80,6 +94,23 @@ public partial class App
         else { _dockKeys?.Dispose(); _dockKeys = null; }
     }
 
+    // lumabar's widget picker, from the bar's menu or the settings page.
+    internal void OpenDockPicker()
+    {
+        if (_dockPicker is null)
+        {
+            _dockPicker = new DockWidgetPicker(this);
+            _dockPicker.Closed += (_, _) => { _dockPicker = null; RefreshDocks(); };
+            _dockPicker.Show();
+            RefreshDocks();
+        }
+        _dockPicker.Activate();
+    }
+
+    internal DockWindow? FirstDock => _docks.FirstOrDefault();
+
+    private void RefreshDocks() { foreach (var dock in _docks) dock.Apply(); }
+
     // The dock's own panic key (DockWindow): switches it off as the island's settings would.
     internal void TurnOffDock()
     {
@@ -103,7 +134,9 @@ public partial class App
         if (settings.TaskbarMode != previous.TaskbarMode) DockTaskbar.Apply(settings.TaskbarMode);
         if (settings.Displays != previous.Displays) SyncDocks();
         ApplyDockKeys();
+        ApplyMonitorDemand(false);
         foreach (var dock in _docks) dock.Apply();
+        _dockPicker?.Refresh();
     }
 
     private void FlushDockSettings()

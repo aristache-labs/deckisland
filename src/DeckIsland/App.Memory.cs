@@ -115,7 +115,7 @@ public partial class App
         if (Exiting) return;
         bool released = false, later = false;
         foreach (var deck in Decks) released |= deck.ReleaseHiddenPages();
-        if (Monitor is { } monitor && !Settings.MonitorPage && !Settings.ShowsMonitor(Settings.Style) && _presentingMonitor.Count + _stripMonitor.Count + _heldStrip.Count == 0 && !_pageExtras)
+        if (Monitor is { } monitor && !Settings.MonitorPage && !Settings.ShowsMonitor(Settings.Style) && _presentingMonitor.Count + _stripMonitor.Count + _heldStrip.Count == 0 && !_pageExtras && !DockWantsMonitor)
         {
             // Still lingering after its last reading: once it has paused, its thread waits and ends at once.
             if (!monitor.Resting) later = true;

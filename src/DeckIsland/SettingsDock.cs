@@ -36,6 +36,51 @@ public sealed partial class SettingsWindow
             help: () => Loc.T("已打开应用的标记和高亮使用它。", "The open marker and highlights wear it.")), Loc.T("Dock 的强调色。", "The dock's accent colour.")));
         Group([.. appearance]);
 
+        SectionTitle(Loc.T("小组件与配置", "Widgets and profiles"), description: Loc.T("Dock 上的实时小组件。每个配置有自己的一组小组件，可从 Dock 的右键菜单切换。",
+            "Live widgets on the dock. Each profile has its own set, and you switch between them from the dock's right-click menu."));
+        var pick = ActionButton(Loc.T("打开小组件…", "Open widgets…"), _app.OpenDockPicker);
+        pick.IsEnabled = S.DockEnabled;
+        var current = dock.Profiles.First(p => p.Id == dock.CurrentProfile);
+        var profiles = new ComboBox { Width = 180, Style = (Style)FindResource("SettingsCombo"), ItemsSource = dock.Profiles.Select(p => p.Name).ToList(),
+            SelectedIndex = dock.Profiles.IndexOf(current) };
+        AutomationProperties.SetName(profiles, Loc.T("配置", "Profile")); PopupMotion.Attach(profiles);
+        profiles.SelectionChanged += (_, _) =>
+        {
+            if (profiles.SelectedIndex < 0 || dock.Profiles[profiles.SelectedIndex].Id == dock.CurrentProfile) return;
+            var id = dock.Profiles[profiles.SelectedIndex].Id; ChangeDock(d => d.CurrentProfile = id); ShowPage(DockSettingsPage);
+        };
+        var name = new TextBox { Width = 180, Style = (Style)FindResource("SettingsField"), Text = current.Name, MaxLength = DockWidgets.MaxProfileName };
+        AutomationProperties.SetName(name, Loc.T("配置名称", "Profile name"));
+        name.LostFocus += (_, _) =>
+        {
+            var text = name.Text.Trim();
+            if (text.Length == 0 || text == current.Name) return;
+            ChangeDock(d => d.Profiles = d.Profiles.Select(p => p.Id == current.Id ? p with { Name = text } : p).ToList()); ShowPage(DockSettingsPage);
+        };
+        var buttons = new StackPanel { Orientation = Orientation.Horizontal };
+        var add = ActionButton(Loc.T("新建", "New"), () =>
+        {
+            var id = Guid.NewGuid().ToString("N")[..8];
+            ChangeDock(d => { d.Profiles = [.. d.Profiles, new DockProfile(id, Loc.T("配置 ", "Profile ") + (d.Profiles.Count + 1), [])]; d.CurrentProfile = id; });
+            ShowPage(DockSettingsPage);
+        });
+        add.IsEnabled = dock.Profiles.Count < DockWidgets.MaxProfiles;
+        var delete = ActionButton(Loc.T("删除", "Delete"), () =>
+        {
+            if (!Confirm(Loc.T("删除配置", "Delete profile"), Loc.T($"删除“{current.Name}”及其小组件？", $"Delete “{current.Name}” and its widgets?"), Loc.T("删除", "Delete"))) return;
+            ChangeDock(d => d.Profiles = d.Profiles.Where(p => p.Id != current.Id).ToList()); ShowPage(DockSettingsPage);
+        });
+        delete.IsEnabled = dock.Profiles.Count > 1; delete.Margin = new Thickness(8, 0, 0, 0);
+        buttons.Children.Add(add); buttons.Children.Add(delete);
+        Group(
+            Describe(Row(Loc.T("小组件", "Widgets"), pick, help: () => Loc.T("按类别浏览或搜索，点击添加或移除。小组件选择器打开时，可点击 Dock 上小组件的减号移除它，或拖动调整顺序。",
+                "Browse by category or search, and click a tile to add or remove it. While the picker is open, click a widget's minus badge on the dock to remove it, or drag it to reorder.")),
+                Loc.T($"当前配置中有 {dock.Widgets.Count} 个小组件。", $"{dock.Widgets.Count} widgets in this profile.")),
+            Describe(Row(Loc.T("当前配置", "Profile"), profiles, help: () => Loc.T("每个配置有自己的一组小组件，应用保持不变。", "Each profile has its own set of widgets; the apps stay the same.")),
+                Loc.T("Dock 正在使用的配置。", "The profile the dock uses.")),
+            Describe(Row(Loc.T("名称", "Name"), name), Loc.T("当前配置的名称。", "The current profile's name.")),
+            Describe(Row(Loc.T("配置", "Profiles"), buttons), Loc.T("新建一个空配置，或删除当前配置。", "Make a new, empty profile, or delete the current one.")));
+
         SectionTitle(Loc.T("布局", "Layout"), description: Loc.T("Dock 在屏幕上的位置、大小和形状。也可以按住 Dock 的空白处拖到屏幕另一半。",
             "Where the dock sits, how big it is and its shape. You can also drag the dock by an empty spot to the other half of the screen."));
         Group(

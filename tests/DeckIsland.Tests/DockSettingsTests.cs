@@ -60,7 +60,7 @@ internal static class DockSettingsTests
         check("Dock taskbar state round-trips and rejects damage", DockTaskbarState.Parse(state.ToJson()) == state && DockTaskbarState.Parse("{ nope") is null);
     }
 
-    internal static void Apps(Action<string, bool> check)
+    internal static void Apps(string root, Action<string, bool> check)
     {
         DockWindowInfo Win(long handle, string key, int z, bool minimized = false) => new(handle, key, key, "t" + handle, minimized, z);
         var pins = new List<(DockPin, string)> { (new DockPin("a.lnk", "A"), "a.exe"), (new DockPin("b.lnk", "B"), "b.exe"), (new DockPin("dup.lnk", "A again"), "a.exe") };
@@ -104,6 +104,25 @@ internal static class DockSettingsTests
             DockLook.For(DockStyle.Clear, DockClearCards.White) is { Bar: "#00000000", Text: "#FF1D1D1F" } && DockLook.For(DockStyle.White, 0).Text == "#FF1D1D1F");
         check("Dock accent keeps a colour and falls back to blue",
             DockLook.Accents.Length == 9 && DockLook.NormalizeAccent("#ff7a1a") == "#FF7A1A" && DockLook.NormalizeAccent("nope") == DockLook.DefaultAccent && DockLook.NormalizeAccent("#80FF0000") == DockLook.DefaultAccent);
+        var widgets = DockWidgets.Add(DockWidgets.Add(DockWidgets.Add([], DockWidgetKind.Cpu), DockWidgetKind.Memory), DockWidgetKind.Battery);
+        check("Dock widgets are added with their own ids, moved and removed",
+            widgets.Select(w => w.Id).Distinct().Count() == 3 && DockWidgets.Move(widgets, widgets[2].Id, 0)[0].Kind == DockWidgetKind.Battery
+            && DockWidgets.Remove(widgets, widgets[1].Id).Select(w => w.Kind).SequenceEqual([DockWidgetKind.Cpu, DockWidgetKind.Battery]));
+        check("Dock widget search finds by name or description within a category",
+            DockWidgets.Find(DockWidgetCategory.System, "").Count == 3 && DockWidgets.Find(null, "ram").Single().Kind == DockWidgetKind.Memory && DockWidgets.Find(DockWidgetCategory.Ai, "ram").Count == 0);
+        var (profiles, currentProfile) = DockWidgets.Normalize([new DockProfile("a", " ", [new DockWidget("x", (DockWidgetKind)99), new DockWidget("y", DockWidgetKind.Cpu), new DockWidget("y", DockWidgetKind.Memory)]),
+            new DockProfile("a", "dup", [])], "gone");
+        check("Dock profiles drop unknown and repeated widgets and repeated profiles, and keep a current one",
+            profiles.Count == 1 && profiles[0].Widgets.Count == 1 && profiles[0].Name.Length > 0 && currentProfile == "a" && DockWidgets.Normalize([], null).Profiles.Count == 1);
+        var withWidgets = new DockSettings().WithWidgets(widgets);
+        var copied = withWidgets.Copy(); copied.Profiles[0].Widgets.Clear();
+        check("Dock widgets belong to the current profile and are copied deeply", withWidgets.Widgets.Count == 3 && new DockSettings().Widgets.Count == 0);
+        var widgetStore = new DockSettingsStore(Path.Combine(root, "dock-widgets"));
+        widgetStore.Save(withWidgets);
+        check("Dock profiles and widgets survive saving", new DockSettingsStore(Path.Combine(root, "dock-widgets")).Load().Widgets.Select(w => w.Kind).SequenceEqual(widgets.Select(w => w.Kind)));
+        File.WriteAllText(widgetStore.FilePath, """{"Style":"White","Profiles":[{"Id":"p","Name":"P","Widgets":[{"Id":"w","Kind":"FutureThing"},{"Id":"c","Kind":"Cpu"}]}],"CurrentProfile":"p"}""");
+        var tolerant = new DockSettingsStore(Path.Combine(root, "dock-widgets")).Load();
+        check("Dock skips a widget it does not know instead of losing its settings", tolerant.Style == DockStyle.White && tolerant.Widgets.Single().Kind == DockWidgetKind.Cpu);
         check("Dock shows its buttons, previews and shortcuts by default",
             new DockSettings() is { ShowStart: true, ShowTrash: true, ShowDesktopButton: true, WindowPreviews: true, AppShortcuts: true });
     }

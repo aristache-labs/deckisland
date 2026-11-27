@@ -107,6 +107,22 @@ internal sealed partial class DockWindow
             item.Click += (_, _) => action();
             menu.Items.Add(item);
         }
+        Add(Loc.T("小组件…", "Widgets…"), _app.OpenDockPicker);
+        // The profiles, the one in use ticked; built when the menu opens, so it shows the current ones.
+        var profiles = new MenuItem { Header = Loc.T("配置", "Profiles") };
+        menu.Items.Add(profiles);
+        menu.Opened += (_, _) =>
+        {
+            profiles.Items.Clear();
+            var settings = _app.DockSettings;
+            foreach (var profile in settings.Profiles)
+            {
+                var item = new MenuItem { Header = profile.Name, IsCheckable = true, IsChecked = profile.Id == settings.CurrentProfile };
+                string id = profile.Id;
+                item.Click += (_, _) => { var copy = _app.DockSettings.Copy(); copy.CurrentProfile = id; _app.UpdateDockSettings(copy); };
+                profiles.Items.Add(item);
+            }
+        };
         Add(Loc.T("Dock 设置", "Settings"), () => _app.OpenSettingsPage(SettingsWindow.DockSettingsPage));
         Add(Loc.T("任务管理器", "Task Manager"), () => DockAppWindows.Launch("taskmgr.exe"));
         menu.Items.Add(new Separator());

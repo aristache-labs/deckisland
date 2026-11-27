@@ -42,7 +42,7 @@ internal sealed partial class DockWindow
         if (!settings.GroupWindows) apps = DockApps.Ungroup(apps, foreground);
         bool trashFull = settings.ShowTrash && DockShell.RecycleBinHasItems();
         var signature = $"{settings.Style}{settings.ClearCards}{settings.Accent}{settings.Corner}|{settings.Size}|{settings.Spacing}|{settings.IconSize}|{settings.AppCards}{settings.NamesOnHover}{settings.Indicator}{settings.WindowPreviews}|"
-            + $"{settings.ShowStart}{settings.ShowTrash}{settings.ShowDesktopButton}{trashFull}|"
+            + $"{settings.ShowStart}{settings.ShowTrash}{settings.ShowDesktopButton}{trashFull}|{_app.DockPickerOpen}|{string.Join(",", settings.Widgets.Select(w => w.Id + w.Option))}|"
             + string.Join(";", apps.Select(a => $"{a.Key},{a.Pinned},{a.Windows.Count},{a.Active}"));
         _shown = apps;
         if (signature == _signature) return;
@@ -52,6 +52,7 @@ internal sealed partial class DockWindow
         _spacing = settings.Spacing;
         if (settings.ShowStart) _apps.Children.Add(Button(StartGlyph(tile), Loc.T("开始", "Start"), tile, DockShell.OpenStart));
         foreach (var app in apps) _apps.Children.Add(Tile(app, tile));
+        AddWidgets(settings, tile);
         if (settings.ShowTrash || settings.ShowDesktopButton)
             _apps.Children.Add(new Rectangle { Width = 1, Height = tile * 0.6, Fill = UI.Brush(_look.Divider), Margin = new Thickness(5, 0, 5, 0) });
         if (settings.ShowTrash) _apps.Children.Add(Trash(tile));
@@ -191,7 +192,8 @@ internal sealed partial class DockWindow
             _dragging = true; _preview.HideNow(); frame.Opacity = 0.6;
         }
         int index = _apps.Children.IndexOf(frame);
-        foreach (var other in _apps.Children.OfType<Border>().Where(child => child.Tag is DockApp && child != frame).ToList())
+        // Apps change places with apps, widgets with widgets.
+        foreach (var other in _apps.Children.OfType<Border>().Where(child => child != frame && child.Tag is not null && child.Tag.GetType() == frame.Tag?.GetType()).ToList())
         {
             double centre = other.TranslatePoint(new Point(other.ActualWidth / 2, 0), this).X;
             int otherIndex = _apps.Children.IndexOf(other);

@@ -70,11 +70,26 @@ public sealed class DockSettings
     [JsonConverter(typeof(JsonStringEnumConverter))] public DockClearCards ClearCards { get; set; } = DockClearCards.Black;
     // The dock's accent (#RRGGBB): the open marker and highlights wear it.
     public string Accent { get; set; } = DockLook.DefaultAccent;
+    // The widget sets and the one in use (DockWidgets).
+    public List<DockProfile> Profiles { get; set; } = [DockWidgets.DefaultProfile()];
+    public string CurrentProfile { get; set; } = "main";
+
+    // The widgets of the profile in use.
+    [JsonIgnore] public IReadOnlyList<DockWidget> Widgets => Profiles.FirstOrDefault(p => p.Id == CurrentProfile)?.Widgets ?? [];
+
+    // These settings with the profile in use given these widgets.
+    public DockSettings WithWidgets(List<DockWidget> widgets)
+    {
+        var copy = Copy();
+        copy.Profiles = copy.Profiles.Select(p => p.Id == CurrentProfile ? p with { Widgets = widgets } : p).ToList();
+        return copy;
+    }
 
     public DockSettings Copy()
     {
         var copy = (DockSettings)MemberwiseClone();
         copy.Pins = Pins is null ? null : [.. Pins];
+        copy.Profiles = Profiles.Select(p => p.Copy()).ToList();
         return copy;
     }
 
@@ -90,6 +105,7 @@ public sealed class DockSettings
         if (!Enum.IsDefined(Style)) Style = DockStyle.Black;
         if (!Enum.IsDefined(ClearCards)) ClearCards = DockClearCards.Black;
         Accent = DockLook.NormalizeAccent(Accent);
+        (Profiles, CurrentProfile) = DockWidgets.Normalize(Profiles, CurrentProfile);
         Distance = Math.Clamp(Distance, 0, MaxDistance);
         Spacing = Math.Clamp(Spacing, 0, MaxSpacing);
         Padding = Math.Clamp(Padding, 0, MaxPadding);

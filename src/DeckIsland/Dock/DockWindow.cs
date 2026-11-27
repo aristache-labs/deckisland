@@ -110,6 +110,7 @@ internal sealed partial class DockWindow : Window
         var settings = _app.DockSettings;
         var now = DateTime.Now;
         UpdateClock(now, settings);
+        UpdateWidgets();
         // Windows' energy saver: the dock reads its windows less often, unless the clock shows seconds.
         _tick.Interval = TimeSpan.FromSeconds(!settings.ClockSeconds && EnergySaverOn() ? 3 : 1);
         RefreshApps();

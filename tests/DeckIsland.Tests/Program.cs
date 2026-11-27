@@ -45,7 +45,7 @@ try
     WorldClocksTests.Run(Check);
     DockSettingsTests.Run(root, Check);
     DockSettingsTests.Geometry(Check);
-    DockSettingsTests.Apps(Check);
+    DockSettingsTests.Apps(root, Check);
     await ToolTabsTests.Run(root, Check);
     CountdownTests.Run(Check);
     TodosTests.Run(Check);
