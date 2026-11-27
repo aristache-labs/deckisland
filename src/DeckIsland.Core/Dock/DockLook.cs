@@ -31,7 +31,7 @@ public sealed record DockLook(string Bar, string Rim, string Card, string CardHo
         {
             DockClearCards.White => new("#00000000", "#00000000", "#FFF5F5F7", "#FFEBEBEE", "#FFE0E0E4", "#0F000000", "#FF1D1D1F", "#FF6E6E73", "#1F000000", false),
             DockClearCards.Glass => new("#00000000", "#00000000", "#734A4C55", "#80565862", "#8C62646F", "#24FFFFFF", "#FFF5F5F7", "#CCF5F5F7", "#33FFFFFF", false),
-            _ => new("#00000000", "#00000000", "#F51C1C1F", "#F5252528", "#F52F2F33", "#0DFFFFFF", "#FFF5F5F7", "#A6F5F5F7", "#26FFFFFF", false)
+            _ => new("#00000000", "#00000000", "#FF18181A", "#FF222225", "#FF2A2A2E", "#1AFFFFFF", "#FFF5F5F7", "#A6F5F5F7", "#26FFFFFF", false)
         },
         // Black: no rim on the bar itself; the widget cards carry a visible hairline instead.
         _ => new("#F2111113", "#00000000", "#FF1E1E21", "#FF29292D", "#FF2E2E33", "#1AFFFFFF", "#FFF5F5F7", "#A6F5F5F7", "#21FFFFFF", false)

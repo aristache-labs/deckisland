@@ -75,7 +75,7 @@ internal sealed partial class DockWindow
             _startTile.BorderThickness = new Thickness(light ? 0 : 1);
             _startTile.MouseEnter += (_, _) => _startTile.Background = UI.Brush(hover);
             _startTile.MouseLeave += (_, _) => _startTile.Background = UI.Brush(card);
-            ShrinkCard(_startTile, tile);
+            if (!Cards) ShrinkCard(_startTile, tile);
             _apps.Children.Add(_startTile);
         }
         foreach (var app in apps) _apps.Children.Add(Tile(app, tile));
@@ -131,15 +131,16 @@ internal sealed partial class DockWindow
 
     private Border Frame(UIElement content, double tile, string name) => new()
     {
-        Width = tile, Height = tile, CornerRadius = new CornerRadius(TileRadius()),
+        // On cards (App cards), as tall as the widgets' cards so the row lines up.
+        Width = tile, Height = Cards ? _app.DockSettings.Size - 6 : tile, CornerRadius = new CornerRadius(TileRadius()),
         BorderBrush = UI.Brush(Cards ? _look.CardRim : "#00000000"), BorderThickness = new Thickness(Cards ? 1 : 0),
         Margin = new Thickness(_spacing / 2, 0, _spacing / 2, 0), Child = content,
         Background = UI.Brush(Rest(false)), ToolTip = _app.DockSettings.NamesOnHover ? name : null, Cursor = Cursors.Hand,
         RenderTransformOrigin = new Point(0.5, _app.DockSettings.Edge == DockEdge.Top ? 0 : 1), RenderTransform = new ScaleTransform(1, 1)
     };
 
-    // Clear always puts the tiles on cards; the other styles when App cards is on.
-    private bool Cards => _app.DockSettings.AppCards || _app.DockSettings.Style == DockStyle.Clear;
+    // App cards puts every app on a card; without it apps sit straight on the bar (on Clear, on the screen), as in lumabar.
+    private bool Cards => _app.DockSettings.AppCards;
     private string Rest(bool active) => active ? _look.CardActive : Cards ? _look.Card : "#00000000";
 
     private void Hover(Border frame, string rest)
@@ -209,8 +210,10 @@ internal sealed partial class DockWindow
         string rest = Rest(app.Active);
         var frame = Frame(grid, tile, app.Name);
         // The shade for the app in front hugs the icon: the frame shrinks by an inset, its margin keeps the spacing between apps.
-        double inset = Math.Round(Math.Clamp((tile - iconSize) / 2 - tile * 0.05, 0, tile * 0.07));
-        frame.Width = frame.Height = tile - 2 * inset;
+        // With App cards every app keeps a full card, the same size as the widgets'.
+        double inset = Cards ? 0 : Math.Round(Math.Clamp((tile - iconSize) / 2 - tile * 0.05, 0, tile * 0.07));
+        frame.Width = tile - 2 * inset;
+        frame.Height -= 2 * inset;
         frame.Margin = new Thickness(_spacing / 2 + inset, inset, _spacing / 2 + inset, inset);
         frame.Tag = app; frame.Background = UI.Brush(rest);
         // The preview shows the window titles, so the tooltip would only repeat them.
