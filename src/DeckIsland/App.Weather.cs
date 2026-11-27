@@ -8,7 +8,8 @@ namespace DeckIsland;
 
 public partial class App
 {
-    private readonly HashSet<MainWindow> _weatherViewers = [];
+    // The panels showing weather, and the dock while it shows a weather widget.
+    private readonly HashSet<object> _weatherViewers = [];
     private readonly DispatcherTimer _weatherTimer = new() { Interval = TimeSpan.FromMinutes(30) };
     private (bool Automatic, WeatherCity? City)? _weatherKey;
     private CancellationTokenSource? _weatherRequest;
@@ -21,7 +22,7 @@ public partial class App
     internal bool WeatherNeedsLocation { get; private set; }
     internal event Action? WeatherChanged;
 
-    internal void PresentWeather(MainWindow deck, bool wanted)
+    internal void PresentWeather(object deck, bool wanted)
     {
         if (wanted) _weatherViewers.Add(deck);
         else _weatherViewers.Remove(deck);

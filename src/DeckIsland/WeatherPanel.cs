@@ -50,7 +50,7 @@ public partial class MainWindow
     private static string WeatherPlace(WeatherReading reading) => reading.Place.Name.Length == 0
         ? Loc.T("当前位置", "Current location") : reading.Place.Name;
 
-    private static (string Icon, string Condition) WeatherCondition(int? code, bool daylight) => code switch
+    internal static (string Icon, string Condition) WeatherCondition(int? code, bool daylight) => code switch
     {
         0 => daylight ? ("☀", Loc.T("晴朗", "Sunny")) : ("☾", Loc.T("晴朗", "Clear")),
         1 or 2 => (daylight ? "⛅" : PartlyCloudyNight, Loc.T("局部多云", "Partly cloudy")),

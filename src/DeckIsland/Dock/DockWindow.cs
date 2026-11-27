@@ -151,6 +151,7 @@ internal sealed partial class DockWindow : Window
     private void Stop()
     {
         _tick.Stop(); _edgeWatch.Stop(); _glass.Stop();
+        _volume?.Dispose(); _volume = null;
         _preview.Close();
         if (_handle == IntPtr.Zero) return;
         UnregisterHotKey(_handle, PanicHotkey);

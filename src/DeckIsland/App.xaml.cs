@@ -410,7 +410,7 @@ public partial class App : Application
     }
     internal void StartMedia()
     {
-        bool wanted = ShownSettings.Any(settings => settings.MediaWanted);
+        bool wanted = ShownSettings.Any(settings => settings.MediaWanted) || DockWantsMedia;
         if (wanted && Media is null)
         {
             // Switched off a moment ago and still kept: the players, the song and its cover are as they were, and the panels take

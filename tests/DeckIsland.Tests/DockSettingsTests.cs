@@ -109,7 +109,7 @@ internal static class DockSettingsTests
             widgets.Select(w => w.Id).Distinct().Count() == 3 && DockWidgets.Move(widgets, widgets[2].Id, 0)[0].Kind == DockWidgetKind.Battery
             && DockWidgets.Remove(widgets, widgets[1].Id).Select(w => w.Kind).SequenceEqual([DockWidgetKind.Cpu, DockWidgetKind.Battery]));
         check("Dock widget search finds by name or description within a category",
-            DockWidgets.Find(DockWidgetCategory.System, "").Count == 3 && DockWidgets.Find(null, "ram").Single().Kind == DockWidgetKind.Memory && DockWidgets.Find(DockWidgetCategory.Ai, "ram").Count == 0);
+            DockWidgets.Find(DockWidgetCategory.System, "").Count == 5 && DockWidgets.Catalog.Select(i => i.Kind).Distinct().Count() == Enum.GetValues<DockWidgetKind>().Length && DockWidgets.Find(null, "ram").Single().Kind == DockWidgetKind.Memory && DockWidgets.Find(DockWidgetCategory.Ai, "ram").Count == 0);
         var (profiles, currentProfile) = DockWidgets.Normalize([new DockProfile("a", " ", [new DockWidget("x", (DockWidgetKind)99), new DockWidget("y", DockWidgetKind.Cpu), new DockWidget("y", DockWidgetKind.Memory)]),
             new DockProfile("a", "dup", [])], "gone");
         check("Dock profiles drop unknown and repeated widgets and repeated profiles, and keep a current one",

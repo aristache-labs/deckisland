@@ -53,11 +53,25 @@ public partial class App
         DockTaskbar.Apply(DockSettings.TaskbarMode);
         SyncDocks();
         ApplyDockKeys();
-        ApplyMonitorDemand(false);
+        ApplyDockData();
     }
 
     // The system monitor is read while a dock shows a CPU or RAM widget (App.ApplyMonitorDemand).
-    internal bool DockWantsMonitor => _docks.Count > 0 && DockSettings.Widgets.Any(w => w.Kind is DockWidgetKind.Cpu or DockWidgetKind.Memory);
+    // Media sessions are kept while a dock shows Now Playing (App.StartMedia); weather is read while it shows Weather.
+    internal bool DockWantsMedia => _docks.Count > 0 && DockSettings.Widgets.Any(w => w.Kind == DockWidgetKind.NowPlaying);
+    private bool DockWantsWeather => _docks.Count > 0 && DockSettings.Widgets.Any(w => w.Kind == DockWidgetKind.Weather);
+    private static readonly object DockWeatherViewer = new();
+
+    // The readings the dock's widgets need, started or let go to match them.
+    private void ApplyDockData()
+    {
+        if (Exiting) return;
+        ApplyMonitorDemand(false);
+        StartMedia();
+        PresentWeather(DockWeatherViewer, DockWantsWeather);
+    }
+
+    internal bool DockWantsMonitor => _docks.Count > 0 && DockSettings.Widgets.Any(w => w.Kind is DockWidgetKind.Cpu or DockWidgetKind.Memory or DockWidgetKind.Network);
 
     private void StopDock()
     {
@@ -67,7 +81,7 @@ public partial class App
         _dockKeys?.Dispose(); _dockKeys = null;
         FlushDockSettings();
         DockTaskbar.Stop();
-        ApplyMonitorDemand(false);
+        ApplyDockData();
     }
 
     // One dock per wanted screen: the main one, or every one; docks on screens no longer wanted or connected are closed.
@@ -134,7 +148,7 @@ public partial class App
         if (settings.TaskbarMode != previous.TaskbarMode) DockTaskbar.Apply(settings.TaskbarMode);
         if (settings.Displays != previous.Displays) SyncDocks();
         ApplyDockKeys();
-        ApplyMonitorDemand(false);
+        ApplyDockData();
         foreach (var dock in _docks) dock.Apply();
         _dockPicker?.Refresh();
     }

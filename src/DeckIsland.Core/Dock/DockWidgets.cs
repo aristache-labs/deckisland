@@ -2,8 +2,8 @@ namespace DeckIsland.Core;
 
 // The dock's widgets, after lumabar's: live tiles that sit on the bar beside the apps, chosen in the widget picker by category.
 // The catalog grows with each wave of widgets; a kind this build does not know is dropped from the settings when they are read.
-public enum DockWidgetKind { Cpu, Memory, Battery, AiUsage, NextEvent }
-public enum DockWidgetCategory { Ai, Productivity, System }
+public enum DockWidgetKind { Cpu, Memory, Battery, AiUsage, NextEvent, Network, Storage, Volume, Weather, AnalogClock, NowPlaying, Calendar, AiRing }
+public enum DockWidgetCategory { Ai, Productivity, System, MediaTime }
 
 // Width is in tiles: 1 a square tile, more a wide card.
 public sealed record DockWidgetInfo(DockWidgetKind Kind, DockWidgetCategory Category, string Name, string Description, int Width);
@@ -24,16 +24,25 @@ public static class DockWidgets
 
     public static IReadOnlyList<DockWidgetInfo> Catalog => [
         new(DockWidgetKind.AiUsage, DockWidgetCategory.Ai, Loc.T("AI 用量", "AI Limits"), Loc.T("一个 AI 工具的会话和每周限额。", "An AI tool's session and weekly limits."), 4),
+        new(DockWidgetKind.AiRing, DockWidgetCategory.Ai, Loc.T("AI 圆环", "AI Ring"), Loc.T("一个 AI 工具的限额，以圆环显示。", "One AI tool's limit as a ring."), 1),
+        new(DockWidgetKind.Calendar, DockWidgetCategory.Productivity, Loc.T("日历", "Calendar"), Loc.T("今天的日期和今天的日程数。", "Today's date and how many events today holds."), 1),
         new(DockWidgetKind.NextEvent, DockWidgetCategory.Productivity, Loc.T("下一个日程", "Next event"), Loc.T("日历中的下一个日程，以及还有多久。", "The next event on your calendar and how soon it starts."), 4),
         new(DockWidgetKind.Cpu, DockWidgetCategory.System, "CPU", Loc.T("处理器的使用率。", "How busy the processor is."), 1),
         new(DockWidgetKind.Memory, DockWidgetCategory.System, "RAM", Loc.T("正在使用的内存。", "How much memory is in use."), 1),
-        new(DockWidgetKind.Battery, DockWidgetCategory.System, Loc.T("电池", "Battery"), Loc.T("电量，以及是否在充电。", "The charge, and whether it is charging."), 1)];
+        new(DockWidgetKind.Battery, DockWidgetCategory.System, Loc.T("电池", "Battery"), Loc.T("电量，以及是否在充电。", "The charge, and whether it is charging."), 1),
+        new(DockWidgetKind.Network, DockWidgetCategory.System, Loc.T("网络", "Network"), Loc.T("下载和上传速度。", "Download and upload speed."), 2),
+        new(DockWidgetKind.Storage, DockWidgetCategory.System, Loc.T("存储", "Storage"), Loc.T("系统盘的剩余空间。", "Free space on the system drive."), 1),
+        new(DockWidgetKind.Volume, DockWidgetCategory.MediaTime, Loc.T("音频输出", "Audio Output"), Loc.T("音量；在上面滚动可调节。", "The volume; scroll on it to change it."), 1),
+        new(DockWidgetKind.NowPlaying, DockWidgetCategory.MediaTime, Loc.T("正在播放", "Now Playing"), Loc.T("正在播放的歌曲、封面和播放控制。", "The song playing, its cover and the controls."), 4),
+        new(DockWidgetKind.Weather, DockWidgetCategory.MediaTime, Loc.T("天气", "Weather"), Loc.T("当前的温度和天气。", "The temperature and conditions now."), 2),
+        new(DockWidgetKind.AnalogClock, DockWidgetCategory.MediaTime, Loc.T("指针时钟", "Analog Minimal"), Loc.T("简洁的指针时钟。", "A minimal clock with hands."), 1)];
 
     public static DockWidgetInfo Info(DockWidgetKind kind) => Catalog.First(info => info.Kind == kind);
 
     public static string CategoryName(DockWidgetCategory category) => category switch
     {
-        DockWidgetCategory.Ai => "AI", DockWidgetCategory.Productivity => Loc.T("效率", "Productivity"), _ => Loc.T("系统", "System")
+        DockWidgetCategory.Ai => "AI", DockWidgetCategory.Productivity => Loc.T("效率", "Productivity"),
+        DockWidgetCategory.MediaTime => Loc.T("音乐、天气与时间", "Music, weather & time"), _ => Loc.T("系统", "System")
     };
 
     // The catalog filtered by category (null for all) and by words in a widget's name or description.

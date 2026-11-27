@@ -77,7 +77,7 @@ internal sealed class DockWidgetPicker : Window
     {
         foreach (var info in DockWidgets.Find(_category, _search.Text))
         {
-            if (info.Kind != DockWidgetKind.AiUsage) { yield return (info, "", info.Name); continue; }
+            if (!PerTool(info.Kind)) { yield return (info, "", info.Name); continue; }
             var tools = (_app.Deck?.Snapshots ?? []).Where(s => s.Quotas.Count > 0).ToList();
             if (tools.Count == 0) yield return (info, "", info.Name);
             foreach (var tool in tools) yield return (info, tool.Id.ToString(), $"{tool.Name} · {info.Name}");
@@ -98,7 +98,7 @@ internal sealed class DockWidgetPicker : Window
         var widgets = _app.DockSettings.Widgets;
         // An AI widget without a tool of its own shows the first tool with limits, so its tile is the one ticked.
         string first = FirstTool();
-        bool added = widgets.Any(w => w.Kind == info.Kind && (info.Kind != DockWidgetKind.AiUsage || w.Option == option || w.Option == "" && option == first));
+        bool added = widgets.Any(w => w.Kind == info.Kind && (!PerTool(info.Kind) || w.Option == option || w.Option == "" && option == first));
         // A live picture of the widget, drawn by a dock in its own style; none while the dock is off.
         var stage = new Border { Height = 92, CornerRadius = new CornerRadius(10), Background = UI.Brush(_palette.Inset) };
         if (dock is not null)
@@ -122,13 +122,16 @@ internal sealed class DockWidgetPicker : Window
         return button;
     }
 
+    // The AI widgets are offered once for each AI tool with limits.
+    private static bool PerTool(DockWidgetKind kind) => kind is DockWidgetKind.AiUsage or DockWidgetKind.AiRing;
+
     private string FirstTool() => (_app.Deck?.Snapshots ?? []).FirstOrDefault(s => s.Quotas.Count > 0)?.Id.ToString() ?? "";
 
     private void Toggle(DockWidgetKind kind, string option, bool added)
     {
         var settings = _app.DockSettings;
         var widgets = added
-            ? settings.Widgets.Where(w => !(w.Kind == kind && (kind != DockWidgetKind.AiUsage || w.Option == option || w.Option == "" && option == FirstTool()))).ToList()
+            ? settings.Widgets.Where(w => !(w.Kind == kind && (!PerTool(kind) || w.Option == option || w.Option == "" && option == FirstTool()))).ToList()
             : DockWidgets.Add(settings.Widgets, kind).Select(w => w.Kind == kind && w.Option == "" && !settings.Widgets.Contains(w) ? w with { Option = option } : w).ToList();
         _app.UpdateDockSettings(settings.WithWidgets(widgets));
     }

@@ -37,6 +37,14 @@ internal sealed partial class DockWindow
         DockWidgetKind.Memory => Meter(tile, "RAM", () => _app.DockMonitor?.Memory.OrDefault is { } memory ? memory.UsedFraction : null),
         DockWidgetKind.Battery => Battery(tile),
         DockWidgetKind.AiUsage => AiUsage(tile, widget.Option),
+        DockWidgetKind.Network => Network(tile),
+        DockWidgetKind.Storage => Storage(tile),
+        DockWidgetKind.Volume => Volume(tile),
+        DockWidgetKind.Weather => Weather(tile),
+        DockWidgetKind.AnalogClock => AnalogClock(tile),
+        DockWidgetKind.NowPlaying => NowPlaying(tile),
+        DockWidgetKind.Calendar => Calendar(tile),
+        DockWidgetKind.AiRing => AiRing(tile, widget.Option),
         _ => NextEvent(tile)
     };
 
