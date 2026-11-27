@@ -15,12 +15,11 @@ namespace DeckIsland;
 internal sealed partial class DockWindow
 {
     private readonly Border _tint = new();
-    private readonly DispatcherTimer _glass = new(DispatcherPriority.Render) { Interval = TimeSpan.FromMilliseconds(120) };
-    private DockBackdrop? _backdrop;
-    private bool _glassOn, _readGlass;
+    private readonly DispatcherTimer _glass = new(DispatcherPriority.Render) { Interval = TimeSpan.FromMilliseconds(16) };
+    private bool _glassOn;
     private byte[]? _lastGlass;
-    // Liquid's blur: the screen behind read at 1/LiquidShrink of its size and stretched back; the larger, the softer.
-    private const double LiquidShrink = 4;
+    // The glass blur: the screen behind read at 1/GlassShrink of its size and stretched back; the larger, the softer.
+    private const double GlassShrink = 4;
     private DockLook _look = DockLook.For(DockStyle.Black, DockClearCards.Black);
 
     // The style's colours on the bar, the clock and (through RefreshSoon) the tiles; glass started or stopped to match.
@@ -33,11 +32,16 @@ internal sealed partial class DockWindow
         // A transparent rim would leave a 1px gap around the tint that shows the screen behind; no rim, no border.
         _bar.BorderThickness = new Thickness(settings.Style == DockStyle.Clear || _look.Rim.StartsWith("#00", StringComparison.Ordinal) ? 0 : 1);
         _tint.BorderThickness = new Thickness(0);
-        if (DockSmart.Effective(settings.Style, settings.SunsetDarkMode, _app.DockDaylight) == DockStyle.Liquid)
+        // Measured from lumabar: the glass styles' rims are an even 2px of cool, see-through white all the way round.
+        switch (DockSmart.Effective(settings.Style, settings.SunsetDarkMode, _app.DockDaylight))
         {
-            // Measured from lumabar: an even 2px rim of cool, see-through white all the way round, no highlight spots.
-            _bar.BorderBrush = UI.Brush("#4DC8D7EB");
-            _bar.BorderThickness = new Thickness(2);
+            case DockStyle.Liquid or DockStyle.IOS:
+                _bar.BorderBrush = UI.Brush("#4DC8D7EB");
+                _bar.BorderThickness = new Thickness(2);
+                break;
+            case DockStyle.Midnight:
+                _bar.BorderThickness = new Thickness(2);
+                break;
         }
         _bar.Background = Brushes.Transparent;
         _bar.Height = OuterBarHeight;
@@ -50,23 +54,17 @@ internal sealed partial class DockWindow
         // The tiles were drawn in the previous style's colours.
         _signature = "";
         if (_handle == IntPtr.Zero) return;
-        // Liquid reads the screen behind it for a soft blur (Windows' own blur is too strong for its clear glass); iOS and Midnight
-        // use Windows' blur in a backdrop window.
-        bool read = _look.Glass && DockSmart.Effective(settings.Style, settings.SunsetDarkMode, _app.DockDaylight) == DockStyle.Liquid;
-        if (_look.Glass != _glassOn || read != _readGlass)
+        // The glass styles read the screen behind the bar for a soft blur, drawn inside the bar's own rounded shape (Windows' blur
+        // is too strong and cannot follow the corners); every frame, so a window sliding behind moves smoothly through the glass.
+        if (_look.Glass != _glassOn)
         {
             _glassOn = _look.Glass;
-            _readGlass = read;
             _lastGlass = null;
-            _backdrop?.Hide();
-            // Liquid reads the screen every frame so a window sliding behind moves smoothly through the glass; the backdrop window
-            // only needs to follow the bar.
-            _glass.Interval = TimeSpan.FromMilliseconds(_readGlass ? 16 : 120);
             if (_glassOn) _glass.Start(); else _glass.Stop();
         }
         // Reading the screen would read the dock too, so while it does the dock is left out of captures; otherwise as the island's
         // setting says.
-        ScreenShots.Exclude(this, _readGlass || _app.Settings.HideFromCapture);
+        ScreenShots.Exclude(this, _glassOn || _app.Settings.HideFromCapture);
         if (_glassOn) GlassTick();
     }
 
@@ -92,31 +90,17 @@ internal sealed partial class DockWindow
     // The tiles' cards follow the bar's corners, a little tighter.
     private double TileRadius() => Math.Clamp(DockGeometry.CornerRadius(_app.DockSettings.Corner, _app.DockSettings.Size) - 4, 3, 12);
 
-    // Glass under the bar: Liquid's soft blur read from the screen, or the backdrop window kept on the bar's rectangle (it follows
-    // slides, resizes and moves); the backdrop hidden when there is no glass.
+    // Glass under the bar: the screen behind it, read small and stretched back, a soft blur.
     private void GlassTick()
     {
-        if (!_glassOn || _reveal <= 0 || _handle == IntPtr.Zero || _bar.ActualWidth < 4 || PresentationSource.FromVisual(_bar) is null)
-        {
-            _backdrop?.Hide();
-            return;
-        }
-        var from = _bar.PointToScreen(new Point(0, 0));
-        var to = _bar.PointToScreen(new Point(_bar.ActualWidth, _bar.ActualHeight));
-        if (_readGlass)
-        {
-            if (!_dragging) ReadGlass(from, to);
-            return;
-        }
-        double scale = (to.X - from.X) / _bar.ActualWidth;
-        (_backdrop ??= new DockBackdrop()).Show(_handle, (int)Math.Round(from.X), (int)Math.Round(from.Y),
-            (int)Math.Round(to.X - from.X), (int)Math.Round(to.Y - from.Y), (int)Math.Round(_bar.CornerRadius.TopLeft * scale));
+        if (!_glassOn || _dragging || _reveal <= 0 || _handle == IntPtr.Zero || _bar.ActualWidth < 4 || PresentationSource.FromVisual(_bar) is null) return;
+        ReadGlass(_bar.PointToScreen(new Point(0, 0)), _bar.PointToScreen(new Point(_bar.ActualWidth, _bar.ActualHeight)));
     }
 
     private void ReadGlass(Point from, Point to)
     {
         int x = (int)Math.Floor(from.X), y = (int)Math.Floor(from.Y), width = (int)Math.Ceiling(to.X - from.X), height = (int)Math.Ceiling(to.Y - from.Y);
-        if (GlassCapture.Grab(x, y, width, height, LiquidShrink) is not { } grabbed) return;
+        if (GlassCapture.Grab(x, y, width, height, GlassShrink) is not { } grabbed) return;
         // A screen bitmap comes back as Bgra32 with every alpha 0, so drawn as is it would be invisible; read as Bgr32 it is opaque.
         var picture = new FormatConvertedBitmap(grabbed, PixelFormats.Bgr32, null, 0);
         picture.Freeze();

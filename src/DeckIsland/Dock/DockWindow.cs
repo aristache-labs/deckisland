@@ -188,7 +188,6 @@ internal sealed partial class DockWindow : Window
         _tick.Stop(); _edgeWatch.Stop(); _glass.Stop();
         _volume?.Dispose(); _volume = null;
         _preview.Close();
-        _backdrop?.Dispose(); _backdrop = null;
         if (_handle == IntPtr.Zero) return;
         UnregisterHotKey(_handle, PanicHotkey);
         Unregister();
@@ -220,7 +219,7 @@ internal sealed partial class DockWindow : Window
     }
 
     // The bar's height with its rim: the rim is drawn inside the bar, so it is added on top of the padded row instead of eating into it.
-    private double OuterBarHeight => _app.DockSettings.BarHeight + 2 * _bar.BorderThickness.Top;
+    private double OuterBarHeight => _app.DockSettings.BarHeight + 2 * (_bar.BorderThickness.Top + _tint.BorderThickness.Top);
 
     // The bar's shape from the settings: corners, the space inside its ends, and which side of the window it sits on.
     private void ApplyStyle()

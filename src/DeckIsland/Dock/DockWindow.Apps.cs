@@ -106,7 +106,7 @@ internal sealed partial class DockWindow
     private void FitEnds(DockSettings settings)
     {
         if (settings.FullWidth) return;
-        double inner = DockGeometry.CornerRadius(settings.Corner, OuterBarHeight) - settings.Padding - _bar.BorderThickness.Left;
+        double inner = DockGeometry.CornerRadius(settings.Corner, OuterBarHeight) - settings.Padding - _bar.BorderThickness.Left - _tint.BorderThickness.Left;
         if (inner <= TileRadius()) return;
         var first = _apps.Children.OfType<Border>().FirstOrDefault();
         var last = (_trailing.Children.Count > 0 ? _trailing.Children : _apps.Children).OfType<Border>().LastOrDefault();

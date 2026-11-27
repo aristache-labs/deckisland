@@ -25,8 +25,8 @@ public sealed partial class SettingsWindow
         var appearance = new List<FrameworkElement>
         {
             Describe(Row(Loc.T("Dock 样式", "Dock style"), StyleTiles(dock),
-                help: () => Loc.T("黑色、白色：不透明。Liquid、iOS、Midnight：透出后面内容的玻璃，Midnight 色调最深。透明：只留下小组件。\nLiquid 样式开启时，Dock 不会出现在截图和录屏中。",
-                    "Black and White are solid. Liquid, iOS and Midnight are glass that shows what is behind, Midnight under the deepest tint. Clear leaves only the widgets.\nWhile Liquid is on, the dock is left out of screenshots and recordings.")),
+                help: () => Loc.T("黑色、白色：不透明。Liquid、iOS、Midnight：透出后面内容的玻璃，Midnight 色调最深。透明：只留下小组件。\n玻璃样式开启时，Dock 不会出现在截图和录屏中。",
+                    "Black and White are solid. Liquid, iOS and Midnight are glass that shows what is behind, Midnight under the deepest tint. Clear leaves only the widgets.\nWhile a glass style is on, the dock is left out of screenshots and recordings.")),
                 Loc.T("六种样式。", "Six styles."))
         };
         if (dock.Style == DockStyle.Clear)
