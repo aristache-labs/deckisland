@@ -97,7 +97,7 @@ internal sealed partial class DockWindow
         Color At(double alpha) => Color.FromArgb((byte)Math.Clamp(color.A * alpha, 0, 255), color.R, color.G, color.B);
         var brush = new LinearGradientBrush { StartPoint = new Point(0, 0), EndPoint = new Point(0, 1), GradientStops =
             {
-                new GradientStop(Color.FromArgb((byte)Math.Clamp(color.A * 1.8, 0, 255), 0xF2, 0xF7, 0xFF), 0),
+                new GradientStop(Color.FromArgb((byte)Math.Clamp(color.A * 1.5, 0, 255), 0xF2, 0xF7, 0xFF), 0),
                 new GradientStop(At(1.15), 0.3), new GradientStop(At(0.9), 0.6), new GradientStop(At(1.3), 1)
             } };
         brush.Freeze();
@@ -106,8 +106,8 @@ internal sealed partial class DockWindow
 
     private static readonly Brush GlossSheen = Frozen(new LinearGradientBrush { StartPoint = new Point(0, 0), EndPoint = new Point(0, 1), GradientStops =
         {
-            new GradientStop(Color.FromArgb(0x26, 255, 255, 255), 0), new GradientStop(Color.FromArgb(0x08, 255, 255, 255), 0.35),
-            new GradientStop(Color.FromArgb(0x00, 255, 255, 255), 0.6), new GradientStop(Color.FromArgb(0x0A, 255, 255, 255), 1)
+            new GradientStop(Color.FromArgb(0x14, 255, 255, 255), 0), new GradientStop(Color.FromArgb(0x05, 255, 255, 255), 0.35),
+            new GradientStop(Color.FromArgb(0x00, 255, 255, 255), 0.6), new GradientStop(Color.FromArgb(0x05, 255, 255, 255), 1)
         } });
 
     private static Brush Frozen(Brush brush) { brush.Freeze(); return brush; }
