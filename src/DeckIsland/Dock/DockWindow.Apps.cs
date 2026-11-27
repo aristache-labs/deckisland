@@ -112,6 +112,13 @@ internal sealed partial class DockWindow
         var last = (_trailing.Children.Count > 0 ? _trailing.Children : _apps.Children).OfType<Border>().LastOrDefault();
         if (first is not null) first.CornerRadius = new CornerRadius(inner, first.CornerRadius.TopRight, first.CornerRadius.BottomRight, inner);
         if (last is not null) last.CornerRadius = new CornerRadius(last.CornerRadius.TopLeft, inner, inner, last.CornerRadius.BottomLeft);
+        // A frosted card's tint layer follows its frame's corners, a pixel inside the frame's rim.
+        foreach (var end in new[] { first, last })
+            if (end?.Child is Border layer)
+            {
+                var c = end.CornerRadius;
+                layer.CornerRadius = new CornerRadius(Math.Max(0, c.TopLeft - 1), Math.Max(0, c.TopRight - 1), Math.Max(0, c.BottomRight - 1), Math.Max(0, c.BottomLeft - 1));
+            }
     }
 
     private static List<(DockPin Pin, string Key)> PinKeys(DockSettings settings) => (settings.Pins ?? []).Select(pin => (pin, DockAppWindows.PinKey(pin))).ToList();
@@ -141,7 +148,8 @@ internal sealed partial class DockWindow
 
     // App cards puts every app on a card; without it apps sit straight on the bar (on Clear, on the screen), as in lumabar.
     private bool Cards => _app.DockSettings.AppCards;
-    private string Rest(bool active) => active ? _look.CardActive : Cards ? _look.Card : "#00000000";
+    // On Clear with frosted cards the app cards are not frosted, only a light see-through grey (measured from lumabar).
+    private string Rest(bool active) => active ? _look.CardActive : Cards ? (FrostedCards ? "#3A6F6F6F" : _look.Card) : "#00000000";
 
     private void Hover(Border frame, string rest)
     {

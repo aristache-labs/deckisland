@@ -63,15 +63,18 @@ internal sealed partial class DockWindow
         if (_handle == IntPtr.Zero) return;
         // The glass styles read the screen behind the bar for a soft blur, drawn inside the bar's own rounded shape (Windows' blur
         // is too strong and cannot follow the corners); every frame, so a window sliding behind moves smoothly through the glass.
-        if (_look.Glass != _glassOn)
+        // Clear with frosted cards reads it too, for the widget cards only (FrostCards).
+        if ((_look.Glass || FrostedCards) != _glassOn || FrostedCards != _frostOn)
         {
-            _glassOn = _look.Glass;
+            _glassOn = _look.Glass || FrostedCards;
+            _frostOn = FrostedCards;
             _lastGlass = null;
             if (_glassOn) _glass.Start(); else _glass.Stop();
         }
         // Reading the screen would read the dock too, so while it does the dock is left out of captures; otherwise as the island's
         // setting says.
         ScreenShots.Exclude(this, _glassOn || _app.Settings.HideFromCapture);
+        if (!_glassOn) _lastGlass = null;
         if (_glassOn) GlassTick();
     }
 
@@ -156,7 +159,33 @@ internal sealed partial class DockWindow
         var brush = new ImageBrush(picture) { Stretch = Stretch.Fill };
         RenderOptions.SetBitmapScalingMode(brush, BitmapScalingMode.HighQuality);
         brush.Freeze();
-        _bar.Background = brush;
+        if (_frostOn) FrostCards(picture);
+        else _bar.Background = brush;
+    }
+
+    // Clear with frosted (Glass) cards: the bar has no surface, only the widget cards are frosted. Each card shows its own part of
+    // the screen read behind the bar, under its tint (DockWindow.Widgets: FrostLayer); app cards stay plainly see-through.
+    private bool _frostOn;
+    private bool FrostedCards => _app.DockSettings.Style == DockStyle.Clear && _app.DockSettings.ClearCards == DockClearCards.Glass
+        && !_app.DockSettings.CleanWidgets;
+
+    private void FrostCards(BitmapSource picture)
+    {
+        double width = _bar.ActualWidth, height = _bar.ActualHeight;
+        if (width < 4 || height < 4) return;
+        foreach (var frame in _apps.Children.OfType<Border>().Concat(_trailing.Children.OfType<Border>()))
+        {
+            if (frame.Tag is not DockWidget || !frame.IsVisible) continue;
+            var area = frame.TransformToAncestor(_bar).TransformBounds(new Rect(frame.RenderSize));
+            var part = new ImageBrush(picture)
+            {
+                Stretch = Stretch.Fill, ViewboxUnits = BrushMappingMode.RelativeToBoundingBox,
+                Viewbox = new Rect(area.X / width, area.Y / height, area.Width / width, area.Height / height)
+            };
+            RenderOptions.SetBitmapScalingMode(part, BitmapScalingMode.HighQuality);
+            part.Freeze();
+            frame.Background = part;
+        }
     }
 
     // The bar's own menu, on its empty parts.

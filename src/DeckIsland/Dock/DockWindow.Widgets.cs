@@ -111,6 +111,16 @@ internal sealed partial class DockWindow
             BorderThickness = new Thickness(_app.DockSettings.CleanWidgets ? 0 : 1), Child = grid, Tag = widget,
             ToolTip = _app.DockSettings.NamesOnHover ? DockWidgets.Info(widget.Kind).Name : null
         };
+        // Frosted cards (Clear, Glass): the frame shows the blur (DockWindow.Look: FrostCards), the tint sits on a layer over it, so
+        // hover changes only the tint.
+        var shade = frame;
+        if (FrostedCards && !darkToday)
+        {
+            frame.Child = null;
+            shade = new Border { CornerRadius = new CornerRadius(Math.Max(0, TileRadius() - 1)), Background = frame.Background, Child = grid };
+            frame.Child = shade;
+            frame.Background = Brushes.Transparent;
+        }
         if (widget.Kind == DockWidgetKind.Tray && !Cards) ShrinkCard(frame, tile);
         if (widget.Kind is DockWidgetKind.WorldTime or DockWidgetKind.WorldClocks)
         {
@@ -141,9 +151,9 @@ internal sealed partial class DockWindow
         // Widgets that do something on a click (and the tray arrow) shade under the pointer, as app tiles do.
         if (click is not null || widget.Kind == DockWidgetKind.Tray)
         {
-            var rest = frame.Background;
-            frame.MouseEnter += (_, _) => frame.Background = UI.Brush(_look.CardHover);
-            frame.MouseLeave += (_, _) => frame.Background = rest;
+            var rest = shade.Background;
+            frame.MouseEnter += (_, _) => shade.Background = UI.Brush(_look.CardHover);
+            frame.MouseLeave += (_, _) => shade.Background = rest;
         }
         frame.PreviewMouseLeftButtonDown += (_, e) =>
         {

@@ -29,8 +29,9 @@ public sealed record DockLook(string Bar, string Rim, string Card, string CardHo
         DockStyle.Midnight => new("#D40A0A0F", "#1AC8D7F0", "#0AFFFFFF", "#17FFFFFF", "#21FFFFFF", "#17FFFFFF", "#FFF5F5F7", "#A6F5F5F7", "#1FFFFFFF", true),
         DockStyle.Clear => clear switch
         {
-            DockClearCards.White => new("#00000000", "#00000000", "#FFF5F5F7", "#FFEBEBEE", "#FFE0E0E4", "#0F000000", "#FF1D1D1F", "#FF6E6E73", "#1F000000", false),
-            DockClearCards.Glass => new("#00000000", "#00000000", "#734A4C55", "#80565862", "#8C62646F", "#24FFFFFF", "#FFF5F5F7", "#CCF5F5F7", "#33FFFFFF", false),
+            // Clear White: the light mirror of Clear Black: near-white opaque cards with a visible hairline (estimated, not measured).
+            DockClearCards.White => new("#00000000", "#00000000", "#FFF7F7F9", "#FFECECEF", "#FFE2E2E6", "#1A000000", "#FF1D1D1F", "#FF6E6E73", "#1F000000", false),
+            DockClearCards.Glass => new("#00000000", "#00000000", "#63424244", "#73505054", "#80585860", "#24FFFFFF", "#FFF5F5F7", "#CCF5F5F7", "#33FFFFFF", false),
             _ => new("#00000000", "#00000000", "#FF18181A", "#FF222225", "#FF2A2A2E", "#1AFFFFFF", "#FFF5F5F7", "#A6F5F5F7", "#26FFFFFF", false)
         },
         // Black: no rim on the bar itself; the widget cards carry a visible hairline instead.

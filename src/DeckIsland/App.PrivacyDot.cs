@@ -139,7 +139,9 @@ public partial class MainWindow
         if (!Equals(SensorIcons.ToolTip, description))
         {
             SensorIcons.ToolTip = description;
-            AutomationProperties.SetName(SensorIcons, description?.Replace('\n', ','));
+            // SetName throws on null or empty; with nothing in use the name is cleared instead.
+            if (string.IsNullOrEmpty(description)) SensorIcons.ClearValue(AutomationProperties.NameProperty);
+            else AutomationProperties.SetName(SensorIcons, description.Replace('\n', ','));
         }
         PlaceSensorIndicator();
     }
