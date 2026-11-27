@@ -96,16 +96,21 @@ internal sealed partial class DockWindow
     }
 
     // A minimal clock face: hour and minute hands, a second hand in the accent.
+    // An analog face, after lumabar's: a filled dial with twelve ticks (longer at the quarters), white hands and an orange
+    // second hand on an orange pin.
     private (FrameworkElement, Action) AnalogClock(double tile, Func<DateTime>? time = null)
     {
-        double size = tile * 0.78, centre = size / 2;
+        bool light = _look.Text == "#FF1D1D1F";
+        string ink = light ? "#FF1D1D1F" : "#FFF5F5F7";
+        double size = Math.Round(tile * 0.84), centre = size / 2;
         var face = new Canvas { Width = size, Height = size, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
-        face.Children.Add(new Ellipse { Width = size, Height = size, Stroke = UI.Brush(_look.Divider), StrokeThickness = 1.2 });
-        for (int i = 0; i < 12; i += 3)
+        face.Children.Add(new Ellipse { Width = size, Height = size, Fill = UI.Brush(light ? "#FFF5F5F7" : "#FF161618"), Stroke = UI.Brush(light ? "#26000000" : "#2EFFFFFF"), StrokeThickness = 1 });
+        for (int i = 0; i < 12; i++)
         {
-            double angle = i * Math.PI / 6;
-            face.Children.Add(new Line { X1 = centre + Math.Sin(angle) * centre * 0.78, Y1 = centre - Math.Cos(angle) * centre * 0.78,
-                X2 = centre + Math.Sin(angle) * centre * 0.9, Y2 = centre - Math.Cos(angle) * centre * 0.9, Stroke = UI.Brush(_look.Dim), StrokeThickness = 1.4 });
+            double angle = i * Math.PI / 6, inner = i % 3 == 0 ? 0.68 : 0.78;
+            face.Children.Add(new Line { X1 = centre + Math.Sin(angle) * centre * inner, Y1 = centre - Math.Cos(angle) * centre * inner,
+                X2 = centre + Math.Sin(angle) * centre * 0.88, Y2 = centre - Math.Cos(angle) * centre * 0.88,
+                Stroke = UI.Brush(ink), Opacity = i % 3 == 0 ? 1 : 0.55, StrokeThickness = i % 3 == 0 ? 1.6 : 1 });
         }
         Line Hand(double length, double thickness, string colour)
         {
@@ -113,12 +118,15 @@ internal sealed partial class DockWindow
             face.Children.Add(hand);
             return hand;
         }
-        var hour = Hand(centre * 0.5, 2.2, _look.Text); var minute = Hand(centre * 0.75, 1.6, _look.Text); var second = Hand(centre * 0.8, 1, Accent);
+        var hour = Hand(centre * 0.5, 2.6, ink); var minute = Hand(centre * 0.74, 1.8, ink); var second = Hand(centre * 0.8, 1, "#FFFF9F0A");
+        double pinSize = Math.Max(3, size * 0.09);
+        var pin = new Ellipse { Width = pinSize, Height = pinSize, Fill = UI.Brush("#FFFF9F0A") };
+        Canvas.SetLeft(pin, centre - pinSize / 2); Canvas.SetTop(pin, centre - pinSize / 2);
+        face.Children.Add(pin);
         void Point(Line hand, double turns) { double length = (double)hand.Tag, angle = turns * 2 * Math.PI; hand.X2 = centre + Math.Sin(angle) * length; hand.Y2 = centre - Math.Cos(angle) * length; }
         return (face, () =>
         {
             var now = time?.Invoke() ?? DateTime.Now;
-            second.Visibility = time is null && _app.DockSettings.ClockSeconds ? Visibility.Visible : Visibility.Collapsed;
             Point(hour, (now.Hour % 12 + now.Minute / 60.0) / 12); Point(minute, (now.Minute + now.Second / 60.0) / 60); Point(second, now.Second / 60.0);
         });
     }

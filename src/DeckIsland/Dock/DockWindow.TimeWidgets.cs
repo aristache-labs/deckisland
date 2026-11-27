@@ -13,44 +13,130 @@ internal sealed partial class DockWindow
 {
     private static readonly string[] DefaultWorldCities = ["New York", "London", "Tokyo"];
 
+    // World clocks' cities: the defaults until the list is edited, then exactly the ones chosen (none to three).
+    private static List<string> WorldClockCities(DockWidget widget) => widget.Option.Length == 0 ? [.. DefaultWorldCities]
+        : WorldClocks.Normalize(widget.Option.Split('|')).Where(city => city.Length > 0).ToList();
+
+    private void SaveWorldClockCities(DockWidget widget, IReadOnlyList<string> cities)
+    {
+        var settings = _app.DockSettings;
+        if (settings.Locked) return;
+        // An emptied list is kept as a lone separator, so it does not fall back to the defaults.
+        string option = cities.Count == 0 ? "|" : string.Join('|', cities);
+        _app.UpdateDockSettings(settings.WithWidgets(settings.Widgets.Select(w => w.Id == widget.Id ? w with { Option = option } : w).ToList()), keepPanels: true);
+    }
+
+    // A city as the faces caption it: a well-known code, or the first three letters.
+    private static readonly Dictionary<string, string> CityCodes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["New York"] = "NYC", ["London"] = "LON", ["Tokyo"] = "TYO", ["Paris"] = "PAR", ["Los Angeles"] = "LAX", ["San Francisco"] = "SFO",
+        ["Hong Kong"] = "HKG", ["Singapore"] = "SIN", ["Sydney"] = "SYD", ["Dubai"] = "DXB", ["Beijing"] = "BJS", ["Shanghai"] = "SHA",
+        ["Berlin"] = "BER", ["Madrid"] = "MAD", ["Rome"] = "ROM", ["Moscow"] = "MOW", ["Bucharest"] = "BUH", ["Chicago"] = "CHI",
+        ["Toronto"] = "YTO", ["Mexico City"] = "MEX", ["Sao Paulo"] = "SAO", ["Buenos Aires"] = "BUE", ["Mumbai"] = "BOM", ["Seoul"] = "SEL",
+        ["Bangkok"] = "BKK", ["Istanbul"] = "IST", ["Amsterdam"] = "AMS", ["Washington"] = "WAS", ["Kolkata"] = "CCU", ["Cairo"] = "CAI"
+    };
+
+    private static string CityCode(string city) => CityCodes.TryGetValue(city, out var code) ? code
+        : new string(city.Where(char.IsLetter).Take(3).ToArray()).ToUpperInvariant();
+
+    // World clocks' editor: the chosen cities with a remove button each, and a search that adds one while there are fewer than three.
+    private void OpenWorldClocksEditor(DockWidget widget, FrameworkElement anchor)
+    {
+        // Anchored to the bar, not the widget: each change rebuilds the widgets, and the panel must stay put.
+        double offset = anchor.TranslatePoint(new Point(0, 0), _bar).X;
+        if (_app.DockSettings.Locked || !BeginDockPanel(_bar)) return;
+        var cities = WorldClockCities(widget);
+        var count = Label("", 11.5, bold: true, dim: true);
+        var chip = new Border { Background = UI.Brush(_look.CardActive), CornerRadius = new CornerRadius(9), Padding = new Thickness(8, 1, 8, 2),
+            Margin = new Thickness(10, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center, Child = count };
+        var header = new DockPanel { Margin = new Thickness(0, 0, 0, 12) };
+        var close = new Border { Background = Brushes.Transparent, Cursor = System.Windows.Input.Cursors.Hand, VerticalAlignment = VerticalAlignment.Center,
+            Child = MonitorIcons.Icon("close", 18, UI.Brush(_look.Dim)) };
+        close.MouseLeftButtonUp += (_, _) => CloseWidgetDetails();
+        DockPanel.SetDock(close, System.Windows.Controls.Dock.Right);
+        header.Children.Add(close);
+        var title = Label(Loc.T("世界时钟", "World clocks"), 15, bold: true);
+        title.VerticalAlignment = VerticalAlignment.Center;
+        header.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, Children = { title, chip } });
+        var search = new TextBox { FontSize = 13.5, Background = Brushes.Transparent, BorderThickness = new Thickness(0), Foreground = UI.Brush(_look.Text),
+            CaretBrush = UI.Brush(_look.Text), VerticalContentAlignment = VerticalAlignment.Center, Padding = new Thickness(2, 0, 2, 0) };
+        var placeholder = Label("", 13.5, dim: true);
+        placeholder.IsHitTestVisible = false; placeholder.VerticalAlignment = VerticalAlignment.Center; placeholder.Margin = new Thickness(4, 0, 0, 0);
+        var field = new DockPanel { Children = { new Border { Margin = new Thickness(0, 0, 8, 0), VerticalAlignment = VerticalAlignment.Center,
+            Child = MonitorIcons.Icon("search", 16, UI.Brush(_look.Dim)) }, new Grid { Children = { search, placeholder } } } };
+        var box = new Border { Background = UI.Brush(_look.CardHover), CornerRadius = new CornerRadius(10), Padding = new Thickness(12, 9, 12, 9), Child = field,
+            Margin = new Thickness(0, 0, 0, 10) };
+        var list = new StackPanel();
+        void Show()
+        {
+            bool full = cities.Count >= WorldClocks.Maximum;
+            count.Text = $"{cities.Count}/{WorldClocks.Maximum}";
+            search.IsEnabled = !full;
+            if (full && search.Text.Length > 0) search.Text = "";
+            placeholder.Text = full ? Loc.T("移除一个城市以添加其他城市", "Remove a city to add another") : Loc.T("搜索要添加的城市", "Search a city to add");
+            placeholder.Visibility = search.Text.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
+            System.Windows.Automation.AutomationProperties.SetName(search, placeholder.Text);
+            string query = search.Text.Trim();
+            list.Children.Clear();
+            var shown = query.Length == 0 ? WorldClocks.Cities.Where(c => cities.Contains(c.City)).OrderBy(c => cities.IndexOf(c.City))
+                : WorldClocks.Cities.Where(c => !cities.Contains(c.City) && (c.City.Contains(query, StringComparison.CurrentCultureIgnoreCase)
+                    || IanaZone(c.Zone).Contains(query, StringComparison.CurrentCultureIgnoreCase))).Take(40);
+            var now = DateTimeOffset.Now;
+            foreach (var (city, zoneId) in shown)
+            {
+                bool chosen = cities.Contains(city);
+                var local = TimeZoneInfo.ConvertTime(now, WorldClocks.Zone(city) ?? TimeZoneInfo.Utc);
+                var time = Label(TimeText(local.DateTime), 14, bold: true);
+                var offset = Label(OffsetText(local.Offset - now.Offset), 11.5, dim: true);
+                time.TextAlignment = offset.TextAlignment = TextAlignment.Right;
+                var right = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center,
+                    Children = { new StackPanel { VerticalAlignment = VerticalAlignment.Center, Children = { time, offset } } } };
+                if (chosen)
+                {
+                    var remove = new Border { Background = Brushes.Transparent, Cursor = System.Windows.Input.Cursors.Hand, Margin = new Thickness(16, 0, 0, 0),
+                        VerticalAlignment = VerticalAlignment.Center, Child = MonitorIcons.Icon("close", 16, UI.Brush(_look.Dim)), ToolTip = Loc.T("移除", "Remove") };
+                    remove.MouseLeftButtonUp += (_, e) => { e.Handled = true; cities.Remove(city); SaveWorldClockCities(widget, cities); Show(); };
+                    right.Children.Add(remove);
+                }
+                var line = new DockPanel();
+                DockPanel.SetDock(right, System.Windows.Controls.Dock.Right);
+                line.Children.Add(right);
+                line.Children.Add(new StackPanel { VerticalAlignment = VerticalAlignment.Center, Children = { Label(city, 14, bold: true), Label(IanaZone(zoneId), 11.5, dim: true) } });
+                var row = new Border { Padding = new Thickness(10, 9, 10, 9), CornerRadius = new CornerRadius(10), Child = line, Background = Brushes.Transparent };
+                if (!chosen)
+                {
+                    row.Cursor = System.Windows.Input.Cursors.Hand;
+                    row.MouseEnter += (_, _) => row.Background = UI.Brush(_look.CardHover);
+                    row.MouseLeave += (_, _) => row.Background = Brushes.Transparent;
+                    row.MouseLeftButtonUp += (_, _) =>
+                    {
+                        if (cities.Count >= WorldClocks.Maximum) return;
+                        cities.Add(city);
+                        SaveWorldClockCities(widget, cities);
+                        search.Text = "";
+                        Show();
+                    };
+                }
+                list.Children.Add(row);
+            }
+            if (list.Children.Count == 0)
+                list.Children.Add(Label(query.Length == 0 ? Loc.T("没有城市", "No cities yet") : Loc.T("没有找到城市", "No city found"), 13, dim: true));
+        }
+        search.TextChanged += (_, _) => Show();
+        Show();
+        var body = new DockPanel { Height = 460 };
+        DockPanel.SetDock(header, System.Windows.Controls.Dock.Top);
+        DockPanel.SetDock(box, System.Windows.Controls.Dock.Top);
+        body.Children.Add(header); body.Children.Add(box);
+        body.Children.Add(new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = list });
+        ShowDockPanel(_bar, body, () => { }, 440, 16, CalendarRadius(14, 30), search, offset);
+    }
+
     private static string[] TimeCities(DockWidget widget)
     {
         var defaults = widget.Kind == DockWidgetKind.WorldTime ? ["Paris"] : DefaultWorldCities;
         var cities = WorldClocks.Normalize(widget.Option.Split('|'));
         return defaults.Select((city, i) => i < cities.Count && cities[i].Length > 0 ? cities[i] : city).ToArray();
-    }
-
-    private ContextMenu TimeWidgetMenu(DockWidget widget)
-    {
-        var menu = NewMenu();
-        var settings = _app.DockSettings;
-        var cities = TimeCities(widget);
-        for (int i = 0; i < cities.Length; i++)
-        {
-            int slot = i;
-            var cityMenu = new MenuItem { Header = $"{Loc.T("城市", "City")} · {cities[i]}", IsEnabled = !settings.Locked };
-            foreach (var group in WorldClocks.Cities.GroupBy(city => city.City[0]))
-            {
-                var letter = new MenuItem { Header = group.Key.ToString() };
-                foreach (var entry in group)
-                {
-                    var city = new MenuItem { Header = entry.City, IsCheckable = true, IsChecked = cities[slot] == entry.City };
-                    city.Click += (_, _) =>
-                    {
-                        var current = _app.DockSettings;
-                        if (current.Locked) return;
-                        var options = TimeCities(current.Widgets.FirstOrDefault(w => w.Id == widget.Id) ?? widget);
-                        options[slot] = entry.City;
-                        _app.UpdateDockSettings(current.WithWidgets(current.Widgets.Select(w => w.Id == widget.Id
-                            ? w with { Option = string.Join('|', options) } : w).ToList()));
-                    };
-                    letter.Items.Add(city);
-                }
-                cityMenu.Items.Add(letter);
-            }
-            menu.Items.Add(cityMenu);
-        }
-        return menu;
     }
 
     // World time's city picker: a search over the cities WorldClocks knows, each with its time zone, time and offset from here;
@@ -189,7 +275,7 @@ internal sealed partial class DockWindow
             // Date, after lumabar's: the weekday small over the month and day, left-aligned; the weekday keeps the accent.
             main.TextTrimming = TextTrimming.None;
             main.FontSize = tile * 0.36;
-            detail.FontSize = tile * 0.17;
+            detail.FontSize = tile * 0.25;
             main.TextAlignment = detail.TextAlignment = TextAlignment.Left;
             content.HorizontalAlignment = HorizontalAlignment.Left;
             detail.Margin = new Thickness(0, 0, 0, -tile * 0.03);
@@ -365,22 +451,72 @@ internal sealed partial class DockWindow
         return size.Minutes == 0 ? $"{sign}{(int)size.TotalHours}h" : $"{sign}{(int)size.TotalHours}h{size.Minutes:00}";
     }
 
+    // World clocks, after lumabar's: a small face per city, white by day and dark by night there, its code under it.
     private (FrameworkElement, Action) WorldFaces(DockWidget widget, double tile)
     {
         var row = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center };
         var updates = new List<Action>();
-        foreach (string city in TimeCities(widget))
+        var cities = WorldClockCities(widget);
+        foreach (string city in cities)
         {
             var zone = WorldClocks.Zone(city) ?? TimeZoneInfo.Utc;
-            var (face, update) = AnalogClock(tile * 0.85, () => TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, zone).DateTime);
-            var caption = Label(city, tile * 0.16, bold: true);
+            var (face, update) = WorldFace(tile * 0.6, () => TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, zone).DateTime);
+            var caption = Label(CityCode(city), tile * 0.15, bold: true, dim: true);
             caption.TextAlignment = TextAlignment.Center;
+            caption.Margin = new Thickness(0, tile * 0.03, 0, 0);
             var stack = TimeStack(face, caption);
-            stack.Width = tile * 0.94;
+            stack.Width = tile * 0.82;
+            stack.ToolTip = city;
             row.Children.Add(stack);
             updates.Add(update);
         }
+        if (cities.Count == 0) row.Children.Add(Label(Loc.T("添加城市", "Add a city"), tile * 0.17, bold: true, dim: true));
         return (row, () => { foreach (var update in updates) update(); });
+    }
+
+    private (FrameworkElement, Action) WorldFace(double size, Func<DateTime> time)
+    {
+        double centre = size / 2;
+        var dial = new Ellipse { Width = size, Height = size, StrokeThickness = 1 };
+        var face = new Canvas { Width = size, Height = size, HorizontalAlignment = HorizontalAlignment.Center, Children = { dial } };
+        var ticks = Enumerable.Range(0, 12).Select(i =>
+        {
+            double angle = i * Math.PI / 6, inner = i % 3 == 0 ? 0.7 : 0.78;
+            var tick = new Line { X1 = centre + Math.Sin(angle) * centre * inner, Y1 = centre - Math.Cos(angle) * centre * inner,
+                X2 = centre + Math.Sin(angle) * centre * 0.88, Y2 = centre - Math.Cos(angle) * centre * 0.88, StrokeThickness = i % 3 == 0 ? 1.4 : 0.8 };
+            face.Children.Add(tick);
+            return tick;
+        }).ToArray();
+        Line Hand(double length, double thickness)
+        {
+            var hand = new Line { X1 = centre, Y1 = centre, StrokeThickness = thickness, StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round, Tag = length };
+            face.Children.Add(hand);
+            return hand;
+        }
+        var hour = Hand(centre * 0.5, 2.2);
+        var minute = Hand(centre * 0.76, 1.5);
+        var second = Hand(centre * 0.8, 0.9);
+        second.Stroke = UI.Brush("#FFFF9F0A");
+        var pin = new Ellipse { Width = 3, Height = 3, Fill = UI.Brush("#FFFF9F0A") };
+        Canvas.SetLeft(pin, centre - 1.5); Canvas.SetTop(pin, centre - 1.5);
+        face.Children.Add(pin);
+        void Point(Line hand, double turns) { double length = (double)hand.Tag, angle = turns * 2 * Math.PI; hand.X2 = centre + Math.Sin(angle) * length; hand.Y2 = centre - Math.Cos(angle) * length; }
+        bool? day = null;
+        return (face, () =>
+        {
+            var now = time();
+            bool isDay = now.Hour is >= 6 and < 18;
+            if (day != isDay)
+            {
+                day = isDay;
+                dial.Fill = UI.Brush(isDay ? "#FFF5F5F7" : "#FF1C1C1E");
+                dial.Stroke = UI.Brush(isDay ? "#33000000" : "#33FFFFFF");
+                var ink = UI.Brush(isDay ? "#FF1D1D1F" : "#FFF5F5F7");
+                hour.Stroke = minute.Stroke = ink;
+                foreach (var tick in ticks) tick.Stroke = UI.Brush(isDay ? "#801D1D1F" : "#80F5F5F7");
+            }
+            Point(hour, (now.Hour % 12 + now.Minute / 60.0) / 12); Point(minute, (now.Minute + now.Second / 60.0) / 60); Point(second, now.Second / 60.0);
+        });
     }
 
     // Seven days from today: the month top left, the weather's icon and temperature top right, then each day's short name over
@@ -440,27 +576,27 @@ internal sealed partial class DockWindow
             var (digit, set) = segment ? SegmentDigit(tile) : FlipDigit(tile);
             // Flip: the hours and the minutes as two pairs with a gap between.
             if (!segment && i == 2) digit.Margin = new Thickness(Math.Round(tile * 0.14), 0, 1, 0);
-            if (segment && i == 2) digit.Margin = new Thickness(Math.Round(tile * 0.1), 0, Math.Round(tile * 0.03), 0);
             row.Children.Add(digit);
             digits[i] = set;
         }
         row.Children.Add(suffix);
         // Segment clock, after lumabar's: the weekday in a red outlined pill and the day and month beside it, over the digits.
-        var weekday = Label("", tile * 0.12, bold: true);
+        var weekday = Label("", tile * 0.17, bold: true);
         weekday.Foreground = UI.Brush("#FFFF3B30");
-        var pill = new Border { BorderBrush = UI.Brush("#FFFF3B30"), BorderThickness = new Thickness(1.2), CornerRadius = new CornerRadius(tile * 0.08),
+        var pill = new Border { BorderBrush = UI.Brush("#FFFF3B30"), BorderThickness = new Thickness(Math.Max(1.5, tile * 0.035)), CornerRadius = new CornerRadius(tile * 0.07),
             Padding = new Thickness(tile * 0.05, 0, tile * 0.05, 0), VerticalAlignment = VerticalAlignment.Center, Child = weekday };
-        caption.FontSize = tile * 0.16;
+        caption.FontSize = tile * 0.24;
         caption.FontWeight = FontWeights.Bold;
         caption.Foreground = UI.Brush(_look.Text);
         caption.Margin = new Thickness(tile * 0.07, 0, 0, 0);
-        var header = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, tile * 0.04), Children = { pill, caption } };
-        FrameworkElement face = TimeStack(row);
-        if (segment)
+        var header = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, tile * 0.05), Children = { pill, caption } };
+        FrameworkElement face;
+        if (!segment) face = TimeStack(row);
+        else
         {
             row.HorizontalAlignment = HorizontalAlignment.Left;
             face = new StackPanel { VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Left,
-                Margin = new Thickness(tile * 0.16, 0, tile * 0.1, 0), Children = { header, row } };
+                Margin = new Thickness(tile * 0.2, 0, tile * 0.08, 0), Children = { header, row } };
         }
         return (face, () =>
         {
@@ -548,23 +684,24 @@ internal sealed partial class DockWindow
         });
     }
 
-    // An LCD digit: seven thin, wide segments, the unlit ones faint, as on lumabar's segment clock.
+    // An LCD digit as lumabar draws it (measured): a little wider than tall, square-ended segments as thick across as they are
+    // along the sides, the unlit ones faint, the digits almost touching.
     private (FrameworkElement, Action<char>) SegmentDigit(double tile)
     {
-        var canvas = new Canvas { Width = 26, Height = 30 };
-        var segments = new[] { (3.0, 0.0, 20.0, 2.6), (23.4, 2.6, 2.6, 11.4), (23.4, 16.0, 2.6, 11.4), (3.0, 27.4, 20.0, 2.6),
-            (0.0, 16.0, 2.6, 11.4), (0.0, 2.6, 2.6, 11.4), (3.0, 13.7, 20.0, 2.6) }.Select(segment =>
+        var canvas = new Canvas { Width = 34, Height = 32 };
+        var segments = new[] { (4.0, 0.0, 26.0, 4.0), (30.0, 4.0, 4.0, 10.0), (30.0, 18.0, 4.0, 10.0), (4.0, 28.0, 26.0, 4.0),
+            (0.0, 18.0, 4.0, 10.0), (0.0, 4.0, 4.0, 10.0), (4.0, 14.0, 26.0, 4.0) }.Select(segment =>
         {
             var (x, y, width, height) = segment;
-            var shape = new Rectangle { Width = width, Height = height, RadiusX = 1.2, RadiusY = 1.2, Fill = UI.Brush(_look.Text) };
+            var shape = new Rectangle { Width = width, Height = height, RadiusX = 0.6, RadiusY = 0.6, Fill = UI.Brush(_look.Text) };
             Canvas.SetLeft(shape, x); Canvas.SetTop(shape, y); canvas.Children.Add(shape);
             return shape;
         }).ToArray();
-        var view = new Viewbox { Width = tile * 0.5, Height = tile * 0.52, Margin = new Thickness(Math.Round(tile * 0.03), 0, Math.Round(tile * 0.03), 0), Child = canvas };
+        var view = new Viewbox { Width = tile * 0.62, Height = tile * 0.58, Margin = new Thickness(0, 0, Math.Round(tile * 0.03), 0), Child = canvas };
         return (view, digit =>
         {
             int mask = DigitMasks[digit - '0'];
-            for (int i = 0; i < segments.Length; i++) segments[i].Opacity = (mask & (1 << i)) == 0 ? 0.08 : 1;
+            for (int i = 0; i < segments.Length; i++) segments[i].Opacity = (mask & (1 << i)) == 0 ? 0.1 : 1;
         });
     }
 }

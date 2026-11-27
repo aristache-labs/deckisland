@@ -112,6 +112,7 @@ internal sealed partial class DockWindow
                 DockWidgetKind.FlipClock => Math.Round(tile * 2.45),
                 // The time, its seconds and the date under them, no wider.
                 DockWidgetKind.Clock => Math.Round(tile * 2.05),
+                DockWidgetKind.SegmentClock => Math.Round(tile * 2.95),
                 // World time: the city and its offset beside the time, the offset wrapping to a second line as on lumabar.
                 DockWidgetKind.WorldTime => Math.Round(tile * 2.6),
                 _ => tile * width + _spacing * (width - 1)
@@ -150,14 +151,16 @@ internal sealed partial class DockWindow
                 _preview.HideNow();
                 _menuOpen = true;
                 DockAppWindows.Focus(_handle);
-                // World time: the bar's menu with Change city..., which opens the same picker as a click; World clocks keep their per-city menu.
+                // The bar's menu with the widget's own item: Change city... (World time) or Edit cities... (World clocks), as a click opens.
                 frame.ContextMenu = widget.Kind == DockWidgetKind.WorldTime
-                    ? BarMenu(Loc.T("更改城市…", "Change city…"), () => OpenCityPicker(widget, frame)) : TimeWidgetMenu(widget);
+                    ? BarMenu(Loc.T("更改城市…", "Change city…"), () => OpenCityPicker(widget, frame))
+                    : BarMenu(Loc.T("编辑城市…", "Edit cities…"), () => OpenWorldClocksEditor(widget, frame));
             };
             frame.ContextMenuClosing += (_, _) => _menuOpen = false;
         }
         Action? click = widget.Kind == DockWidgetKind.ShowDesktop ? DockShell.ToggleDesktop
             : widget.Kind == DockWidgetKind.WorldTime && !_app.DockSettings.Locked ? () => OpenCityPicker(widget, frame)
+            : widget.Kind == DockWidgetKind.WorldClocks && !_app.DockSettings.Locked ? () => OpenWorldClocksEditor(widget, frame)
             : HasWidgetDetails(widget.Kind) ? () => ToggleWidgetDetails(frame, widget.Kind) : null;
         if (click is not null)
         {

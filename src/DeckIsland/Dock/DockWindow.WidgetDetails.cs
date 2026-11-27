@@ -15,8 +15,10 @@ internal sealed partial class DockWindow
     private FrameworkElement? _dismissedAnchor;
     private long _dismissedAt;
 
+    // Every clock and date widget opens the calendar (world clocks open their city editor instead); weather widgets the forecast.
     private static bool HasWidgetDetails(DockWidgetKind kind) => kind is DockWidgetKind.Calendar or DockWidgetKind.Date
-        or DockWidgetKind.Today or DockWidgetKind.ClockWeather || DockWidgets.IsWeather(kind);
+        or DockWidgetKind.Today or DockWidgetKind.ClockWeather or DockWidgetKind.Clock or DockWidgetKind.FlipClock or DockWidgetKind.SegmentClock
+        or DockWidgetKind.AnalogClock or DockWidgetKind.SevenDays or DockWidgetKind.DayNumber || DockWidgets.IsWeather(kind);
 
     private void CloseWidgetDetails()
     {
@@ -52,8 +54,9 @@ internal sealed partial class DockWindow
     }
 
     // A panel above (or below) the bar on the dock's card: Esc or a click elsewhere closes it, and `update` runs with the widgets.
+    // offset: how far right of the anchor's left edge the panel starts (a panel anchored to the bar, which outlives its widgets).
     private void ShowDockPanel(FrameworkElement anchor, FrameworkElement body, Action update, double width, double padding, double radius,
-        FrameworkElement? focus = null)
+        FrameworkElement? focus = null, double offset = 0)
     {
         double workWidth = DeckIsland.Native.WindowsHost.MonitorScreen(Monitor) is { } screen
             ? screen.Work.Width / screen.Scale : SystemParameters.WorkArea.Width;
@@ -74,7 +77,7 @@ internal sealed partial class DockWindow
         var popup = new Popup
         {
             PlacementTarget = anchor, Placement = top ? PlacementMode.Bottom : PlacementMode.Top,
-            VerticalOffset = top ? 8 : -8, AllowsTransparency = true, StaysOpen = false, Child = card
+            VerticalOffset = top ? 8 : -8, HorizontalOffset = offset, AllowsTransparency = true, StaysOpen = false, Child = card
         };
         popup.Opened += (_, _) => (focus ?? card).Focus();
         popup.Closed += (_, _) =>
